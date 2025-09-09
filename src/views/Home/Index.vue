@@ -262,10 +262,10 @@ const getProject = async () => {
       color: '#e18525'
     },
     {
-      name: '关于我们',
+      name: '文档',
       icon: 'ant-design:mobile',
-      message: 'www.bgwa.cn/sample-page/',
-      personal: '关于我们',
+      message: 'https://docs.bgwa.cn/',
+      personal: '文档',
       time: new Date('2025-06-01'),
       color: '#2979ff'
     }
