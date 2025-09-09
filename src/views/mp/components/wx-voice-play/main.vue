@@ -84,7 +84,7 @@ const amrStop = () => {
   playing.value = false
   amr.value.stop()
 }
-// TODO 芋艿：下面样式有点问题
+// TODO worker：下面样式有点问题
 </script>
 <style lang="scss" scoped>
 .wx-voice-div {

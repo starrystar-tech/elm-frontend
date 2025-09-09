@@ -60,7 +60,7 @@
         <el-form-item label="集合" key="collection" v-show="false">
           <el-input v-model="loopInstanceForm.collection" clearable @change="updateLoopBase" />
         </el-form-item>
-        <!-- add by 芋艿：由于「元素变量」暂时用不到，所以这里 display 为 none -->
+        <!-- add by worker：由于「元素变量」暂时用不到，所以这里 display 为 none -->
         <el-form-item label="元素变量" key="elementVariable" style="display: none">
           <el-input v-model="loopInstanceForm.elementVariable" clearable @change="updateLoopBase" />
         </el-form-item>
@@ -71,7 +71,7 @@
             @change="updateLoopCondition"
           />
         </el-form-item>
-        <!-- add by 芋艿：由于「异步状态」暂时用不到，所以这里 display 为 none -->
+        <!-- add by worker：由于「异步状态」暂时用不到，所以这里 display 为 none -->
         <el-form-item label="异步状态" key="async" style="display: none">
           <el-checkbox
             v-model="loopInstanceForm.asyncBefore"

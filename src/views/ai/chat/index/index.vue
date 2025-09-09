@@ -70,7 +70,7 @@
 
       <!-- 底部 -->
       <el-footer class="flex flex-col !h-auto !p-0">
-        <!-- TODO @芋艿：这块要想办法迁移下！ -->
+        <!-- TODO @worker：这块要想办法迁移下！ -->
         <form
           class="mt-10px mx-20px mb-20px py-9px px-10px flex flex-col h-auto rounded-10px"
           style="border: 1px solid var(--el-border-color)"
@@ -393,7 +393,7 @@ const handlePromptInput = (event) => {
     isComposing.value = false
   }, 400)
 }
-// TODO @芋艿：是不是可以通过 @keydown.enter、@keydown.shift.enter 来实现，回车发送、shift+回车换行；主要看看，是不是可以简化 isComposing 相关的逻辑
+// TODO @worker：是不是可以通过 @keydown.enter、@keydown.shift.enter 来实现，回车发送、shift+回车换行；主要看看，是不是可以简化 isComposing 相关的逻辑
 const onCompositionstart = () => {
   isComposing.value = true
 }

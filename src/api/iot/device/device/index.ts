@@ -49,7 +49,7 @@ export interface IotDevicePropertyRespVO {
   updateTime: Date // 更新时间
 }
 
-// TODO @芋艿：调整到 constants
+// TODO @worker：调整到 constants
 // IoT 设备状态枚举
 export enum DeviceStateEnum {
   INACTIVE = 0, // 未激活
