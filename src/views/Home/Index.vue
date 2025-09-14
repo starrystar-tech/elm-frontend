@@ -264,7 +264,7 @@ const getProject = async () => {
     {
       name: '文档',
       icon: 'ant-design:mobile',
-      message: 'https://docs.bgwa.cn/',
+      message: 'docs.bgwa.cn',
       personal: '文档',
       time: new Date('2025-06-01'),
       color: '#2979ff'
