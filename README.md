@@ -40,10 +40,10 @@ QQ: 516908542@qq.com <br>
 微信号: lixiaobin9959 <br>
 [<img src="https://file.bgwa.cn/bgwa/groupchat.jpg" width="300" />](https://file.bgwa.cn/bgwa/cooperation.jpg) 
 
-## 项目地址
-后端: https://github.com/starrystar-tech/elm-backend
-前端: https://github.com/starrystar-tech/elm-frontend
-文档: https://github.com/starrystar-tech/elm-docs 
+## 开源项目
+* 后端: https://github.com/starrystar-tech/elm-backend
+* 前端: https://github.com/starrystar-tech/elm-frontend
+* 文档: https://github.com/starrystar-tech/elm-docs 
 
 ## 平台简介
 
