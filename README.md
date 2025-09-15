@@ -1,11 +1,15 @@
 
-## 新手必读
+## 安装环境
 
 * nodejs > 16.18.0 && pnpm > 8.6.0 (强制使用pnpm)
-* 演示地址 https://mall.bgwa.cn（密码已默认，直接点登录即可）
 
-## 启动 [查看文档](https://docs.bgwa.cn/frontend.html)
+## 在线体验
+* 体验地址: https://elm.softfoucs.cn (账号密码已默认)
+* 文档地址: https://docs.softfoucs.cn
 
+## 启动 
+
+* [前端说明](https://docs.softfoucs.cn/frontend.html)
 * 克隆 https://github.com/starrystar-tech/elm-frontend.git 项目，并 Star 关注下该项目。
 
 * 在目录下执行如下命令，进行启动：
@@ -36,8 +40,10 @@ QQ: 516908542@qq.com <br>
 微信号: lixiaobin9959 <br>
 [<img src="https://file.bgwa.cn/bgwa/groupchat.jpg" width="300" />](https://file.bgwa.cn/bgwa/cooperation.jpg) 
 
-## 后台项目地址
-https://github.com/starrystar-tech/elm-backend
+## 项目地址
+后端: https://github.com/starrystar-tech/elm-backend
+前端: https://github.com/starrystar-tech/elm-frontend
+文档: https://github.com/starrystar-tech/elm-docs 
 
 ## 平台简介
 
