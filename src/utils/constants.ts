@@ -1,5 +1,5 @@
 /**
- * Created by 软聚企业信息化平台
+ * Created by 百谷科技
  *
  * 枚举类
  */

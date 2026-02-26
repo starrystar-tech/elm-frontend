@@ -199,7 +199,7 @@ const loginData = reactive({
   captchaEnable: import.meta.env.VITE_APP_CAPTCHA_ENABLE !== 'false',
   tenantEnable: import.meta.env.VITE_APP_TENANT_ENABLE !== 'false',
   loginForm: {
-    tenantName: '软聚企业信息化平台',
+    tenantName: '百谷科技',
     username: 'admin',
     password: '',
     captchaVerification: '',

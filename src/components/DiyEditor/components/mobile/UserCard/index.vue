@@ -5,7 +5,7 @@
         <el-avatar :size="60">
           <Icon icon="ep:avatar" :size="60" />
         </el-avatar>
-        <span class="text-18px font-bold">软聚企业信息化平台</span>
+        <span class="text-18px font-bold">百谷科技</span>
       </div>
       <Icon icon="tdesign:qrcode" :size="20" />
     </div>

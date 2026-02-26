@@ -63,7 +63,7 @@ const emit = defineEmits<{
   column-count: 5;
   margin-top: 10px;
 
-  /* 软聚企业信息化平台：增加 10px，避免顶着上面 */
+  /* 百谷科技：增加 10px，避免顶着上面 */
 }
 
 .waterfall-item {

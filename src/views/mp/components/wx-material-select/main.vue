@@ -1,7 +1,7 @@
 <!--
   - Copyright (C) 2018-2019
   - All rights reserved, Designed By www.joolun.com
-  软聚企业信息化平台：
+  百谷科技：
   ① 移除 avue 组件，使用 ElementUI 原生组件
 -->
 <template>

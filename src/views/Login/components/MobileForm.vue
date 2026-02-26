@@ -133,7 +133,7 @@ const loginData = reactive({
   },
   loginForm: {
     uuid: '',
-    tenantName: '软聚企业信息化平台',
+    tenantName: '百谷科技',
     mobileNumber: '',
     code: ''
   }
