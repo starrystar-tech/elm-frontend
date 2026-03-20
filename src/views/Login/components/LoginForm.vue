@@ -1,140 +1,72 @@
 <template>
-  <el-form
-    v-show="getShow"
-    ref="formLogin"
-    :model="loginData.loginForm"
-    :rules="LoginRules"
-    class="login-form"
-    label-position="top"
-    label-width="120px"
-    size="large"
-  >
-    <el-row class="mx-[-10px]">
-      <el-col :span="24" class="px-10px">
-        <el-form-item>
-          <LoginFormTitle class="w-full" />
-        </el-form-item>
-      </el-col>
-      <!-- <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item v-if="loginData.tenantEnable === 'true'" prop="tenantName">
-          <el-input
-            v-model="loginData.loginForm.tenantName"
-            :placeholder="t('login.tenantNamePlaceholder')"
-            :prefix-icon="iconHouse"
-            link
-            type="primary"
-          />
-        </el-form-item>
-      </el-col> -->
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item prop="username">
-          <el-input
-            v-model="loginData.loginForm.username"
-            :placeholder="t('login.usernamePlaceholder')"
-            :prefix-icon="iconAvatar"
-          />
-        </el-form-item>
-      </el-col>
-      <el-col :span="24" class="px-10px">
-        <el-form-item prop="password">
-          <el-input
-            v-model="loginData.loginForm.password"
-            :placeholder="t('login.passwordPlaceholder')"
-            :prefix-icon="iconLock"
-            show-password
-            type="password"
-            @keyup.enter="getCode()"
-          />
-        </el-form-item>
-      </el-col>
-      <el-col :span="24" class="px-10px mt-[-20px] mb-[-20px]">
-        <el-form-item>
-          <el-row justify="space-between" style="width: 100%">
-            <el-col :span="6">
-              <el-checkbox v-model="loginData.loginForm.rememberMe">
-                {{ t('login.remember') }}
-              </el-checkbox>
-            </el-col>
-            <el-col :offset="6" :span="12">
-              <el-link
-                class="float-right"
-                type="primary"
-                @click="setLoginState(LoginStateEnum.RESET_PASSWORD)"
-              >
-                {{ t('login.forgetPassword') }}
-              </el-link>
-            </el-col>
-          </el-row>
-        </el-form-item>
-      </el-col>
-      <el-col :span="24" class="px-10px">
-        <el-form-item>
-          <XButton
-            :loading="loginLoading"
-            :title="t('login.login')"
-            class="w-full"
-            type="primary"
-            @click="getCode()"
-          />
-        </el-form-item>
-      </el-col>
-      <Verify
-        v-if="loginData.captchaEnable === 'true'"
-        ref="verify"
-        :captchaType="captchaType"
-        :imgSize="{ width: '400px', height: '200px' }"
-        mode="pop"
-        @success="handleLogin"
-      />
-      <!-- <el-col :span="24" class="px-10px">
-        <el-form-item>
-          <el-row :gutter="5" justify="space-between" style="width: 100%">
-            <el-col :span="8">
-              <XButton
-                :title="t('login.btnMobile')"
-                class="w-full"
-                @click="setLoginState(LoginStateEnum.MOBILE)"
-              />
-            </el-col>
-            <el-col :span="8">
-              <XButton
-                :title="t('login.btnQRCode')"
-                class="w-full"
-                @click="setLoginState(LoginStateEnum.QR_CODE)"
-              />
-            </el-col>
-            <el-col :span="8">
-              <XButton
-                :title="t('login.btnRegister')"
-                class="w-full"
-                @click="setLoginState(LoginStateEnum.REGISTER)"
-              />
-            </el-col>
-          </el-row>
-        </el-form-item>
-      </el-col> -->
-      <!-- <el-divider content-position="center">{{ t('login.otherLogin') }}</el-divider> -->
-      <!-- <el-col :span="24" class="px-10px">
-        <el-form-item>
-          <div class="w-full flex justify-between">
-            <Icon
-              v-for="(item, key) in socialList"
-              :key="key"
-              :icon="item.icon"
-              :size="30"
-              class="anticon cursor-pointer"
-              color="#999"
-              @click="doSocialLogin(item.type)"
-            />
-          </div>
-        </el-form-item>
-      </el-col> -->
-    </el-row>
-  </el-form>
+  <div v-show="getShow" class="login-form-container">
+    <!-- 密码登录 -->
+    <el-form
+      ref="formLogin"
+      :model="loginData.loginForm"
+      :rules="LoginRules"
+      class="login-form"
+      label-position="top"
+      size="large"
+    >
+      <el-form-item prop="username" class="form-item-custom">
+        <el-input
+          v-model="loginData.loginForm.username"
+          placeholder="请输入用户名"
+          :prefix-icon="iconAvatar"
+          class="input-custom"
+        />
+      </el-form-item>
+
+      <el-form-item prop="password" class="form-item-custom">
+        <el-input
+          v-model="loginData.loginForm.password"
+          placeholder="请输入密码"
+          :prefix-icon="iconLock"
+          show-password
+          type="password"
+          @keyup.enter="getCode()"
+          class="input-custom"
+        />
+      </el-form-item>
+
+      <div class="flex items-center justify-between mt-4 mb-6">
+        <el-checkbox v-model="loginData.loginForm.rememberMe" class="checkbox-custom">
+          记住我
+        </el-checkbox>
+        <el-link
+          type="primary"
+          @click="setLoginState(LoginStateEnum.RESET_PASSWORD)"
+          class="link-custom"
+        >
+          忘记密码
+        </el-link>
+      </div>
+
+      <el-form-item class="form-item-custom">
+        <el-button
+          :loading="loginLoading"
+          type="primary"
+          class="w-full button-custom"
+          @click="getCode()"
+        >
+          登录
+        </el-button>
+      </el-form-item>
+    </el-form>
+
+    <Verify
+      v-if="loginData.captchaEnable === 'true'"
+      ref="verify"
+      :captchaType="captchaType"
+      :imgSize="{ width: '400px', height: '200px' }"
+      mode="pop"
+      @success="handleLogin"
+    />
+  </div>
 </template>
 <script lang="ts" setup>
 import { ElLoading } from 'element-plus'
-import LoginFormTitle from './LoginFormTitle.vue'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 
 import { useIcon } from '@/hooks/web/useIcon'
@@ -181,13 +113,6 @@ const loginData = reactive({
   }
 })
 
-const socialList = [
-  { icon: 'ant-design:wechat-filled', type: 30 },
-  { icon: 'ant-design:dingtalk-circle-filled', type: 20 },
-  { icon: 'ant-design:github-filled', type: 0 },
-  { icon: 'ant-design:alipay-circle-filled', type: 0 }
-]
-
 // 获取验证码
 const getCode = async () => {
   // 情况一，未开启：则直接登录
@@ -199,6 +124,7 @@ const getCode = async () => {
     verify.value.show()
   }
 }
+
 // 获取租户 ID
 const getTenantId = async () => {
   if (loginData.tenantEnable === 'true') {
@@ -206,6 +132,7 @@ const getTenantId = async () => {
     authUtil.setTenantId(res)
   }
 }
+
 // 记住我
 const getLoginFormCache = () => {
   const loginForm = authUtil.getLoginForm()
@@ -219,6 +146,7 @@ const getLoginFormCache = () => {
     }
   }
 }
+
 // 根据域名，获得租户信息
 const getTenantByWebsite = async () => {
   if (loginData.tenantEnable === 'true') {
@@ -230,7 +158,9 @@ const getTenantByWebsite = async () => {
     }
   }
 }
+
 const loading = ref() // ElLoading.service 返回的实例
+
 // 登录
 const handleLogin = async (params: any) => {
   loginLoading.value = true
@@ -272,41 +202,6 @@ const handleLogin = async (params: any) => {
   }
 }
 
-// 社交登录
-const doSocialLogin = async (type: number) => {
-  if (type === 0) {
-    message.error('此方式未配置')
-  } else {
-    loginLoading.value = true
-    if (loginData.tenantEnable === 'true') {
-      // 尝试先通过 tenantName 获取租户
-      await getTenantId()
-      // 如果获取不到，则需要弹出提示，进行处理
-      if (!authUtil.getTenantId()) {
-        try {
-          const data = await message.prompt('请输入租户名称', t('common.reminder'))
-          if (data?.action !== 'confirm') throw 'cancel'
-          const res = await LoginApi.getTenantIdByName(data.value)
-          authUtil.setTenantId(res)
-        } catch (error) {
-          if (error === 'cancel') return
-        } finally {
-          loginLoading.value = false
-        }
-      }
-    }
-    // 计算 redirectUri
-    // 注意: type、redirect 需要先 encode 一次，否则钉钉回调会丢失。
-    // 配合 social-login.vue#getUrlValue() 使用
-    const redirectUri =
-      location.origin +
-      '/social-login?' +
-      encodeURIComponent(`type=${type}&redirect=${redirect.value || '/'}`)
-
-    // 进行跳转
-    window.location.href = await LoginApi.socialAuthRedirect(type, encodeURIComponent(redirectUri))
-  }
-}
 watch(
   () => currentRoute.value,
   (route: RouteLocationNormalizedLoaded) => {
@@ -316,6 +211,7 @@ watch(
     immediate: true
   }
 )
+
 onMounted(() => {
   getLoginFormCache()
   getTenantByWebsite()
@@ -323,23 +219,85 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-:deep(.anticon) {
-  &:hover {
-    color: var(--el-color-primary) !important;
+.login-form-container {
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.form-item-custom {
+  margin-bottom: 16px;
+}
+
+.input-custom {
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  border: 1px solid #e8e8e8;
+
+  &:focus-within {
+    border-color: #409eff;
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+  }
+
+  .el-input__wrapper {
+    border-radius: 4px;
+    padding: 10px 14px;
+  }
+
+  .el-input__prefix {
+    margin-right: 8px;
   }
 }
 
-.login-code {
-  float: right;
-  width: 100%;
-  height: 38px;
+.button-custom {
+  background: #409eff;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 25px 12px;
+  transition: all 0.3s ease;
 
-  img {
-    width: 100%;
-    height: auto;
-    max-width: 100px;
-    vertical-align: middle;
-    cursor: pointer;
+  &:hover {
+    background: #66b1ff;
+  }
+
+  &:active {
+    background: #3a8ee6;
+  }
+}
+
+.checkbox-custom {
+  .el-checkbox__inner {
+    border-radius: 2px;
+    transition: all 0.3s ease;
+  }
+
+  .el-checkbox__input.is-checked .el-checkbox__inner {
+    background-color: #409eff;
+    border-color: #409eff;
+  }
+}
+
+.link-custom {
+  color: #409eff;
+  font-size: 14px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    color: #66b1ff;
+    text-decoration: underline;
+  }
+}
+
+// 深色模式适配
+:deep(.dark) {
+  .input-custom {
+    border-color: #334155;
+
+    &:focus-within {
+      border-color: #409eff;
+      box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+    }
   }
 }
 </style>

@@ -62,8 +62,16 @@
 
 html,
 body {
+  /* 1. 强制使用灰度抗锯齿（最常用，能显著改善非 Mac 屏的模糊感） */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* 2. 确保字体渲染不产生额外的模糊滤镜 */
+  text-rendering: optimizeLegibility;
+
+  /* 3. 禁用某些浏览器默认的字体平滑过度处理 (针对旧版 Chrome/Android) */
+  /* 注意：现代浏览器通常忽略此属性，但在某些 Android 设备上有效 */
+  -webkit-text-size-adjust: 100%;
 }
 
 *,
