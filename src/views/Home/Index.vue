@@ -10,7 +10,9 @@
               </el-avatar>
               <div>
                 <div class="text-20px">
-                  {{ t('workplace.welcome') }} {{ username }} {{ t('workplace.happyDay') }}
+                  <Icon icon="svg-icon:send" size="14" color="#409eff" />
+                  {{ t('workplace.welcome') }} {{ username }}
+                  {{ t('workplace.happyDay') }}
                 </div>
                 <div class="mt-10px text-14px text-gray-500">
                   {{ t('workplace.toady') }}，20℃ - 32℃！
@@ -62,12 +64,7 @@
         <template #header>
           <div class="h-3 flex justify-between">
             <span>{{ t('workplace.project') }}</span>
-            <el-link
-              type="primary"
-              :underline="false"
-              href="https://www.bgwa.cn"
-              target="_blank"
-            >
+            <el-link type="primary" :underline="false" href="https://www.bgwa.cn" target="_blank">
               {{ t('action.more') }}
             </el-link>
           </div>

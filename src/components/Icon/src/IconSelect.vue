@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { CSSProperties } from 'vue'
+import { CSSProperties, onMounted } from 'vue'
 import { cloneDeep } from 'lodash-es'
 import { IconJson } from '@/components/Icon/src/data'
 
@@ -39,14 +39,25 @@ const tabsList = [
     name: 'ep:'
   },
   {
-    label: 'Font Awesome 4',
-    name: 'fa:'
-  },
-  {
-    label: 'Font Awesome 5 Solid',
-    name: 'fa-solid:'
+    label: '本地图标',
+    name: 'svg-icon:'
   }
 ]
+
+// 本地SVG图标列表
+const localSvgIcons = ref<string[]>([])
+
+// 模拟获取本地SVG图标列表（实际项目中可以通过构建工具或API获取）
+onMounted(() => {
+  // 这里我们手动添加一些本地SVG图标作为示例
+  // 实际项目中，你可以通过扫描src/assets/svgs目录来获取所有SVG图标
+  const localIcons = ['crm']
+
+  localSvgIcons.value = localIcons
+  // 将本地图标添加到iconList中
+  iconList.value['svg-icon:'] = localIcons
+  copyIconList['svg-icon:'] = localIcons
+})
 
 const pageList = computed(() => {
   if (currentPage.value === 1) {
@@ -125,7 +136,12 @@ watch(
 
 <template>
   <div class="selector">
-    <ElInput v-model="inputValue" @click="visible = !visible" :clearable="props.clearable" @clear="clearIcon">
+    <ElInput
+      v-model="inputValue"
+      @click="visible = !visible"
+      :clearable="props.clearable"
+      @clear="clearIcon"
+    >
       <template #append>
         <ElPopover
           :popper-options="{
