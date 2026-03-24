@@ -1,8 +1,16 @@
 <template>
   <div :class="prefixCls" class="relative h-screen w-full flex flex-col">
     <!-- 顶部标题 -->
-    <div class="bg-white z-10">
-      <img src="@/assets/imgs/logo2.png" alt="logo" class="w-32 ml-5 mt-2" />
+    <div class="bg-white z-10 flex items-center justify-between px-5 py-2">
+      <img src="@/assets/imgs/logo2.png" alt="logo" class="w-32" />
+      <div class="flex items-center space-x-6">
+        <a href="https://docs.bgwa.cn/" target="_blank" class="text-gray-600 hover:text-blue-500"
+          >文档中心</a
+        >
+        <a href="https://www.bgwa.cn/" target="_blank" class="text-gray-600 hover:text-blue-500"
+          >官网</a
+        >
+      </div>
     </div>
 
     <!-- 背景 -->
@@ -57,7 +65,7 @@
     <!-- 版权栏 -->
     <div class="relative z-10 py-4">
       <div class="text-center text-xs text-[#9598a6]">
-        <div> Copyright © 2025-2026 www.bgwa.com. All Rights Reserved </div>
+        <div> Copyright © 2025-2026 www.bgwa.cn. All Rights Reserved </div>
         <div>武汉百谷科技有限公司版权所有 鄂ICP备2022019819号-1</div>
       </div>
     </div>
