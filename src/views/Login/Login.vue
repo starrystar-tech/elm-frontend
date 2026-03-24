@@ -17,8 +17,8 @@
     </div>
 
     <!-- 登录卡片 -->
-    <div class="relative z-10 flex-1 flex items-center justify-center p-8">
-      <div class="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
+    <div class="relative z-10 flex-1 flex items-center justify-center p-0">
+      <div class="w-full max-w-sm p-8 bg-white rounded-lg shadow-md">
         <!-- 系统标题 -->
         <div class="text-center mb-8">
           <h2 class="text-2xl font-bold text-gray-800">欢迎回来</h2>
@@ -56,7 +56,10 @@
 
     <!-- 版权栏 -->
     <div class="relative z-10 py-4">
-      <div class="text-center text-xs text-[#9598a6]"> 武汉百谷科技有限公司版权所有 </div>
+      <div class="text-center text-xs text-[#9598a6]">
+        <div> Copyright © 2025-2026 www.bgwa.com. All Rights Reserved </div>
+        <div>武汉百谷科技有限公司版权所有 鄂ICP备2022019819号-1</div>
+      </div>
     </div>
   </div>
 </template>

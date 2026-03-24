@@ -34,13 +34,13 @@
         <el-checkbox v-model="loginData.loginForm.rememberMe" class="checkbox-custom">
           记住我
         </el-checkbox>
-        <el-link
+        <!-- <el-link
           type="primary"
           @click="setLoginState(LoginStateEnum.RESET_PASSWORD)"
           class="link-custom"
         >
           忘记密码
-        </el-link>
+        </el-link> -->
       </div>
 
       <el-form-item class="form-item-custom">
