@@ -59,6 +59,7 @@ watch(
 <template>
   <div>
     <router-link
+      class="layout-border__bottom"
       :class="[
         prefixCls,
         layout !== 'classic' ? `${prefixCls}__Top` : '',
@@ -67,8 +68,8 @@ watch(
       to="/"
     >
       <img
-        class="h-[calc(var(--logo-height))] w-[calc(var(--logo-width))]"
-        src="@/assets/imgs/bgwalogo.png"
+        class="h-[calc(var(--logo-height))] w-[calc(var(--logo-width))] m-5"
+        src="@/assets/imgs/logo2.png"
       />
       <div
         v-if="show"
@@ -81,7 +82,7 @@ watch(
           }
         ]"
       >
-        {{ title }}
+        <!-- {{ title }} -->
       </div>
     </router-link>
   </div>

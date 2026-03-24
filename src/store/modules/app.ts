@@ -77,27 +77,27 @@ export const useAppStore = defineStore('app', {
         // 左侧菜单边框颜色
         leftMenuBorderColor: 'inherit',
         // 左侧菜单背景颜色
-        leftMenuBgColor: '#001529',
+        leftMenuBgColor: '#ffffff',
         // 左侧菜单浅色背景颜色
-        leftMenuBgLightColor: '#0f2438',
+        leftMenuBgLightColor: '#f6f6f6',
         // 左侧菜单选中背景颜色
         leftMenuBgActiveColor: 'var(--el-color-primary)',
         // 左侧菜单收起选中背景颜色
         leftMenuCollapseBgActiveColor: 'var(--el-color-primary)',
         // 左侧菜单字体颜色
-        leftMenuTextColor: '#bfcbd9',
+        leftMenuTextColor: '#303133',
         // 左侧菜单选中字体颜色
         leftMenuTextActiveColor: '#fff',
         // logo字体颜色
-        logoTitleTextColor: '#fff',
+        logoTitleTextColor: '#303133',
         // logo边框颜色
         logoBorderColor: 'inherit',
         // 头部背景颜色
-        topHeaderBgColor: '#fff',
+        topHeaderBgColor: '#616161',
         // 头部字体颜色
-        topHeaderTextColor: 'inherit',
+        topHeaderTextColor: '#ffffff',
         // 头部悬停颜色
-        topHeaderHoverColor: '#f6f6f6',
+        topHeaderHoverColor: 'rgba(255, 255, 255, 0.1)',
         // 头部边框颜色
         topToolBorderColor: '#eee'
       }
@@ -305,6 +305,16 @@ export const useAppStore = defineStore('app', {
       wsCache.set(CACHE_KEY.THEME, this.theme)
     },
     setCssVarTheme() {
+      // 确保强制设置CSS变量，覆盖任何缓存的值
+      setCssVar('--left-menu-bg-color', '#ffffff')
+      setCssVar('--left-menu-bg-light-color', '#f6f6f6')
+      setCssVar('--left-menu-text-color', '#303133')
+      setCssVar('--logo-title-text-color', '#303133')
+      setCssVar('--top-header-bg-color', 'var(--el-color-primary)')
+      setCssVar('--top-header-text-color', '#ffffff')
+      setCssVar('--top-header-hover-color', 'rgba(255, 255, 255, 0.1)')
+
+      // 然后设置其他主题变量
       for (const key in this.theme) {
         setCssVar(`--${humpToUnderline(key)}`, this.theme[key])
       }
