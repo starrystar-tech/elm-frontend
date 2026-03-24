@@ -93,9 +93,9 @@ export const useAppStore = defineStore('app', {
         // logo边框颜色
         logoBorderColor: 'inherit',
         // 头部背景颜色
-        topHeaderBgColor: '#616161',
+        topHeaderBgColor: '#fff',
         // 头部字体颜色
-        topHeaderTextColor: '#ffffff',
+        topHeaderTextColor: '#333',
         // 头部悬停颜色
         topHeaderHoverColor: 'rgba(255, 255, 255, 0.1)',
         // 头部边框颜色
