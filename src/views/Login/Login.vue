@@ -12,7 +12,6 @@
         >
       </div>
     </div>
-
     <!-- 背景 -->
     <div class="absolute inset-0 flex-1">
       <img src="@/assets/imgs/bg.png" alt="背景" class="w-full h-full object-cover" />
@@ -88,8 +87,13 @@ import {
   ForgetPasswordForm
 } from './components'
 import { LoginStateEnum, useLoginState } from './components/useLogin'
+import Form from '@/components/Form/src/Form.vue'
 
 defineOptions({ name: 'Login' })
+
+const form = reactive({
+  username: ''
+})
 
 const { t } = useI18n()
 const appStore = useAppStore()

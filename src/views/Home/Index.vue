@@ -10,7 +10,6 @@
               </el-avatar>
               <div>
                 <div class="text-20px">
-                  <Icon icon="svg-icon:send" size="14" color="#409eff" />
                   {{ t('workplace.welcome') }} {{ username }}
                   {{ t('workplace.happyDay') }}
                 </div>
