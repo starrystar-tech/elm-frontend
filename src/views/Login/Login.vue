@@ -65,7 +65,7 @@
     <!-- 版权栏 -->
     <div class="relative z-10 py-4">
       <div class="text-center text-xs text-[#9598a6]">
-        <div> Copyright © 2025-2026 www.bgwa.cn. All Rights Reserved </div>
+        <div class="mb-1"> Copyright © 2025-2026 www.bgwa.cn. All Rights Reserved </div>
         <div>武汉百谷科技有限公司版权所有 鄂ICP备2022019819号-1</div>
       </div>
     </div>
