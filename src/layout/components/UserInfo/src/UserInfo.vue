@@ -57,7 +57,12 @@ const toDocument = () => {
 <template>
   <ElDropdown class="custom-hover" :class="prefixCls" trigger="click">
     <div class="flex items-center">
-      <ElAvatar :src="avatar" alt="" class="w-[calc(var(--logo-height)-25px)] rounded-[50%]" />
+      <ElAvatar
+        :size="30"
+        :src="avatar"
+        alt=""
+        class="w-[calc(var(--logo-height)-25px)] rounded-[50%]"
+      />
       <span class="pl-[5px] text-14px text-[var(--top-header-text-color)] <lg:hidden">
         {{ userName }}
       </span>
