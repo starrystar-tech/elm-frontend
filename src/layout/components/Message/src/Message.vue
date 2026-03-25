@@ -58,7 +58,7 @@ onMounted(() => {
   <div class="message">
     <ElPopover :width="400" placement="bottom" trigger="click">
       <template #reference>
-        <ElBadge :is-dot="unreadCount > 0" class="item">
+        <ElBadge :is-dot="unreadCount > 0" class="item flex items-center">
           <Icon :size="18" class="cursor-pointer" icon="ep:bell" :color="color" @click="getList" />
         </ElBadge>
       </template>

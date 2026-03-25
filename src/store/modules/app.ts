@@ -79,7 +79,7 @@ export const useAppStore = defineStore('app', {
         // 左侧菜单背景颜色
         leftMenuBgColor: '#ffffff',
         // 左侧菜单浅色背景颜色
-        leftMenuBgLightColor: '#f6f6f6',
+        leftMenuBgLightColor: '#fff',
         // 左侧菜单选中背景颜色
         leftMenuBgActiveColor: 'var(--el-color-primary)',
         // 左侧菜单收起选中背景颜色

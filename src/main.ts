@@ -81,4 +81,4 @@ const setupAll = async () => {
 
 setupAll()
 
-Logger.prettyPrimary(`欢迎使用`, import.meta.env.VITE_APP_TITLE)
+// Logger.prettyPrimary(`欢迎使用`, import.meta.env.VITE_APP_TITLE)
