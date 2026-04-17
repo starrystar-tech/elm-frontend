@@ -63,12 +63,12 @@ watch(
       :class="[
         prefixCls,
         layout !== 'classic' ? `${prefixCls}__Top` : '',
-        'flex !h-[var(--logo-height)] items-center cursor-pointer relative decoration-none overflow-hidden logo-wrap'
+        'flex !h-[var(--logo-height)] items-center cursor-pointer relative decoration-none overflow-hidden logo-wrap sidebar-logo'
       ]"
       to="/"
     >
       <img
-        class="h-[calc(var(--logo-height))] w-[calc(var(--logo-width))] m-5"
+        class="h-[40px] w-auto ml-18px mr-10px"
         src="@/assets/imgs/logo2.png"
       />
       <div
@@ -87,3 +87,10 @@ watch(
     </router-link>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.sidebar-logo {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+</style>

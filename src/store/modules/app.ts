@@ -307,8 +307,8 @@ export const useAppStore = defineStore('app', {
     setCssVarTheme() {
       // 确保强制设置CSS变量，覆盖任何缓存的值
       setCssVar('--left-menu-bg-color', '#ffffff')
-      setCssVar('--left-menu-bg-light-color', '#f6f6f6')
-      setCssVar('--left-menu-text-color', '#303133')
+      setCssVar('--left-menu-bg-light-color', '#f7fbff')
+      setCssVar('--left-menu-text-color', '#595959')
       setCssVar('--logo-title-text-color', '#303133')
       setCssVar('--top-header-bg-color', 'var(--el-color-primary)')
       setCssVar('--top-header-text-color', '#ffffff')

@@ -182,33 +182,40 @@ $prefix-cls: #{$namespace}-menu;
 .#{$prefix-cls} {
   position: relative;
   transition: width var(--transition-time-02);
+  background: var(--left-menu-bg-color);
+  border-right: 1px solid #efefef;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.01);
 
   .v-menu-list {
     width: 100%;
-    padding: 10px;
+    padding: 8px 0 16px;
   }
 
   // 一级菜单项（可折叠）
   .v-menu-submenu {
     width: 100%;
-    margin-bottom: 24px;
+    border-bottom: 1px solid #f3f3f3;
+
     .v-menu-submenu-title {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 22px;
-      color: rgba(0, 0, 0, 0.87);
+      min-height: 50px;
+      color: #666;
       font-size: 14px;
-      line-height: 22px;
+      line-height: 20px;
       cursor: pointer;
       transition: all var(--transition-time-02);
       position: relative;
       width: 100%;
-      margin-bottom: 12px;
-      font-weight: bolder;
+      margin-bottom: 0;
+      padding: 14px 18px;
+      font-weight: 500;
+      gap: 10px;
+
       &:hover {
-        color: var(--el-color-primary) !important;
-        background-color: transparent !important;
+        color: #444 !important;
+        background-color: #fafafa !important;
       }
 
       .v-menu-submenu-icon {
@@ -216,17 +223,24 @@ $prefix-cls: #{$namespace}-menu;
         font-size: 12px;
         margin-left: auto;
         flex-shrink: 0;
+        color: #8f8f8f;
 
         &.is-opened {
           transform: rotate(180deg);
         }
       }
+
+      :deep(.app-iconify) {
+        width: 15px;
+        min-width: 15px;
+        font-size: 15px;
+        color: #666;
+      }
     }
 
     &.is-active {
       .v-menu-submenu-title {
-        color: var(--el-color-primary) !important;
-        background-color: transparent !important;
+        color: #4a4a4a !important;
       }
     }
 
@@ -239,51 +253,16 @@ $prefix-cls: #{$namespace}-menu;
     }
 
     .v-menu-submenu-content {
-      background-color: var(--left-menu-bg-light-color);
-      padding: 4px 0;
-    }
-    .v-menu-submenu-content > .v-menu-row:last-child {
-      margin-bottom: 0;
-    }
-    .v-menu-submenu-content > .v-menu-divider:first-child {
-      margin-top: 4px;
+      background-color: #fff;
+      padding: 0 0 10px;
     }
   }
 
   // 一级菜单项（不可折叠，单行显示）
   .v-menu-item-first-level {
     width: 100%;
-    height: 22px;
-    color: rgba(0, 0, 0, 0.87);
-    font-size: 14px;
-    line-height: 22px;
-    cursor: pointer;
-    transition: all var(--transition-time-02);
-    position: relative;
-    display: flex;
-    align-items: center;
-    margin-bottom: 24px;
-    font-weight: bolder;
-
-    &:hover {
-      color: var(--el-color-primary) !important;
-      background-color: transparent !important;
-    }
-
-    &.is-active {
-      color: var(--el-color-primary) !important;
-      background-color: transparent !important;
-
-      &:hover {
-        background-color: transparent !important;
-      }
-    }
-  }
-
-  // 二级菜单项（不可折叠，两列显示）
-  .v-menu-item:not(.v-menu-item-first-level) {
-    height: 20px;
-    color: #606266;
+    min-height: 50px;
+    color: #666;
     font-size: 14px;
     line-height: 20px;
     cursor: pointer;
@@ -291,32 +270,78 @@ $prefix-cls: #{$namespace}-menu;
     position: relative;
     display: flex;
     align-items: center;
+    margin-bottom: 0;
+    padding: 14px 18px;
+    gap: 10px;
+    font-weight: 500;
+    border-bottom: 1px solid #f3f3f3;
 
     &:hover {
-      color: var(--el-color-primary) !important;
-      background-color: transparent !important;
+      color: #444 !important;
+      background-color: #fafafa !important;
     }
 
     &.is-active {
       color: var(--el-color-primary) !important;
-      background-color: transparent !important;
+      background-color: #f7fbff !important;
 
       &:hover {
-        background-color: transparent !important;
+        background-color: #f7fbff !important;
+      }
+    }
+
+    :deep(.app-iconify) {
+      width: 15px;
+      min-width: 15px;
+      font-size: 15px;
+      color: #666;
+    }
+  }
+
+  // 二级菜单项（不可折叠，两列显示）
+  .v-menu-item:not(.v-menu-item-first-level) {
+    min-height: 32px;
+    color: #555;
+    font-size: 13px;
+    line-height: 18px;
+    cursor: pointer;
+    transition: all var(--transition-time-02);
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 7px 10px;
+    border-radius: 4px;
+
+    &:hover {
+      color: #333 !important;
+      background-color: #f7f7f7 !important;
+    }
+
+    &.is-active {
+      color: var(--el-color-primary) !important;
+      background-color: #e8efff !important;
+      font-weight: 500;
+
+      &:hover {
+        background-color: #e8efff !important;
       }
     }
   }
 
-  // 两列布局
+  // 子菜单按两列排布，一行两个
   .v-menu-row {
     display: flex;
+    flex-direction: row;
     width: 100%;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 10px;
+    margin-bottom: 4px;
+    padding: 0 14px;
 
     .v-menu-item {
       flex: 1;
       min-width: 0;
+      justify-content: flex-start;
     }
 
     .v-menu-item-placeholder {
@@ -326,21 +351,22 @@ $prefix-cls: #{$namespace}-menu;
 
   // 分割线
   .v-menu-divider {
-    margin: 22px 0;
-    height: 1px;
-    background-color: var(--left-menu-divider-color);
+    margin: 4px 14px;
+    height: auto;
+    background-color: transparent;
     position: relative;
     display: flex;
     align-items: center;
 
     .v-menu-divider-text {
-      position: absolute;
-      left: 50%;
-      transform: translate(-50%);
-      padding: 0 8px;
-      background-color: var(--left-menu-bg-light-color);
-      font-size: 13px;
-      color: #909399;
+      position: static;
+      transform: none;
+      padding: 4px 0 2px;
+      background-color: transparent;
+      font-size: 12px;
+      color: #8c8c8c;
+      font-weight: 600;
+      letter-spacing: 0.3px;
     }
   }
 }
