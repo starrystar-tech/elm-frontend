@@ -90,7 +90,7 @@
       <el-descriptions-item labelClassName="no-colon">
         <el-row :gutter="20">
           <el-col :span="15">
-            <el-table v-if="formData.orderItem" :data="[formData.orderItem]" border>
+            <Table v-if="formData.orderItem" :data="[formData.orderItem]" border>
               <el-table-column label="商品" prop="spuName" width="auto">
                 <template #default="{ row }">
                   {{ row.spuName }}
@@ -110,7 +110,7 @@
               <el-table-column label="合计" prop="payPrice" width="150">
                 <template #default="{ row }">{{ fenToYuan(row.payPrice) }} 元</template>
               </el-table-column>
-            </el-table>
+            </Table>
           </el-col>
           <el-col :span="10" />
         </el-row>

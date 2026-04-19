@@ -1,7 +1,7 @@
 <template>
   <!-- 搜索 -->
   <ContentWrap>
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -86,7 +86,7 @@
           断开扫描枪
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 统计卡片 -->
@@ -135,7 +135,7 @@
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list">
+    <Table v-loading="loading" :data="list">
       <el-table-column label="订单号" align="center" prop="no" min-width="180" />
       <el-table-column label="用户信息" align="center" prop="user.nickname" min-width="80" />
       <el-table-column
@@ -197,7 +197,7 @@
         min-width="170"
         :formatter="dateFormatter"
       />
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

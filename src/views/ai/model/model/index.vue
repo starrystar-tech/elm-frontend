@@ -1,7 +1,7 @@
 <template>
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       class="-mb-15px"
       :model="queryParams"
       ref="queryFormRef"
@@ -47,12 +47,12 @@
           <Icon icon="ep:plus" class="mr-5px" /> 新增
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="所属平台" align="center" prop="platform" min-width="100">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.AI_PLATFORM" :value="scope.row.platform" />
@@ -99,7 +99,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

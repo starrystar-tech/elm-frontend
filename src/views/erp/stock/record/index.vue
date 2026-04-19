@@ -2,7 +2,7 @@
 <template>
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       class="-mb-15px"
       :model="queryParams"
       ref="queryFormRef"
@@ -97,12 +97,12 @@
           <Icon icon="ep:download" class="mr-5px" /> 导出
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="产品名称" align="center" prop="productName" />
       <el-table-column label="产品分类" align="center" prop="categoryName" />
       <el-table-column label="产品单位" align="center" prop="unitName" />
@@ -133,7 +133,7 @@
         :formatter="erpCountTableColumnFormatter"
       />
       <el-table-column label="操作人" align="center" prop="creatorName" />
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

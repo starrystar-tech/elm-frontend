@@ -1,343 +1,264 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <el-form
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
+    <Search
+      :schema="searchSchema"
       label-width="150px"
-    >
-      <el-form-item label="短信类型" prop="type">
-        <el-select
-          v-model="queryParams.type"
-          placeholder="请选择短信类型"
-          clearable
-          class="!w-240px"
-        >
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.SYSTEM_SMS_TEMPLATE_TYPE)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="开启状态" prop="status">
-        <el-select
-          v-model="queryParams.status"
-          placeholder="请选择开启状态"
-          clearable
-          class="!w-240px"
-        >
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="模板编码" prop="code">
-        <el-input
-          v-model="queryParams.code"
-          placeholder="请输入模板编码"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="短信 API 的模板编号" prop="apiTemplateId">
-        <el-input
-          v-model="queryParams.apiTemplateId"
-          placeholder="请输入短信 API 的模板编号"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="短信渠道" prop="channelId">
-        <el-select
-          v-model="queryParams.channelId"
-          placeholder="请选择短信渠道"
-          clearable
-          class="!w-240px"
-        >
-          <el-option
-            v-for="channel in channelList"
-            :key="channel.id"
-            :value="channel.id"
-            :label="
-              channel.signature +
-              `【 ${getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, channel.code)}】`
-            "
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
-        <el-date-picker
-          v-model="queryParams.createTime"
-          style="width: 240px"
-          type="daterange"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['system:sms-template:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" />新增
-        </el-button>
-        <el-button
-          type="danger"
-          plain
-          :disabled="checkedIds.length === 0"
-          @click="handleDeleteBatch"
-          v-hasPermi="['system:sms-template:delete']"
-        >
-          <Icon icon="ep:delete" class="mr-5px" />批量删除
-        </el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['system:sms-template:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
-      <el-table-column type="selection" width="55" />
-      <el-table-column
-        label="模板编码"
-        align="center"
-        prop="code"
-        width="120"
-        :show-overflow-tooltip="true"
-      />
-      <el-table-column
-        label="模板名称"
-        align="center"
-        prop="name"
-        width="120"
-        :show-overflow-tooltip="true"
-      />
-      <el-table-column
-        label="模板内容"
-        align="center"
-        prop="content"
-        width="200"
-        :show-overflow-tooltip="true"
-      />
-      <el-table-column label="短信类型" align="center" prop="type">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.SYSTEM_SMS_TEMPLATE_TYPE" :value="scope.row.type" />
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" align="center" prop="status" width="80">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" />
-      <el-table-column
-        label="短信 API 的模板编号"
-        align="center"
-        prop="apiTemplateId"
-        width="200"
-        :show-overflow-tooltip="true"
-      />
-      <el-table-column label="短信渠道" align="center" width="120">
-        <template #default="scope">
-          <div>
-            {{ channelList.find((channel) => channel.id === scope.row.channelId)?.signature }}
-          </div>
-          <dict-tag :type="DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE" :value="scope.row.channelCode" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        width="180"
-        :formatter="dateFormatter"
-      />
-      <el-table-column label="操作" align="center" width="210" fixed="right">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['system:sms-template:update']"
-          >
-            修改
-          </el-button>
-          <el-button
-            link
-            type="primary"
-            @click="openSendForm(scope.row.id)"
-            v-hasPermi="['system:sms-template:send-sms']"
-          >
-            测试
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['system:sms-template:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+      @reset="setSearchParams"
+      @search="setSearchParams"
+    />
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+      <BaseButton
+        v-if="canDelete"
+        type="danger"
+        :disabled="checkedIds.length === 0"
+        @click="handleDeleteBatch"
+      >
+        批量删除
+      </BaseButton>
+      <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+        导出
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      selection
+      @register="tableRegister"
+      @selection-change="handleRowCheckboxChange"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <SmsTemplateForm ref="formRef" @success="getList" />
-  <!-- 表单弹窗：测试发送 -->
+  <SmsTemplateForm ref="formRef" @success="tableMethods.getList" />
   <SmsTemplateSendForm ref="sendFormRef" />
 </template>
-<script lang="ts" setup>
+
+<script setup lang="tsx">
+import { computed, reactive, ref } from 'vue'
 import { DICT_TYPE, getIntDictOptions, getDictLabel } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import * as SmsTemplateApi from '@/api/system/sms/smsTemplate'
 import * as SmsChannelApi from '@/api/system/sms/smsChannel'
-import download from '@/utils/download'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 import SmsTemplateForm from './SmsTemplateForm.vue'
 import SmsTemplateSendForm from './SmsTemplateSendForm.vue'
 
 defineOptions({ name: 'SystemSmsTemplate' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canCreate = hasPermission(['system:sms-template:create'])
+const canUpdate = hasPermission(['system:sms-template:update'])
+const canDelete = hasPermission(['system:sms-template:delete'])
+const canExport = hasPermission(['system:sms-template:export'])
+const canSend = hasPermission(['system:sms-template:send-sms'])
 
-const loading = ref(false) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryFormRef = ref() // 搜索的表单
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  type: undefined,
-  status: undefined,
-  code: '',
-  content: '',
-  apiTemplateId: '',
-  channelId: undefined,
-  createTime: []
-})
-const exportLoading = ref(false) // 导出的加载中
-const channelList = ref<SmsChannelApi.SmsChannelVO[]>([]) // 短信渠道列表
-
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await SmsTemplateApi.getSmsTemplatePage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
-
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
-}
-
-/** 发送短信按钮 */
-const sendFormRef = ref()
-const openSendForm = (id: number) => {
-  sendFormRef.value.open(id)
-}
-
-/** 删除按钮操作 */
-const handleDelete = async (id: number) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await SmsTemplateApi.deleteSmsTemplate(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-  } catch {}
-}
-
-/** 批量删除按钮操作 */
+const channelList = ref<SmsChannelApi.SmsChannelVO[]>([])
 const checkedIds = ref<number[]>([])
+const message = useMessage()
+
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'type',
+    label: '短信类型',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择短信类型',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.SYSTEM_SMS_TEMPLATE_TYPE),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'status',
+    label: '开启状态',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择开启状态',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.COMMON_STATUS),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'code',
+    label: '模板编码',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入模板编码',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'apiTemplateId',
+    label: '短信 API 的模板编号',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入短信 API 的模板编号',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'channelId',
+    label: '短信渠道',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择短信渠道',
+      clearable: true,
+      options: [],
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'createTime',
+    label: '创建时间',
+    component: 'DatePicker',
+    componentProps: {
+      type: 'daterange',
+      valueFormat: 'YYYY-MM-DD HH:mm:ss',
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+      style: { width: '240px' }
+    }
+  }
+])
+
+const formRef = ref<InstanceType<typeof SmsTemplateForm>>()
+const sendFormRef = ref<InstanceType<typeof SmsTemplateSendForm>>()
+
+const openForm = (type: string, id?: number) => {
+  formRef.value?.open(type, id)
+}
+
+const openSendForm = (id: number) => {
+  sendFormRef.value?.open(id)
+}
+
+const { tableObject, tableMethods, register: tableRegister } = useTable<SmsTemplateApi.SmsTemplateVO>({
+  getListApi: async (params) => await SmsTemplateApi.getSmsTemplatePage(params),
+  delListApi: async (id) => await SmsTemplateApi.deleteSmsTemplate(id as number),
+  exportListApi: async (params) => await SmsTemplateApi.exportSmsTemplate(params)
+})
+
+const exportLoading = computed(() => tableObject.exportLoading)
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
+}
+
 const handleRowCheckboxChange = (rows: SmsTemplateApi.SmsTemplateVO[]) => {
-  checkedIds.value = rows.map((row) => row.id!)
+  checkedIds.value = rows.map((row) => row.id!).filter(Boolean) as number[]
+}
+
+const handleDelete = async (id: number) => {
+  await tableMethods.delList(id, false)
 }
 
 const handleDeleteBatch = async () => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起批量删除
     await SmsTemplateApi.deleteSmsTemplateList(checkedIds.value)
     checkedIds.value = []
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
+    message.success('删除成功')
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 导出按钮操作 */
 const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await SmsTemplateApi.exportSmsTemplate(queryParams)
-    download.excel(data, '短信模板.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
+  await tableMethods.exportList('短信模板.xls')
 }
 
-/** 初始化 **/
+const getChannelName = (channelId?: number) => {
+  const channel = channelList.value.find((item) => item.id === channelId)
+  if (!channel) return ''
+  return `${channel.signature}【 ${getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, channel.code)}】`
+}
+
+const tableColumns = reactive<TableColumn[]>([
+  {
+    field: 'type',
+    label: '短信类型',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.SYSTEM_SMS_TEMPLATE_TYPE} value={data.row.type} />
+    }
+  },
+  { field: 'code', label: '模板编码', width: '150px', showOverflowTooltip: true },
+  { field: 'name', label: '模板名称', width: '180px', showOverflowTooltip: true },
+  { field: 'content', label: '模板内容', width: '300px', showOverflowTooltip: true },
+  { field: 'apiTemplateId', label: '短信 API 的模板编号', width: '180px', showOverflowTooltip: true },
+  {
+    field: 'channelId',
+    label: '短信渠道',
+    width: '220px',
+    slots: {
+      default: (data) => <>{getChannelName(data.row.channelId)}</>
+    }
+  },
+  {
+    field: 'status',
+    label: '开启状态',
+    width: '100px',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} />
+    }
+  },
+  {
+    field: 'createTime',
+    label: '创建时间',
+    formatter: dateFormatter,
+    width: '180px'
+  },
+  {
+    field: 'action',
+    label: '操作',
+    width: '210px',
+    slots: {
+      default: (data) => {
+        const row = data.row as SmsTemplateApi.SmsTemplateVO
+        return (
+          <>
+            {canUpdate ? (
+              <BaseButton link type="primary" onClick={() => openForm('update', row.id)}>
+                修改
+              </BaseButton>
+            ) : null}
+            {canSend ? (
+              <BaseButton link type="primary" onClick={() => openSendForm(row.id!)}>
+                测试
+              </BaseButton>
+            ) : null}
+            {canDelete ? (
+              <BaseButton link type="danger" onClick={() => handleDelete(row.id!)}>
+                删除
+              </BaseButton>
+            ) : null}
+          </>
+        )
+      }
+    }
+  }
+])
+
 onMounted(async () => {
-  await getList()
-  // 加载渠道列表
   channelList.value = await SmsChannelApi.getSimpleSmsChannelList()
+  searchSchema[4].componentProps = {
+    ...(searchSchema[4].componentProps || {}),
+    options: channelList.value.map((channel) => ({
+      label: `${channel.signature}【 ${getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, channel.code)}】`,
+      value: channel.id
+    }))
+  }
+  await tableMethods.getList()
 })
 </script>

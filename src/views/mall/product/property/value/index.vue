@@ -1,163 +1,120 @@
 <template>
-  <!-- 搜索工作栏 -->
   <ContentWrap>
-    <el-form
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="属性项" prop="propertyId">
-        <el-select v-model="queryParams.propertyId" class="!w-240px" disabled>
-          <el-option
-            v-for="item in propertyOptions"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入名称"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          plain
-          type="primary"
-          @click="openForm('create')"
-          v-hasPermi="['product:property:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table v-loading="loading" :data="list">
-      <el-table-column label="编号" align="center" min-width="60" prop="id" />
-      <el-table-column label="属性值名称" align="center" min-width="150" prop="name" />
-      <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        width="180"
-        :formatter="dateFormatter"
-      />
-      <el-table-column label="操作" align="center">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['product:property:update']"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['product:property:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <ValueForm ref="formRef" @success="getList" />
+  <ValueForm ref="formRef" @success="tableMethods.getList" />
 </template>
-<script lang="ts" setup>
+
+<script lang="tsx" setup>
+import { computed, ref } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
 import * as PropertyApi from '@/api/mall/product/property'
 import ValueForm from './ValueForm.vue'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'ProductPropertyValue' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
-const { params } = useRoute() // 查询参数
+const canCreate = hasPermission(['product:property:create'])
+const canUpdate = hasPermission(['product:property:update'])
+const canDelete = hasPermission(['product:property:delete'])
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  propertyId: params.propertyId,
-  name: undefined
-})
-const queryFormRef = ref() // 搜索的表单
-const propertyOptions = ref([]) // 属性项的列表
+const { params } = useRoute()
+const propertyId = Number(params.propertyId)
+const formRef = ref<InstanceType<typeof ValueForm>>()
+const propertyOptions = ref<any[]>([])
 
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await PropertyApi.getPropertyValuePage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
+const searchSchema = computed<FormSchema[]>(() => [
+  {
+    field: 'propertyId',
+    label: '属性项',
+    component: 'Select',
+    componentProps: {
+      disabled: true,
+      options: propertyOptions.value.map((item) => ({ label: item.name, value: item.id })),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'name',
+    label: '名称',
+    component: 'Input',
+    componentProps: { placeholder: '请输入名称', clearable: true, style: { width: '240px' } }
   }
+])
+
+const { tableObject, tableMethods, register: tableRegister } = useTable({
+  getListApi: async (params) =>
+    await PropertyApi.getPropertyValuePage({
+      ...params,
+      propertyId
+    }),
+  delListApi: async (id) => await PropertyApi.deletePropertyValue(id as number)
+})
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams({
+    ...params,
+    propertyId
+  })
 }
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const formRef = ref()
 const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, queryParams.propertyId, id)
+  formRef.value?.open(type, propertyId, id)
 }
 
-/** 删除按钮操作 */
 const handleDelete = async (id: number) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await PropertyApi.deletePropertyValue(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-  } catch {}
+  await tableMethods.delList(id, false)
 }
 
-/** 初始化 **/
+const tableColumns = computed<TableColumn[]>(() => [
+  { field: 'id', label: '编号', align: 'center', minWidth: '60px' },
+  { field: 'name', label: '属性值名称', align: 'center', minWidth: '150px' },
+  { field: 'remark', label: '备注', align: 'center', showOverflowTooltip: true },
+  { field: 'createTime', label: '创建时间', align: 'center', width: '180px', formatter: dateFormatter },
+  {
+    field: 'action',
+    label: '操作',
+    align: 'center',
+    slots: {
+      default: (data) => (
+        <>
+          {canUpdate ? (
+            <BaseButton link type="primary" onClick={() => openForm('update', data.row.id)}>
+              编辑
+            </BaseButton>
+          ) : null}
+          {canDelete ? (
+            <BaseButton link type="danger" onClick={() => handleDelete(data.row.id)}>
+              删除
+            </BaseButton>
+          ) : null}
+        </>
+      )
+    }
+  }
+])
+
 onMounted(async () => {
-  await getList()
-  // 属性项下拉框数据
-  propertyOptions.value.push(await PropertyApi.getProperty(queryParams.propertyId))
+  tableMethods.setSearchParams({ propertyId })
+  propertyOptions.value.push(await PropertyApi.getProperty(propertyId))
 })
 </script>

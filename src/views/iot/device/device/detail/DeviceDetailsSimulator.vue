@@ -11,7 +11,7 @@
               <!-- 属性上报 -->
               <el-tab-pane label="属性上报" :name="IotDeviceMessageMethodEnum.PROPERTY_POST.method">
                 <ContentWrap>
-                  <el-table :data="propertyList" :show-overflow-tooltip="true" :stripe="true">
+                  <Table :data="propertyList" :show-overflow-tooltip="true" :stripe="true">
                     <el-table-column
                       fixed="left"
                       align="center"
@@ -46,7 +46,7 @@
                         />
                       </template>
                     </el-table-column>
-                  </el-table>
+                  </Table>
                   <div class="flex justify-between items-center mt-4">
                     <span class="text-sm text-gray-600">
                       设置属性值后，点击「发送属性上报」按钮
@@ -59,7 +59,7 @@
               <!-- 事件上报 -->
               <el-tab-pane label="事件上报" :name="IotDeviceMessageMethodEnum.EVENT_POST.method">
                 <ContentWrap>
-                  <el-table :data="eventList" :show-overflow-tooltip="true" :stripe="true">
+                  <Table :data="eventList" :show-overflow-tooltip="true" :stripe="true">
                     <el-table-column
                       fixed="left"
                       align="center"
@@ -103,7 +103,7 @@
                         </el-button>
                       </template>
                     </el-table-column>
-                  </el-table>
+                  </Table>
                 </ContentWrap>
               </el-tab-pane>
 
@@ -129,7 +129,7 @@
               <!-- 属性调试 -->
               <el-tab-pane label="属性设置" :name="IotDeviceMessageMethodEnum.PROPERTY_SET.method">
                 <ContentWrap>
-                  <el-table :data="propertyList" :show-overflow-tooltip="true" :stripe="true">
+                  <Table :data="propertyList" :show-overflow-tooltip="true" :stripe="true">
                     <el-table-column
                       fixed="left"
                       align="center"
@@ -164,7 +164,7 @@
                         />
                       </template>
                     </el-table-column>
-                  </el-table>
+                  </Table>
                   <div class="flex justify-between items-center mt-4">
                     <span class="text-sm text-gray-600">
                       设置属性值后，点击「发送属性设置」按钮
@@ -180,7 +180,7 @@
                 :name="IotDeviceMessageMethodEnum.SERVICE_INVOKE.method"
               >
                 <ContentWrap>
-                  <el-table :data="serviceList" :show-overflow-tooltip="true" :stripe="true">
+                  <Table :data="serviceList" :show-overflow-tooltip="true" :stripe="true">
                     <el-table-column
                       fixed="left"
                       align="center"
@@ -223,7 +223,7 @@
                         </el-button>
                       </template>
                     </el-table-column>
-                  </el-table>
+                  </Table>
                 </ContentWrap>
               </el-tab-pane>
             </el-tabs>

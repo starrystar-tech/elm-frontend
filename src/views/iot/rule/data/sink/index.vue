@@ -1,7 +1,7 @@
 <template>
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -77,12 +77,12 @@
           新增
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
+    <Table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column align="center" label="目的编号" prop="id" />
       <el-table-column align="center" label="目的名称" prop="name" />
       <el-table-column align="center" label="目的描述" prop="description" />
@@ -123,7 +123,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

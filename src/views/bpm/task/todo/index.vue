@@ -2,7 +2,7 @@
 
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -95,12 +95,12 @@
           </el-form-item>
         </el-popover>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list">
+    <Table v-loading="loading" :data="list">
       <el-table-column align="center" label="流程" prop="processInstance.name" width="180" />
       <el-table-column label="摘要" prop="processInstance.summary" width="180">
         <template #default="scope">
@@ -147,7 +147,7 @@
           <el-button link type="primary" @click="handleAudit(scope.row)">办理</el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

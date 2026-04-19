@@ -3,7 +3,7 @@
   <ContentWrap>
     <div class="pb-5 text-xl">待回款提醒</div>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -25,11 +25,11 @@
           />
         </el-select>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column align="center" fixed="left" label="客户名称" prop="customerName" width="150">
         <template #default="scope">
           <el-link
@@ -139,7 +139,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

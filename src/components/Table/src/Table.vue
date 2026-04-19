@@ -6,7 +6,7 @@ import { setIndex } from './helper'
 import { getSlot } from '@/utils/tsxHelper'
 import type { TableProps } from './types'
 import { set } from 'lodash-es'
-import { Pagination, TableColumn, TableSetPropsType, TableSlotDefault } from '@/types/table'
+import { Pagination, TableColumn, TableSetProps, TableSlotDefault } from './types'
 
 export default defineComponent({
   // eslint-disable-next-line vue/no-reserved-component-names
@@ -52,6 +52,7 @@ export default defineComponent({
   emits: ['update:pageSize', 'update:currentPage', 'register'],
   setup(props, { attrs, slots, emit, expose }) {
     const elTableRef = ref<ComponentRef<typeof ElTable>>()
+    const slotMode = computed(() => !props.columns?.length && !!slots.default)
 
     // 注册
     onMounted(() => {
@@ -79,7 +80,7 @@ export default defineComponent({
       outsideProps.value = props
     }
 
-    const setColumn = (columnProps: TableSetPropsType[], columnsChildren?: TableColumn[]) => {
+    const setColumn = (columnProps: TableSetProps[], columnsChildren?: TableColumn[]) => {
       const { columns } = unref(getProps)
       for (const v of columnsChildren || columns) {
         for (const item of columnProps) {
@@ -98,10 +99,42 @@ export default defineComponent({
       selections.value = selection
     }
 
+    const addColumn = (column: TableColumn, index?: number) => {
+      const { columns } = unref(getProps)
+      if (index !== void 0) {
+        columns.splice(index, 0, column)
+        return
+      }
+      columns.push(column)
+    }
+
+    const delColumn = (field: string) => {
+      const { columns } = unref(getProps)
+      const index = columns.findIndex((item) => item.field === field)
+      if (index > -1) {
+        columns.splice(index, 1)
+      }
+    }
+
     expose({
       setProps,
       setColumn,
-      selections
+      addColumn,
+      delColumn,
+      elTableRef,
+      selections,
+      clearSelection: () => unref(elTableRef)?.clearSelection(),
+      getSelectionRows: () => unref(elTableRef)?.getSelectionRows() || [],
+      toggleRowSelection: (row: Recordable, selected?: boolean) =>
+        unref(elTableRef)?.toggleRowSelection(row, selected),
+      toggleAllSelection: () => unref(elTableRef)?.toggleAllSelection(),
+      toggleRowExpansion: (row: Recordable, expanded?: boolean) =>
+        unref(elTableRef)?.toggleRowExpansion(row, expanded),
+      setCurrentRow: (row?: Recordable) => unref(elTableRef)?.setCurrentRow(row),
+      clearSort: () => unref(elTableRef)?.clearSort(),
+      sort: (prop: string, order: 'ascending' | 'descending') =>
+        unref(elTableRef)?.sort(prop, order),
+      doLayout: () => unref(elTableRef)?.doLayout()
     })
 
     const pagination = computed(() => {
@@ -279,7 +312,7 @@ export default defineComponent({
           {...unref(getBindValue)}
         >
           {{
-            default: () => rnderTableColumn(),
+            default: () => (slotMode.value ? getSlot(slots, 'default') : rnderTableColumn()),
             // @ts-ignore
             append: () => getSlot(slots, 'append')
           }}

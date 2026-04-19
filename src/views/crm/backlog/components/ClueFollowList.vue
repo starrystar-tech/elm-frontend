@@ -2,7 +2,7 @@
   <ContentWrap>
     <div class="pb-5 text-xl">分配给我的线索</div>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -24,11 +24,11 @@
           />
         </el-select>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="线索名称" align="center" prop="name" fixed="left" width="160">
         <template #default="scope">
           <el-link :underline="false" type="primary" @click="openDetail(scope.row.id)">
@@ -88,7 +88,7 @@
         width="180px"
       />
       <el-table-column align="center" label="创建人" prop="creatorName" width="100px" />
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

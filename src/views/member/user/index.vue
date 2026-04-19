@@ -1,7 +1,6 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -66,140 +65,37 @@
           <Icon class="mr-5px" icon="ep:refresh" />
           重置
         </el-button>
-        <el-button v-hasPermi="['promotion:coupon:send']" @click="openCoupon">发送优惠券</el-button>
+        <BaseButton v-if="canSendCoupon" @click="openCoupon">发送优惠券</BaseButton>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
-  <!-- 列表 -->
   <ContentWrap>
-    <el-table
-      v-loading="loading"
-      :data="list"
-      :show-overflow-tooltip="true"
-      :stripe="true"
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      stripe
+      show-overflow-tooltip
+      selection
+      @register="tableRegister"
       @selection-change="handleSelectionChange"
-    >
-      <el-table-column type="selection" width="55" />
-      <el-table-column align="center" label="用户编号" prop="id" width="120px" />
-      <el-table-column align="center" label="头像" prop="avatar" width="80px">
-        <template #default="scope">
-          <img :src="scope.row.avatar" style="width: 40px" />
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="手机号" prop="mobile" width="120px" />
-      <el-table-column align="center" label="昵称" prop="nickname" width="80px" />
-      <el-table-column align="center" label="等级" prop="levelName" width="100px" />
-      <el-table-column align="center" label="分组" prop="groupName" width="100px" />
-      <el-table-column
-        :show-overflow-tooltip="false"
-        align="center"
-        label="用户标签"
-        prop="tagNames"
-      >
-        <template #default="scope">
-          <el-tag v-for="(tagName, index) in scope.row.tagNames" :key="index" class="mr-5px">
-            {{ tagName }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="积分" prop="point" width="100px" />
-      <el-table-column align="center" label="状态" prop="status" width="100px">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="登录时间"
-        prop="loginDate"
-        width="180px"
-      />
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="注册时间"
-        prop="createTime"
-        width="180px"
-      />
-      <el-table-column
-        :show-overflow-tooltip="false"
-        align="center"
-        fixed="right"
-        label="操作"
-        width="100px"
-      >
-        <template #default="scope">
-          <div class="flex items-center justify-center">
-            <el-button link type="primary" @click="openDetail(scope.row.id)">详情</el-button>
-            <el-dropdown
-              v-hasPermi="[
-                'member:user:update',
-                'member:user:update-level',
-                'member:user:update-point',
-                'pay:wallet:update-balance'
-              ]"
-              @command="(command) => handleCommand(command, scope.row)"
-            >
-              <el-button link type="primary">
-                <Icon icon="ep:d-arrow-right" />
-                更多
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item
-                    v-if="checkPermi(['member:user:update'])"
-                    command="handleUpdate"
-                  >
-                    编辑
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="checkPermi(['member:user:update-level'])"
-                    command="handleUpdateLevel"
-                  >
-                    修改等级
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="checkPermi(['member:user:update-point'])"
-                    command="handleUpdatePoint"
-                  >
-                    修改积分
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="checkPermi(['pay:wallet:update-balance'])"
-                    command="handleUpdateBlance"
-                  >
-                    修改余额
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
-      :total="total"
-      @pagination="getList"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <UserForm ref="formRef" @success="getList" />
-  <!-- 修改用户等级弹窗 -->
-  <UserLevelUpdateForm ref="updateLevelFormRef" @success="getList" />
-  <!-- 修改用户积分弹窗 -->
-  <UserPointUpdateForm ref="updatePointFormRef" @success="getList" />
-  <!-- 修改用户余额弹窗 -->
-  <UserBalanceUpdateForm ref="UpdateBalanceFormRef" @success="getList" />
-  <!-- 发送优惠券弹窗 -->
+  <UserForm ref="formRef" @success="tableMethods.getList" />
+  <UserLevelUpdateForm ref="updateLevelFormRef" @success="tableMethods.getList" />
+  <UserPointUpdateForm ref="updatePointFormRef" @success="tableMethods.getList" />
+  <UserBalanceUpdateForm ref="updateBalanceFormRef" @success="tableMethods.getList" />
   <CouponSendForm ref="couponSendFormRef" />
 </template>
-<script lang="ts" setup>
+
+<script lang="tsx" setup>
+import { ElDropdown, ElDropdownItem, ElDropdownMenu, ElTag } from 'element-plus'
+import { reactive, ref } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
 import * as UserApi from '@/api/member/user'
 import { DICT_TYPE } from '@/utils/dict'
@@ -212,17 +108,21 @@ import UserPointUpdateForm from './components/UserPointUpdateForm.vue'
 import UserBalanceUpdateForm from './components/UserBalanceUpdateForm.vue'
 import { CouponSendForm } from '@/views/mall/promotion/coupon/components'
 import { checkPermi } from '@/utils/permission'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'MemberUser' })
 
-const message = useMessage() // 消息弹窗
+const message = useMessage()
+const { push } = useRouter()
+const canSendCoupon = hasPermission(['promotion:coupon:send'])
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
 const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
   nickname: null,
   mobile: null,
   loginDate: [],
@@ -231,85 +131,156 @@ const queryParams = reactive({
   levelId: null,
   groupId: null
 })
-const queryFormRef = ref() // 搜索的表单
-const updateLevelFormRef = ref() // 修改会员等级表单
-const updatePointFormRef = ref() // 修改会员积分表单
-const UpdateBalanceFormRef = ref() // 修改用户余额表单
-const selectedIds = ref<number[]>([]) // 表格的选中 ID 数组
+const queryFormRef = ref()
+const selectedIds = ref<number[]>([])
 
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await UserApi.getUserPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
+const { tableObject, tableMethods, register: tableRegister } = useTable<UserApi.UserVO>({
+  getListApi: async (params) => await UserApi.getUserPage(params)
+})
 
-/** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
+  tableMethods.setSearchParams(queryParams)
 }
 
-/** 重置按钮操作 */
 const resetQuery = () => {
   queryFormRef.value.resetFields()
   handleQuery()
 }
 
-/** 打开会员详情 */
-const { push } = useRouter()
 const openDetail = (id: number) => {
   push({ name: 'MemberUserDetail', params: { id } })
 }
 
-/** 添加/修改操作 */
-const formRef = ref()
+const formRef = ref<InstanceType<typeof UserForm>>()
 const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
+  formRef.value?.open(type, id)
 }
 
-/** 表格选中事件 */
 const handleSelectionChange = (rows: UserApi.UserVO[]) => {
   selectedIds.value = rows.map((row) => row.id)
 }
 
-/** 发送优惠券 */
-const couponSendFormRef = ref()
+const couponSendFormRef = ref<InstanceType<typeof CouponSendForm>>()
 const openCoupon = () => {
   if (selectedIds.value.length === 0) {
     message.warning('请选择要发送优惠券的用户')
     return
   }
-  couponSendFormRef.value.open(selectedIds.value)
+  couponSendFormRef.value?.open(selectedIds.value)
 }
 
-/** 操作分发 */
+const updateLevelFormRef = ref<InstanceType<typeof UserLevelUpdateForm>>()
+const updatePointFormRef = ref<InstanceType<typeof UserPointUpdateForm>>()
+const updateBalanceFormRef = ref<InstanceType<typeof UserBalanceUpdateForm>>()
+
 const handleCommand = (command: string, row: UserApi.UserVO) => {
   switch (command) {
     case 'handleUpdate':
       openForm('update', row.id)
       break
     case 'handleUpdateLevel':
-      updateLevelFormRef.value.open(row.id)
+      updateLevelFormRef.value?.open(row.id)
       break
     case 'handleUpdatePoint':
-      updatePointFormRef.value.open(row.id)
+      updatePointFormRef.value?.open(row.id)
       break
     case 'handleUpdateBlance':
-      UpdateBalanceFormRef.value.open(row.id)
-      break
-    default:
+      updateBalanceFormRef.value?.open(row.id)
       break
   }
 }
 
-/** 初始化 **/
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'id', label: '用户编号', width: '120px' },
+  {
+    field: 'avatar',
+    label: '头像',
+    width: '80px',
+    slots: {
+      default: (data) => <img src={data.row.avatar} style="width: 40px" />
+    }
+  },
+  { field: 'mobile', label: '手机号', width: '120px' },
+  { field: 'nickname', label: '昵称', width: '80px' },
+  { field: 'levelName', label: '等级', width: '100px' },
+  { field: 'groupName', label: '分组', width: '100px' },
+  {
+    field: 'tagNames',
+    label: '用户标签',
+    showOverflowTooltip: false,
+    slots: {
+      default: (data) => (
+        <>
+          {(data.row.tagNames || []).map((tagName: string, index: number) => (
+            <ElTag key={index} class="mr-5px">
+              {tagName}
+            </ElTag>
+          ))}
+        </>
+      )
+    }
+  },
+  { field: 'point', label: '积分', width: '100px' },
+  {
+    field: 'status',
+    label: '状态',
+    width: '100px',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} />
+    }
+  },
+  { field: 'loginDate', label: '登录时间', width: '180px', formatter: dateFormatter },
+  { field: 'createTime', label: '注册时间', width: '180px', formatter: dateFormatter },
+  {
+    field: 'action',
+    label: '操作',
+    width: '140px',
+    fixed: 'right',
+    showOverflowTooltip: false,
+    slots: {
+      default: (data) => {
+        const row = data.row as UserApi.UserVO
+        return (
+          <div class="flex items-center justify-center">
+            <BaseButton link type="primary" onClick={() => openDetail(row.id)}>
+              详情
+            </BaseButton>
+            {checkPermi([
+              'member:user:update',
+              'member:user:update-level',
+              'member:user:update-point',
+              'pay:wallet:update-balance'
+            ]) ? (
+              <ElDropdown onCommand={(command: string) => handleCommand(command, row)}>
+                <BaseButton link type="primary">更多</BaseButton>
+                {{
+                  dropdown: () => (
+                    <ElDropdownMenu>
+                      {checkPermi(['member:user:update']) ? (
+                        <ElDropdownItem command="handleUpdate">编辑</ElDropdownItem>
+                      ) : null}
+                      {checkPermi(['member:user:update-level']) ? (
+                        <ElDropdownItem command="handleUpdateLevel">修改等级</ElDropdownItem>
+                      ) : null}
+                      {checkPermi(['member:user:update-point']) ? (
+                        <ElDropdownItem command="handleUpdatePoint">修改积分</ElDropdownItem>
+                      ) : null}
+                      {checkPermi(['pay:wallet:update-balance']) ? (
+                        <ElDropdownItem command="handleUpdateBlance">修改余额</ElDropdownItem>
+                      ) : null}
+                    </ElDropdownMenu>
+                  )
+                }}
+              </ElDropdown>
+            ) : null}
+          </div>
+        )
+      }
+    }
+  }
+])
+
 onMounted(() => {
-  getList()
+  handleQuery()
 })
 </script>

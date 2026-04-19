@@ -2,7 +2,7 @@
   <Dialog v-model="dialogVisible" title="关联联系人">
     <!-- 搜索工作栏 -->
     <ContentWrap>
-      <el-form
+      <Search
         ref="queryFormRef"
         :inline="true"
         :model="queryParams"
@@ -32,12 +32,12 @@
             新增
           </el-button>
         </el-form-item>
-      </el-form>
+      </Search>
     </ContentWrap>
 
     <!-- 列表 -->
     <ContentWrap class="mt-10px">
-      <el-table
+      <Table
         ref="contactRef"
         v-loading="loading"
         :data="list"
@@ -60,7 +60,7 @@
             <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.master" />
           </template>
         </el-table-column>
-      </el-table>
+      </Table>
       <!-- 分页 -->
       <Pagination
         v-model:limit="queryParams.pageSize"

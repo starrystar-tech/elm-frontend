@@ -9,7 +9,7 @@
 
   <!-- 列表 -->
   <ContentWrap class="mt-10px">
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="合同名称" fixed="left" align="center" prop="name">
         <template #default="scope">
           <el-link type="primary" :underline="false" @click="openDetail(scope.row.id)">
@@ -44,7 +44,7 @@
           <dict-tag :type="DICT_TYPE.CRM_AUDIT_STATUS" :value="scope.row.auditStatus" />
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

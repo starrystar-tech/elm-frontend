@@ -2,7 +2,7 @@
   <ContentWrap>
     <div class="pb-5 text-xl"> 今日需联系客户 </div>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -39,10 +39,10 @@
           />
         </el-select>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
+    <Table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column align="center" label="客户名称" fixed="left" prop="name" width="160">
         <template #default="scope">
           <el-link :underline="false" type="primary" @click="openDetail(scope.row.id)">
@@ -115,7 +115,7 @@
         width="180px"
       />
       <el-table-column align="center" label="创建人" prop="creatorName" width="100px" />
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

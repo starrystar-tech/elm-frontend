@@ -9,7 +9,7 @@
 
   <!-- 列表 -->
   <ContentWrap class="mt-10px">
-    <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
+    <Table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column align="center" label="客户名称" prop="customerName" width="150px" />
       <el-table-column align="center" label="合同编号" prop="contractNo" width="200px" />
       <el-table-column align="center" label="期数" prop="period" />
@@ -66,7 +66,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

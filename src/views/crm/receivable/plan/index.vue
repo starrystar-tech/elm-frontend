@@ -1,333 +1,253 @@
 <template>
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <el-form
-      ref="queryFormRef"
-      :inline="true"
-      :model="queryParams"
-      class="-mb-15px"
-      label-width="68px"
-    >
-      <el-form-item label="客户名称" prop="customerId">
-        <el-select
-          v-model="queryParams.customerId"
-          class="!w-240px"
-          placeholder="请选择客户"
-          @keyup.enter="handleQuery"
-        >
-          <el-option
-            v-for="item in customerList"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="合同编号" prop="contractNo">
-        <el-input
-          v-model="queryParams.contractNo"
-          class="!w-240px"
-          clearable
-          placeholder="请输入合同编号"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery">
-          <Icon class="mr-5px" icon="ep:search" />
-          搜索
-        </el-button>
-        <el-button @click="resetQuery">
-          <Icon class="mr-5px" icon="ep:refresh" />
-          重置
-        </el-button>
-        <el-button
-          v-hasPermi="['crm:receivable-plan:create']"
-          plain
-          type="primary"
-          @click="openForm('create')"
-        >
-          <Icon class="mr-5px" icon="ep:plus" />
-          新增
-        </el-button>
-        <el-button
-          v-hasPermi="['crm:receivable-plan:export']"
-          :loading="exportLoading"
-          plain
-          type="success"
-          @click="handleExport"
-        >
-          <Icon class="mr-5px" icon="ep:download" />
-          导出
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
     <el-tabs v-model="activeName" @tab-click="handleTabClick">
       <el-tab-pane label="我负责的" name="1" />
       <el-tab-pane label="下属负责的" name="3" />
     </el-tabs>
-    <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
-      <el-table-column align="center" fixed="left" label="客户名称" prop="customerName" width="150">
-        <template #default="scope">
-          <el-link
-            :underline="false"
-            type="primary"
-            @click="openCustomerDetail(scope.row.customerId)"
-          >
-            {{ scope.row.customerName }}
-          </el-link>
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="合同编号" prop="contractNo" width="200px" />
-      <el-table-column align="center" label="期数" prop="period">
-        <template #default="scope">
-          <el-link :underline="false" type="primary" @click="openDetail(scope.row.id)">
-            {{ scope.row.period }}
-          </el-link>
-        </template>
-      </el-table-column>
-      <el-table-column
-        align="center"
-        label="计划回款金额（元）"
-        prop="price"
-        width="160"
-        :formatter="erpPriceTableColumnFormatter"
-      />
-      <el-table-column
-        :formatter="dateFormatter2"
-        align="center"
-        label="计划回款日期"
-        prop="returnTime"
-        width="180px"
-      />
-      <el-table-column align="center" label="提前几天提醒" prop="remindDays" width="150" />
-      <el-table-column
-        align="center"
-        label="提醒日期"
-        prop="remindTime"
-        width="180px"
-        :formatter="dateFormatter2"
-      />
-      <el-table-column align="center" label="回款方式" prop="returnType" width="130px">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.CRM_RECEIVABLE_RETURN_TYPE" :value="scope.row.returnType" />
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="备注" prop="remark" />
-      <el-table-column label="负责人" prop="ownerUserName" width="120" />
-      <el-table-column
-        align="center"
-        label="实际回款金额（元）"
-        prop="receivable.price"
-        width="160"
-      >
-        <template #default="scope">
-          <el-text v-if="scope.row.receivable">
-            {{ erpPriceInputFormatter(scope.row.receivable.price) }}
-          </el-text>
-          <el-text v-else>{{ erpPriceInputFormatter(0) }}</el-text>
-        </template>
-      </el-table-column>
-      <el-table-column
-        align="center"
-        label="实际回款日期"
-        prop="receivable.returnTime"
-        width="180px"
-        :formatter="dateFormatter2"
-      />
-      <el-table-column
-        align="center"
-        label="实际回款金额（元）"
-        prop="receivable.price"
-        width="160"
-      >
-        <template #default="scope">
-          <el-text v-if="scope.row.receivable">
-            {{ erpPriceInputFormatter(scope.row.price - scope.row.receivable.price) }}
-          </el-text>
-          <el-text v-else>{{ erpPriceInputFormatter(scope.row.price) }}</el-text>
-        </template>
-      </el-table-column>
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="更新时间"
-        prop="updateTime"
-        width="180px"
-      />
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="创建时间"
-        prop="createTime"
-        width="180px"
-      />
-      <el-table-column align="center" label="创建人" prop="creatorName" width="100px" />
-      <el-table-column align="center" fixed="right" label="操作" width="180px">
-        <template #default="scope">
-          <el-button
-            v-hasPermi="['crm:receivable:create']"
-            link
-            type="success"
-            @click="openReceivableForm(scope.row)"
-            :disabled="scope.row.receivableId"
-          >
-            创建回款
-          </el-button>
-          <el-button
-            v-hasPermi="['crm:receivable-plan:update']"
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-          >
-            编辑
-          </el-button>
-          <el-button
-            v-hasPermi="['crm:receivable-plan:delete']"
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
-      :total="total"
-      @pagination="getList"
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+      <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+        导出
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      :show-overflow-tooltip="true"
+      :stripe="true"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <ReceivablePlanForm ref="formRef" @success="getList" />
-  <ReceivableForm ref="receivableFormRef" @success="getList" />
+  <ReceivablePlanForm ref="formRef" @success="tableMethods.getList" />
+  <ReceivableForm ref="receivableFormRef" @success="tableMethods.getList" />
 </template>
 
-<script lang="ts" setup>
+<script lang="tsx" setup>
+import { computed, ref } from 'vue'
+import { ElLink, ElText, type TabsPaneContext } from 'element-plus'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter, dateFormatter2 } from '@/utils/formatTime'
-import download from '@/utils/download'
 import * as ReceivablePlanApi from '@/api/crm/receivable/plan'
 import ReceivablePlanForm from './ReceivablePlanForm.vue'
 import * as CustomerApi from '@/api/crm/customer'
 import { erpPriceInputFormatter, erpPriceTableColumnFormatter } from '@/utils'
-import { TabsPaneContext } from 'element-plus'
 import ReceivableForm from '@/views/crm/receivable/ReceivableForm.vue'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'ReceivablePlan' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canCreate = hasPermission(['crm:receivable-plan:create'])
+const canUpdate = hasPermission(['crm:receivable-plan:update'])
+const canDelete = hasPermission(['crm:receivable-plan:delete'])
+const canCreateReceivable = hasPermission(['crm:receivable:create'])
+const canExport = hasPermission(['crm:receivable-plan:export'])
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  sceneType: '1', // 默认和 activeName 相等
-  customerId: undefined,
-  contractNo: undefined
-})
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
-const activeName = ref('1') // 列表 tab
-const customerList = ref<CustomerApi.CustomerVO[]>([]) // 客户列表
-
-/** tab 切换 */
-const handleTabClick = (tab: TabsPaneContext) => {
-  queryParams.sceneType = tab.paneName
-  handleQuery()
-}
-
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await ReceivablePlanApi.getReceivablePlanPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
-
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
-}
-
-/** 创建回款操作 */
-const receivableFormRef = ref()
-const openReceivableForm = (row: ReceivablePlanApi.ReceivablePlanVO) => {
-  receivableFormRef.value.open('create', undefined, row)
-}
-
-/** 删除按钮操作 */
-const handleDelete = async (id: number) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await ReceivablePlanApi.deleteReceivablePlan(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-  } catch {}
-}
-
-/** 导出按钮操作 */
-const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await ReceivablePlanApi.exportReceivablePlan(queryParams)
-    download.excel(data, '回款计划.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
-}
-
-/** 打开详情 */
+const activeName = ref('1')
+const customerList = ref<CustomerApi.CustomerVO[]>([])
+const formRef = ref<InstanceType<typeof ReceivablePlanForm>>()
+const receivableFormRef = ref<InstanceType<typeof ReceivableForm>>()
 const { push } = useRouter()
+
+const searchSchema = computed<FormSchema[]>(() => [
+  {
+    field: 'customerId',
+    label: '客户名称',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择客户',
+      clearable: true,
+      options: customerList.value.map((item) => ({ label: item.name, value: item.id })),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'contractNo',
+    label: '合同编号',
+    component: 'Input',
+    componentProps: { placeholder: '请输入合同编号', clearable: true, style: { width: '240px' } }
+  }
+])
+
+const { tableObject, tableMethods, register: tableRegister } =
+  useTable<ReceivablePlanApi.ReceivablePlanVO>({
+    getListApi: async (params) =>
+      await ReceivablePlanApi.getReceivablePlanPage({
+        ...params,
+        sceneType: activeName.value
+      }),
+    delListApi: async (id) => await ReceivablePlanApi.deleteReceivablePlan(id as number),
+    exportListApi: async (params) =>
+      await ReceivablePlanApi.exportReceivablePlan({
+        ...params,
+        sceneType: activeName.value
+      })
+  })
+
+const exportLoading = computed(() => tableObject.exportLoading)
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams({
+    ...params,
+    sceneType: activeName.value
+  })
+}
+
+const handleTabClick = (tab: TabsPaneContext) => {
+  activeName.value = String(tab.paneName)
+  tableMethods.setSearchParams({
+    ...(tableObject.params || {}),
+    sceneType: activeName.value
+  })
+}
+
+const openForm = (type: string, id?: number) => {
+  formRef.value?.open(type, id)
+}
+
+const openReceivableForm = (row: ReceivablePlanApi.ReceivablePlanVO) => {
+  receivableFormRef.value?.open('create', undefined, row)
+}
+
+const handleDelete = async (id: number) => {
+  await tableMethods.delList(id, false)
+}
+
+const handleExport = async () => {
+  await tableMethods.exportList('回款计划.xls')
+}
+
 const openDetail = (id: number) => {
   push({ name: 'CrmReceivablePlanDetail', params: { id } })
 }
 
-/** 打开客户详情 */
 const openCustomerDetail = (id: number) => {
   push({ name: 'CrmCustomerDetail', params: { id } })
 }
 
-/** 初始化 **/
+const tableColumns: TableColumn[] = [
+  {
+    field: 'customerName',
+    label: '客户名称',
+    width: '150px',
+    fixed: 'left',
+    slots: {
+      default: (data) => (
+        <ElLink underline={false} type="primary" onClick={() => openCustomerDetail(data.row.customerId)}>
+          {data.row.customerName}
+        </ElLink>
+      )
+    }
+  },
+  { field: 'contractNo', label: '合同编号', width: '200px' },
+  {
+    field: 'period',
+    label: '期数',
+    slots: {
+      default: (data) => (
+        <ElLink underline={false} type="primary" onClick={() => openDetail(data.row.id)}>
+          {data.row.period}
+        </ElLink>
+      )
+    }
+  },
+  { field: 'price', label: '计划回款金额（元）', width: '160px', formatter: erpPriceTableColumnFormatter },
+  { field: 'returnTime', label: '计划回款日期', width: '180px', formatter: dateFormatter2 },
+  { field: 'remindDays', label: '提前几天提醒', width: '150px' },
+  { field: 'remindTime', label: '提醒日期', width: '180px', formatter: dateFormatter2 },
+  {
+    field: 'returnType',
+    label: '回款方式',
+    width: '130px',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.CRM_RECEIVABLE_RETURN_TYPE} value={data.row.returnType} />
+    }
+  },
+  { field: 'remark', label: '备注' },
+  { field: 'ownerUserName', label: '负责人', width: '120px' },
+  {
+    field: 'receivablePrice',
+    label: '实际回款金额（元）',
+    width: '160px',
+    slots: {
+      default: (data) => (
+        <ElText>{erpPriceInputFormatter(data.row.receivable ? data.row.receivable.price : 0)}</ElText>
+      )
+    }
+  },
+  {
+    field: 'receivableReturnTime',
+    label: '实际回款日期',
+    width: '180px',
+    slots: {
+      default: (data) => <>{data.row.receivable ? dateFormatter2(data.row, undefined, data.row.receivable.returnTime, undefined) : ''}</>
+    }
+  },
+  {
+    field: 'remainingPrice',
+    label: '未回款金额（元）',
+    width: '160px',
+    slots: {
+      default: (data) => (
+        <ElText>
+          {erpPriceInputFormatter(
+            data.row.receivable ? data.row.price - data.row.receivable.price : data.row.price
+          )}
+        </ElText>
+      )
+    }
+  },
+  { field: 'updateTime', label: '更新时间', width: '180px', formatter: dateFormatter },
+  { field: 'createTime', label: '创建时间', width: '180px', formatter: dateFormatter },
+  { field: 'creatorName', label: '创建人', width: '100px' },
+  {
+    field: 'action',
+    label: '操作',
+    width: '180px',
+    fixed: 'right',
+    slots: {
+      default: (data) => (
+        <>
+          {canCreateReceivable ? (
+            <BaseButton
+              link
+              type="success"
+              disabled={!!data.row.receivableId}
+              onClick={() => openReceivableForm(data.row)}
+            >
+              创建回款
+            </BaseButton>
+          ) : null}
+          {canUpdate ? (
+            <BaseButton link type="primary" onClick={() => openForm('update', data.row.id)}>
+              编辑
+            </BaseButton>
+          ) : null}
+          {canDelete ? (
+            <BaseButton link type="danger" onClick={() => handleDelete(data.row.id)}>
+              删除
+            </BaseButton>
+          ) : null}
+        </>
+      )
+    }
+  }
+]
+
 onMounted(async () => {
-  await getList()
-  // 获得客户列表
+  tableMethods.setSearchParams({ sceneType: activeName.value })
   customerList.value = await CustomerApi.getCustomerSimpleList()
 })
 </script>

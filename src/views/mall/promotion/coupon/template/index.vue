@@ -1,7 +1,7 @@
 <template>
   <!-- 搜索工作栏 -->
   <ContentWrap>
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -77,12 +77,12 @@
           新增
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list">
+    <Table v-loading="loading" :data="list">
       <el-table-column label="优惠券名称" min-width="140" prop="name" />
       <el-table-column label="类型" min-width="130" prop="productScope">
         <template #default="scope">
@@ -168,7 +168,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

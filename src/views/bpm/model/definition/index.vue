@@ -1,6 +1,6 @@
 <template>
   <ContentWrap>
-    <el-table v-loading="loading" :data="list">
+    <Table v-loading="loading" :data="list">
       <el-table-column label="定义编号" align="center" prop="id" min-width="250" />
       <el-table-column label="流程名称" align="center" prop="name" min-width="150" />
       <el-table-column label="流程图标" align="center" min-width="50">
@@ -76,7 +76,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

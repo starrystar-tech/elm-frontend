@@ -3,7 +3,7 @@
   <Dialog :title="dialogTitle" v-model="dialogVisible" :appendToBody="true" width="60%">
     <ContentWrap>
       <!-- 搜索工作栏 -->
-      <el-form
+      <Search
         ref="queryFormRef"
         :inline="true"
         :model="queryParams"
@@ -38,12 +38,12 @@
             重置
           </el-button>
         </el-form-item>
-      </el-form>
+      </Search>
     </ContentWrap>
 
     <!-- 列表 -->
     <ContentWrap>
-      <el-table
+      <Table
         ref="tableRef"
         v-loading="loading"
         :data="list"
@@ -101,7 +101,7 @@
           prop="createTime"
           width="180px"
         />
-      </el-table>
+      </Table>
 
       <!-- 分页 -->
       <Pagination

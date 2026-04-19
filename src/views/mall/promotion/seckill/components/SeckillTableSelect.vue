@@ -2,7 +2,7 @@
   <Dialog v-model="dialogVisible" :appendToBody="true" title="选择活动" width="70%">
     <ContentWrap>
       <!-- 搜索工作栏 -->
-      <el-form
+      <Search
         ref="queryFormRef"
         :inline="true"
         :model="queryParams"
@@ -43,8 +43,8 @@
             重置
           </el-button>
         </el-form-item>
-      </el-form>
-      <el-table v-loading="loading" :data="list" show-overflow-tooltip>
+      </Search>
+      <Table v-loading="loading" :data="list" show-overflow-tooltip>
         <!-- 1. 多选模式（不能使用type="selection"，Element会忽略Header插槽） -->
         <el-table-column width="55" v-if="multiple">
           <template #header>
@@ -119,7 +119,7 @@
           :formatter="dateFormatter"
           width="180px"
         />
-      </el-table>
+      </Table>
       <!-- 分页 -->
       <Pagination
         v-model:limit="queryParams.pageSize"

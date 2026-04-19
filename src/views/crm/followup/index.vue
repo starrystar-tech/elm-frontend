@@ -9,7 +9,7 @@
   </el-row>
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
+    <Table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column
         :formatter="dateFormatter"
         align="center"
@@ -106,7 +106,7 @@
           <el-button link type="danger" @click="handleDelete(scope.row.id)"> 删除 </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

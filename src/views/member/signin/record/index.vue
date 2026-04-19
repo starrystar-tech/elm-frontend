@@ -1,132 +1,59 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <el-form
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="签到用户" prop="nickname">
-        <el-input
-          v-model="queryParams.nickname"
-          placeholder="请输入签到用户"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="签到天数" prop="day">
-        <el-input
-          v-model="queryParams.day"
-          placeholder="请输入签到天数"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="签到时间" prop="createTime">
-        <el-date-picker
-          v-model="queryParams.createTime"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table v-loading="loading" :data="list">
-      <el-table-column label="编号" align="center" prop="id" />
-      <el-table-column label="签到用户" align="center" prop="nickname" />
-      <el-table-column
-        label="签到天数"
-        align="center"
-        prop="day"
-        :formatter="(_, __, cellValue) => ['第', cellValue, '天'].join(' ')"
-      />
-      <el-table-column label="获得积分" align="center" prop="point" width="100">
-        <template #default="scope">
-          <el-tag v-if="scope.row.point > 0" class="ml-2" type="success" effect="dark">
-            +{{ scope.row.point }}
-          </el-tag>
-          <el-tag v-else class="ml-2" type="danger" effect="dark"> {{ scope.row.point }} </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="签到时间"
-        align="center"
-        prop="createTime"
-        :formatter="dateFormatter"
-      />
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 </template>
 
-<script lang="ts" setup>
+<script lang="tsx" setup>
+import { ElTag } from 'element-plus'
+import { reactive } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
 import * as SignInRecordApi from '@/api/member/signin/record'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
 
 defineOptions({ name: 'SignInRecord' })
 
-const message = useMessage() // 消息弹窗
+const searchSchema = reactive<FormSchema[]>([
+  { field: 'nickname', label: '签到用户', component: 'Input', componentProps: { placeholder: '请输入签到用户', clearable: true, style: { width: '240px' } } },
+  { field: 'day', label: '签到天数', component: 'Input', componentProps: { placeholder: '请输入签到天数', clearable: true, style: { width: '240px' } } },
+  { field: 'createTime', label: '签到时间', component: 'DatePicker', componentProps: { type: 'daterange', valueFormat: 'YYYY-MM-DD HH:mm:ss', startPlaceholder: '开始日期', endPlaceholder: '结束日期', defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')], style: { width: '240px' } } }
+])
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  nickname: null,
-  day: null,
-  createTime: []
-})
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
+const { tableObject, tableMethods, register: tableRegister } = useTable<SignInRecordApi.SignInRecordVO>({ getListApi: async (params) => await SignInRecordApi.getSignInRecordPage(params) })
+const setSearchParams = (params: Recordable) => tableMethods.setSearchParams(params)
 
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await SignInRecordApi.getSignInRecordPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'id', label: '编号' },
+  { field: 'nickname', label: '签到用户' },
+  { field: 'day', label: '签到天数', formatter: (_r, _c, value) => ['第', value, '天'].join(' ') },
+  {
+    field: 'point',
+    label: '获得积分',
+    width: '100px',
+    slots: {
+      default: (data) =>
+        data.row.point > 0 ? (
+          <ElTag class="ml-2" type="success" effect="dark">+{data.row.point}</ElTag>
+        ) : (
+          <ElTag class="ml-2" type="danger" effect="dark">{data.row.point}</ElTag>
+        )
+    }
+  },
+  { field: 'createTime', label: '签到时间', formatter: dateFormatter }
+])
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 初始化 **/
-onMounted(() => {
-  getList()
-})
+onMounted(() => tableMethods.getList())
 </script>

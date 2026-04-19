@@ -2,7 +2,7 @@
 <template>
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       class="-mb-15px"
       :model="queryParams"
       ref="queryFormRef"
@@ -43,7 +43,7 @@
           style="--el-switch-on-color: #13ce66"
         />
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
   <ContentWrap>
     <!-- 卡片视图 -->
@@ -117,7 +117,7 @@
     </template>
 
     <!-- 列表视图 -->
-    <el-table v-else v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+    <Table v-else v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="属性标识符" align="center" prop="identifier" />
       <el-table-column label="属性名称" align="center" prop="name" />
       <el-table-column label="数据类型" align="center" prop="dataType" />
@@ -144,7 +144,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
 
     <!-- 表单弹窗：添加/修改 -->
     <DeviceDetailsThingModelPropertyHistory ref="historyRef" :deviceId="props.deviceId" />

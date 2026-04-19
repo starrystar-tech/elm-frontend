@@ -1,7 +1,7 @@
 <template>
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       class="-mb-15px"
       :model="queryParams"
       ref="queryFormRef"
@@ -53,12 +53,12 @@
           重置
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list">
+    <Table v-loading="loading" :data="list">
       <el-table-column label="编号" align="center" prop="id" width="180" />
       <el-table-column
         label="获得时间"
@@ -84,7 +84,7 @@
           <dict-tag :type="DICT_TYPE.MEMBER_POINT_BIZ_TYPE" :value="scope.row.bizType" />
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

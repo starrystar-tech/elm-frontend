@@ -1,7 +1,7 @@
 <template>
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       class="-mb-15px"
       :model="queryParams"
       ref="queryFormRef"
@@ -30,12 +30,12 @@
         <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
         <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="用户编号" align="center" prop="id" min-width="80px" />
       <el-table-column label="头像" align="center" prop="avatar" width="70px">
         <template #default="scope">
@@ -56,7 +56,7 @@
         :formatter="dateFormatter"
         width="170px"
       />
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

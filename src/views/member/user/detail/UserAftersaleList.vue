@@ -1,7 +1,7 @@
 <template>
   <!-- 搜索 -->
   <ContentWrap>
-    <el-form ref="queryFormRef" :inline="true" :model="queryParams" label-width="68px">
+    <Search ref="queryFormRef" :inline="true" :model="queryParams" label-width="68px">
       <el-form-item label="商品名称" prop="spuName">
         <el-input
           v-model="queryParams.spuName"
@@ -96,7 +96,7 @@
           重置
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <ContentWrap>
@@ -109,7 +109,7 @@
       />
     </el-tabs>
     <!-- 列表 -->
-    <el-table v-loading="loading" :data="list">
+    <Table v-loading="loading" :data="list">
       <el-table-column align="center" label="退款编号" min-width="200" prop="no" />
       <el-table-column align="center" label="订单编号" min-width="200" prop="orderNo">
         <template #default="{ row }">
@@ -158,7 +158,7 @@
           <el-button link type="primary" @click="openAfterSaleDetail(row.id)">处理退款</el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

@@ -1,104 +1,63 @@
 <template>
-  <!-- 搜索工作栏 -->
   <ContentWrap>
-    <el-button
-      type="primary"
-      plain
-      @click="openForm('create')"
-      v-hasPermi="['point:sign-in-config:create']"
-    >
-      <Icon icon="ep:plus" class="mr-5px" /> 新增
-    </el-button>
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+    </div>
+    <Table :columns="tableColumns" :data="list" :loading="loading" />
   </ContentWrap>
 
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table v-loading="loading" :data="list">
-      <el-table-column
-        label="签到天数"
-        align="center"
-        prop="day"
-        :formatter="(_, __, cellValue) => ['第', cellValue, '天'].join(' ')"
-      />
-      <el-table-column label="奖励积分" align="center" prop="point" />
-      <el-table-column label="奖励经验" align="center" prop="experience" />
-      <el-table-column label="状态" align="center" prop="status">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['point:sign-in-config:update']"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['point:sign-in-config:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-  </ContentWrap>
-
-  <!-- 表单弹窗：添加/修改 -->
   <SignInConfigForm ref="formRef" @success="getList" />
 </template>
-<script lang="ts" setup>
+
+<script lang="tsx" setup>
+import { reactive, ref } from 'vue'
 import * as SignInConfigApi from '@/api/member/signin/config'
 import SignInConfigForm from './SignInConfigForm.vue'
 import { DICT_TYPE } from '@/utils/dict'
+import { ContentWrap } from '@/components/ContentWrap'
+import { Table, type TableColumn } from '@/components/Table'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'SignInConfig' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canCreate = hasPermission(['point:sign-in-config:create'])
+const canUpdate = hasPermission(['point:sign-in-config:update'])
+const canDelete = hasPermission(['point:sign-in-config:delete'])
+const message = useMessage()
 
-const loading = ref(true) // 列表的加载中
-const list = ref([]) // 列表的数据
+const loading = ref(true)
+const list = ref<SignInConfigApi.SignInConfigVO[]>([])
 
-/** 查询列表 */
 const getList = async () => {
   loading.value = true
   try {
-    const data = await SignInConfigApi.getSignInConfigList()
-    console.log(data)
-    list.value = data
+    list.value = await SignInConfigApi.getSignInConfigList()
   } finally {
     loading.value = false
   }
 }
 
-/** 添加/修改操作 */
-const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
-}
+const formRef = ref<InstanceType<typeof SignInConfigForm>>()
+const openForm = (type: string, id?: number) => formRef.value?.open(type, id)
 
-/** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起删除
     await SignInConfigApi.deleteSignInConfig(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
+    message.success('删除成功')
     await getList()
   } catch {}
 }
 
-/** 初始化 **/
-onMounted(() => {
-  getList()
-})
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'day', label: '签到天数', formatter: (_r, _c, value) => ['第', value, '天'].join(' ') },
+  { field: 'point', label: '奖励积分' },
+  { field: 'experience', label: '奖励经验' },
+  { field: 'status', label: '状态', slots: { default: (data) => <DictTag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} /> } },
+  { field: 'action', label: '操作', slots: { default: (data) => <>{canUpdate ? <BaseButton link type="primary" onClick={() => openForm('update', data.row.id)}>编辑</BaseButton> : null}{canDelete ? <BaseButton link type="danger" onClick={() => handleDelete(data.row.id)}>删除</BaseButton> : null}</> } }
+])
+
+onMounted(() => getList())
 </script>

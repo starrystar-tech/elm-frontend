@@ -1,7 +1,7 @@
 <template>
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list">
+    <Table v-loading="loading" :data="list">
       <el-table-column key="id" align="center" label="商品编号" width="180" prop="id" />
       <el-table-column label="商品图" min-width="80">
         <template #default="{ row }">
@@ -25,7 +25,7 @@
           <dict-tag :type="DICT_TYPE.PRODUCT_SPU_STATUS" :value="scope.row.status" />
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

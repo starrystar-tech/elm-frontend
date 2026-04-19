@@ -1,250 +1,189 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <el-form
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="用户编号" prop="userId">
-        <el-input
-          v-model="queryParams.userId"
-          placeholder="请输入用户编号"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="用户类型" prop="userType">
-        <el-select
-          v-model="queryParams.userType"
-          placeholder="请选择用户类型"
-          clearable
-          class="!w-240px"
-        >
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.USER_TYPE)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="应用名" prop="applicationName">
-        <el-input
-          v-model="queryParams.applicationName"
-          placeholder="请输入应用名"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="异常时间" prop="exceptionTime">
-        <el-date-picker
-          v-model="queryParams.exceptionTime"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="处理状态" prop="processStatus">
-        <el-select
-          v-model="queryParams.processStatus"
-          placeholder="请选择处理状态"
-          clearable
-          class="!w-240px"
-        >
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.INFRA_API_ERROR_LOG_PROCESS_STATUS)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['infra:api-error-log:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table v-loading="loading" :data="list">
-      <el-table-column label="日志编号" align="center" prop="id" />
-      <el-table-column label="用户编号" align="center" prop="userId" />
-      <el-table-column label="用户类型" align="center" prop="userType">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.USER_TYPE" :value="scope.row.userType" />
-        </template>
-      </el-table-column>
-      <el-table-column label="应用名" align="center" prop="applicationName" width="200" />
-      <el-table-column label="请求方法" align="center" prop="requestMethod" width="80" />
-      <el-table-column label="请求地址" align="center" prop="requestUrl" width="180" />
-      <el-table-column
-        label="异常发生时间"
-        align="center"
-        prop="exceptionTime"
-        width="180"
-        :formatter="dateFormatter"
-      />
-      <el-table-column label="异常名" align="center" prop="exceptionName" width="180" />
-      <el-table-column label="处理状态" align="center" prop="processStatus">
-        <template #default="scope">
-          <dict-tag
-            :type="DICT_TYPE.INFRA_API_ERROR_LOG_PROCESS_STATUS"
-            :value="scope.row.processStatus"
-          />
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" width="200">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openDetail(scope.row)"
-            v-hasPermi="['infra:api-error-log:query']"
-          >
-            详细
-          </el-button>
-          <el-button
-            link
-            type="primary"
-            v-if="scope.row.processStatus === InfraApiErrorLogProcessStatusEnum.INIT"
-            @click="handleProcess(scope.row.id, InfraApiErrorLogProcessStatusEnum.DONE)"
-            v-hasPermi="['infra:api-error-log:update-status']"
-          >
-            已处理
-          </el-button>
-          <el-button
-            link
-            type="primary"
-            v-if="scope.row.processStatus === InfraApiErrorLogProcessStatusEnum.INIT"
-            @click="handleProcess(scope.row.id, InfraApiErrorLogProcessStatusEnum.IGNORE)"
-            v-hasPermi="['infra:api-error-log:update-status']"
-          >
-            已忽略
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页组件 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+        导出
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：详情 -->
   <ApiErrorLogDetail ref="detailRef" />
 </template>
 
-<script lang="ts" setup>
+<script lang="tsx" setup>
+import { computed, reactive, ref } from 'vue'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
-import download from '@/utils/download'
 import * as ApiErrorLogApi from '@/api/infra/apiErrorLog'
 import ApiErrorLogDetail from './ApiErrorLogDetail.vue'
 import { InfraApiErrorLogProcessStatusEnum } from '@/utils/constants'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'InfraApiErrorLog' })
 
-const message = useMessage() // 消息弹窗
+const message = useMessage()
+const canQuery = hasPermission(['infra:api-error-log:query'])
+const canExport = hasPermission(['infra:api-error-log:export'])
+const canUpdateStatus = hasPermission(['infra:api-error-log:update-status'])
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  userId: null,
-  userType: null,
-  applicationName: null,
-  requestUrl: null,
-  processStatus: null,
-  exceptionTime: []
-})
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
-
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await ApiErrorLogApi.getApiErrorLogPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'userId',
+    label: '用户编号',
+    component: 'Input',
+    componentProps: { placeholder: '请输入用户编号', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'userType',
+    label: '用户类型',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择用户类型',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.USER_TYPE),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'applicationName',
+    label: '应用名',
+    component: 'Input',
+    componentProps: { placeholder: '请输入应用名', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'exceptionTime',
+    label: '异常时间',
+    component: 'DatePicker',
+    componentProps: {
+      type: 'daterange',
+      valueFormat: 'YYYY-MM-DD HH:mm:ss',
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+      defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'processStatus',
+    label: '处理状态',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择处理状态',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.INFRA_API_ERROR_LOG_PROCESS_STATUS),
+      style: { width: '240px' }
+    }
   }
-}
+])
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
+const detailRef = ref<InstanceType<typeof ApiErrorLogDetail>>()
 
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
+const { tableObject, tableMethods, register: tableRegister } = useTable<ApiErrorLogApi.ApiErrorLogVO>({
+  getListApi: async (params) => await ApiErrorLogApi.getApiErrorLogPage(params),
+  exportListApi: async (params) => await ApiErrorLogApi.exportApiErrorLog(params)
+})
 
-/** 详情操作 */
-const detailRef = ref()
-const openDetail = (data: ApiErrorLogApi.ApiErrorLogVO) => {
-  detailRef.value.open(data)
-}
+const exportLoading = computed(() => tableObject.exportLoading)
 
-/** 处理已处理 / 已忽略的操作 **/
+const setSearchParams = (params: Recordable) => tableMethods.setSearchParams(params)
+const openDetail = (data: ApiErrorLogApi.ApiErrorLogVO) => detailRef.value?.open(data)
+const handleExport = async () => tableMethods.exportList('异常日志.xls')
+
 const handleProcess = async (id: number, processStatus: number) => {
   try {
-    // 操作的二次确认
     const type = processStatus === InfraApiErrorLogProcessStatusEnum.DONE ? '已处理' : '已忽略'
     await message.confirm('确认标记为' + type + '?')
-    // 执行操作
     await ApiErrorLogApi.updateApiErrorLogPage(id, processStatus)
     await message.success(type)
-    // 刷新列表
-    await getList()
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 导出按钮操作 */
-const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await ApiErrorLogApi.exportApiErrorLog(queryParams)
-    download.excel(data, '异常日志.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'id', label: '日志编号' },
+  { field: 'userId', label: '用户编号' },
+  {
+    field: 'userType',
+    label: '用户类型',
+    slots: { default: (data) => <DictTag type={DICT_TYPE.USER_TYPE} value={data.row.userType} /> }
+  },
+  { field: 'applicationName', label: '应用名', width: '200px' },
+  { field: 'requestMethod', label: '请求方法', width: '80px' },
+  { field: 'requestUrl', label: '请求地址', width: '180px' },
+  { field: 'exceptionTime', label: '异常发生时间', width: '180px', formatter: dateFormatter },
+  { field: 'exceptionName', label: '异常名', width: '180px' },
+  {
+    field: 'processStatus',
+    label: '处理状态',
+    slots: {
+      default: (data) => (
+        <DictTag
+          type={DICT_TYPE.INFRA_API_ERROR_LOG_PROCESS_STATUS}
+          value={data.row.processStatus}
+        />
+      )
+    }
+  },
+  {
+    field: 'action',
+    label: '操作',
+    width: '200px',
+    slots: {
+      default: (data) => (
+        <>
+          {canQuery ? (
+            <BaseButton link type="primary" onClick={() => openDetail(data.row)}>
+              详细
+            </BaseButton>
+          ) : null}
+          {canUpdateStatus &&
+          data.row.processStatus === InfraApiErrorLogProcessStatusEnum.INIT ? (
+            <BaseButton
+              link
+              type="primary"
+              onClick={() =>
+                handleProcess(data.row.id, InfraApiErrorLogProcessStatusEnum.DONE)
+              }
+            >
+              已处理
+            </BaseButton>
+          ) : null}
+          {canUpdateStatus &&
+          data.row.processStatus === InfraApiErrorLogProcessStatusEnum.INIT ? (
+            <BaseButton
+              link
+              type="primary"
+              onClick={() =>
+                handleProcess(data.row.id, InfraApiErrorLogProcessStatusEnum.IGNORE)
+              }
+            >
+              已忽略
+            </BaseButton>
+          ) : null}
+        </>
+      )
+    }
   }
-}
+])
 
-/** 初始化 **/
 onMounted(() => {
-  getList()
+  tableMethods.getList()
 })
 </script>

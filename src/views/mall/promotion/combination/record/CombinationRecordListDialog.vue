@@ -2,7 +2,7 @@
   <Dialog v-model="dialogVisible" title="拼团列表" width="950">
     <!-- 列表 -->
     <ContentWrap>
-      <el-table v-loading="loading" :data="list">
+      <Table v-loading="loading" :data="list">
         <el-table-column align="center" label="编号" prop="id" min-width="50" />
         <el-table-column align="center" label="头像" prop="avatar" min-width="80">
           <template #default="scope">
@@ -37,7 +37,7 @@
             />
           </template>
         </el-table-column>
-      </el-table>
+      </Table>
       <!-- 分页 -->
       <Pagination
         v-model:limit="queryParams.pageSize"

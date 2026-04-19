@@ -1,7 +1,7 @@
 <template>
   <!-- 搜索工作栏 -->
   <ContentWrap>
-    <el-form
+    <Search
       class="-mb-15px"
       :model="queryParams"
       ref="queryFormRef"
@@ -31,12 +31,12 @@
           <Icon icon="ep:refresh" class="mr-5px" /> 同步
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list">
+    <Table v-loading="loading" :data="list">
       <el-table-column label="编号" align="center" prop="id" />
       <el-table-column label="标签名称" align="center" prop="name" />
       <el-table-column label="粉丝数" align="center" prop="count" />
@@ -67,7 +67,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

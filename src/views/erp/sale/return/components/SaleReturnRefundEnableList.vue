@@ -9,7 +9,7 @@
   >
     <ContentWrap>
       <!-- 搜索工作栏 -->
-      <el-form
+      <Search
         class="-mb-15px"
         :model="queryParams"
         ref="queryFormRef"
@@ -56,11 +56,11 @@
           <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
           <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
         </el-form-item>
-      </el-form>
+      </Search>
     </ContentWrap>
 
     <ContentWrap>
-      <el-table
+      <Table
         v-loading="loading"
         :data="list"
         :show-overflow-tooltip="true"
@@ -99,7 +99,7 @@
             </el-tag>
           </template>
         </el-table-column>
-      </el-table>
+      </Table>
       <!-- 分页 -->
       <Pagination
         v-model:limit="queryParams.pageSize"

@@ -1,7 +1,7 @@
 <template>
   <ContentWrap title="升级任务管理" class="mb-20px">
     <!-- 搜索栏 -->
-    <el-form
+    <Search
       class="-mb-15px"
       :model="queryParams"
       ref="queryFormRef"
@@ -23,10 +23,10 @@
           class="!w-240px"
         />
       </el-form-item>
-    </el-form>
+    </Search>
 
     <!-- 任务列表 -->
-    <el-table
+    <Table
       v-loading="taskLoading"
       :data="taskList"
       :stripe="true"
@@ -71,7 +71,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
 
     <!-- 分页 -->
     <Pagination

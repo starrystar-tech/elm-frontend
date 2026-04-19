@@ -1,158 +1,115 @@
 <template>
-  <!-- 搜索工作栏 -->
   <ContentWrap>
-    <el-form
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="部门名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入部门名称"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="部门状态" prop="status">
-        <el-select
-          v-model="queryParams.status"
-          placeholder="请选择部门状态"
-          clearable
-          class="!w-240px"
-        >
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['system:dept:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-        <el-button type="danger" plain @click="toggleExpandAll">
-          <Icon icon="ep:sort" class="mr-5px" /> 展开/折叠
-        </el-button>
-        <el-button
-          type="danger"
-          plain
-          :disabled="checkedIds.length === 0"
-          @click="handleDeleteBatch"
-          v-hasPermi="['system:dept:delete']"
-        >
-          <Icon icon="ep:delete" class="mr-5px" /> 批量删除
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table
-      v-loading="loading"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+      <BaseButton type="danger" @click="toggleExpandAll">展开/折叠</BaseButton>
+      <BaseButton
+        v-if="canDelete"
+        type="danger"
+        :disabled="checkedIds.length === 0"
+        @click="handleDeleteBatch"
+      >
+        批量删除
+      </BaseButton>
+    </div>
+    <Table
+      v-if="refreshTable"
+      :columns="tableColumns"
       :data="list"
+      :loading="loading"
       row-key="id"
       :default-expand-all="isExpandAll"
-      v-if="refreshTable"
+      selection
       @selection-change="handleRowCheckboxChange"
-    >
-      <el-table-column type="selection" width="55" />
-      <el-table-column prop="name" label="部门名称" />
-      <el-table-column prop="leader" label="负责人">
-        <template #default="scope">
-          {{ userList.find((user) => user.id === scope.row.leaderUserId)?.nickname }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="sort" label="排序" />
-      <el-table-column prop="status" label="状态">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        width="180"
-        :formatter="dateFormatter"
-      />
-      <el-table-column label="操作" align="center">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['system:dept:update']"
-          >
-            修改
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['system:dept:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
   <DeptForm ref="formRef" @success="getList" />
 </template>
-<script lang="ts" setup>
+
+<script setup lang="tsx">
+import { computed, nextTick, reactive, ref } from 'vue'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import { handleTree } from '@/utils/tree'
 import * as DeptApi from '@/api/system/dept'
 import DeptForm from './DeptForm.vue'
 import * as UserApi from '@/api/system/user'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'SystemDept' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canCreate = hasPermission(['system:dept:create'])
+const canUpdate = hasPermission(['system:dept:update'])
+const canDelete = hasPermission(['system:dept:delete'])
 
-const loading = ref(true) // 列表的加载中
-const list = ref() // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 100,
+const message = useMessage()
+const searchParams = reactive({
   name: undefined,
   status: undefined
 })
-const queryFormRef = ref() // 搜索的表单
-const isExpandAll = ref(true) // 是否展开，默认全部展开
-const refreshTable = ref(true) // 重新渲染表格状态
-const userList = ref<UserApi.UserVO[]>([]) // 用户列表
+const loading = ref(true)
+const list = ref<DeptApi.DeptVO[]>([])
+const isExpandAll = ref(true)
+const refreshTable = ref(true)
+const userList = ref<UserApi.UserVO[]>([])
+const checkedIds = ref<number[]>([])
 
-/** 查询部门列表 */
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'name',
+    label: '部门名称',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入部门名称',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'status',
+    label: '部门状态',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择部门状态',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.COMMON_STATUS),
+      style: { width: '240px' }
+    }
+  }
+])
+
+const formRef = ref<InstanceType<typeof DeptForm>>()
+const openForm = (type: string, id?: number) => {
+  formRef.value?.open(type, id)
+}
+
 const getList = async () => {
   loading.value = true
   try {
-    const data = await DeptApi.getDeptList(queryParams)
+    const data = await DeptApi.getDeptList({
+      pageNo: 1,
+      pageSize: 100,
+      ...searchParams
+    })
     list.value = handleTree(data)
   } finally {
     loading.value = false
   }
 }
 
-/** 展开/折叠操作 */
+const setSearchParams = async (params: Recordable) => {
+  Object.assign(searchParams, params)
+  await getList()
+}
+
 const toggleExpandAll = () => {
   refreshTable.value = false
   isExpandAll.value = !isExpandAll.value
@@ -161,60 +118,75 @@ const toggleExpandAll = () => {
   })
 }
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryParams.pageNo = 1
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
-}
-
-/** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起删除
     await DeptApi.deleteDept(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
+    message.success('删除成功')
     await getList()
   } catch {}
 }
 
-/** 批量删除按钮操作 */
-const checkedIds = ref<number[]>([])
 const handleRowCheckboxChange = (rows: DeptApi.DeptVO[]) => {
   checkedIds.value = rows.map((row) => row.id)
 }
 
 const handleDeleteBatch = async () => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起批量删除
     await DeptApi.deleteDeptList(checkedIds.value)
     checkedIds.value = []
-    message.success(t('common.delSuccess'))
-    // 刷新列表
+    message.success('删除成功')
     await getList()
   } catch {}
 }
 
-/** 初始化 **/
+const tableColumns = computed<TableColumn[]>(() => [
+  { field: 'name', label: '部门名称' },
+  {
+    field: 'leader',
+    label: '负责人',
+    slots: {
+      default: (data) => <>{userList.value.find((user) => user.id === data.row.leaderUserId)?.nickname}</>
+    }
+  },
+  { field: 'sort', label: '排序' },
+  {
+    field: 'status',
+    label: '状态',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} />
+    }
+  },
+  { field: 'createTime', label: '创建时间', width: '180px', formatter: dateFormatter },
+  {
+    field: 'action',
+    label: '操作',
+    width: '140px',
+    slots: {
+      default: (data) => {
+        const row = data.row as DeptApi.DeptVO
+        return (
+          <>
+            {canUpdate ? (
+              <BaseButton link type="primary" onClick={() => openForm('update', row.id)}>
+                修改
+              </BaseButton>
+            ) : null}
+            {canDelete ? (
+              <BaseButton link type="danger" onClick={() => handleDelete(row.id)}>
+                删除
+              </BaseButton>
+            ) : null}
+          </>
+        )
+      }
+    }
+  }
+])
+
 onMounted(async () => {
-  await getList()
-  // 获取用户列表
   userList.value = await UserApi.getSimpleUserList()
+  await getList()
 })
 </script>

@@ -75,7 +75,7 @@
       <el-descriptions-item labelClassName="no-colon">
         <el-row :gutter="20">
           <el-col :span="15">
-            <el-table :data="formData.items" border>
+            <Table :data="formData.items" border>
               <el-table-column label="商品" prop="spuName" width="auto">
                 <template #default="{ row }">
                   {{ row.spuName }}
@@ -99,7 +99,7 @@
                   />
                 </template>
               </el-table-column>
-            </el-table>
+            </Table>
           </el-col>
           <el-col :span="10" />
         </el-row>

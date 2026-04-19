@@ -1,7 +1,7 @@
 <template>
   <!-- 搜索工作栏 -->
   <ContentWrap>
-    <el-form
+    <Search
       class="-mb-15px"
       :model="queryParams"
       ref="queryFormRef"
@@ -24,12 +24,12 @@
           <Icon icon="ep:plus" class="mr-5px" /> 新增
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list">
+    <Table v-loading="loading" :data="list">
       <el-table-column label="名称" align="center" prop="name" />
       <el-table-column label="微信号" align="center" prop="account" width="180" />
       <el-table-column label="appId" align="center" prop="appId" width="180" />
@@ -85,7 +85,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

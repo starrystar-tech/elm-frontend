@@ -184,7 +184,8 @@ $prefix-cls: #{$namespace}-menu;
   transition: width var(--transition-time-02);
   background: var(--left-menu-bg-color);
   border-right: 1px solid #efefef;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.01);
+  box-shadow: 6px 0 18px rgba(15, 23, 42, 0.08);
+  z-index: 2;
 
   .v-menu-list {
     width: 100%;

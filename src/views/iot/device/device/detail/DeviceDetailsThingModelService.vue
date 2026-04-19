@@ -2,7 +2,7 @@
 <template>
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       class="-mb-15px"
       :model="queryParams"
       ref="queryFormRef"
@@ -48,12 +48,12 @@
           重置
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <ContentWrap>
     <!-- 服务调用列表 -->
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="调用时间" align="center" prop="requestTime" width="180px">
         <template #default="scope">
           {{ scope.row.request?.reportTime ? formatDate(scope.row.request.reportTime) : '-' }}
@@ -94,7 +94,7 @@
           <span v-else>-</span>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
 
     <!-- 分页 -->
     <Pagination

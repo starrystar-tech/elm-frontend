@@ -1,268 +1,216 @@
 <template>
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <el-form
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="线索名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入线索名称"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="转化状态" prop="transformStatus">
-        <el-select v-model="queryParams.transformStatus" class="!w-240px">
-          <el-option :value="false" label="未转化" />
-          <el-option :value="true" label="已转化" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="手机号" prop="mobile">
-        <el-input
-          v-model="queryParams.mobile"
-          placeholder="请输入手机号"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="电话" prop="telephone">
-        <el-input
-          v-model="queryParams.telephone"
-          placeholder="请输入电话"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button type="primary" @click="openForm('create')" v-hasPermi="['crm:clue:create']">
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['crm:clue:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
     <el-tabs v-model="activeName" @tab-click="handleTabClick">
       <el-tab-pane label="我负责的" name="1" />
       <el-tab-pane label="我参与的" name="2" />
       <el-tab-pane label="下属负责的" name="3" />
     </el-tabs>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="线索名称" align="center" prop="name" fixed="left" width="160">
-        <template #default="scope">
-          <el-link :underline="false" type="primary" @click="openDetail(scope.row.id)">
-            {{ scope.row.name }}
-          </el-link>
-        </template>
-      </el-table-column>
-      <el-table-column label="线索来源" align="center" prop="source" width="100">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.CRM_CUSTOMER_SOURCE" :value="scope.row.source" />
-        </template>
-      </el-table-column>
-      <el-table-column label="手机" align="center" prop="mobile" width="120" />
-      <el-table-column label="电话" align="center" prop="telephone" width="130" />
-      <el-table-column label="邮箱" align="center" prop="email" width="180" />
-      <el-table-column label="地址" align="center" prop="detailAddress" width="180" />
-      <el-table-column align="center" label="客户行业" prop="industryId" width="100">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.CRM_CUSTOMER_INDUSTRY" :value="scope.row.industryId" />
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="客户级别" prop="level" width="135">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.CRM_CUSTOMER_LEVEL" :value="scope.row.level" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="下次联系时间"
-        prop="contactNextTime"
-        width="180px"
-      />
-      <el-table-column align="center" label="备注" prop="remark" width="200" />
-      <el-table-column
-        label="最后跟进时间"
-        align="center"
-        prop="contactLastTime"
-        :formatter="dateFormatter"
-        width="180px"
-      />
-      <el-table-column align="center" label="最后跟进记录" prop="contactLastContent" width="200" />
-      <el-table-column align="center" label="负责人" prop="ownerUserName" width="100px" />
-      <el-table-column align="center" label="所属部门" prop="ownerUserDeptName" width="100" />
-      <el-table-column
-        label="更新时间"
-        align="center"
-        prop="updateTime"
-        :formatter="dateFormatter"
-        width="180px"
-      />
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        :formatter="dateFormatter"
-        width="180px"
-      />
-      <el-table-column align="center" label="创建人" prop="creatorName" width="100px" />
-      <el-table-column label="操作" align="center" min-width="110" fixed="right">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['crm:clue:update']"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['crm:clue:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+      <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+        导出
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <ClueForm ref="formRef" @success="getList" />
+  <ClueForm ref="formRef" @success="tableMethods.getList" />
 </template>
 
-<script setup lang="ts">
+<script setup lang="tsx">
+import { computed, reactive, ref } from 'vue'
+import { ElLink, type TabsPaneContext } from 'element-plus'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
-import download from '@/utils/download'
 import * as ClueApi from '@/api/crm/clue'
 import ClueForm from './ClueForm.vue'
-import { TabsPaneContext } from 'element-plus'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'CrmClue' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canCreate = hasPermission(['crm:clue:create'])
+const canUpdate = hasPermission(['crm:clue:update'])
+const canDelete = hasPermission(['crm:clue:delete'])
+const canExport = hasPermission(['crm:clue:export'])
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  sceneType: '1', // 默认和 activeName 相等
-  name: null,
-  telephone: null,
-  mobile: null,
-  transformStatus: false
-})
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
-const activeName = ref('1') // 列表 tab
+const activeName = ref('1')
 
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await ClueApi.getCluePage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'name',
+    label: '线索名称',
+    component: 'Input',
+    componentProps: { placeholder: '请输入线索名称', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'transformStatus',
+    label: '转化状态',
+    component: 'Select',
+    componentProps: {
+      options: [
+        { label: '未转化', value: false },
+        { label: '已转化', value: true }
+      ],
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'mobile',
+    label: '手机号',
+    component: 'Input',
+    componentProps: { placeholder: '请输入手机号', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'telephone',
+    label: '电话',
+    component: 'Input',
+    componentProps: { placeholder: '请输入电话', clearable: true, style: { width: '240px' } }
   }
-}
+])
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** tab 切换 */
-const handleTabClick = (tab: TabsPaneContext) => {
-  queryParams.sceneType = tab.paneName
-  handleQuery()
-}
-
-/** 打开线索详情 */
+const formRef = ref<InstanceType<typeof ClueForm>>()
 const { push } = useRouter()
+
+const { tableObject, tableMethods, register: tableRegister } = useTable<ClueApi.ClueVO>({
+  getListApi: async (params) =>
+    await ClueApi.getCluePage({
+      transformStatus: false,
+      ...params,
+      sceneType: activeName.value
+    }),
+  delListApi: async (id) => await ClueApi.deleteClue(id as number),
+  exportListApi: async (params) =>
+    await ClueApi.exportClue({
+      transformStatus: false,
+      ...params,
+      sceneType: activeName.value
+    })
+})
+
+const exportLoading = computed(() => tableObject.exportLoading)
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams({
+    sceneType: activeName.value,
+    transformStatus: false,
+    ...params
+  })
+}
+
+const handleTabClick = (tab: TabsPaneContext) => {
+  activeName.value = String(tab.paneName)
+  tableMethods.setSearchParams({
+    ...(tableObject.params || {}),
+    sceneType: activeName.value
+  })
+}
+
 const openDetail = (id: number) => {
   push({ name: 'CrmClueDetail', params: { id } })
 }
 
-/** 添加/修改操作 */
-const formRef = ref()
 const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
+  formRef.value?.open(type, id)
 }
 
-/** 删除按钮操作 */
 const handleDelete = async (id: number) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await ClueApi.deleteClue(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-  } catch {}
+  await tableMethods.delList(id, false)
 }
 
-/** 导出按钮操作 */
 const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await ClueApi.exportClue(queryParams)
-    download.excel(data, '线索.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
+  await tableMethods.exportList('线索.xls')
 }
 
-/** 初始化 **/
+const tableColumns = reactive<TableColumn[]>([
+  {
+    field: 'name',
+    label: '线索名称',
+    width: '160px',
+    fixed: 'left',
+    slots: {
+      default: (data) => (
+        <ElLink underline={false} type="primary" onClick={() => openDetail(data.row.id)}>
+          {data.row.name}
+        </ElLink>
+      )
+    }
+  },
+  {
+    field: 'source',
+    label: '线索来源',
+    width: '100px',
+    slots: { default: (data) => <DictTag type={DICT_TYPE.CRM_CUSTOMER_SOURCE} value={data.row.source} /> }
+  },
+  { field: 'mobile', label: '手机', width: '120px' },
+  { field: 'telephone', label: '电话', width: '130px' },
+  { field: 'email', label: '邮箱', width: '180px' },
+  { field: 'detailAddress', label: '地址', width: '180px' },
+  {
+    field: 'industryId',
+    label: '客户行业',
+    width: '100px',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.CRM_CUSTOMER_INDUSTRY} value={data.row.industryId} />
+    }
+  },
+  {
+    field: 'level',
+    label: '客户级别',
+    width: '135px',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.CRM_CUSTOMER_LEVEL} value={data.row.level} />
+    }
+  },
+  { field: 'contactNextTime', label: '下次联系时间', width: '180px', formatter: dateFormatter },
+  { field: 'remark', label: '备注', width: '200px' },
+  { field: 'contactLastTime', label: '最后跟进时间', width: '180px', formatter: dateFormatter },
+  { field: 'contactLastContent', label: '最后跟进记录', width: '200px' },
+  { field: 'ownerUserName', label: '负责人', width: '100px' },
+  { field: 'ownerUserDeptName', label: '所属部门', width: '100px' },
+  { field: 'updateTime', label: '更新时间', width: '180px', formatter: dateFormatter },
+  { field: 'createTime', label: '创建时间', width: '180px', formatter: dateFormatter },
+  { field: 'creatorName', label: '创建人', width: '100px' },
+  {
+    field: 'action',
+    label: '操作',
+    minWidth: '110px',
+    fixed: 'right',
+    slots: {
+      default: (data) => (
+        <>
+          {canUpdate ? (
+            <BaseButton link type="primary" onClick={() => openForm('update', data.row.id)}>
+              编辑
+            </BaseButton>
+          ) : null}
+          {canDelete ? (
+            <BaseButton link type="danger" onClick={() => handleDelete(data.row.id)}>
+              删除
+            </BaseButton>
+          ) : null}
+        </>
+      )
+    }
+  }
+])
+
 onMounted(() => {
-  getList()
+  tableMethods.setSearchParams({ sceneType: activeName.value, transformStatus: false })
 })
 </script>

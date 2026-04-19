@@ -22,23 +22,23 @@
 
   /* logo start */
   --logo-width: auto;
-  --logo-height: 64px;
+  --logo-height: 58px;
 
-  --logo-title-text-color: #303133;
+  --logo-title-text-color: #1f2a37;
   /* logo end */
 
   /* header start */
-  --top-header-bg-color: var(--el-color-primary);
+  --top-header-bg-color: #ffffff;
 
-  --top-header-text-color: #ffffff;
+  --top-header-text-color: #1f2a37;
 
-  --top-header-hover-color: rgba(255, 255, 255, 0.1);
+  --top-header-hover-color: #f3f6fb;
 
   --top-tool-height: var(--logo-height);
 
-  --top-tool-p-x: 0;
+  --top-tool-p-x: 20px;
 
-  --tags-view-height: 35px;
+  --tags-view-height: 38px;
   /* header start */
 
   /* tab menu start */
@@ -49,9 +49,9 @@
   --tab-menu-collapse-height: 36px;
   /* tab menu end */
 
-  --app-content-padding: 20px;
+  --app-content-padding: 12px;
 
-  --app-content-bg-color: #f5f7f9;
+  --app-content-bg-color: #f4f7fb;
 
   --app-footer-height: 50px;
 

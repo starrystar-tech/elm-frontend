@@ -68,7 +68,7 @@ watch(
       to="/"
     >
       <img
-        class="h-[40px] w-auto ml-18px mr-10px"
+        class="h-[42px] w-auto ml-18px mr-10px"
         src="@/assets/imgs/logo2.png"
       />
       <div

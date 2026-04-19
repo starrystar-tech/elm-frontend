@@ -1,6 +1,6 @@
 <template>
   <Dialog :title="dialogTitle" v-model="dialogVisible" width="20%">
-    <el-form
+    <Search
       ref="formRef"
       :model="formData"
       :rules="formRules"
@@ -21,7 +21,7 @@
           </el-form-item>
           <!-- 店员列表 -->
           <ContentWrap v-if="formData.verifyUsers?.length > 0">
-            <el-table :data="formData.verifyUsers">
+            <Table :data="formData.verifyUsers">
               <el-table-column label="编号" align="center" prop="id" />
               <el-table-column
                 label="用户昵称"
@@ -46,11 +46,11 @@
                   </el-button>
                 </template>
               </el-table-column>
-            </el-table>
+            </Table>
           </ContentWrap>
         </el-col>
       </el-row>
-    </el-form>
+    </Search>
     <template #footer>
       <el-button @click="submitForm" type="primary" :disabled="formLoading">确 定</el-button>
       <el-button @click="dialogVisible = false">取 消</el-button>

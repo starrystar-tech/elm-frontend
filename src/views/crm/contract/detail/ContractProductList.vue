@@ -1,6 +1,6 @@
 <template>
   <ContentWrap>
-    <el-table :data="contract.products" :stripe="true" :show-overflow-tooltip="true">
+    <Table :data="contract.products" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column
         align="center"
         label="产品名称"
@@ -46,7 +46,7 @@
         min-width="140"
         :formatter="erpPriceTableColumnFormatter"
       />
-    </el-table>
+    </Table>
     <el-row class="mt-10px" justify="end">
       <el-col :span="3"> 整单折扣：{{ erpPriceInputFormatter(contract.discountPercent) }}% </el-col>
       <el-col :span="4">

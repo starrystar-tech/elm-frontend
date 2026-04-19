@@ -1,232 +1,180 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <el-form
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="岗位名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入岗位名称"
-          clearable
-          class="!w-240px"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="岗位编码" prop="code">
-        <el-input
-          v-model="queryParams.code"
-          placeholder="请输入岗位编码"
-          clearable
-          class="!w-240px"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-240px">
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['system:post:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['system:post:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
-        </el-button>
-        <el-button
-          type="danger"
-          plain
-          :disabled="checkedIds.length === 0"
-          @click="handleDeleteBatch"
-          v-hasPermi="['system:post:delete']"
-        >
-          <Icon icon="ep:delete" class="mr-5px" /> 批量删除
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="岗位编号" align="center" prop="id" />
-      <el-table-column label="岗位名称" align="center" prop="name" />
-      <el-table-column label="岗位编码" align="center" prop="code" />
-      <el-table-column label="岗位顺序" align="center" prop="sort" />
-      <el-table-column label="岗位备注" align="center" prop="remark" />
-      <el-table-column label="状态" align="center" prop="status">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        width="180"
-        :formatter="dateFormatter"
-      />
-      <el-table-column label="操作" align="center">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['system:post:update']"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['system:post:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+      <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+        导出
+      </BaseButton>
+      <BaseButton
+        v-if="canDelete"
+        type="danger"
+        :disabled="checkedIds.length === 0"
+        @click="handleDeleteBatch"
+      >
+        批量删除
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      selection
+      @register="tableRegister"
+      @selection-change="handleRowCheckboxChange"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <PostForm ref="formRef" @success="getList" />
+  <PostForm ref="formRef" @success="tableMethods.getList" />
 </template>
-<script lang="ts" setup>
+
+<script setup lang="tsx">
+import { computed, reactive, ref } from 'vue'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
-import download from '@/utils/download'
 import * as PostApi from '@/api/system/post'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 import PostForm from './PostForm.vue'
 
 defineOptions({ name: 'SystemPost' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canCreate = hasPermission(['system:post:create'])
+const canUpdate = hasPermission(['system:post:update'])
+const canDelete = hasPermission(['system:post:delete'])
+const canExport = hasPermission(['system:post:export'])
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  code: '',
-  name: '',
-  status: undefined
-})
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
-
-/** 查询岗位列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await PostApi.getPostPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'name',
+    label: '岗位名称',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入岗位名称',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'code',
+    label: '岗位编码',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入岗位编码',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'status',
+    label: '状态',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择状态',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.COMMON_STATUS),
+      style: { width: '240px' }
+    }
   }
-}
+])
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
-}
-
-/** 删除按钮操作 */
-const handleDelete = async (id: number) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await PostApi.deletePost(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-  } catch {}
-}
-
-/** 批量删除按钮操作 */
+const formRef = ref<InstanceType<typeof PostForm>>()
 const checkedIds = ref<number[]>([])
+
+const openForm = (type: string, id?: number) => {
+  formRef.value?.open(type, id)
+}
+
+const { tableObject, tableMethods, register: tableRegister } = useTable<PostApi.PostVO>({
+  getListApi: async (params) => await PostApi.getPostPage(params),
+  delListApi: async (id) => await PostApi.deletePost(id as number),
+  exportListApi: async (params) => await PostApi.exportPost(params)
+})
+
+const exportLoading = computed(() => tableObject.exportLoading)
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
+}
+
 const handleRowCheckboxChange = (rows: PostApi.PostVO[]) => {
-  checkedIds.value = rows.map((row) => row.id)
+  checkedIds.value = rows.map((row) => row.id!).filter(Boolean) as number[]
+}
+
+const handleDelete = async (id: number) => {
+  await tableMethods.delList(id, false)
 }
 
 const handleDeleteBatch = async () => {
+  const message = useMessage()
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起批量删除
     await PostApi.deletePostList(checkedIds.value)
     checkedIds.value = []
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
+    message.success('删除成功')
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 导出按钮操作 */
 const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await PostApi.exportPost(queryParams)
-    download.excel(data, '岗位列表.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
+  await tableMethods.exportList('岗位列表.xls')
 }
 
-/** 初始化 **/
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'id', label: '岗位编号' },
+  { field: 'name', label: '岗位名称' },
+  { field: 'code', label: '岗位编码' },
+  { field: 'sort', label: '岗位顺序' },
+  { field: 'remark', label: '岗位备注' },
+  {
+    field: 'status',
+    label: '状态',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} />
+    }
+  },
+  {
+    field: 'createTime',
+    label: '创建时间',
+    formatter: dateFormatter,
+    width: '180px'
+  },
+  {
+    field: 'action',
+    label: '操作',
+    width: '150px',
+    slots: {
+      default: (data) => {
+        const row = data.row as PostApi.PostVO
+        return (
+          <>
+            {canUpdate ? (
+              <BaseButton link type="primary" onClick={() => openForm('update', row.id)}>
+                编辑
+              </BaseButton>
+            ) : null}
+            {canDelete ? (
+              <BaseButton link type="danger" onClick={() => handleDelete(row.id!)}>
+                删除
+              </BaseButton>
+            ) : null}
+          </>
+        )
+      }
+    }
+  }
+])
+
 onMounted(() => {
-  getList()
+  tableMethods.getList()
 })
 </script>

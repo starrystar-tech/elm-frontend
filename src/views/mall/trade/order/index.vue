@@ -2,7 +2,7 @@
 
   <!-- 搜索 -->
   <ContentWrap>
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -159,13 +159,13 @@
           重置
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
     <!-- 添加 row-key="id" 解决列数据中的 table#header 数据不刷新的问题  -->
-    <el-table v-loading="loading" :data="list" row-key="id">
+    <Table v-loading="loading" :data="list" row-key="id">
       <OrderTableColumn :list="list" :pick-up-store-list="pickUpStoreList">
         <template #default="{ row }">
           <div class="flex items-center justify-center">
@@ -209,7 +209,7 @@
           </div>
         </template>
       </OrderTableColumn>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

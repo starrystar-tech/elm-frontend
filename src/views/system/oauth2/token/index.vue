@@ -1,162 +1,123 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <el-form
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
+    <Search
+      :schema="searchSchema"
       label-width="90px"
-    >
-      <el-form-item label="用户编号" prop="userId">
-        <el-input
-          v-model="queryParams.userId"
-          placeholder="请输入用户编号"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="用户类型" prop="userType">
-        <el-select
-          v-model="queryParams.userType"
-          placeholder="请选择用户类型"
-          clearable
-          class="!w-240px"
-        >
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.USER_TYPE)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="客户端编号" prop="clientId">
-        <el-input
-          v-model="queryParams.clientId"
-          placeholder="请输入客户端编号"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table v-loading="loading" :data="list">
-      <el-table-column label="访问令牌" align="center" prop="accessToken" width="300" />
-      <el-table-column label="刷新令牌" align="center" prop="refreshToken" width="300" />
-      <el-table-column label="用户编号" align="center" prop="userId" />
-      <el-table-column label="用户类型" align="center" prop="userType">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.USER_TYPE" :value="scope.row.userType" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="过期时间"
-        align="center"
-        prop="expiresTime"
-        :formatter="dateFormatter"
-        width="180"
-      />
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        :formatter="dateFormatter"
-        width="180"
-      />
-      <el-table-column label="操作" align="center">
-        <template #default="scope">
-          <el-button
-            link
-            type="danger"
-            @click="handleForceLogout(scope.row.accessToken)"
-            v-hasPermi="['system:oauth2-token:delete']"
-          >
-            强退
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+      @reset="setSearchParams"
+      @search="setSearchParams"
+    />
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 </template>
 
-<script lang="ts" setup>
+<script setup lang="tsx">
+import { reactive } from 'vue'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import * as OAuth2AccessTokenApi from '@/api/system/oauth2/token'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'SystemTokenClient' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const message = useMessage()
+const canDelete = hasPermission(['system:oauth2-token:delete'])
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  userId: null,
-  userType: undefined,
-  clientId: null
-})
-const queryFormRef = ref() // 搜索的表单
-
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await OAuth2AccessTokenApi.getAccessTokenPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'userId',
+    label: '用户编号',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入用户编号',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'userType',
+    label: '用户类型',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择用户类型',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.USER_TYPE),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'clientId',
+    label: '客户端编号',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入客户端编号',
+      clearable: true,
+      style: { width: '240px' }
+    }
   }
+])
+
+const { tableObject, tableMethods, register: tableRegister } =
+  useTable<OAuth2AccessTokenApi.OAuth2TokenVO>({
+    getListApi: async (params) => await OAuth2AccessTokenApi.getAccessTokenPage(params)
+  })
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
 }
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 强制退出操作 */
 const handleForceLogout = async (accessToken: string) => {
   try {
-    // 删除的二次确认
     await message.confirm('是否要强制退出用户')
-    // 发起删除
     await OAuth2AccessTokenApi.deleteAccessToken(accessToken)
-    message.success(t('common.success'))
-    // 刷新列表
-    await getList()
+    message.success('操作成功')
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 初始化 **/
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'accessToken', label: '访问令牌', width: '300px' },
+  { field: 'refreshToken', label: '刷新令牌', width: '300px' },
+  { field: 'userId', label: '用户编号' },
+  {
+    field: 'userType',
+    label: '用户类型',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.USER_TYPE} value={data.row.userType} />
+    }
+  },
+  { field: 'expiresTime', label: '过期时间', width: '180px', formatter: dateFormatter },
+  { field: 'createTime', label: '创建时间', width: '180px', formatter: dateFormatter },
+  {
+    field: 'action',
+    label: '操作',
+    width: '100px',
+    slots: {
+      default: (data) =>
+        canDelete ? (
+          <BaseButton link type="danger" onClick={() => handleForceLogout(data.row.accessToken)}>
+            强退
+          </BaseButton>
+        ) : null
+    }
+  }
+])
+
 onMounted(() => {
-  getList()
+  tableMethods.getList()
 })
 </script>

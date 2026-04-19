@@ -18,7 +18,7 @@
       >
         <Icon icon="ep:delete" class="mr-5px" /> 批量删除
       </el-button>
-    <el-table
+    <Table
         row-key="id"
         v-loading="loading"
         :data="list"
@@ -57,7 +57,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

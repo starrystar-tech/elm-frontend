@@ -1,7 +1,7 @@
 <template>
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -66,7 +66,7 @@
           </el-button>
         </el-button-group>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 卡片视图 -->
@@ -158,7 +158,7 @@
     </el-row>
 
     <!-- 列表视图 -->
-    <el-table v-else v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
+    <Table v-else v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column align="center" label="ID" prop="id" />
       <el-table-column align="center" label="ProductKey" prop="productKey" />
       <el-table-column align="center" label="品类" prop="categoryName" />
@@ -225,7 +225,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
 
     <!-- 分页 -->
     <Pagination

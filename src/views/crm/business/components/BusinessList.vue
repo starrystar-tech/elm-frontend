@@ -23,7 +23,7 @@
 
   <!-- 列表 -->
   <ContentWrap class="mt-10px">
-    <el-table
+    <Table
       ref="businessRef"
       v-loading="loading"
       :data="list"
@@ -47,7 +47,7 @@
       <el-table-column label="客户名称" align="center" prop="customerName" />
       <el-table-column label="商机组" align="center" prop="statusTypeName" />
       <el-table-column label="商机阶段" align="center" prop="statusName" />
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

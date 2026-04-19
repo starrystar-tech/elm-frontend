@@ -2,7 +2,7 @@
 <template>
   <!-- 搜索工作栏 -->
   <ContentWrap>
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -69,7 +69,7 @@
           导出
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
@@ -82,10 +82,10 @@
         :name="item.type"
       />
     </el-tabs>
-    <el-table v-loading="loading" :data="list">
+    <Table v-loading="loading" :data="list">
       <el-table-column type="expand">
         <template #default="{ row }">
-          <el-form class="spu-table-expand" label-position="left">
+          <Search class="spu-table-expand" label-position="left">
             <el-row>
               <el-col :span="24">
                 <el-row>
@@ -123,7 +123,7 @@
                 </el-row>
               </el-col>
             </el-row>
-          </el-form>
+          </Search>
         </template>
       </el-table-column>
       <el-table-column label="商品编号" min-width="140" prop="id" />
@@ -218,7 +218,7 @@
           </template>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

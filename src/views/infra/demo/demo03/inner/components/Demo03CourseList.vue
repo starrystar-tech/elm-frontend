@@ -1,7 +1,7 @@
 <template>
   <!-- 列表 -->
   <ContentWrap>
-    <el-table
+    <Table
       row-key="id"
       v-loading="loading"
       :data="list"
@@ -18,7 +18,7 @@
         :formatter="dateFormatter"
         width="180px"
       />
-    </el-table>
+    </Table>
   </ContentWrap>
 </template>
 <script setup lang="ts">

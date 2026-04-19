@@ -2,7 +2,7 @@
 <template>
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -39,13 +39,13 @@
           TSL
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
     <el-tabs>
-      <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
+      <Table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
         <el-table-column align="center" label="功能类型" prop="type">
           <template #default="scope">
             <dict-tag :type="DICT_TYPE.IOT_THING_MODEL_TYPE" :value="scope.row.type" />
@@ -83,7 +83,7 @@
             </el-button>
           </template>
         </el-table-column>
-      </el-table>
+      </Table>
       <!-- 分页 -->
       <Pagination
         v-model:limit="queryParams.pageSize"

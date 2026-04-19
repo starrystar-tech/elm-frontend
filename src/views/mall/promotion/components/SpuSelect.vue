@@ -44,7 +44,7 @@
           </el-button>
         </el-col>
       </el-row>
-      <el-table
+      <Table
         ref="spuListRef"
         v-loading="loading"
         :data="list"
@@ -94,7 +94,7 @@
           prop="createTime"
           width="180"
         />
-      </el-table>
+      </Table>
       <!-- 分页 -->
       <Pagination
         v-model:limit="queryParams.pageSize"

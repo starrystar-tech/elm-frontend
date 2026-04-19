@@ -68,7 +68,7 @@
 
   <!-- 搜索工作栏 -->
   <ContentWrap>
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -108,12 +108,12 @@
           重置
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 分页列表数据展示 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="pageList">
+    <Table v-loading="loading" :data="pageList">
       <el-table-column align="center" label="编号" prop="id" min-width="50" />
       <el-table-column align="center" label="头像" prop="avatar" min-width="80">
         <template #default="scope">
@@ -187,7 +187,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

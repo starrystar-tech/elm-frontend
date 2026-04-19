@@ -41,7 +41,7 @@ export const useRenderLayout = () => {
       <>
         <div
           class={[
-            'absolute top-0 left-0 h-full layout-border__right',
+            'absolute top-0 left-0 h-full layout-border__right z-[8]',
             { '!fixed z-3000': mobile.value }
           ]}
         >
@@ -99,7 +99,7 @@ export const useRenderLayout = () => {
             >
               <ToolHeader
                 class={[
-                  'bg-[var(--top-header-bg-color)] text-[var(--top-header-text-color)]',
+                  'bg-[var(--top-header-bg-color)] text-[var(--top-header-text-color)] shadow-[0_2px_14px_rgba(15,23,42,0.05)]',
                   {
                     'layout-border__bottom': !tagsView.value
                   }

@@ -3,7 +3,7 @@
   <ContentWrap>
     <div class="pb-5 text-xl"> 待审核回款 </div>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       class="-mb-15px"
       :model="queryParams"
       ref="queryFormRef"
@@ -25,11 +25,11 @@
           />
         </el-select>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column align="center" fixed="left" label="回款编号" prop="no" width="180">
         <template #default="scope">
           <el-link :underline="false" type="primary" @click="openDetail(scope.row.id)">
@@ -120,7 +120,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

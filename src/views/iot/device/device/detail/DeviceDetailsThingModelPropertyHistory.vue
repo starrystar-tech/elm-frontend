@@ -3,7 +3,7 @@
   <Dialog title="查看数据" v-model="dialogVisible" width="1024px" :appendToBody="true">
     <ContentWrap>
       <!-- 搜索工作栏 -->
-      <el-form
+      <Search
         class="-mb-15px"
         :model="queryParams"
         ref="queryFormRef"
@@ -39,7 +39,7 @@
             </el-button>
           </el-button-group>
         </el-form-item>
-      </el-form>
+      </Search>
     </ContentWrap>
 
     <!-- 数据展示区域 -->
@@ -52,7 +52,7 @@
 
       <!-- 表格模式 -->
       <div v-else>
-        <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+        <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
           <el-table-column label="时间" align="center" prop="time" width="180px">
             <template #default="scope">
               {{ formatDate(new Date(scope.row.updateTime)) }}
@@ -63,7 +63,7 @@
               {{ scope.row.value }}
             </template>
           </el-table-column>
-        </el-table>
+        </Table>
       </div>
     </ContentWrap>
   </Dialog>

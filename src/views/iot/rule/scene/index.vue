@@ -21,7 +21,7 @@
 
     <!-- 搜索和筛选 -->
     <el-card class="mb-16px" shadow="never">
-      <el-form
+      <Search
         ref="queryFormRef"
         :model="queryParams"
         :inline="true"
@@ -62,7 +62,7 @@
             重置
           </el-button>
         </el-form-item>
-      </el-form>
+      </Search>
     </el-card>
 
     <!-- 统计卡片 -->
@@ -151,7 +151,7 @@
 
     <!-- 数据表格 -->
     <el-card class="mb-20px" shadow="never">
-      <el-table v-loading="loading" :data="list" stripe @selection-change="handleSelectionChange">
+      <Table v-loading="loading" :data="list" stripe @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
         <el-table-column label="规则名称" prop="name" min-width="200">
           <template #default="{ row }">
@@ -234,7 +234,7 @@
             </div>
           </template>
         </el-table-column>
-      </el-table>
+      </Table>
 
       <!-- 分页 -->
       <Pagination

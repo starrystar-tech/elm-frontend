@@ -11,7 +11,7 @@
       <el-col :span="20" :xs="24">
         <!-- 搜索 -->
         <ContentWrap>
-          <el-form
+          <Search
             class="-mb-15px"
             :model="queryParams"
             ref="queryFormRef"
@@ -65,10 +65,10 @@
               <el-button @click="handleQuery"><Icon icon="ep:search" />搜索</el-button>
               <el-button @click="resetQuery"><Icon icon="ep:refresh" />重置</el-button>
             </el-form-item>
-          </el-form>
+          </Search>
         </ContentWrap>
         <ContentWrap>
-          <el-table v-loading="loading" :data="list">
+          <Table v-loading="loading" :data="list">
             <el-table-column width="55">
               <template #header>
                 <el-checkbox
@@ -117,7 +117,7 @@
               :formatter="dateFormatter"
               width="180"
             />
-          </el-table>
+          </Table>
           <Pagination
             :total="total"
             v-model:page="queryParams.pageNo"

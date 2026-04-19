@@ -3,7 +3,7 @@
   <ContentWrap>
     <div class="pb-5 text-xl">待审核合同</div>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       ref="queryFormRef"
       :inline="true"
       :model="queryParams"
@@ -25,11 +25,11 @@
           />
         </el-select>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
+    <Table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column align="center" fixed="left" label="合同编号" prop="no" width="180" />
       <el-table-column align="center" fixed="left" label="合同名称" prop="name" width="160">
         <template #default="scope">
@@ -160,7 +160,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

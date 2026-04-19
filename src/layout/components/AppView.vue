@@ -36,7 +36,7 @@ provide('reload', reload)
 <template>
   <section
     :class="[
-      'p-[var(--app-content-padding)] w-full bg-[var(--app-content-bg-color)] dark:bg-[var(--el-bg-color)]',
+      'w-full bg-[var(--app-content-bg-color)] px-[14px] pt-[12px] pb-[16px] dark:bg-[var(--el-bg-color)]',
       {
         '!min-h-[calc(100vh-var(--top-tool-height)-var(--tags-view-height)-var(--app-footer-height))] pb-0':
           footer

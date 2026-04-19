@@ -1,178 +1,142 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <el-form
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="用户名称" prop="username">
-        <el-input
-          v-model="queryParams.username"
-          placeholder="请输入用户名称"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="登录地址" prop="userIp">
-        <el-input
-          v-model="queryParams.userIp"
-          placeholder="请输入登录地址"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="登录日期" prop="createTime">
-        <el-date-picker
-          v-model="queryParams.createTime"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['system:login-log:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table v-loading="loading" :data="list">
-      <el-table-column label="日志编号" align="center" prop="id" />
-      <el-table-column label="操作类型" align="center" prop="logType">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.SYSTEM_LOGIN_TYPE" :value="scope.row.logType" />
-        </template>
-      </el-table-column>
-      <el-table-column label="用户名称" align="center" prop="username" width="180" />
-      <el-table-column label="登录地址" align="center" prop="userIp" width="180" />
-      <el-table-column label="浏览器" align="center" prop="userAgent" />
-      <el-table-column label="登陆结果" align="center" prop="result">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.SYSTEM_LOGIN_RESULT" :value="scope.row.result" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="登录日期"
-        align="center"
-        prop="createTime"
-        width="180"
-        :formatter="dateFormatter"
-      />
-      <el-table-column label="操作" align="center">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openDetail(scope.row)"
-            v-hasPermi="['system:login-log:query']"
-          >
-            详情
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+        导出
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：详情 -->
   <LoginLogDetail ref="detailRef" />
 </template>
-<script lang="ts" setup>
+
+<script setup lang="tsx">
+import { computed, reactive, ref } from 'vue'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
-import download from '@/utils/download'
 import * as LoginLogApi from '@/api/system/loginLog'
 import LoginLogDetail from './LoginLogDetail.vue'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'SystemLoginLog' })
 
-const message = useMessage() // 消息弹窗
+const canQuery = hasPermission(['system:login-log:query'])
+const canExport = hasPermission(['system:login-log:export'])
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  username: undefined,
-  userIp: undefined,
-  createTime: []
-})
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
-
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await LoginLogApi.getLoginLogPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'username',
+    label: '用户名称',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入用户名称',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'userIp',
+    label: '登录地址',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入登录地址',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'createTime',
+    label: '登录日期',
+    component: 'DatePicker',
+    componentProps: {
+      type: 'daterange',
+      valueFormat: 'YYYY-MM-DD HH:mm:ss',
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+      defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
+      style: { width: '240px' }
+    }
   }
-}
+])
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 详情操作 */
-const detailRef = ref()
+const detailRef = ref<InstanceType<typeof LoginLogDetail>>()
 const openDetail = (data: LoginLogApi.LoginLogVO) => {
-  detailRef.value.open(data)
+  detailRef.value?.open(data)
 }
 
-/** 导出按钮操作 */
+const { tableObject, tableMethods, register: tableRegister } = useTable<LoginLogApi.LoginLogVO>({
+  getListApi: async (params) => await LoginLogApi.getLoginLogPage(params),
+  exportListApi: async (params) => await LoginLogApi.exportLoginLog(params)
+})
+
+const exportLoading = computed(() => tableObject.exportLoading)
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
+}
+
 const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await LoginLogApi.exportLoginLog(queryParams)
-    download.excel(data, '登录日志.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
+  await tableMethods.exportList('登录日志.xls')
 }
 
-/** 初始化 **/
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'id', label: '日志编号' },
+  {
+    field: 'logType',
+    label: '操作类型',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.SYSTEM_LOGIN_TYPE} value={data.row.logType} />
+    }
+  },
+  { field: 'username', label: '用户名称', width: '180px' },
+  { field: 'userIp', label: '登录地址', width: '180px' },
+  { field: 'userAgent', label: '浏览器' },
+  {
+    field: 'result',
+    label: '登陆结果',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.SYSTEM_LOGIN_RESULT} value={data.row.result} />
+    }
+  },
+  {
+    field: 'createTime',
+    label: '登录日期',
+    formatter: dateFormatter,
+    width: '180px'
+  },
+  {
+    field: 'action',
+    label: '操作',
+    width: '100px',
+    slots: {
+      default: (data) =>
+        canQuery ? (
+          <BaseButton link type="primary" onClick={() => openDetail(data.row as LoginLogApi.LoginLogVO)}>
+            详情
+          </BaseButton>
+        ) : null
+    }
+  }
+])
+
 onMounted(() => {
-  getList()
+  tableMethods.getList()
 })
 </script>

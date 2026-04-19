@@ -1,7 +1,7 @@
 <template>
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       class="-mb-15px"
       :model="queryParams"
       ref="queryFormRef"
@@ -145,7 +145,7 @@
           <Icon icon="ep:delete" class="mr-5px" /> 批量删除
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
 
   <!-- 列表 -->
@@ -272,7 +272,7 @@
     </template>
 
     <!-- 列表视图 -->
-    <el-table
+    <Table
       v-else
       v-loading="loading"
       :data="list"
@@ -349,7 +349,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
 
     <!-- 分页 -->
     <Pagination

@@ -1,263 +1,205 @@
 <template>
-  <!-- 搜索工作栏 -->
   <ContentWrap>
-    <el-form
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="模板名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入模板名称"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="模板编号" prop="code">
-        <el-input
-          v-model="queryParams.code"
-          placeholder="请输入模版编码"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select
-          v-model="queryParams.status"
-          placeholder="请选择开启状态"
-          clearable
-          class="!w-240px"
-        >
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
-        <el-date-picker
-          v-model="queryParams.createTime"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['system:notify-template:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" />新增
-        </el-button>
-        <el-button
-          type="danger"
-          plain
-          :disabled="checkedIds.length === 0"
-          @click="handleDeleteBatch"
-          v-hasPermi="['system:notify-template:delete']"
-        >
-          <Icon icon="ep:delete" class="mr-5px" />批量删除
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
-      <el-table-column type="selection" width="55" />
-      <el-table-column
-        label="模板编码"
-        align="center"
-        prop="code"
-        width="120"
-        :show-overflow-tooltip="true"
-      />
-      <el-table-column
-        label="模板名称"
-        align="center"
-        prop="name"
-        width="120"
-        :show-overflow-tooltip="true"
-      />
-      <el-table-column label="类型" align="center" prop="type">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.SYSTEM_NOTIFY_TEMPLATE_TYPE" :value="scope.row.type" />
-        </template>
-      </el-table-column>
-      <el-table-column label="发送人名称" align="center" prop="nickname" />
-      <el-table-column
-        label="模板内容"
-        align="center"
-        prop="content"
-        width="200"
-        :show-overflow-tooltip="true"
-      />
-      <el-table-column label="开启状态" align="center" prop="status" width="80">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" />
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        width="180"
-        :formatter="dateFormatter"
-      />
-      <el-table-column label="操作" align="center" width="210" fixed="right">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['system:notify-template:update']"
-          >
-            修改
-          </el-button>
-          <el-button
-            link
-            type="primary"
-            @click="openSendForm(scope.row)"
-            v-hasPermi="['system:notify-template:send-notify']"
-          >
-            测试
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['system:notify-template:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+      <BaseButton
+        v-if="canDelete"
+        type="danger"
+        :disabled="checkedIds.length === 0"
+        @click="handleDeleteBatch"
+      >
+        批量删除
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      selection
+      @register="tableRegister"
+      @selection-change="handleRowCheckboxChange"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <NotifyTemplateForm ref="formRef" @success="getList" />
-  <!-- 表单弹窗：测试发送 -->
+  <NotifyTemplateForm ref="formRef" @success="tableMethods.getList" />
   <NotifyTemplateSendForm ref="sendFormRef" />
 </template>
-<script lang="ts" setup>
+
+<script setup lang="tsx">
+import { reactive, ref } from 'vue'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import * as NotifyTemplateApi from '@/api/system/notify/template'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 import NotifyTemplateForm from './NotifyTemplateForm.vue'
 import NotifyTemplateSendForm from './NotifyTemplateSendForm.vue'
 
 defineOptions({ name: 'NotifySmsTemplate' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
-
-const loading = ref(false) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  name: undefined,
-  status: undefined,
-  code: undefined,
-  createTime: []
-})
-const queryFormRef = ref() // 搜索的表单
-
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await NotifyTemplateApi.getNotifyTemplatePage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
-
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
-}
-
-/** 删除按钮操作 */
-const handleDelete = async (id: number) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await NotifyTemplateApi.deleteNotifyTemplate(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-  } catch {}
-}
-
-/** 批量删除按钮操作 */
+const canCreate = hasPermission(['system:notify-template:create'])
+const canUpdate = hasPermission(['system:notify-template:update'])
+const canDelete = hasPermission(['system:notify-template:delete'])
+const canSend = hasPermission(['system:notify-template:send-notify'])
 const checkedIds = ref<number[]>([])
+const message = useMessage()
+
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'name',
+    label: '模板名称',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入模板名称',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'code',
+    label: '模板编号',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入模版编码',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'status',
+    label: '状态',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择开启状态',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.COMMON_STATUS),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'createTime',
+    label: '创建时间',
+    component: 'DatePicker',
+    componentProps: {
+      type: 'daterange',
+      valueFormat: 'YYYY-MM-DD HH:mm:ss',
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+      defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
+      style: { width: '240px' }
+    }
+  }
+])
+
+const formRef = ref<InstanceType<typeof NotifyTemplateForm>>()
+const sendFormRef = ref<InstanceType<typeof NotifyTemplateSendForm>>()
+
+const openForm = (type: string, id?: number) => {
+  formRef.value?.open(type, id)
+}
+
+const openSendForm = (row: NotifyTemplateApi.NotifyTemplateVO) => {
+  sendFormRef.value?.open(row.id)
+}
+
+const { tableObject, tableMethods, register: tableRegister } =
+  useTable<NotifyTemplateApi.NotifyTemplateVO>({
+    getListApi: async (params) => await NotifyTemplateApi.getNotifyTemplatePage(params),
+    delListApi: async (id) => await NotifyTemplateApi.deleteNotifyTemplate(id as number)
+  })
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
+}
+
 const handleRowCheckboxChange = (rows: NotifyTemplateApi.NotifyTemplateVO[]) => {
-  checkedIds.value = rows.map((row) => row.id!)
+  checkedIds.value = rows.map((row) => row.id!).filter(Boolean) as number[]
+}
+
+const handleDelete = async (id: number) => {
+  await tableMethods.delList(id, false)
 }
 
 const handleDeleteBatch = async () => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起批量删除
     await NotifyTemplateApi.deleteNotifyTemplateList(checkedIds.value)
     checkedIds.value = []
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
+    message.success('删除成功')
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 发送站内信按钮 */
-const sendFormRef = ref() // 表单 Ref
-const openSendForm = (row: NotifyTemplateApi.NotifyTemplateVO) => {
-  sendFormRef.value.open(row.id)
-}
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'code', label: '模板编码', width: '120px', showOverflowTooltip: true },
+  { field: 'name', label: '模板名称', width: '120px', showOverflowTooltip: true },
+  {
+    field: 'type',
+    label: '类型',
+    slots: {
+      default: (data) => (
+        <DictTag type={DICT_TYPE.SYSTEM_NOTIFY_TEMPLATE_TYPE} value={data.row.type} />
+      )
+    }
+  },
+  { field: 'nickname', label: '发送人名称' },
+  { field: 'content', label: '模板内容', width: '200px', showOverflowTooltip: true },
+  {
+    field: 'status',
+    label: '开启状态',
+    width: '80px',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} />
+    }
+  },
+  {
+    field: 'createTime',
+    label: '创建时间',
+    formatter: dateFormatter,
+    width: '180px'
+  },
+  {
+    field: 'action',
+    label: '操作',
+    width: '210px',
+    slots: {
+      default: (data) => {
+        const row = data.row as NotifyTemplateApi.NotifyTemplateVO
+        return (
+          <>
+            {canUpdate ? (
+              <BaseButton link type="primary" onClick={() => openForm('update', row.id)}>
+                修改
+              </BaseButton>
+            ) : null}
+            {canSend ? (
+              <BaseButton link type="primary" onClick={() => openSendForm(row)}>
+                测试
+              </BaseButton>
+            ) : null}
+            {canDelete ? (
+              <BaseButton link type="danger" onClick={() => handleDelete(row.id!)}>
+                删除
+              </BaseButton>
+            ) : null}
+          </>
+        )
+      }
+    }
+  }
+])
 
-/** 初始化 **/
 onMounted(() => {
-  getList()
+  tableMethods.getList()
 })
 </script>

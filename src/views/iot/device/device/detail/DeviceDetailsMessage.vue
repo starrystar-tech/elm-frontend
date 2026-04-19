@@ -2,7 +2,7 @@
 <template>
   <ContentWrap>
     <!-- 搜索区域 -->
-    <el-form :model="queryParams" inline>
+    <Search :model="queryParams" inline>
       <el-form-item>
         <el-select v-model="queryParams.method" placeholder="所有方法" class="!w-160px" clearable>
           <el-option
@@ -39,10 +39,10 @@
           style="--el-switch-on-color: #13ce66"
         />
       </el-form-item>
-    </el-form>
+    </Search>
 
     <!-- 消息列表 -->
-    <el-table v-loading="loading" :data="list" :stripe="true" class="whitespace-nowrap">
+    <Table v-loading="loading" :data="list" :stripe="true" class="whitespace-nowrap">
       <el-table-column label="时间" align="center" prop="ts" width="180">
         <template #default="scope">
           {{ formatDate(scope.row.ts) }}
@@ -79,7 +79,7 @@
           <span v-else>{{ scope.row.params }}</span>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
 
     <!-- 分页 -->
     <div class="mt-10px flex justify-end">

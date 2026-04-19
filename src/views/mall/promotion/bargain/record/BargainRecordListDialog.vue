@@ -2,7 +2,7 @@
   <Dialog v-model="dialogVisible" title="助力列表">
     <!-- 列表 -->
     <ContentWrap>
-      <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+      <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
         <el-table-column label="用户编号" prop="userId" min-width="80px" />
         <el-table-column label="用户头像" prop="avatar" min-width="80px">
           <template #default="scope">
@@ -23,7 +23,7 @@
           :formatter="dateFormatter"
           width="180px"
         />
-      </el-table>
+      </Table>
       <!-- 分页 -->
       <Pagination
         :total="total"

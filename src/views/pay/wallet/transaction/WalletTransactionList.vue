@@ -1,6 +1,6 @@
 <template>
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
+    <Table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column align="center" label="编号" prop="id" />
       <el-table-column align="center" label="钱包编号" prop="walletId" />
       <el-table-column align="center" label="关联业务标题" prop="title" />
@@ -17,7 +17,7 @@
         prop="createTime"
         width="180px"
       />
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

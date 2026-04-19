@@ -2,7 +2,7 @@
   <Dialog title="关联商机" v-model="dialogVisible">
     <!-- 搜索工作栏 -->
     <ContentWrap>
-      <el-form
+      <Search
         class="-mb-15px"
         :model="queryParams"
         ref="queryFormRef"
@@ -25,12 +25,12 @@
             <Icon icon="ep:plus" class="mr-5px" /> 新增
           </el-button>
         </el-form-item>
-      </el-form>
+      </Search>
     </ContentWrap>
 
     <!-- 列表 -->
     <ContentWrap class="mt-10px">
-      <el-table
+      <Table
         v-loading="loading"
         ref="businessRef"
         :data="list"
@@ -54,7 +54,7 @@
         <el-table-column label="客户名称" align="center" prop="customerName" />
         <el-table-column label="商机组" align="center" prop="statusTypeName" />
         <el-table-column label="商机阶段" align="center" prop="statusName" />
-      </el-table>
+      </Table>
       <!-- 分页 -->
       <Pagination
         :total="total"

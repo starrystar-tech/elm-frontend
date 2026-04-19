@@ -91,7 +91,7 @@
       <!-- Tab 内容 -->
       <div v-for="tab in statusTabs" :key="tab.key" v-show="activeTab === tab.key">
         <!-- 设备列表 -->
-        <el-table
+        <Table
           v-loading="recordLoading"
           :data="recordList"
           :stripe="true"
@@ -132,7 +132,7 @@
               </el-button>
             </template>
           </el-table-column>
-        </el-table>
+        </Table>
         <!-- 分页 -->
         <Pagination
           :total="recordTotal"

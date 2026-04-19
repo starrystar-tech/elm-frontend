@@ -15,13 +15,14 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="submitForm" type="primary" :disabled="formLoading">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <BaseButton @click="submitForm" type="primary" :loading="formLoading">确 定</BaseButton>
+      <BaseButton @click="dialogVisible = false">取 消</BaseButton>
     </template>
   </Dialog>
 </template>
 <script setup lang="ts">
 import { ScoreApi, ScoreVO } from '@/api/media/score'
+import { BaseButton } from '@/components/Button'
 
 /** 媒体用户分数 表单 */
 defineOptions({ name: 'ScoreForm' })

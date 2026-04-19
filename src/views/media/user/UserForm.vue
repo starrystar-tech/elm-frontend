@@ -18,13 +18,14 @@
       </el-tab-pane>
     </el-tabs>
     <template #footer>
-      <el-button @click="submitForm" type="primary" :disabled="formLoading">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <BaseButton @click="submitForm" type="primary" :loading="formLoading">确 定</BaseButton>
+      <BaseButton @click="dialogVisible = false">取 消</BaseButton>
     </template>
   </Dialog>
 </template>
 <script setup lang="ts">
 import { UserApi, UserVO } from '@/api/media/user'
+import { BaseButton } from '@/components/Button'
 import ScoreForm from './components/ScoreForm.vue'
 
 /** 媒体用户测试 表单 */

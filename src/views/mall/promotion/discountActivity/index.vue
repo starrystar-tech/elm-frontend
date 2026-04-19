@@ -1,7 +1,7 @@
 <template>
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form
+    <Search
       class="-mb-15px"
       :model="queryParams"
       ref="queryFormRef"
@@ -55,11 +55,11 @@
           <Icon icon="ep:plus" class="mr-5px" /> 新增活动
         </el-button>
       </el-form-item>
-    </el-form>
+    </Search>
   </ContentWrap>
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="活动编号" prop="id" min-width="80" />
       <el-table-column label="活动名称" prop="name" min-width="140" />
       <el-table-column label="活动时间" min-width="210">
@@ -121,7 +121,7 @@
           </el-button>
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       :total="total"

@@ -2,7 +2,7 @@
   <Dialog v-model="dialogVisible" :title="dialogTitle" width="65%">
     <!-- 搜索工作栏 -->
     <ContentWrap>
-      <el-form
+      <Search
         ref="queryFormRef"
         :inline="true"
         :model="queryParams"
@@ -43,12 +43,12 @@
             重置
           </el-button>
         </el-form-item>
-      </el-form>
+      </Search>
     </ContentWrap>
 
     <!-- 列表 -->
     <ContentWrap>
-      <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
+      <Table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
         <el-table-column label="优惠券名称" min-width="140" prop="name" />
         <el-table-column label="类型" min-width="80" prop="productScope">
@@ -92,7 +92,7 @@
             <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
           </template>
         </el-table-column>
-      </el-table>
+      </Table>
       <!-- 分页 -->
       <Pagination
         v-model:limit="queryParams.pageSize"

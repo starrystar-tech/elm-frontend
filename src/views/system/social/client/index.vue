@@ -1,225 +1,186 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <el-form
-      ref="queryFormRef"
-      :inline="true"
-      :model="queryParams"
-      class="-mb-15px"
+    <Search
+      :schema="searchSchema"
       label-width="130px"
-    >
-      <el-form-item label="应用名" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          class="!w-240px"
-          clearable
-          placeholder="请输入应用名"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="社交平台" prop="socialType">
-        <el-select
-          v-model="queryParams.socialType"
-          class="!w-240px"
-          clearable
-          placeholder="请选择社交平台"
-        >
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.SYSTEM_SOCIAL_TYPE)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="用户类型" prop="userType">
-        <el-select
-          v-model="queryParams.userType"
-          class="!w-240px"
-          clearable
-          placeholder="请选择用户类型"
-        >
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.USER_TYPE)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="客户端编号" prop="clientId">
-        <el-input
-          v-model="queryParams.clientId"
-          class="!w-240px"
-          clearable
-          placeholder="请输入客户端编号"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" class="!w-240px" clearable placeholder="请选择状态">
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery">
-          <Icon class="mr-5px" icon="ep:search" />
-          搜索
-        </el-button>
-        <el-button @click="resetQuery">
-          <Icon class="mr-5px" icon="ep:refresh" />
-          重置
-        </el-button>
-        <el-button
-          v-hasPermi="['system:social-client:create']"
-          plain
-          type="primary"
-          @click="openForm('create')"
-        >
-          <Icon class="mr-5px" icon="ep:plus" />
-          新增
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
-      <el-table-column align="center" label="编号" prop="id" />
-      <el-table-column align="center" label="应用名" prop="name" />
-      <el-table-column align="center" label="社交平台" prop="socialType">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.SYSTEM_SOCIAL_TYPE" :value="scope.row.socialType" />
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="用户类型" prop="userType">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.USER_TYPE" :value="scope.row.userType" />
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="客户端编号" prop="clientId" width="180px" />
-      <el-table-column align="center" label="状态" prop="status">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="创建时间"
-        prop="createTime"
-        width="180px"
-      />
-      <el-table-column align="center" label="操作">
-        <template #default="scope">
-          <el-button
-            v-hasPermi="['system:social-client:update']"
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-          >
-            编辑
-          </el-button>
-          <el-button
-            v-hasPermi="['system:social-client:delete']"
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
-      :total="total"
-      @pagination="getList"
+      @reset="setSearchParams"
+      @search="setSearchParams"
+    />
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      stripe
+      show-overflow-tooltip
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <SocialClientForm ref="formRef" @success="getList" />
+  <SocialClientForm ref="formRef" @success="tableMethods.getList" />
 </template>
 
-<script lang="ts" setup>
+<script setup lang="tsx">
+import { reactive, ref } from 'vue'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import * as SocialClientApi from '@/api/system/social/client'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 import SocialClientForm from './SocialClientForm.vue'
 
 defineOptions({ name: 'SocialClient' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canCreate = hasPermission(['system:social-client:create'])
+const canUpdate = hasPermission(['system:social-client:update'])
+const canDelete = hasPermission(['system:social-client:delete'])
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  name: undefined,
-  socialType: undefined,
-  userType: undefined,
-  clientId: undefined,
-  status: undefined
-})
-const queryFormRef = ref() // 搜索的表单
-
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await SocialClientApi.getSocialClientPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'name',
+    label: '应用名',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入应用名',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'socialType',
+    label: '社交平台',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择社交平台',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.SYSTEM_SOCIAL_TYPE),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'userType',
+    label: '用户类型',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择用户类型',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.USER_TYPE),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'clientId',
+    label: '客户端编号',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入客户端编号',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'status',
+    label: '状态',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择状态',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.COMMON_STATUS),
+      style: { width: '240px' }
+    }
   }
-}
+])
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
+const formRef = ref<InstanceType<typeof SocialClientForm>>()
 
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const formRef = ref()
 const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
+  formRef.value?.open(type, id)
 }
 
-/** 删除按钮操作 */
+const { tableObject, tableMethods, register: tableRegister } = useTable<SocialClientApi.SocialClientVO>(
+  {
+    getListApi: async (params) => await SocialClientApi.getSocialClientPage(params),
+    delListApi: async (id) => await SocialClientApi.deleteSocialClient(id as number)
+  }
+)
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
+}
+
 const handleDelete = async (id: number) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await SocialClientApi.deleteSocialClient(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-  } catch {}
+  await tableMethods.delList(id, false)
 }
 
-/** 初始化 **/
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'id', label: '编号' },
+  { field: 'name', label: '应用名' },
+  {
+    field: 'socialType',
+    label: '社交平台',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.SYSTEM_SOCIAL_TYPE} value={data.row.socialType} />
+    }
+  },
+  {
+    field: 'userType',
+    label: '用户类型',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.USER_TYPE} value={data.row.userType} />
+    }
+  },
+  { field: 'clientId', label: '客户端编号', width: '180px' },
+  {
+    field: 'status',
+    label: '状态',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} />
+    }
+  },
+  {
+    field: 'createTime',
+    label: '创建时间',
+    formatter: dateFormatter,
+    width: '180px'
+  },
+  {
+    field: 'action',
+    label: '操作',
+    width: '140px',
+    slots: {
+      default: (data) => {
+        const row = data.row as SocialClientApi.SocialClientVO
+        return (
+          <>
+            {canUpdate ? (
+              <BaseButton link type="primary" onClick={() => openForm('update', row.id)}>
+                编辑
+              </BaseButton>
+            ) : null}
+            {canDelete ? (
+              <BaseButton link type="danger" onClick={() => handleDelete(row.id)}>
+                删除
+              </BaseButton>
+            ) : null}
+          </>
+        )
+      }
+    }
+  }
+])
+
 onMounted(() => {
-  getList()
+  tableMethods.getList()
 })
 </script>

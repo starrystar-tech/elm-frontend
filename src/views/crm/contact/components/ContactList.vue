@@ -25,7 +25,7 @@
 
   <!-- 列表 -->
   <ContentWrap class="mt-10px">
-    <el-table
+    <Table
       ref="contactRef"
       v-loading="loading"
       :data="list"
@@ -48,7 +48,7 @@
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.master" />
         </template>
       </el-table-column>
-    </el-table>
+    </Table>
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"

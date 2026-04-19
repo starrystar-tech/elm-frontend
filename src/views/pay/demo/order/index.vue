@@ -1,81 +1,21 @@
 <template>
-  <!-- 操作工具栏 -->
-  <el-row :gutter="10" class="mb8">
-    <el-col :span="1.5">
-      <el-button type="primary" plain @click="openForm"><Icon icon="ep:plus" />发起订单</el-button>
-    </el-col>
-  </el-row>
-
-  <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list">
-      <el-table-column label="订单编号" align="center" prop="id" />
-      <el-table-column label="用户编号" align="center" prop="userId" />
-      <el-table-column label="商品名字" align="center" prop="spuName" />
-      <el-table-column label="支付价格" align="center" prop="price">
-        <template #default="scope">
-          <span>￥{{ (scope.row.price / 100.0).toFixed(2) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="退款金额" align="center" prop="refundPrice">
-        <template #default="scope">
-          <span>￥{{ (scope.row.refundPrice / 100.0).toFixed(2) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        width="180"
-        :formatter="dateFormatter"
-      />
-      <el-table-column label="支付单号" align="center" prop="payOrderId" />
-      <el-table-column label="是否支付" align="center" prop="payStatus">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.payStatus" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="支付时间"
-        align="center"
-        prop="payTime"
-        width="180"
-        :formatter="dateFormatter"
-      />
-      <el-table-column label="退款时间" align="center" prop="refundTime" width="180">
-        <template #default="scope">
-          <span v-if="scope.row.refundTime">{{ formatDate(scope.row.refundTime) }}</span>
-          <span v-else-if="scope.row.payRefundId">退款中，等待退款结果</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-        <template #default="scope">
-          <el-button link type="primary" @click="handlePay(scope.row)" v-if="!scope.row.payStatus">
-            前往支付
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleRefund(scope.row)"
-            v-if="scope.row.payStatus && !scope.row.payRefundId"
-          >
-            发起退款
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页组件 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <div class="mb-10px">
+      <BaseButton type="primary" @click="openForm">发起订单</BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 对话框(添加 / 修改) -->
   <Dialog title="发起订单" v-model="dialogVisible" width="500px">
-    <el-form
+    <Search
       ref="formRef"
       v-loading="formLoading"
       :model="formData"
@@ -97,47 +37,40 @@
           </el-option>
         </el-select>
       </el-form-item>
-    </el-form>
+    </Search>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <BaseButton :disabled="formLoading" type="primary" @click="submitForm">确 定</BaseButton>
+      <BaseButton @click="dialogVisible = false">取 消</BaseButton>
     </template>
   </Dialog>
 </template>
-<script lang="ts" setup name="PayDemoOrder">
+
+<script lang="tsx" setup>
+import { computed, reactive, ref } from 'vue'
 import * as PayDemoApi from '@/api/pay/demo/order'
 import { dateFormatter, formatDate } from '@/utils/formatTime'
 import { DICT_TYPE } from '@/utils/dict'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { Dialog } from '@/components/Dialog'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
 
-const { t } = useI18n() // 国际化
-const router = useRouter() // 路由对象
-const message = useMessage() // 消息弹窗
+defineOptions({ name: 'PayDemoOrder' })
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-// 查询条件
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10
+const { t } = useI18n()
+const router = useRouter()
+const message = useMessage()
+
+const { tableObject, tableMethods, register: tableRegister } = useTable({
+  getListApi: async (params) => await PayDemoApi.getDemoOrderPage(params)
 })
 
-const formRef = ref()
+const setList = computed(() => tableObject.tableList)
 
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await PayDemoApi.getDemoOrderPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
-
-/** 支付按钮操作 */
-const handlePay = (row: any) => {
+const handlePay = (row: Recordable) => {
   router.push({
     name: 'PayCashier',
     query: {
@@ -147,76 +80,119 @@ const handlePay = (row: any) => {
   })
 }
 
-/** 退款按钮操作 */
-const handleRefund = async (row: any) => {
+const handleRefund = async (row: Recordable) => {
   const id = row.id
   try {
     await message.confirm('是否确认退款编号为"' + id + '"的示例订单?')
     await PayDemoApi.refundDemoOrder(id)
-    await getList()
+    await tableMethods.getList()
     message.success('发起退款成功！')
   } catch {}
 }
 
-// ========== 弹窗 ==========
+const formatPrice = (price?: number) => `￥${((price || 0) / 100).toFixed(2)}`
 
-// 商品数组
-const spus = ref([
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'id', label: '订单编号' },
+  { field: 'userId', label: '用户编号' },
+  { field: 'spuName', label: '商品名字' },
   {
-    id: 1,
-    name: '华为手机',
-    price: 1
+    field: 'price',
+    label: '支付价格',
+    slots: { default: (data) => <>{formatPrice(data.row.price)}</> }
   },
   {
-    id: 2,
-    name: '小米电视',
-    price: 10
+    field: 'refundPrice',
+    label: '退款金额',
+    slots: { default: (data) => <>{formatPrice(data.row.refundPrice)}</> }
   },
   {
-    id: 3,
-    name: '苹果手表',
-    price: 100
+    field: 'createTime',
+    label: '创建时间',
+    width: '180px',
+    formatter: dateFormatter
+  },
+  { field: 'payOrderId', label: '支付单号' },
+  {
+    field: 'payStatus',
+    label: '是否支付',
+    slots: {
+      default: (data) => (
+        <DictTag type={DICT_TYPE.INFRA_BOOLEAN_STRING} value={data.row.payStatus} />
+      )
+    }
   },
   {
-    id: 4,
-    name: '华硕笔记本',
-    price: 1000
+    field: 'payTime',
+    label: '支付时间',
+    width: '180px',
+    formatter: dateFormatter
   },
   {
-    id: 5,
-    name: '蔚来汽车',
-    price: 200000
+    field: 'refundTime',
+    label: '退款时间',
+    width: '180px',
+    slots: {
+      default: (data) =>
+        data.row.refundTime ? (
+          <span>{formatDate(data.row.refundTime)}</span>
+        ) : data.row.payRefundId ? (
+          <span>退款中，等待退款结果</span>
+        ) : null
+    }
+  },
+  {
+    field: 'action',
+    label: '操作',
+    width: '160px',
+    slots: {
+      default: (data) => (
+        <>
+          {!data.row.payStatus ? (
+            <BaseButton link type="primary" onClick={() => handlePay(data.row)}>
+              前往支付
+            </BaseButton>
+          ) : null}
+          {data.row.payStatus && !data.row.payRefundId ? (
+            <BaseButton link type="danger" onClick={() => handleRefund(data.row)}>
+              发起退款
+            </BaseButton>
+          ) : null}
+        </>
+      )
+    }
   }
 ])
 
-const dialogVisible = ref(false) // 弹窗的是否展示
-const formLoading = ref(false) // 表单的加载中
-const formData = ref<any>({}) // 表单数据
+const formRef = ref()
+const spus = ref([
+  { id: 1, name: '华为手机', price: 1 },
+  { id: 2, name: '小米电视', price: 10 },
+  { id: 3, name: '苹果手表', price: 100 },
+  { id: 4, name: '华硕笔记本', price: 1000 },
+  { id: 5, name: '蔚来汽车', price: 200000 }
+])
+const dialogVisible = ref(false)
+const formLoading = ref(false)
+const formData = ref<Recordable>({})
 const formRules = {
   spuId: [{ required: true, message: '商品编号不能为空', trigger: 'blur' }]
 }
 
-/** 表单重置 */
 const reset = () => {
-  formData.value = {
-    spuId: undefined
-  }
+  formData.value = { spuId: undefined }
   formRef.value?.resetFields()
 }
 
-/** 新增按钮操作 */
 const openForm = () => {
   reset()
   dialogVisible.value = true
 }
 
-/** 提交按钮 */
 const submitForm = async () => {
-  // 校验表单
-  if (!formRef) return
+  if (!formRef.value) return
   const valid = await formRef.value.validate()
   if (!valid) return
-  // 提交请求
   formLoading.value = true
   try {
     await PayDemoApi.createDemoOrder(formData.value)
@@ -224,12 +200,11 @@ const submitForm = async () => {
     dialogVisible.value = false
   } finally {
     formLoading.value = false
-    getList()
+    await tableMethods.getList()
   }
 }
 
-/** 初始化 **/
 onMounted(() => {
-  getList()
+  tableMethods.getList()
 })
 </script>

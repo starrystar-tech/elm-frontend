@@ -1,9 +1,8 @@
 <template>
-  <!-- 操作栏 -->
   <ContentWrap>
-    <el-button type="primary" plain @click="openForm()">
-      <Icon icon="ep:plus" class="mr-5px" /> IP 查询
-    </el-button>
+    <div class="mb-10px">
+      <BaseButton type="primary" @click="openForm()">IP 查询</BaseButton>
+    </div>
   </ContentWrap>
 
   <!-- 列表 -->
@@ -13,7 +12,7 @@
       <el-auto-resizer>
         <template #default="{ height, width }">
           <!-- Virtualized Table 虚拟化表格：高性能，解决表格在大数据量下的卡顿问题 -->
-          <el-table-v2
+          <Table-v2
             v-loading="loading"
             :columns="columns"
             :data="list"
@@ -31,6 +30,7 @@
 </template>
 <script setup lang="tsx">
 import { Column } from 'element-plus'
+import { BaseButton } from '@/components/Button'
 import AreaForm from './AreaForm.vue'
 import * as AreaApi from '@/api/system/area'
 

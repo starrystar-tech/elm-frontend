@@ -2,7 +2,7 @@
   <Dialog v-model="dialogVisible" title="推广订单列表" width="75%">
     <ContentWrap>
       <!-- 搜索工作栏 -->
-      <el-form
+      <Search
         ref="queryFormRef"
         :inline="true"
         :model="queryParams"
@@ -52,12 +52,12 @@
             重置
           </el-button>
         </el-form-item>
-      </el-form>
+      </Search>
     </ContentWrap>
 
     <!-- 列表 -->
     <ContentWrap>
-      <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
+      <Table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
         <el-table-column align="center" label="订单编号" min-width="80px" prop="bizId" />
         <el-table-column align="center" label="用户编号" min-width="80px" prop="sourceUserId" />
         <el-table-column align="center" label="头像" prop="sourceUserAvatar" width="70px">
@@ -85,7 +85,7 @@
           prop="createTime"
           width="180px"
         />
-      </el-table>
+      </Table>
       <!-- 分页 -->
       <Pagination
         v-model:limit="queryParams.pageSize"
