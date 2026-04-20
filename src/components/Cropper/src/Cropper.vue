@@ -123,7 +123,9 @@ async function init() {
 
 // Real-time display preview
 function realTimeCroppered() {
-  props.realTimePreview && croppered()
+  if (props.realTimePreview) {
+    croppered()
+  }
 }
 
 // event: return base64 and width and height information after cropping

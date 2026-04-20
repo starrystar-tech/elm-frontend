@@ -19,7 +19,9 @@ export function hasRole(app: App<Element>) {
       })
 
       if (!hasRole) {
-        el.parentNode && el.parentNode.removeChild(el)
+        if (el.parentNode) {
+          el.parentNode.removeChild(el)
+        }
       }
     } else {
       throw new Error(t('permission.hasRole'))

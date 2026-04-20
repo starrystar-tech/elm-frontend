@@ -41,7 +41,9 @@ export const useMallKefuStore = defineStore('mall-kefu', {
         return
       }
       const conversation = this.conversationList.find((item) => item.id === conversationId)
-      conversation && (conversation.adminUnreadMessageCount = 0)
+      if (conversation) {
+        conversation.adminUnreadMessageCount = 0
+      }
     },
     /** 更新会话缓存 */
     async updateConversation(conversationId: number) {
@@ -51,7 +53,9 @@ export const useMallKefuStore = defineStore('mall-kefu', {
 
       const conversation = await KeFuConversationApi.getConversation(conversationId)
       this.deleteConversation(conversationId)
-      conversation && this.conversationList.push(conversation)
+      if (conversation) {
+        this.conversationList.push(conversation)
+      }
       this.conversationSort()
     },
     /** 删除会话缓存 */

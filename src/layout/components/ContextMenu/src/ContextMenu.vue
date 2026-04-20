@@ -32,7 +32,9 @@ const props = defineProps({
 })
 
 const command = (item: contextMenuSchema) => {
-  item.command && item.command(item)
+  if (item.command) {
+    item.command(item)
+  }
 }
 
 const visibleChange = (visible: boolean) => {

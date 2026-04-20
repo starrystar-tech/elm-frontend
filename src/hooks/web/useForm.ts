@@ -84,7 +84,9 @@ export const useForm = (props?: FormProps) => {
     }
   }
 
-  props && methods.setProps(props)
+  if (props) {
+    methods.setProps(props)
+  }
 
   return {
     register,

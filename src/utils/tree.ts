@@ -58,7 +58,9 @@ export const findNode = <T = any>(
   const list = [...tree]
   for (const node of list) {
     if (func(node)) return node
-    node[children!] && list.push(...node[children!])
+    if (node[children!]) {
+      list.push(...node[children!])
+    }
   }
   return null
 }
@@ -73,8 +75,12 @@ export const findNodeAll = <T = any>(
   const list = [...tree]
   const result: T[] = []
   for (const node of list) {
-    func(node) && result.push(node)
-    node[children!] && list.push(...node[children!])
+    if (func(node)) {
+      result.push(node)
+    }
+    if (node[children!]) {
+      list.push(...node[children!])
+    }
   }
   return result
 }
@@ -96,7 +102,9 @@ export const findPath = <T = any>(
       list.shift()
     } else {
       visitedSet.add(node)
-      node[children!] && list.unshift(...node[children!])
+      if (node[children!]) {
+        list.unshift(...node[children!])
+      }
       path.push(node)
       if (func(node)) {
         return path
@@ -120,9 +128,13 @@ export const findPathAll = (tree: any, func: Fn, config: Partial<TreeHelperConfi
       list.shift()
     } else {
       visitedSet.add(node)
-      node[children!] && list.unshift(...node[children!])
+      if (node[children!]) {
+        list.unshift(...node[children!])
+      }
       path.push(node)
-      func(node) && result.push([...path])
+      if (func(node)) {
+        result.push([...path])
+      }
     }
   }
   return result
@@ -161,7 +173,9 @@ export const forEach = <T = any>(
     if (func(list[i])) {
       return
     }
-    children && list[i][children] && list.splice(i + 1, 0, ...list[i][children])
+    if (children && list[i][children]) {
+      list.splice(i + 1, 0, ...list[i][children])
+    }
   }
 }
 

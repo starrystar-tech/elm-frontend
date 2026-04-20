@@ -342,7 +342,9 @@ const additionalModules = computed(() => {
   if (Object.prototype.toString.call(props.additionalModel) == '[object Array]') {
     Modules.push(...(props.additionalModel as any[]))
   } else {
-    props.additionalModel && Modules.push(props.additionalModel)
+    if (props.additionalModel) {
+      Modules.push(props.additionalModel)
+    }
   }
 
   // 翻译模块
@@ -573,7 +575,9 @@ const downloadProcessAsSvg = () => {
 const processSimulation = () => {
   simulationStatus.value = !simulationStatus.value
   console.log(bpmnModeler.get('toggleMode', 'strict'), "bpmnModeler.get('toggleMode')")
-  props.simulation && bpmnModeler.get('toggleMode', 'strict').toggleMode()
+  if (props.simulation) {
+    bpmnModeler.get('toggleMode', 'strict').toggleMode()
+  }
 }
 const processRedo = () => {
   bpmnModeler.get('commandStack').redo()

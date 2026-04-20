@@ -9,8 +9,12 @@ export const openWindow = (
   const { target = '__blank', noopener = true, noreferrer = true } = opt || {}
   const feature: string[] = []
 
-  noopener && feature.push('noopener=yes')
-  noreferrer && feature.push('noreferrer=yes')
+  if (noopener) {
+    feature.push('noopener=yes')
+  }
+  if (noreferrer) {
+    feature.push('noreferrer=yes')
+  }
 
   window.open(url, target, feature.join(','))
 }

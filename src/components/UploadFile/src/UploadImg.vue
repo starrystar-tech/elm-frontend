@@ -104,7 +104,9 @@ const { uploadUrl, httpRequest } = useUpload(props.directory)
 
 const editImg = () => {
   const dom = document.querySelector(`#${uuid.value} .el-upload__input`)
-  dom && dom.dispatchEvent(new MouseEvent('click'))
+  if (dom) {
+    dom.dispatchEvent(new MouseEvent('click'))
+  }
 }
 
 const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {

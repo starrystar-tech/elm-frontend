@@ -4,7 +4,9 @@ const bpmnInstances = () => (window as any)?.bpmnInstances
 export function createListenerObject(options, isTask, prefix) {
   const listenerObj = Object.create(null)
   listenerObj.event = options.event
-  isTask && (listenerObj.id = options.id) // 任务监听器特有的 id 字段
+  if (isTask) {
+    listenerObj.id = options.id
+  } // 任务监听器特有的 id 字段
   switch (options.listenerType) {
     case 'scriptListener':
       listenerObj.script = createScriptObject(options, prefix)

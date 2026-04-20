@@ -12,7 +12,9 @@ export function hasPermi(app: App<Element>) {
       const hasPermissions = hasPermission(value)
 
       if (!hasPermissions) {
-        el.parentNode && el.parentNode.removeChild(el)
+        if (el.parentNode) {
+          el.parentNode.removeChild(el)
+        }
       }
     } else {
       throw new Error(t('permission.hasPermission'))

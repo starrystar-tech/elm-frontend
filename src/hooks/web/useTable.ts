@@ -110,11 +110,15 @@ export const useTable = <T = any>(config?: UseTableConfig<T>) => {
       idsLength = ids.length
       await Promise.all(
         ids.map(async (id: string | number) => {
-          await (config?.delListApi && config?.delListApi(id))
+          if (config?.delListApi) {
+            await config.delListApi(id)
+          }
         })
       )
     } else {
-      await (config?.delListApi && config?.delListApi(ids))
+      if (config?.delListApi) {
+        await config.delListApi(ids)
+      }
     }
     ElMessage.success(t('common.delSuccess'))
 
@@ -210,7 +214,9 @@ export const useTable = <T = any>(config?: UseTableConfig<T>) => {
     }
   }
 
-  config?.props && methods.setProps(config.props)
+  if (config?.props) {
+    methods.setProps(config.props)
+  }
 
   return {
     register,

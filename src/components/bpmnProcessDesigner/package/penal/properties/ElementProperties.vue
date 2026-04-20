@@ -160,7 +160,9 @@ watch(
   () => props.id,
   (val) => {
     if (val) {
-      val && val.length && resetAttributesList()
+      if (val.length) {
+        resetAttributesList()
+      }
     }
   },
   { immediate: true }
