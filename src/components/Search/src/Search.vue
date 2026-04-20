@@ -47,10 +47,19 @@ const emit = defineEmits(['search', 'reset', 'register', 'validate'])
 
 const visible = ref(true)
 const slotMode = computed(() => props.schema.length === 0 && !!slots.default)
+const searchBodyRef = ref<HTMLDivElement>()
+const searchOverflow = ref(false)
+const collapsedMaxHeight = ref(0)
 
 const formModel = ref<Recordable>(props.model)
 
 const mergedButtonPosition = computed(() => props.buttonPosition || props.buttomPosition)
+const manualExpandEnabled = computed(
+  () => (props.showExpand || props.expand) && !!props.expandField
+)
+const useExternalActionBar = computed(
+  () => props.layout === 'inline' && !slotMode.value && searchOverflow.value
+)
 
 const newSchema = computed(() => {
   let schema: FormSchema[] = cloneDeep(props.schema)
@@ -61,7 +70,7 @@ const newSchema = computed(() => {
       hidden: index > -1 ? currentIndex >= index : item.hidden
     }))
   }
-  if (props.layout === 'inline') {
+  if (props.layout === 'inline' && !unref(useExternalActionBar)) {
     schema = schema.concat([
       {
         field: 'action',
@@ -145,6 +154,63 @@ const setVisible = () => {
   visible.value = !unref(visible)
 }
 
+const measureSearchRows = async () => {
+  if (slotMode.value || props.layout !== 'inline') return
+  await nextTick()
+
+  const formBody = unref(searchBodyRef)
+  if (!formBody) return
+
+  let formItems = Array.from(formBody.querySelectorAll('.el-form-item')) as HTMLElement[]
+  if (!formItems.length) return
+
+  // Inline schema mode appends an action row at the end; exclude it when measuring whether
+  // actual search fields exceed two rows.
+  if (!unref(useExternalActionBar) && formItems.length > 1) {
+    formItems = formItems.slice(0, -1)
+  }
+
+  if (!formItems.length) return
+
+  const topValues: number[] = []
+  const containerTop = formBody.getBoundingClientRect().top
+
+  formItems.forEach((item) => {
+    const top = Math.round(item.getBoundingClientRect().top - containerTop)
+    if (!topValues.includes(top)) {
+      topValues.push(top)
+    }
+  })
+
+  topValues.sort((a, b) => a - b)
+
+  if (topValues.length <= 2) {
+    if (unref(useExternalActionBar) && topValues.length === 2) {
+      searchOverflow.value = true
+      return
+    }
+    searchOverflow.value = false
+    collapsedMaxHeight.value = 0
+    visible.value = true
+    return
+  }
+
+  const secondRowTop = topValues[1]
+  const secondRowItems = formItems.filter((item) => {
+    const top = Math.round(item.getBoundingClientRect().top - containerTop)
+    return top === secondRowTop
+  })
+  const secondRowBottom = Math.max(
+    ...secondRowItems.map((item) => item.getBoundingClientRect().bottom - containerTop)
+  )
+
+  collapsedMaxHeight.value = Math.ceil(secondRowBottom + 4)
+  searchOverflow.value = true
+  if (!unref(manualExpandEnabled)) {
+    visible.value = false
+  }
+}
+
 const setProps = async (searchProps: Recordable = {}) => {
   await methods.setProps(searchProps)
 }
@@ -174,7 +240,7 @@ const addSchema = async (formSchema: FormSchema, index?: number) => {
   await methods.addSchema(formSchema, index)
 }
 
-const getFormData = async <T = Recordable>() => {
+const getFormData = async <T = Recordable,>() => {
   if (slotMode.value) {
     return props.model as T
   }
@@ -219,7 +285,21 @@ const defaultExpose = {
 
 onMounted(() => {
   emit('register', defaultExpose)
+  measureSearchRows()
+  window.addEventListener('resize', measureSearchRows)
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', measureSearchRows)
+})
+
+watch(
+  () => [schemaRef.value, props.layout, slotMode.value],
+  () => {
+    measureSearchRows()
+  },
+  { deep: true }
+)
 
 defineExpose(defaultExpose)
 </script>
@@ -240,39 +320,71 @@ defineExpose(defaultExpose)
     </template>
 
     <template v-else>
-      <Form
-        :inline="inline"
-        :is-col="isCol"
-        :is-custom="false"
-        :label-width="labelWidth"
-        :model="formModel"
-        :schema="schemaRef"
-        class="-mb-15px"
-        hide-required-asterisk
-        @register="register"
-        @validate="onFormValidate"
+      <div
+        ref="searchBodyRef"
+        :class="{ 'search-body--collapsed': useExternalActionBar && !visible }"
+        :style="
+          useExternalActionBar && !visible && collapsedMaxHeight
+            ? { maxHeight: `${collapsedMaxHeight}px` }
+            : undefined
+        "
       >
-        <template #action>
-          <div v-if="layout === 'inline'">
-            <ElButton v-if="showSearch" :loading="searchLoading" @click="search">
-              <Icon class="mr-5px" icon="ep:search" />
-              {{ t('common.query') }}
-            </ElButton>
-            <ElButton v-if="showReset" :loading="resetLoading" @click="reset">
-              <Icon class="mr-5px" icon="ep:refresh" />
-              {{ t('common.reset') }}
-            </ElButton>
-            <ElButton v-if="showExpand || expand" text @click="setVisible">
-              {{ t(visible ? 'common.shrink' : 'common.expand') }}
-              <Icon :icon="visible ? 'ep:arrow-up' : 'ep:arrow-down'" />
-            </ElButton>
-            <slot name="actionMore"></slot>
-          </div>
-        </template>
-        <template v-for="name in Object.keys($slots)" :key="name" #[name]>
-          <slot :name="name"></slot>
-        </template>
-      </Form>
+        <Form
+          :inline="inline"
+          :is-col="isCol"
+          :is-custom="false"
+          :label-width="labelWidth"
+          :model="formModel"
+          :schema="schemaRef"
+          class="-mb-15px"
+          hide-required-asterisk
+          @register="register"
+          @validate="onFormValidate"
+        >
+          <template #action>
+            <div v-if="layout === 'inline'">
+              <ElButton v-if="showSearch" type="primary" :loading="searchLoading" @click="search">
+                <Icon class="mr-5px" icon="ep:search" />
+                {{ t('common.query') }}
+              </ElButton>
+              <ElButton v-if="showReset" :loading="resetLoading" @click="reset">
+                <Icon class="mr-5px" icon="ep:refresh" />
+                {{ t('common.reset') }}
+              </ElButton>
+              <ElButton
+                v-if="(showExpand || expand) && !useExternalActionBar"
+                text
+                @click="setVisible"
+              >
+                {{ t(visible ? 'common.shrink' : 'common.expand') }}
+                <Icon :icon="visible ? 'ep:arrow-up' : 'ep:arrow-down'" />
+              </ElButton>
+              <slot name="actionMore"></slot>
+            </div>
+          </template>
+          <template v-for="name in Object.keys($slots)" :key="name" #[name]>
+            <slot :name="name"></slot>
+          </template>
+        </Form>
+      </div>
+    </template>
+
+    <template v-if="useExternalActionBar">
+      <div class="search-external-actions">
+        <ElButton v-if="showSearch" type="primary" :loading="searchLoading" @click="search">
+          <Icon class="mr-5px" icon="ep:search" />
+          {{ t('common.query') }}
+        </ElButton>
+        <ElButton v-if="showReset" :loading="resetLoading" @click="reset">
+          <Icon class="mr-5px" icon="ep:refresh" />
+          {{ t('common.reset') }}
+        </ElButton>
+        <ElButton text @click="setVisible">
+          {{ t(visible ? 'common.shrink' : 'common.expand') }}
+          <Icon :icon="visible ? 'ep:arrow-up' : 'ep:arrow-down'" />
+        </ElButton>
+        <slot name="actionMore"></slot>
+      </div>
     </template>
 
     <template v-if="!slotMode && layout === 'bottom'">
@@ -303,5 +415,21 @@ defineExpose(defaultExpose)
   border-radius: 10px;
   background: #fff;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+}
+
+.search-body--collapsed {
+  overflow: hidden;
+}
+
+.search-external-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 10px;
+  padding-right: 4px;
+  border-top: 1px solid rgba(15, 23, 42, 0.04);
 }
 </style>

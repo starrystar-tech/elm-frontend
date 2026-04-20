@@ -11,7 +11,7 @@
         <el-input v-model="formData.id" />
       </el-form-item>
 
-      <el-tabs>
+      <el-tabs class="member-config-tabs">
         <el-tab-pane label="积分">
           <el-form-item label="积分抵扣" prop="pointTradeDeductEnable">
             <el-switch v-model="formData.pointTradeDeductEnable" style="user-select: none" />
@@ -117,3 +117,21 @@ onMounted(() => {
   getConfig()
 })
 </script>
+
+<style lang="scss" scoped>
+.member-config-tabs {
+  :deep(.el-tabs__header) {
+    margin-bottom: 0;
+    padding: 0 16px;
+  }
+
+  :deep(.el-tabs__content) {
+    padding: 18px 20px 8px;
+  }
+}
+
+:deep(.el-form-item:last-child) {
+  padding: 0 20px 12px;
+  margin-bottom: 0;
+}
+</style>

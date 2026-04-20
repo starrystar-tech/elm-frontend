@@ -1,7 +1,7 @@
 <template>
   <el-row :gutter="20">
     <el-col :span="4" :xs="24">
-      <ContentWrap class="h-1/1">
+      <ContentWrap class="h-1/1 system-user-dept-panel" :body-style="{ padding: '20px 20px 16px' }">
         <DeptTree @node-click="handleDeptNodeClick" />
       </ContentWrap>
     </el-col>
@@ -11,7 +11,12 @@
         <div class="mb-10px">
           <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
           <BaseButton v-if="canImport" type="warning" @click="handleImport">导入</BaseButton>
-          <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+          <BaseButton
+            v-if="canExport"
+            type="success"
+            :loading="exportLoading"
+            @click="handleExport"
+          >
             导出
           </BaseButton>
           <BaseButton
@@ -137,7 +142,11 @@ const handleRole = (row: UserApi.UserVO) => {
   assignRoleFormRef.value?.open(row)
 }
 
-const { tableObject, tableMethods, register: tableRegister } = useTable<UserApi.UserVO>({
+const {
+  tableObject,
+  tableMethods,
+  register: tableRegister
+} = useTable<UserApi.UserVO>({
   getListApi: async (params) => await UserApi.getUserPage({ ...params, deptId: deptId.value }),
   delListApi: async (id) => await UserApi.deleteUser(id as number),
   exportListApi: async (params) => await UserApi.exportUser({ ...params, deptId: deptId.value })
@@ -287,3 +296,9 @@ onMounted(() => {
   tableMethods.getList()
 })
 </script>
+
+<style lang="scss" scoped>
+.system-user-dept-panel {
+  min-height: calc(100vh - 180px);
+}
+</style>

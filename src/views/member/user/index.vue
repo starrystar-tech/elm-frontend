@@ -2,75 +2,25 @@
   <ContentWrap>
     <Search
       ref="queryFormRef"
-      :inline="true"
+      :schema="searchSchema"
       :model="queryParams"
-      class="-mb-15px"
       label-width="68px"
+      @reset="setSearchParams"
+      @search="setSearchParams"
     >
-      <el-form-item label="用户昵称" prop="nickname">
-        <el-input
-          v-model="queryParams.nickname"
-          class="!w-240px"
-          clearable
-          placeholder="请输入用户昵称"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="手机号" prop="mobile">
-        <el-input
-          v-model="queryParams.mobile"
-          class="!w-240px"
-          clearable
-          placeholder="请输入手机号"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="注册时间" prop="createTime">
-        <el-date-picker
-          v-model="queryParams.createTime"
-          :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-          class="!w-240px"
-          end-placeholder="结束日期"
-          start-placeholder="开始日期"
-          type="daterange"
-          value-format="YYYY-MM-DD HH:mm:ss"
-        />
-      </el-form-item>
-      <el-form-item label="登录时间" prop="loginDate">
-        <el-date-picker
-          v-model="queryParams.loginDate"
-          :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-          class="!w-240px"
-          end-placeholder="结束日期"
-          start-placeholder="开始日期"
-          type="daterange"
-          value-format="YYYY-MM-DD HH:mm:ss"
-        />
-      </el-form-item>
-      <el-form-item label="用户标签" prop="tagIds">
+      <template #tagIds>
         <MemberTagSelect v-model="queryParams.tagIds" />
-      </el-form-item>
-      <el-form-item label="用户等级" prop="levelId">
+      </template>
+      <template #levelId>
         <MemberLevelSelect v-model="queryParams.levelId" />
-      </el-form-item>
-      <el-form-item label="用户分组" prop="groupId">
+      </template>
+      <template #groupId>
         <MemberGroupSelect v-model="queryParams.groupId" />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery">
-          <Icon class="mr-5px" icon="ep:search" />
-          搜索
-        </el-button>
-        <el-button @click="resetQuery">
-          <Icon class="mr-5px" icon="ep:refresh" />
-          重置
-        </el-button>
-        <BaseButton v-if="canSendCoupon" @click="openCoupon">发送优惠券</BaseButton>
-      </el-form-item>
+      </template>
     </Search>
-  </ContentWrap>
-
-  <ContentWrap>
+    <div v-if="canSendCoupon" class="mb-10px">
+      <BaseButton @click="openCoupon">发送优惠券</BaseButton>
+    </div>
     <Table
       v-model:currentPage="tableObject.currentPage"
       v-model:pageSize="tableObject.pageSize"
@@ -115,6 +65,7 @@ import { BaseButton } from '@/components/Button'
 import { DictTag } from '@/components/DictTag'
 import { useTable } from '@/hooks/web/useTable'
 import { hasPermission } from '@/directives/permission/hasPermi'
+import type { FormSchema } from '@/types/form'
 
 defineOptions({ name: 'MemberUser' })
 
@@ -134,7 +85,78 @@ const queryParams = reactive({
 const queryFormRef = ref()
 const selectedIds = ref<number[]>([])
 
-const { tableObject, tableMethods, register: tableRegister } = useTable<UserApi.UserVO>({
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'nickname',
+    label: '用户昵称',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入用户昵称',
+      clearable: true,
+      style: { width: '240px' },
+      onKeyup: (event: KeyboardEvent) => {
+        if (event.key === 'Enter') handleQuery()
+      }
+    }
+  },
+  {
+    field: 'mobile',
+    label: '手机号',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入手机号',
+      clearable: true,
+      style: { width: '240px' },
+      onKeyup: (event: KeyboardEvent) => {
+        if (event.key === 'Enter') handleQuery()
+      }
+    }
+  },
+  {
+    field: 'createTime',
+    label: '注册时间',
+    component: 'DatePicker',
+    componentProps: {
+      type: 'daterange',
+      valueFormat: 'YYYY-MM-DD HH:mm:ss',
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+      defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'loginDate',
+    label: '登录时间',
+    component: 'DatePicker',
+    componentProps: {
+      type: 'daterange',
+      valueFormat: 'YYYY-MM-DD HH:mm:ss',
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+      defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'tagIds',
+    label: '用户标签'
+  },
+  {
+    field: 'levelId',
+    label: '用户等级'
+  },
+  {
+    field: 'groupId',
+    label: '用户分组'
+  }
+])
+
+const {
+  tableObject,
+  tableMethods,
+  register: tableRegister
+} = useTable<UserApi.UserVO>({
   getListApi: async (params) => await UserApi.getUserPage(params)
 })
 
@@ -142,9 +164,8 @@ const handleQuery = () => {
   tableMethods.setSearchParams(queryParams)
 }
 
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
 }
 
 const openDetail = (id: number) => {
@@ -252,7 +273,9 @@ const tableColumns = reactive<TableColumn[]>([
               'pay:wallet:update-balance'
             ]) ? (
               <ElDropdown onCommand={(command: string) => handleCommand(command, row)}>
-                <BaseButton link type="primary">更多</BaseButton>
+                <BaseButton link type="primary">
+                  更多
+                </BaseButton>
                 {{
                   dropdown: () => (
                     <ElDropdownMenu>
@@ -284,3 +307,9 @@ onMounted(() => {
   handleQuery()
 })
 </script>
+
+<style lang="scss" scoped>
+.member-user-table-wrap {
+  padding-top: 6px;
+}
+</style>

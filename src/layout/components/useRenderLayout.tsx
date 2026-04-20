@@ -36,7 +36,7 @@ const mobile = computed(() => appStore.getMobile)
 const fixedMenu = computed(() => appStore.getFixedMenu)
 
 const topHeaderSoftShadowCls =
-  'border-b border-[rgba(15,23,42,0.04)] shadow-[0_1px_2px_rgba(15,23,42,0.02)]'
+  'border-b border-[rgba(15,23,42,0.025)] shadow-[0_1px_2px_rgba(15,23,42,0.012)]'
 
 export const useRenderLayout = () => {
   const renderClassic = () => {
