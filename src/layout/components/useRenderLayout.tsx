@@ -35,6 +35,9 @@ const mobile = computed(() => appStore.getMobile)
 // 固定菜单
 const fixedMenu = computed(() => appStore.getFixedMenu)
 
+const topHeaderSoftShadowCls =
+  'border-b border-[rgba(15,23,42,0.04)] shadow-[0_1px_2px_rgba(15,23,42,0.02)]'
+
 export const useRenderLayout = () => {
   const renderClassic = () => {
     return (
@@ -99,10 +102,8 @@ export const useRenderLayout = () => {
             >
               <ToolHeader
                 class={[
-                  'bg-[var(--top-header-bg-color)] text-[var(--top-header-text-color)] shadow-[0_2px_14px_rgba(15,23,42,0.05)]',
-                  {
-                    'layout-border__bottom': !tagsView.value
-                  }
+                  'bg-[var(--top-header-bg-color)] text-[var(--top-header-text-color)]',
+                  topHeaderSoftShadowCls
                 ]}
               ></ToolHeader>
 
@@ -121,7 +122,12 @@ export const useRenderLayout = () => {
   const renderTopLeft = () => {
     return (
       <>
-        <div class="relative flex items-center bg-[var(--top-header-bg-color)] text-[var(--top-header-text-color)] layout-border__bottom dark:bg-[var(--el-bg-color)]">
+        <div
+          class={[
+            'relative flex items-center bg-[var(--top-header-bg-color)] text-[var(--top-header-text-color)] dark:bg-[var(--el-bg-color)]',
+            topHeaderSoftShadowCls
+          ]}
+        >
           {logo.value ? <Logo class="custom-hover"></Logo> : undefined}
 
           <ToolHeader class="flex-1"></ToolHeader>
@@ -181,9 +187,7 @@ export const useRenderLayout = () => {
         <div
           class={[
             'flex items-center justify-between bg-[var(--top-header-bg-color)] text-[var(--top-header-text-color)] relative',
-            {
-              'layout-border__bottom': !tagsView.value
-            }
+            topHeaderSoftShadowCls
           ]}
         >
           {logo.value ? <Logo class="custom-hover"></Logo> : undefined}
@@ -223,7 +227,12 @@ export const useRenderLayout = () => {
   const renderCutMenu = () => {
     return (
       <>
-        <div class="relative flex items-center bg-[var(--top-header-bg-color)] text-[var(--top-header-text-color)] layout-border__bottom">
+        <div
+          class={[
+            'relative flex items-center bg-[var(--top-header-bg-color)] text-[var(--top-header-text-color)]',
+            topHeaderSoftShadowCls
+          ]}
+        >
           {logo.value ? <Logo class="custom-hover !pr-15px"></Logo> : undefined}
 
           <ToolHeader class="flex-1"></ToolHeader>

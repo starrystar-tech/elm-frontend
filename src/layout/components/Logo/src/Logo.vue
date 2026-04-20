@@ -59,16 +59,19 @@ watch(
 <template>
   <div>
     <router-link
-      class="layout-border__bottom"
       :class="[
         prefixCls,
         layout !== 'classic' ? `${prefixCls}__Top` : '',
-        'flex !h-[var(--logo-height)] items-center cursor-pointer relative decoration-none overflow-hidden logo-wrap sidebar-logo'
+        'flex !h-[var(--logo-height)] items-center cursor-pointer relative decoration-none overflow-hidden logo-wrap',
+        {
+          'layout-border__bottom sidebar-logo': layout === 'classic',
+          'top-header-logo': layout !== 'classic'
+        }
       ]"
       to="/"
     >
       <img
-        class="h-[42px] w-auto ml-18px mr-10px"
+        class="h-[36px] w-auto ml-18px mr-10px"
         src="@/assets/imgs/logo2.png"
       />
       <div
@@ -91,6 +94,11 @@ watch(
 <style lang="scss" scoped>
 .sidebar-logo {
   background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.top-header-logo {
+  background: #fff;
+  box-shadow: none;
 }
 </style>

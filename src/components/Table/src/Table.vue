@@ -303,11 +303,12 @@ export default defineComponent({
     }
 
     return () => (
-      <div v-loading={unref(getProps).loading}>
+      <div v-loading={unref(getProps).loading} class="crm-soft-table-wrap">
         <ElTable
           // @ts-ignore
           ref={elTableRef}
           data={unref(getProps).data}
+          class="crm-soft-table"
           onSelection-change={selectionChange}
           {...unref(getBindValue)}
         >
@@ -322,7 +323,7 @@ export default defineComponent({
           <ElPagination
             v-model:pageSize={pageSizeRef.value}
             v-model:currentPage={currentPageRef.value}
-            class="float-right mb-15px mt-15px"
+            class="float-right mb-15px mt-15px crm-soft-pagination"
             {...unref(pagination)}
           ></ElPagination>
         ) : undefined}

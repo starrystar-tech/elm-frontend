@@ -43,18 +43,18 @@ defineProps({
 
 <style scoped lang="scss">
 .crm-panel-card {
-  border: 1px solid #e9eef5;
-  border-radius: 10px;
+  border: 1px solid #edf2f7;
+  border-radius: 8px;
   background: #fff;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.025);
 
   :deep(.el-card__header) {
-    padding: 16px 18px;
-    border-bottom: 1px solid #eef2f7;
+    padding: 15px 18px;
+    border-bottom: 1px solid #f1f4f8;
   }
 
   :deep(.el-card__body) {
-    border-radius: 0 0 10px 10px;
+    border-radius: 0 0 8px 8px;
   }
 }
 </style>
@@ -81,31 +81,31 @@ defineProps({
 
   .content-wrap-stack > :not(.search-block-gap) {
     background: #fff;
-    border-left: 1px solid #e9eef5;
-    border-right: 1px solid #e9eef5;
+    border-left: 1px solid #edf2f7;
+    border-right: 1px solid #edf2f7;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
   }
 
   .content-wrap-stack > :not(.search-block-gap):first-child,
   .content-wrap-stack > .search-block-gap + :not(.search-block-gap) {
-    border-top: 1px solid #e9eef5;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
+    border-top: 1px solid #edf2f7;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.025);
   }
 
   .content-wrap-stack > :not(.search-block-gap):last-child {
-    border-bottom: 1px solid #e9eef5;
-    border-bottom-left-radius: 10px;
-    border-bottom-right-radius: 10px;
+    border-bottom: 1px solid #edf2f7;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
   }
 
   .content-wrap-stack > div.mb-10px:not(.search-block-gap),
   .content-wrap-stack > div.mb8:not(.search-block-gap),
   .content-wrap-stack > div.mb-15px:not(.search-block-gap) {
     margin-bottom: 0 !important;
-    padding: 12px 16px 0;
+    padding: 12px 16px 10px;
   }
 
   .content-wrap-stack > div:not(.search-block-gap) + div:not(.search-block-gap),
