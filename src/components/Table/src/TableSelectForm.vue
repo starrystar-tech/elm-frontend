@@ -68,7 +68,7 @@ const submitForm = () => {
   }
 }
 
-const getList = async (getListFunc: Function) => {
+const getList = async (getListFunc: (...args: any[]) => any) => {
   loading.value = true
   try {
     const data = await getListFunc(queryParams)
@@ -80,7 +80,7 @@ const getList = async (getListFunc: Function) => {
 }
 
 /** 打开弹窗 */
-const open = async (getListFunc: Function) => {
+const open = async (getListFunc: (...args: any[]) => any) => {
   dialogVisible.value = true
   await nextTick()
   if (multipleSelection.value.length > 0) {
