@@ -49,7 +49,7 @@ export default defineComponent({
       default: () => []
     }
   },
-  emits: ['update:pageSize', 'update:currentPage', 'register'],
+  emits: ['update:pageSize', 'update:currentPage', 'register', 'selection-change'],
   setup(props, { attrs, slots, emit, expose }) {
     const elTableRef = ref<ComponentRef<typeof ElTable>>()
     const slotMode = computed(() => !props.columns?.length && !!slots.default)
@@ -97,6 +97,27 @@ export default defineComponent({
 
     const selectionChange = (selection: Recordable[]) => {
       selections.value = selection
+      emit('selection-change', selection)
+    }
+
+    const getRowClassName = (params: { row: Recordable; rowIndex: number }) => {
+      const customRowClassName = attrs.rowClassName
+      const classNames: string[] = []
+
+      if (typeof customRowClassName === 'string' && customRowClassName) {
+        classNames.push(customRowClassName)
+      } else if (typeof customRowClassName === 'function') {
+        const customClassName = customRowClassName(params)
+        if (customClassName) {
+          classNames.push(customClassName)
+        }
+      }
+
+      if (selections.value.includes(params.row)) {
+        classNames.push('is-selected-row')
+      }
+
+      return classNames.join(' ')
     }
 
     const addColumn = (column: TableColumn, index?: number) => {
@@ -186,6 +207,7 @@ export default defineComponent({
       const bindValue: Recordable = { ...attrs, ...props }
       delete bindValue.columns
       delete bindValue.data
+      delete bindValue.rowClassName
       return bindValue
     })
 
@@ -309,6 +331,7 @@ export default defineComponent({
           ref={elTableRef}
           data={unref(getProps).data}
           class="crm-soft-table"
+          rowClassName={getRowClassName}
           onSelection-change={selectionChange}
           {...unref(getBindValue)}
         >

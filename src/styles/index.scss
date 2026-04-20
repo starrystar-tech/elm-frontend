@@ -79,6 +79,19 @@
       color: #5f6b7a;
     }
 
+    .el-table__body tr.is-selected-row > td.el-table__cell {
+      background: #edf4ff;
+    }
+
+    .el-table__body tr.is-selected-row:hover > td.el-table__cell,
+    .el-table__body tr.is-selected-row.hover-row > td.el-table__cell {
+      background: #e6f0ff;
+    }
+
+    .el-table__body tr.current-row > td.el-table__cell {
+      background: #f5f9ff;
+    }
+
     tr:last-child > td.el-table__cell {
       border-bottom: none;
     }
