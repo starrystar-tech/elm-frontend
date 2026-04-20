@@ -65,6 +65,10 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
   const res: AppRouteRecordRaw[] = []
   const modulesRoutesKeys = Object.keys(modules)
   for (const route of routes) {
+    const routeName =
+      route.componentName && route.componentName.length > 0
+        ? route.componentName
+        : toCamelCase(route.path, true)
     // 1. 生成 meta 菜单元数据
     const meta = {
       title: route.name,
@@ -90,10 +94,7 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
     let data: AppRouteRecordRaw = {
       path:
         route.path.indexOf('?') > -1 && !isUrl(route.path) ? route.path.split('?')[0] : route.path, // 注意，需要排除 http 这种 url，避免它带 ? 参数被截取掉
-      name:
-        route.componentName && route.componentName.length > 0
-          ? route.componentName
-          : toCamelCase(route.path, true),
+      name: routeName,
       redirect: route.redirect,
       meta: meta
     }
@@ -103,15 +104,12 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
       data.meta = {
         hidden: meta.hidden
       }
-      data.name = toCamelCase(route.path, true) + 'Parent'
+      data.name = `${routeName}Parent`
       data.redirect = ''
       meta.alwaysShow = true
       const childrenData: AppRouteRecordRaw = {
         path: '',
-        name:
-          route.componentName && route.componentName.length > 0
-            ? route.componentName
-            : toCamelCase(route.path, true),
+        name: routeName,
         redirect: route.redirect,
         meta: meta
       }
@@ -124,6 +122,7 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
       // 目录
       if (route.children?.length) {
         data.component = Layout
+        data.name = `${routeName}Root`
         data.redirect = getRedirect(route.path, route.children)
         // 外链
       } else if (isUrl(route.path)) {

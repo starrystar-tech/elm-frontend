@@ -8,7 +8,6 @@ const include = [
   'pinia',
   'dayjs',
   'qrcode',
-  'unocss',
   'vue-router',
   'vue-types',
   'vue-i18n',
@@ -118,6 +117,13 @@ const include = [
   'element-plus/es/components/mention/style/css'
 ]
 
-const exclude = ['@iconify/json']
+const exclude = [
+  '@iconify/json',
+  'unocss',
+  'oxc-parser',
+  '@oxc-parser/binding-wasm32-wasi',
+  '@unocss/eslint-plugin',
+  '@unocss/eslint-config'
+]
 
 export { include, exclude }
