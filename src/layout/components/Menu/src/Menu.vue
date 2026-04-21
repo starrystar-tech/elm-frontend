@@ -253,9 +253,9 @@ $prefix-cls: #{$namespace}-menu;
       }
     }
 
-    .v-menu-submenu-content {
+  .v-menu-submenu-content {
       background-color: #fff;
-      padding: 0 0 10px;
+      padding: 2px 0 12px;
     }
   }
 
@@ -301,8 +301,8 @@ $prefix-cls: #{$namespace}-menu;
 
   // 二级菜单项（不可折叠，两列显示）
   .v-menu-item:not(.v-menu-item-first-level) {
-    min-height: 32px;
-    color: #555;
+    min-height: 34px;
+    color: #5f6368;
     font-size: 13px;
     line-height: 18px;
     cursor: pointer;
@@ -311,21 +311,24 @@ $prefix-cls: #{$namespace}-menu;
     display: flex;
     align-items: center;
     width: 100%;
-    padding: 7px 10px;
-    border-radius: 4px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    justify-content: center;
+    text-align: center;
 
     &:hover {
-      color: #333 !important;
-      background-color: #f7f7f7 !important;
+      color: #2f3136 !important;
+      background-color: #f5f7fb !important;
     }
 
     &.is-active {
       color: var(--el-color-primary) !important;
-      background-color: #e8efff !important;
-      font-weight: 500;
+      background-color: #edf3ff !important;
+      font-weight: 600;
+      box-shadow: inset 0 0 0 1px rgba(64, 158, 255, 0.18);
 
       &:hover {
-        background-color: #e8efff !important;
+        background-color: #edf3ff !important;
       }
     }
   }
@@ -335,14 +338,13 @@ $prefix-cls: #{$namespace}-menu;
     display: flex;
     flex-direction: row;
     width: 100%;
-    gap: 10px;
-    margin-bottom: 4px;
+    gap: 8px;
+    margin-bottom: 2px;
     padding: 0 14px;
 
     .v-menu-item {
       flex: 1;
       min-width: 0;
-      justify-content: flex-start;
     }
 
     .v-menu-item-placeholder {
@@ -352,22 +354,33 @@ $prefix-cls: #{$namespace}-menu;
 
   // 分割线
   .v-menu-divider {
-    margin: 4px 14px;
+    margin: 8px 14px 6px;
     height: auto;
     background-color: transparent;
     position: relative;
     display: flex;
     align-items: center;
+    gap: 10px;
 
     .v-menu-divider-text {
       position: static;
       transform: none;
-      padding: 4px 0 2px;
-      background-color: transparent;
+      padding: 0 2px;
+      background-color: #fff;
       font-size: 12px;
-      color: #8c8c8c;
+      color: #9aa0a6;
       font-weight: 600;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.4px;
+      line-height: 20px;
+      white-space: nowrap;
+    }
+
+    &::before,
+    &::after {
+      content: '';
+      height: 1px;
+      flex: 1;
+      background: linear-gradient(90deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.04));
     }
   }
 }
