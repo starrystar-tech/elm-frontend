@@ -1,30 +1,30 @@
 <template>
-    <el-row :gutter="20">
-        <el-col :span="4" class="min-w-[200px]">
-            <div class="side-item-list">
-                <div
-                    v-for="(item, index) in leftSides"
-                    :key="index"
-                    :class="leftMenu == item.menu ? 'side-item-select' : 'side-item-default'"
-                    class="side-item"
-                    @click="sideClick(item)"
-                >
-                    {{ item.name }}
-                    <el-badge v-if="item.count > 0" :max="99" :value="item.count" />
-                </div>
-            </div>
-        </el-col>
-        <el-col :span="20" :xs="24">
-            <CustomerTodayContactList v-if="leftMenu === 'customerTodayContact'" />
-            <ClueFollowList v-if="leftMenu === 'clueFollow'" />
-            <ContractAuditList v-if="leftMenu === 'contractAudit'" />
-            <ReceivableAuditList v-if="leftMenu === 'receivableAudit'" />
-            <ContractRemindList v-if="leftMenu === 'contractRemind'" />
-            <CustomerFollowList v-if="leftMenu === 'customerFollow'" />
-            <CustomerPutPoolRemindList v-if="leftMenu === 'customerPutPoolRemind'" />
-            <ReceivablePlanRemindList v-if="leftMenu === 'receivablePlanRemind'" />
-        </el-col>
-    </el-row>
+  <div class="backlog-layout">
+    <div class="backlog-left">
+      <div class="side-item-list">
+        <div
+          v-for="(item, index) in leftSides"
+          :key="index"
+          :class="leftMenu == item.menu ? 'side-item-select' : 'side-item-default'"
+          class="side-item"
+          @click="sideClick(item)"
+        >
+          {{ item.name }}
+          <el-badge v-if="item.count > 0" :max="99" :value="item.count" />
+        </div>
+      </div>
+    </div>
+    <div class="backlog-right">
+      <CustomerTodayContactList v-if="leftMenu === 'customerTodayContact'" />
+      <ClueFollowList v-if="leftMenu === 'clueFollow'" />
+      <ContractAuditList v-if="leftMenu === 'contractAudit'" />
+      <ReceivableAuditList v-if="leftMenu === 'receivableAudit'" />
+      <ContractRemindList v-if="leftMenu === 'contractRemind'" />
+      <CustomerFollowList v-if="leftMenu === 'customerFollow'" />
+      <CustomerPutPoolRemindList v-if="leftMenu === 'customerPutPoolRemind'" />
+      <ReceivablePlanRemindList v-if="leftMenu === 'receivablePlanRemind'" />
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -132,23 +132,41 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-.side-item-list {
-    top: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 1;
-    font-size: 14px;
-    background-color: var(--el-bg-color);
-    border: 1px solid var(--el-border-color);
-    border-radius: 5px;
+.backlog-layout {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 20px;
+}
 
-    .side-item {
-        position: relative;
-        height: 50px;
-        padding: 0 20px;
-        line-height: 50px;
-        cursor: pointer;
-    }
+.backlog-left {
+  width: 220px;
+  min-width: 220px;
+  flex: 0 0 220px;
+}
+
+.backlog-right {
+  flex: 1;
+  min-width: 0;
+}
+
+.side-item-list {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  font-size: 14px;
+  background-color: var(--el-bg-color);
+  border: 1px solid var(--el-border-color);
+  border-radius: 5px;
+
+  .side-item {
+    position: relative;
+    height: 50px;
+    padding: 0 20px;
+    line-height: 50px;
+    cursor: pointer;
+  }
 }
 
 .side-item-default {
