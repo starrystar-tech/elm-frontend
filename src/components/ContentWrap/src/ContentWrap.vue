@@ -8,25 +8,35 @@ const { getPrefixCls } = useDesign()
 
 const prefixCls = getPrefixCls('content-wrap')
 
-defineProps({
+const props = defineProps({
   title: propTypes.string.def(''),
   message: propTypes.string.def(''),
-  bodyStyle: propTypes.object.def({ padding: '10px' })
+  bodyStyle: propTypes.object.def({})
+})
+
+const cardBodyStyle = computed(() => {
+  if (props.title) {
+    return {
+      padding: '10px',
+      ...props.bodyStyle
+    }
+  }
+  return props.bodyStyle
 })
 </script>
 
 <template>
   <ElCard
-    :body-style="bodyStyle"
-    :class="[prefixCls, title ? 'mb-18px crm-panel-card' : 'mb-18px crm-panel-shell']"
+    :body-style="cardBodyStyle"
+    :class="[prefixCls, props.title ? 'mb-18px crm-panel-card' : 'mb-18px crm-panel-shell']"
     shadow="never"
   >
-    <template v-if="title" #header>
+    <template v-if="props.title" #header>
       <div class="flex items-center">
-        <span class="text-16px font-700">{{ title }}</span>
-        <ElTooltip v-if="message" effect="dark" placement="right">
+        <span class="text-16px font-700">{{ props.title }}</span>
+        <ElTooltip v-if="props.message" effect="dark" placement="right">
           <template #content>
-            <div class="max-w-200px">{{ message }}</div>
+            <div class="max-w-200px">{{ props.message }}</div>
           </template>
           <Icon :size="14" class="ml-5px" icon="ep:question-filled" />
         </ElTooltip>
@@ -66,7 +76,6 @@ defineProps({
   box-shadow: none !important;
 
   > .el-card__body {
-    padding: 0 !important;
     background: transparent !important;
   }
 
