@@ -1,11 +1,11 @@
 <template>
-    <el-row :gutter="20">
-        <el-col :span="4" :xs="24">
+    <el-row :gutter="15">
+        <el-col :span="5" :xs="24">
             <ContentWrap>
                 <DeptTree @node-click="handleDeptNodeClick" />
             </ContentWrap>
         </el-col>
-        <el-col :span="20" :xs="24">
+        <el-col :span="19" :xs="24">
             <ContentWrap>
                 <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
                 <div class="mb-10px">

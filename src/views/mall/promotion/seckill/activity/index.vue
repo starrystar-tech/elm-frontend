@@ -1,254 +1,210 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <Search
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="活动名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入活动名称"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="活动状态" prop="status">
-        <el-select
-          v-model="queryParams.status"
-          placeholder="请选择活动状态"
-          clearable
-          class="!w-240px"
-        >
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['promotion:seckill-activity:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-      </el-form-item>
-    </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="活动编号" prop="id" min-width="80" />
-      <el-table-column label="活动名称" prop="name" min-width="140" />
-      <el-table-column
-        label="秒杀时段"
-        prop="configIds"
-        width="220px"
-        :show-overflow-tooltip="false"
-      >
-        <template #default="scope">
-          <el-tag v-for="(configId, index) in scope.row.configIds" :key="index" class="mr-5px">
-            {{ formatConfigNames(configId) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="活动时间" min-width="210">
-        <template #default="scope">
-          {{ formatDate(scope.row.startTime, 'YYYY-MM-DD') }}
-          ~ {{ formatDate(scope.row.endTime, 'YYYY-MM-DD') }}
-        </template>
-      </el-table-column>
-      <el-table-column label="商品图片" prop="spuName" min-width="80">
-        <template #default="scope">
-          <el-image
-            :src="scope.row.picUrl"
-            class="h-40px w-40px"
-            :preview-src-list="[scope.row.picUrl]"
-            preview-teleported
-          />
-        </template>
-      </el-table-column>
-      <el-table-column label="商品标题" prop="spuName" min-width="300" />
-      <el-table-column
-        label="原价"
-        prop="marketPrice"
-        min-width="100"
-        :formatter="fenToYuanFormat"
-      />
-      <el-table-column label="原价" prop="marketPrice" min-width="100" />
-      <el-table-column label="秒杀价" prop="seckillPrice" min-width="100">
-        <template #default="scope">
-          {{ formatSeckillPrice(scope.row.products) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="活动状态" align="center" prop="status" min-width="100">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column label="库存" align="center" prop="stock" min-width="80" />
-      <el-table-column label="总库存" align="center" prop="totalStock" min-width="80" />
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        :formatter="dateFormatter"
-        width="180px"
-      />
-      <el-table-column label="操作" align="center" width="150px" fixed="right">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['promotion:seckill-activity:update']"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleClose(scope.row.id)"
-            v-if="scope.row.status === 0"
-            v-hasPermi="['promotion:seckill-activity:close']"
-          >
-            关闭
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-else
-            v-hasPermi="['promotion:seckill-activity:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </Table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      :stripe="true"
+      :show-overflow-tooltip="true"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <SeckillActivityForm ref="formRef" @success="getList" />
+  <SeckillActivityForm ref="formRef" @success="tableMethods.getList" />
 </template>
 
-<script setup lang="ts">
+<script setup lang="tsx">
+import { computed, reactive, ref } from 'vue'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
-import { dateFormatter } from '@/utils/formatTime'
+import { dateFormatter, formatDate } from '@/utils/formatTime'
 import * as SeckillActivityApi from '@/api/mall/promotion/seckill/seckillActivity'
 import { SeckillConfigApi } from '@/api/mall/promotion/seckill/seckillConfig'
 import SeckillActivityForm from './SeckillActivityForm.vue'
-import { formatDate } from '@/utils/formatTime'
 import { fenToYuanFormat } from '@/utils/formatter'
 import { fenToYuan } from '@/utils'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'SeckillActivity' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canCreate = hasPermission(['promotion:seckill-activity:create'])
+const canUpdate = hasPermission(['promotion:seckill-activity:update'])
+const canClose = hasPermission(['promotion:seckill-activity:close'])
+const canDelete = hasPermission(['promotion:seckill-activity:delete'])
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  name: null,
-  status: null
-})
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
-
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await SeckillActivityApi.getSeckillActivityPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
-
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
+const message = useMessage()
 const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
+const configList = ref<any[]>([])
+
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'name',
+    label: '活动名称',
+    component: 'Input',
+    componentProps: { placeholder: '请输入活动名称', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'status',
+    label: '活动状态',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择活动状态',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.COMMON_STATUS),
+      style: { width: '240px' }
+    }
+  }
+])
+
+const { tableObject, tableMethods, register: tableRegister } = useTable({
+  getListApi: async (params) => await SeckillActivityApi.getSeckillActivityPage(params)
+})
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
 }
 
-/** 关闭按钮操作 */
+const openForm = (type: string, id?: number) => {
+  formRef.value?.open(type, id)
+}
+
 const handleClose = async (id: number) => {
   try {
-    // 关闭的二次确认
     await message.confirm('确认关闭该秒杀活动吗？')
-    // 发起关闭
     await SeckillActivityApi.closeSeckillActivity(id)
     message.success('关闭成功')
-    // 刷新列表
-    await getList()
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起删除
     await SeckillActivityApi.deleteSeckillActivity(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
+    message.success('删除成功')
+    await tableMethods.getList()
   } catch {}
 }
 
-const configList = ref([]) // 时段配置精简列表
-const formatConfigNames = (configId) => {
+const formatConfigNames = (configId: number) => {
   const config = configList.value.find((item) => item.id === configId)
   return config != null ? `${config.name}[${config.startTime} ~ ${config.endTime}]` : ''
 }
 
-const formatSeckillPrice = (products) => {
+const formatSeckillPrice = (products: any[]) => {
   const seckillPrice = Math.min(...products.map((item) => item.seckillPrice))
   return `￥${fenToYuan(seckillPrice)}`
 }
 
-/** 初始化 **/
+const tableColumns = computed<TableColumn[]>(() => [
+  { field: 'id', label: '活动编号', minWidth: '80' },
+  { field: 'name', label: '活动名称', minWidth: '140' },
+  {
+    field: 'configIds',
+    label: '秒杀时段',
+    width: '220px',
+    showOverflowTooltip: false,
+    slots: {
+      default: (data) =>
+        data.row.configIds?.map((configId: number, index: number) => (
+          <el-tag key={index} class="mr-5px">
+            {formatConfigNames(configId)}
+          </el-tag>
+        ))
+    }
+  },
+  {
+    field: 'activeTime',
+    label: '活动时间',
+    minWidth: '210',
+    slots: {
+      default: (data) => (
+        <span>
+          {formatDate(data.row.startTime, 'YYYY-MM-DD')} ~ {formatDate(data.row.endTime, 'YYYY-MM-DD')}
+        </span>
+      )
+    }
+  },
+  {
+    field: 'picUrl',
+    label: '商品图片',
+    minWidth: '80',
+    slots: {
+      default: (data) => (
+        <el-image
+          src={data.row.picUrl}
+          class="h-40px w-40px"
+          preview-src-list={[data.row.picUrl]}
+          preview-teleported
+        />
+      )
+    }
+  },
+  { field: 'spuName', label: '商品标题', minWidth: '300' },
+  { field: 'marketPrice', label: '原价', minWidth: '100', formatter: fenToYuanFormat },
+  {
+    field: 'seckillPrice',
+    label: '秒杀价',
+    minWidth: '100',
+    slots: {
+      default: (data) => <span>{formatSeckillPrice(data.row.products || [])}</span>
+    }
+  },
+  {
+    field: 'status',
+    label: '活动状态',
+    minWidth: '100',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} />
+    }
+  },
+  { field: 'stock', label: '库存', minWidth: '80' },
+  { field: 'totalStock', label: '总库存', minWidth: '80' },
+  { field: 'createTime', label: '创建时间', width: '180px', formatter: dateFormatter },
+  {
+    field: 'action',
+    label: '操作',
+    width: '150px',
+    fixed: 'right',
+    slots: {
+      default: (data) => (
+        <>
+          {canUpdate ? (
+            <BaseButton link type="primary" onClick={() => openForm('update', data.row.id)}>
+              编辑
+            </BaseButton>
+          ) : null}
+          {canClose && data.row.status === 0 ? (
+            <BaseButton link type="danger" onClick={() => handleClose(data.row.id)}>
+              关闭
+            </BaseButton>
+          ) : null}
+          {canDelete && data.row.status !== 0 ? (
+            <BaseButton link type="danger" onClick={() => handleDelete(data.row.id)}>
+              删除
+            </BaseButton>
+          ) : null}
+        </>
+      )
+    }
+  }
+])
+
 onMounted(async () => {
-  await getList()
-  // 获得秒杀时间段
+  await tableMethods.getList()
   configList.value = await SeckillConfigApi.getSimpleSeckillConfigList()
 })
 </script>

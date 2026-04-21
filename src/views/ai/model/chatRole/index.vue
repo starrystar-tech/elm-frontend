@@ -1,199 +1,180 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <Search
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="角色名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入角色名称"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="角色类别" prop="category">
-        <el-input
-          v-model="queryParams.category"
-          placeholder="请输入角色类别"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="是否公开" prop="publicStatus">
-        <el-select
-          v-model="queryParams.publicStatus"
-          placeholder="请选择是否公开"
-          clearable
-          class="!w-240px"
-        >
-          <el-option
-            v-for="dict in getBoolDictOptions(DICT_TYPE.INFRA_BOOLEAN_STRING)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['ai:chat-role:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-      </el-form-item>
-    </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="角色名称" align="center" prop="name" />
-      <el-table-column label="绑定模型" align="center" prop="modelName" />
-      <el-table-column label="角色头像" align="center" prop="avatar">
-        <template #default="scope">
-          <el-image :src="scope?.row.avatar" class="w-32px h-32px" />
-        </template>
-      </el-table-column>
-      <el-table-column label="角色类别" align="center" prop="category" />
-      <el-table-column label="角色描述" align="center" prop="description" />
-      <el-table-column label="角色设定" align="center" prop="systemMessage" />
-      <el-table-column label="知识库" align="center" prop="knowledgeIds">
-        <template #default="scope">
-          <span v-if="!scope.row.knowledgeIds || scope.row.knowledgeIds.length === 0">-</span>
-          <span v-else>引用 {{ scope.row.knowledgeIds.length }} 个</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="工具" align="center" prop="toolIds">
-        <template #default="scope">
-          <span v-if="!scope.row.toolIds || scope.row.toolIds.length === 0">-</span>
-          <span v-else>引用 {{ scope.row.toolIds.length }} 个</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="是否公开" align="center" prop="publicStatus">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.publicStatus" />
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" align="center" prop="status">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column label="角色排序" align="center" prop="sort" />
-      <el-table-column label="操作" align="center">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['ai:chat-role:update']"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['ai:chat-role:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </Table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton
+        v-hasPermi="['ai:chat-role:create']"
+        type="primary"
+        @click="openForm('create')"
+      >
+        新增
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <ChatRoleForm ref="formRef" @success="getList" />
+  <ChatRoleForm ref="formRef" @success="tableMethods.getList" />
 </template>
 
-<script setup lang="ts">
+<script setup lang="tsx">
+import { reactive, ref } from 'vue'
 import { getBoolDictOptions, DICT_TYPE } from '@/utils/dict'
-import { ChatRoleApi, ChatRoleVO } from '@/api/ai/model/chatRole'
+import { ChatRoleApi, type ChatRoleVO } from '@/api/ai/model/chatRole'
 import ChatRoleForm from './ChatRoleForm.vue'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
 
-/** AI 聊天角色 列表 */
 defineOptions({ name: 'AiChatRole' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const message = useMessage()
+const { t } = useI18n()
 
-const loading = ref(true) // 列表的加载中
-const list = ref<ChatRoleVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  name: undefined,
-  category: undefined,
-  publicStatus: true
-})
-const queryFormRef = ref() // 搜索的表单
-
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await ChatRoleApi.getChatRolePage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
-
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
 const formRef = ref()
+
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'name',
+    label: '角色名称',
+    component: 'Input',
+    componentProps: { placeholder: '请输入角色名称', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'category',
+    label: '角色类别',
+    component: 'Input',
+    componentProps: { placeholder: '请输入角色类别', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'publicStatus',
+    label: '是否公开',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择是否公开',
+      clearable: true,
+      options: getBoolDictOptions(DICT_TYPE.INFRA_BOOLEAN_STRING),
+      style: { width: '240px' }
+    }
+  }
+])
+
+const { tableObject, tableMethods, register: tableRegister } = useTable<ChatRoleVO>({
+  getListApi: async (params) => await ChatRoleApi.getChatRolePage(params)
+})
+
 const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
+  formRef.value?.open(type, id)
 }
 
-/** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起删除
     await ChatRoleApi.deleteChatRole(id)
     message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 初始化 **/
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
+}
+
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'name', label: '角色名称' },
+  { field: 'modelName', label: '绑定模型' },
+  {
+    field: 'avatar',
+    label: '角色头像',
+    slots: {
+      default: (data) => <el-image src={data.row.avatar} class="w-32px h-32px" />
+    }
+  },
+  { field: 'category', label: '角色类别' },
+  { field: 'description', label: '角色描述' },
+  { field: 'systemMessage', label: '角色设定' },
+  {
+    field: 'knowledgeIds',
+    label: '知识库',
+    slots: {
+      default: (data) => (
+        <span>
+          {!data.row.knowledgeIds || data.row.knowledgeIds.length === 0
+            ? '-'
+            : `引用 ${data.row.knowledgeIds.length} 个`}
+        </span>
+      )
+    }
+  },
+  {
+    field: 'toolIds',
+    label: '工具',
+    slots: {
+      default: (data) => (
+        <span>
+          {!data.row.toolIds || data.row.toolIds.length === 0
+            ? '-'
+            : `引用 ${data.row.toolIds.length} 个`}
+        </span>
+      )
+    }
+  },
+  {
+    field: 'publicStatus',
+    label: '是否公开',
+    slots: {
+      default: (data) => (
+        <dict-tag type={DICT_TYPE.INFRA_BOOLEAN_STRING} value={data.row.publicStatus} />
+      )
+    }
+  },
+  {
+    field: 'status',
+    label: '状态',
+    slots: {
+      default: (data) => <dict-tag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} />
+    }
+  },
+  { field: 'sort', label: '角色排序' },
+  {
+    field: 'action',
+    label: '操作',
+    slots: {
+      default: (data) => (
+        <>
+          <BaseButton
+            v-hasPermi={['ai:chat-role:update']}
+            link
+            type="primary"
+            onClick={() => openForm('update', data.row.id)}
+          >
+            编辑
+          </BaseButton>
+          <BaseButton
+            v-hasPermi={['ai:chat-role:delete']}
+            link
+            type="danger"
+            onClick={() => handleDelete(data.row.id)}
+          >
+            删除
+          </BaseButton>
+        </>
+      )
+    }
+  }
+])
+
 onMounted(() => {
-  getList()
+  tableMethods.getList()
 })
 </script>

@@ -1,267 +1,42 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <Search
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="付款单号" prop="no">
-        <el-input
-          v-model="queryParams.no"
-          placeholder="请输入付款单号"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="付款时间" prop="paymentTime">
-        <el-date-picker
-          v-model="queryParams.paymentTime"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="供应商" prop="supplierId">
-        <el-select
-          v-model="queryParams.supplierId"
-          clearable
-          filterable
-          placeholder="请选择供供应商"
-          class="!w-240px"
-        >
-          <el-option
-            v-for="item in supplierList"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="创建人" prop="creator">
-        <el-select
-          v-model="queryParams.creator"
-          clearable
-          filterable
-          placeholder="请选择创建人"
-          class="!w-240px"
-        >
-          <el-option
-            v-for="item in userList"
-            :key="item.id"
-            :label="item.nickname"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="财务人员" prop="financeUserId">
-        <el-select
-          v-model="queryParams.financeUserId"
-          clearable
-          filterable
-          placeholder="请选择财务人员"
-          class="!w-240px"
-        >
-          <el-option
-            v-for="item in userList"
-            :key="item.id"
-            :label="item.nickname"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="付款账户" prop="accountId">
-        <el-select
-          v-model="queryParams.accountId"
-          clearable
-          filterable
-          placeholder="请选择付款账户"
-          class="!w-240px"
-        >
-          <el-option
-            v-for="item in accountList"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-240px">
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="备注" prop="remark">
-        <el-input
-          v-model="queryParams.remark"
-          placeholder="请输入备注"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="采购单号" prop="bizNo">
-        <el-input
-          v-model="queryParams.bizNo"
-          placeholder="请输入采购单号"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['erp:finance-payment:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['erp:finance-payment:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
-        </el-button>
-        <el-button
-          type="danger"
-          plain
-          @click="handleDelete(selectionList.map((item) => item.id))"
-          v-hasPermi="['erp:finance-payment:delete']"
-          :disabled="selectionList.length === 0"
-        >
-          <Icon icon="ep:delete" class="mr-5px" /> 删除
-        </el-button>
-      </el-form-item>
-    </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+      <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+        导出
+      </BaseButton>
+      <BaseButton
+        v-if="canDelete"
+        type="danger"
+        :disabled="selectionList.length === 0"
+        @click="handleDelete(selectionList.map((item) => item.id))"
+      >
+        删除
+      </BaseButton>
+    </div>
     <Table
-      v-loading="loading"
-      :data="list"
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
       :stripe="true"
       :show-overflow-tooltip="true"
+      selection
+      @register="tableRegister"
       @selection-change="handleSelectionChange"
-    >
-      <el-table-column width="30" label="选择" type="selection" />
-      <el-table-column min-width="180" label="付款单号" align="center" prop="no" />
-      <el-table-column label="供应商" align="center" prop="supplierName" />
-      <el-table-column
-        label="付款时间"
-        align="center"
-        prop="paymentTime"
-        :formatter="dateFormatter2"
-        width="120px"
-      />
-      <el-table-column label="创建人" align="center" prop="creatorName" />
-      <el-table-column label="财务人员" align="center" prop="financeUserName" />
-      <el-table-column label="付款账户" align="center" prop="accountName" />
-      <el-table-column
-        label="合计付款"
-        align="center"
-        prop="totalPrice"
-        :formatter="erpPriceTableColumnFormatter"
-      />
-      <el-table-column
-        label="优惠金额"
-        align="center"
-        prop="discountPrice"
-        :formatter="erpPriceTableColumnFormatter"
-      />
-      <el-table-column
-        label="实际付款"
-        align="center"
-        prop="paymentPrice"
-        :formatter="erpPriceTableColumnFormatter"
-      />
-      <el-table-column label="状态" align="center" fixed="right" width="90" prop="status">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.ERP_AUDIT_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" fixed="right" width="220">
-        <template #default="scope">
-          <el-button
-            link
-            @click="openForm('detail', scope.row.id)"
-            v-hasPermi="['erp:finance-payment:query']"
-          >
-            详情
-          </el-button>
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['erp:finance-payment:update']"
-            :disabled="scope.row.status === 20"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="primary"
-            @click="handleUpdateStatus(scope.row.id, 20)"
-            v-hasPermi="['erp:finance-payment:update-status']"
-            v-if="scope.row.status === 10"
-          >
-            审批
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleUpdateStatus(scope.row.id, 10)"
-            v-hasPermi="['erp:finance-payment:update-status']"
-            v-else
-          >
-            反审批
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete([scope.row.id])"
-            v-hasPermi="['erp:finance-payment:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </Table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <FinancePaymentForm ref="formRef" @success="getList" />
+  <FinancePaymentForm ref="formRef" @success="tableMethods.getList" />
 </template>
 
-<script setup lang="ts">
-import { getIntDictOptions, DICT_TYPE } from '@/utils/dict'
+<script setup lang="tsx">
+import { computed, onMounted, ref } from 'vue'
+import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter2 } from '@/utils/formatTime'
-import download from '@/utils/download'
 import { FinancePaymentApi, FinancePaymentVO } from '@/api/erp/finance/payment'
 import FinancePaymentForm from './FinancePaymentForm.vue'
 import { UserVO } from '@/api/system/user'
@@ -269,121 +44,258 @@ import * as UserApi from '@/api/system/user'
 import { erpPriceTableColumnFormatter } from '@/utils'
 import { SupplierApi, SupplierVO } from '@/api/erp/purchase/supplier'
 import { AccountApi, AccountVO } from '@/api/erp/finance/account'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
-/** ERP 付款单列表 */
-defineOptions({ name: 'ErpPurchaseOrder' })
+defineOptions({ name: 'ErpFinancePayment' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canCreate = hasPermission(['erp:finance-payment:create'])
+const canQuery = hasPermission(['erp:finance-payment:query'])
+const canUpdate = hasPermission(['erp:finance-payment:update'])
+const canUpdateStatus = hasPermission(['erp:finance-payment:update-status'])
+const canDelete = hasPermission(['erp:finance-payment:delete'])
+const canExport = hasPermission(['erp:finance-payment:export'])
 
-const loading = ref(true) // 列表的加载中
-const list = ref<FinancePaymentVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  no: undefined,
-  paymentTime: [],
-  supplierId: undefined,
-  creator: undefined,
-  financeUserId: undefined,
-  accountId: undefined,
-  status: undefined,
-  remark: undefined,
-  bizNo: undefined
-})
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
-const supplierList = ref<SupplierVO[]>([]) // 供应商列表
-const userList = ref<UserVO[]>([]) // 用户列表
-const accountList = ref<AccountVO[]>([]) // 账户列表
-
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await FinancePaymentApi.getFinancePaymentPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
-
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
+const message = useMessage()
 const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
-}
-
-/** 删除按钮操作 */
-const handleDelete = async (ids: number[]) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await FinancePaymentApi.deleteFinancePayment(ids)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-    selectionList.value = selectionList.value.filter((item) => !ids.includes(item.id))
-  } catch {}
-}
-
-/** 审批/反审批操作 */
-const handleUpdateStatus = async (id: number, status: number) => {
-  try {
-    // 审批的二次确认
-    await message.confirm(`确定${status === 20 ? '审批' : '反审批'}该付款单吗？`)
-    // 发起审批
-    await FinancePaymentApi.updateFinancePaymentStatus(id, status)
-    message.success(`${status === 20 ? '审批' : '反审批'}成功`)
-    // 刷新列表
-    await getList()
-  } catch {}
-}
-
-/** 导出按钮操作 */
-const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await FinancePaymentApi.exportFinancePayment(queryParams)
-    download.excel(data, '付款单.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
-}
-
-/** 选中操作 */
+const supplierList = ref<SupplierVO[]>([])
+const userList = ref<UserVO[]>([])
+const accountList = ref<AccountVO[]>([])
 const selectionList = ref<FinancePaymentVO[]>([])
+
+const searchSchema = computed<FormSchema[]>(() => [
+  {
+    field: 'no',
+    label: '付款单号',
+    component: 'Input',
+    componentProps: { placeholder: '请输入付款单号', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'paymentTime',
+    label: '付款时间',
+    component: 'DatePicker',
+    componentProps: {
+      type: 'daterange',
+      valueFormat: 'YYYY-MM-DD HH:mm:ss',
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+      defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'supplierId',
+    label: '供应商',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择供应商',
+      clearable: true,
+      filterable: true,
+      options: supplierList.value.map((item) => ({ label: item.name, value: item.id })),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'creator',
+    label: '创建人',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择创建人',
+      clearable: true,
+      filterable: true,
+      options: userList.value.map((item) => ({ label: item.nickname, value: item.id })),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'financeUserId',
+    label: '财务人员',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择财务人员',
+      clearable: true,
+      filterable: true,
+      options: userList.value.map((item) => ({ label: item.nickname, value: item.id })),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'accountId',
+    label: '付款账户',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择付款账户',
+      clearable: true,
+      filterable: true,
+      options: accountList.value.map((item) => ({ label: item.name, value: item.id })),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'status',
+    label: '状态',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择状态',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'remark',
+    label: '备注',
+    component: 'Input',
+    componentProps: { placeholder: '请输入备注', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'bizNo',
+    label: '采购单号',
+    component: 'Input',
+    componentProps: { placeholder: '请输入采购单号', clearable: true, style: { width: '240px' } }
+  }
+])
+
+const { tableObject, tableMethods, register: tableRegister } = useTable<FinancePaymentVO>({
+  getListApi: async (params) => await FinancePaymentApi.getFinancePaymentPage(params),
+  exportListApi: async (params) => await FinancePaymentApi.exportFinancePayment(params)
+})
+
+const exportLoading = computed(() => tableObject.exportLoading)
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
+}
+
+const openForm = (type: string, id?: number) => {
+  formRef.value?.open(type, id)
+}
+
 const handleSelectionChange = (rows: FinancePaymentVO[]) => {
   selectionList.value = rows
 }
 
-/** 初始化 **/
+const handleDelete = async (ids: number[]) => {
+  try {
+    await message.delConfirm()
+    await FinancePaymentApi.deleteFinancePayment(ids)
+    message.success('删除成功')
+    selectionList.value = selectionList.value.filter((item) => !ids.includes(item.id))
+    await tableMethods.getList()
+  } catch {}
+}
+
+const handleUpdateStatus = async (id: number, status: number) => {
+  try {
+    await message.confirm(`确定${status === 20 ? '审批' : '反审批'}该付款单吗？`)
+    await FinancePaymentApi.updateFinancePaymentStatus(id, status)
+    message.success(`${status === 20 ? '审批' : '反审批'}成功`)
+    await tableMethods.getList()
+  } catch {}
+}
+
+const handleExport = async () => {
+  await tableMethods.exportList('付款单.xls')
+}
+
+const tableColumns = computed<TableColumn[]>(() => [
+  { field: 'no', label: '付款单号', minWidth: '180', align: 'center' },
+  { field: 'supplierName', label: '供应商', align: 'center' },
+  {
+    field: 'paymentTime',
+    label: '付款时间',
+    width: '120px',
+    align: 'center',
+    formatter: dateFormatter2
+  },
+  { field: 'creatorName', label: '创建人', align: 'center' },
+  { field: 'financeUserName', label: '财务人员', align: 'center' },
+  { field: 'accountName', label: '付款账户', align: 'center' },
+  { field: 'totalPrice', label: '合计付款', align: 'center', formatter: erpPriceTableColumnFormatter },
+  {
+    field: 'discountPrice',
+    label: '优惠金额',
+    align: 'center',
+    formatter: erpPriceTableColumnFormatter
+  },
+  {
+    field: 'paymentPrice',
+    label: '实际付款',
+    align: 'center',
+    formatter: erpPriceTableColumnFormatter
+  },
+  {
+    field: 'status',
+    label: '状态',
+    width: '90',
+    align: 'center',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.ERP_AUDIT_STATUS} value={data.row.status} />
+    }
+  },
+  {
+    field: 'action',
+    label: '操作',
+    width: '220',
+    fixed: 'right',
+    align: 'center',
+    slots: {
+      default: (data) => (
+        <>
+          {canQuery ? (
+            <BaseButton link onClick={() => openForm('detail', data.row.id)}>
+              详情
+            </BaseButton>
+          ) : null}
+          {canUpdate ? (
+            <BaseButton
+              link
+              type="primary"
+              disabled={data.row.status === 20}
+              onClick={() => openForm('update', data.row.id)}
+            >
+              编辑
+            </BaseButton>
+          ) : null}
+          {canUpdateStatus && data.row.status === 10 ? (
+            <BaseButton
+              link
+              type="primary"
+              onClick={() => handleUpdateStatus(data.row.id, 20)}
+            >
+              审批
+            </BaseButton>
+          ) : null}
+          {canUpdateStatus && data.row.status !== 10 ? (
+            <BaseButton
+              link
+              type="danger"
+              onClick={() => handleUpdateStatus(data.row.id, 10)}
+            >
+              反审批
+            </BaseButton>
+          ) : null}
+          {canDelete ? (
+            <BaseButton link type="danger" onClick={() => handleDelete([data.row.id])}>
+              删除
+            </BaseButton>
+          ) : null}
+        </>
+      )
+    }
+  }
+])
+
 onMounted(async () => {
-  await getList()
-  // 加载供应商、用户、账户
+  await tableMethods.getList()
   supplierList.value = await SupplierApi.getSupplierSimpleList()
   userList.value = await UserApi.getSimpleUserList()
   accountList.value = await AccountApi.getAccountSimpleList()
 })
-// TODO worker：可优化功能：列表界面，支持导入
-// TODO worker：可优化功能：详情界面，支持打印
 </script>

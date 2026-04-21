@@ -1,194 +1,158 @@
 <template>
-  <!-- 搜索工作栏 -->
   <ContentWrap>
-    <Search
-      ref="queryFormRef"
-      :inline="true"
-      :model="queryParams"
-      class="-mb-15px"
-      label-width="68px"
-    >
-      <el-form-item label="会员昵称" prop="nickname">
-        <el-input
-          v-model="queryParams.nickname"
-          class="!w-240px"
-          placeholder="请输入会员昵称"
-          clearable
-          @keyup="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="领取时间" prop="createTime">
-        <el-date-picker
-          v-model="queryParams.createTime"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"> <Icon icon="ep:search" class="mr-5px" />搜索 </el-button>
-        <el-button @click="resetQuery"> <Icon icon="ep:refresh" class="mr-5px" />重置 </el-button>
-      </el-form-item>
-    </Search>
-  </ContentWrap>
-
-  <ContentWrap>
-    <!-- Tab 选项：真正的内容在 Lab -->
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
     <el-tabs v-model="activeTab" type="card" @tab-change="onTabChange">
-      <el-tab-pane
-        v-for="tab in statusTabs"
-        :key="tab.value"
-        :label="tab.label"
-        :name="tab.value"
-      />
+      <el-tab-pane v-for="tab in statusTabs" :key="tab.value" :label="tab.label" :name="tab.value" />
     </el-tabs>
-
-    <!-- 列表 -->
-    <Table v-loading="loading" :data="list">
-      <el-table-column label="会员昵称" align="center" min-width="100" prop="nickname" />
-      <el-table-column label="优惠券名称" align="center" min-width="140" prop="name" />
-      <el-table-column label="类型" align="center" prop="discountType">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.PROMOTION_PRODUCT_SCOPE" :value="scope.row.productScope" />
-        </template>
-      </el-table-column>
-      <el-table-column label="优惠" min-width="100" prop="discount">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.PROMOTION_DISCOUNT_TYPE" :value="scope.row.discountType" />
-          {{ discountFormat(scope.row) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="领取方式" align="center" prop="takeType">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.PROMOTION_COUPON_TAKE_TYPE" :value="scope.row.takeType" />
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" align="center" prop="status">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.PROMOTION_COUPON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="领取时间"
-        align="center"
-        prop="createTime"
-        :formatter="dateFormatter"
-        width="180"
-      />
-      <el-table-column
-        label="使用时间"
-        align="center"
-        prop="useTime"
-        :formatter="dateFormatter"
-        width="180"
-      />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-        <template #default="scope">
-          <el-button
-            v-hasPermi="['promotion:coupon:delete']"
-            type="danger"
-            link
-            @click="handleDelete(scope.row.id)"
-          >
-            回收
-          </el-button>
-        </template>
-      </el-table-column>
-    </Table>
-    <!-- 分页 -->
-    <Pagination
-      v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
-      :total="total"
-      @pagination="getList"
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 </template>
 
-<script setup lang="ts" name="PromotionCoupon">
+<script setup lang="tsx" name="PromotionCoupon">
+import { computed, reactive, ref } from 'vue'
 import { deleteCoupon, getCouponPage } from '@/api/mall/promotion/coupon/coupon'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import { discountFormat } from '@/views/mall/promotion/coupon/formatter'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'PromotionCoupon' })
 
-const message = useMessage() // 消息弹窗
+const canDelete = hasPermission(['promotion:coupon:delete'])
+const message = useMessage()
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 字典表格数据
-// 查询参数
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  createTime: [],
-  status: undefined,
-  nickname: undefined
-})
-const queryFormRef = ref() // 搜索的表单
+const activeTab = ref('all')
+const statusTabs = reactive<{ label: string; value: string | number }[]>([
+  { label: '全部', value: 'all' }
+])
 
-const activeTab = ref('all') // Tab 筛选
-const statusTabs = reactive([
+const searchSchema = reactive<FormSchema[]>([
   {
-    label: '全部',
-    value: 'all'
+    field: 'nickname',
+    label: '会员昵称',
+    component: 'Input',
+    componentProps: { placeholder: '请输入会员昵称', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'createTime',
+    label: '领取时间',
+    component: 'DatePicker',
+    componentProps: {
+      type: 'daterange',
+      valueFormat: 'YYYY-MM-DD HH:mm:ss',
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+      defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
+      style: { width: '240px' }
+    }
   }
 ])
 
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  // 执行查询
-  try {
-    const data = await getCouponPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
+const { tableObject, tableMethods, register: tableRegister } = useTable({
+  getListApi: async (params) => await getCouponPage(params)
+})
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams({
+    ...params,
+    status: activeTab.value === 'all' ? undefined : activeTab.value
+  })
 }
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value?.resetFields()
-  handleQuery()
-}
-
-/** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 二次确认
     await message.confirm(
       '回收将会收回会员领取的待使用的优惠券，已使用的将无法回收，确定要回收所选优惠券吗？'
     )
-    // 发起删除
     await deleteCoupon(id)
     message.notifySuccess('回收成功')
-    // 重新加载列表
-    await getList()
+    await tableMethods.getList()
   } catch {}
 }
 
-/** tab 切换 */
-const onTabChange = (tabName) => {
-  queryParams.status = tabName === 'all' ? undefined : tabName
-  getList()
+const onTabChange = (tabName: string | number) => {
+  activeTab.value = String(tabName)
+  tableMethods.setSearchParams({
+    status: tabName === 'all' ? undefined : tabName
+  })
 }
 
-/** 初始化 **/
+const tableColumns = computed<TableColumn[]>(() => [
+  { field: 'nickname', label: '会员昵称', minWidth: '100' },
+  { field: 'name', label: '优惠券名称', minWidth: '140' },
+  {
+    field: 'productScope',
+    label: '类型',
+    slots: {
+      default: (data) => (
+        <DictTag type={DICT_TYPE.PROMOTION_PRODUCT_SCOPE} value={data.row.productScope} />
+      )
+    }
+  },
+  {
+    field: 'discount',
+    label: '优惠',
+    minWidth: '100',
+    slots: {
+      default: (data) => (
+        <>
+          <DictTag type={DICT_TYPE.PROMOTION_DISCOUNT_TYPE} value={data.row.discountType} />
+          {discountFormat(data.row)}
+        </>
+      )
+    }
+  },
+  {
+    field: 'takeType',
+    label: '领取方式',
+    slots: {
+      default: (data) => (
+        <DictTag type={DICT_TYPE.PROMOTION_COUPON_TAKE_TYPE} value={data.row.takeType} />
+      )
+    }
+  },
+  {
+    field: 'status',
+    label: '状态',
+    slots: {
+      default: (data) => (
+        <DictTag type={DICT_TYPE.PROMOTION_COUPON_STATUS} value={data.row.status} />
+      )
+    }
+  },
+  { field: 'createTime', label: '领取时间', width: '180', formatter: dateFormatter },
+  { field: 'useTime', label: '使用时间', width: '180', formatter: dateFormatter },
+  {
+    field: 'action',
+    label: '操作',
+    slots: {
+      default: (data) =>
+        canDelete ? (
+          <BaseButton link type="danger" onClick={() => handleDelete(data.row.id)}>
+            回收
+          </BaseButton>
+        ) : null
+    }
+  }
+])
+
 onMounted(() => {
-  getList()
-  // 设置 statuses 过滤
+  tableMethods.getList()
   for (const dict of getIntDictOptions(DICT_TYPE.PROMOTION_COUPON_STATUS)) {
     statusTabs.push({
       label: dict.label,

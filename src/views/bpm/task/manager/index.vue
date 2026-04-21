@@ -1,155 +1,68 @@
 <template>
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <Search
-      ref="queryFormRef"
-      :inline="true"
-      :model="queryParams"
-      class="-mb-15px"
-      label-width="68px"
-    >
-      <el-form-item label="任务名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          class="!w-240px"
-          clearable
-          placeholder="请输入任务名称"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
-        <el-date-picker
-          v-model="queryParams.createTime"
-          :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-          class="!w-240px"
-          end-placeholder="结束日期"
-          start-placeholder="开始日期"
-          type="daterange"
-          value-format="YYYY-MM-DD HH:mm:ss"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery">
-          <Icon class="mr-5px" icon="ep:search" />
-          搜索
-        </el-button>
-        <el-button @click="resetQuery">
-          <Icon class="mr-5px" icon="ep:refresh" />
-          重置
-        </el-button>
-      </el-form-item>
-    </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <Table v-loading="loading" :data="list">
-      <el-table-column align="center" label="流程" prop="processInstance.name" width="180" />
-      <el-table-column
-        align="center"
-        label="发起人"
-        prop="processInstance.startUser.nickname"
-        width="100"
-      />
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="发起时间"
-        prop="createTime"
-        width="180"
-      />
-      <el-table-column align="center" label="当前任务" prop="name" width="180" />
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="任务开始时间"
-        prop="createTime"
-        width="180"
-      />
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="任务结束时间"
-        prop="endTime"
-        width="180"
-      />
-      <el-table-column align="center" label="审批人" prop="assigneeUser.nickname" width="100" />
-      <el-table-column align="center" label="审批状态" prop="status" width="120">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.BPM_TASK_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="审批建议" prop="reason" min-width="180" />
-      <el-table-column align="center" label="耗时" prop="durationInMillis" width="160">
-        <template #default="scope">
-          {{ formatPast2(scope.row.durationInMillis) }}
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="流程编号" prop="processInstanceId" :show-overflow-tooltip="true" />
-      <el-table-column align="center" label="任务编号" prop="id" :show-overflow-tooltip="true" />
-      <el-table-column align="center" label="操作" fixed="right" width="80">
-        <template #default="scope">
-          <el-button link type="primary" @click="handleAudit(scope.row)">历史</el-button>
-        </template>
-      </el-table-column>
-    </Table>
-    <!-- 分页 -->
-    <Pagination
-      v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
-      :total="total"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 </template>
-<script lang="ts" setup>
+
+<script lang="tsx" setup>
+import { reactive } from 'vue'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter, formatPast2 } from '@/utils/formatTime'
 import * as TaskApi from '@/api/bpm/task'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
 
-// 它和【待办任务】【已办任务】的差异是，该菜单可以看全部的流程任务
 defineOptions({ name: 'BpmManagerTask' })
 
-const { push } = useRouter() // 路由
+const { push } = useRouter()
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  name: '',
-  createTime: []
-})
-const queryFormRef = ref() // 搜索的表单
-
-/** 查询任务列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await TaskApi.getTaskManagerPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'name',
+    label: '任务名称',
+    component: 'Input',
+    componentProps: {
+      placeholder: '请输入任务名称',
+      clearable: true,
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'createTime',
+    label: '创建时间',
+    component: 'DatePicker',
+    componentProps: {
+      type: 'daterange',
+      valueFormat: 'YYYY-MM-DD HH:mm:ss',
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+      defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
+      style: { width: '240px' }
+    }
   }
+])
+
+const { tableObject, tableMethods, register: tableRegister } = useTable({
+  getListApi: async (params) => await TaskApi.getTaskManagerPage(params)
+})
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
 }
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 处理审批按钮 */
-const handleAudit = (row: any) => {
+const handleAudit = (row: Recordable) => {
   push({
     name: 'BpmProcessInstanceDetail',
     query: {
@@ -158,8 +71,49 @@ const handleAudit = (row: any) => {
   })
 }
 
-/** 初始化 **/
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'processInstance.name', label: '流程', width: '180' },
+  { field: 'processInstance.startUser.nickname', label: '发起人', width: '100' },
+  { field: 'createTime', label: '发起时间', width: '180', formatter: dateFormatter },
+  { field: 'name', label: '当前任务', width: '180' },
+  { field: 'createTime', label: '任务开始时间', width: '180', formatter: dateFormatter },
+  { field: 'endTime', label: '任务结束时间', width: '180', formatter: dateFormatter },
+  { field: 'assigneeUser.nickname', label: '审批人', width: '100' },
+  {
+    field: 'status',
+    label: '审批状态',
+    width: '120',
+    slots: {
+      default: (data) => <dict-tag type={DICT_TYPE.BPM_TASK_STATUS} value={data.row.status} />
+    }
+  },
+  { field: 'reason', label: '审批建议', minWidth: '180' },
+  {
+    field: 'durationInMillis',
+    label: '耗时',
+    width: '160',
+    slots: {
+      default: (data) => <span>{formatPast2(data.row.durationInMillis)}</span>
+    }
+  },
+  { field: 'processInstanceId', label: '流程编号', showOverflowTooltip: true },
+  { field: 'id', label: '任务编号', showOverflowTooltip: true },
+  {
+    field: 'action',
+    label: '操作',
+    fixed: 'right',
+    width: '80',
+    slots: {
+      default: (data) => (
+        <el-button link type="primary" onClick={() => handleAudit(data.row)}>
+          历史
+        </el-button>
+      )
+    }
+  }
+])
+
 onMounted(() => {
-  getList()
+  tableMethods.getList()
 })
 </script>

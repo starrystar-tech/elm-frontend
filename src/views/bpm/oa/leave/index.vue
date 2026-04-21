@@ -73,10 +73,6 @@
         </el-button>
       </el-form-item>
     </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
     <Table v-loading="loading" :data="list">
       <el-table-column align="center" label="申请编号" prop="id" />
       <el-table-column align="center" label="状态" prop="status">

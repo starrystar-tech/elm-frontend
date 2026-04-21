@@ -86,10 +86,6 @@
         <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
       </el-form-item>
     </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
     <Table v-loading="loading" border :data="list">
       <el-table-column label="流程名称" align="center" prop="name" fixed="left" width="200" />
       <el-table-column label="流程发起人" align="center" prop="startUser.nickname" width="120" />

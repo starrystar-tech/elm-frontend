@@ -34,10 +34,6 @@
         </el-button>
       </el-form-item>
     </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
     <Table v-loading="loading" :data="list">
       <!-- TODO worker：增加摘要 -->
       <el-table-column align="center" label="流程名" prop="processInstanceName" min-width="180" />

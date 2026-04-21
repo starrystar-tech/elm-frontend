@@ -1,193 +1,161 @@
 <template>
-  <!-- 搜索工作栏 -->
   <ContentWrap>
-    <Search
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入名称"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" />搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" />重置</el-button>
-        <el-button type="primary" @click="openForm('create')" v-hasPermi="['mp:account:create']">
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-      </el-form-item>
-    </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <Table v-loading="loading" :data="list">
-      <el-table-column label="名称" align="center" prop="name" />
-      <el-table-column label="微信号" align="center" prop="account" width="180" />
-      <el-table-column label="appId" align="center" prop="appId" width="180" />
-      <el-table-column label="服务器地址(URL)" align="center" prop="appId" width="360">
-        <template #default="scope">
-          {{ 'http://服务端地址/admin-api/mp/open/' + scope.row.appId }}
-        </template>
-      </el-table-column>
-      <el-table-column label="二维码" align="center" prop="qrCodeUrl">
-        <template #default="scope">
-          <img
-            v-if="scope.row.qrCodeUrl"
-            :src="scope.row.qrCodeUrl"
-            alt="二维码"
-            style="display: inline-block; height: 100px"
-          />
-          <el-button
-            link
-            type="primary"
-            @click="handleGenerateQrCode(scope.row)"
-            v-hasPermi="['mp:account:qr-code']"
-          >
-            生成二维码
-          </el-button>
-        </template>
-      </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" />
-      <el-table-column label="操作" align="center">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['mp:account:update']"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['mp:account:delete']"
-          >
-            删除
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleCleanQuota(scope.row)"
-            v-hasPermi="['mp:account:clear-quota']"
-          >
-            清空 API 配额
-          </el-button>
-        </template>
-      </el-table-column>
-    </Table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 对话框(添加 / 修改) -->
-  <AccountForm ref="formRef" @success="getList" />
+  <AccountForm ref="formRef" @success="tableMethods.getList" />
 </template>
-<script lang="ts" setup>
+
+<script lang="tsx" setup>
+import { reactive, ref } from 'vue'
 import * as AccountApi from '@/api/mp/account'
 import AccountForm from './AccountForm.vue'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'MpAccount' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canCreate = hasPermission(['mp:account:create'])
+const canUpdate = hasPermission(['mp:account:update'])
+const canDelete = hasPermission(['mp:account:delete'])
+const canQrCode = hasPermission(['mp:account:qr-code'])
+const canClearQuota = hasPermission(['mp:account:clear-quota'])
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  name: null,
-  account: null,
-  appId: null
-})
-const queryFormRef = ref() // 搜索的表单
-
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await AccountApi.getAccountPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
-
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
+const message = useMessage()
+const { t } = useI18n()
 const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
+
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'name',
+    label: '名称',
+    component: 'Input',
+    componentProps: { placeholder: '请输入名称', clearable: true, style: { width: '240px' } }
+  }
+])
+
+const { tableObject, tableMethods, register: tableRegister } = useTable<AccountApi.AccountVO>({
+  getListApi: async (params) => await AccountApi.getAccountPage(params)
+})
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
 }
 
-/** 删除按钮操作 */
-const handleDelete = async (id) => {
+const openForm = (type: string, id?: number) => {
+  formRef.value?.open(type, id)
+}
+
+const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起删除
     await AccountApi.deleteAccount(id)
     message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 生成二维码的按钮操作 */
-const handleGenerateQrCode = async (row) => {
+const handleGenerateQrCode = async (row: any) => {
   try {
-    // 生成二维码的二次确认
-    await message.confirm('是否确认生成公众号账号编号为"' + row.name + '"的二维码?')
-    // 发起生成二维码
+    await message.confirm(`是否确认生成公众号账号编号为"${row.name}"的二维码?`)
     await AccountApi.generateAccountQrCode(row.id)
     message.success('生成二维码成功')
-    // 刷新列表
-    await getList()
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 清空二维码 API 配额的按钮操作 */
-const handleCleanQuota = async (row) => {
+const handleCleanQuota = async (row: any) => {
   try {
-    // 清空 API 配额的二次确认
-    await message.confirm('是否确认清空生成公众号账号编号为"' + row.name + '"的 API 配额?')
-    // 发起清空 API 配额
+    await message.confirm(`是否确认清空生成公众号账号编号为"${row.name}"的 API 配额?`)
     await AccountApi.clearAccountQuota(row.id)
     message.success('清空 API 配额成功')
   } catch {}
 }
 
-/** 初始化 **/
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'name', label: '名称', align: 'center' },
+  { field: 'account', label: '微信号', align: 'center', width: '180' },
+  { field: 'appId', label: 'appId', align: 'center', width: '180' },
+  {
+    field: 'serverUrl',
+    label: '服务器地址(URL)',
+    align: 'center',
+    width: '360',
+    slots: {
+      default: (data) => <span>{`http://服务端地址/admin-api/mp/open/${data.row.appId}`}</span>
+    }
+  },
+  {
+    field: 'qrCodeUrl',
+    label: '二维码',
+    align: 'center',
+    slots: {
+      default: (data) => (
+        <>
+          {data.row.qrCodeUrl ? (
+            <img
+              src={data.row.qrCodeUrl}
+              alt="二维码"
+              style={{ display: 'inline-block', height: '100px' }}
+            />
+          ) : null}
+          {canQrCode ? (
+            <BaseButton link type="primary" onClick={() => handleGenerateQrCode(data.row)}>
+              生成二维码
+            </BaseButton>
+          ) : null}
+        </>
+      )
+    }
+  },
+  { field: 'remark', label: '备注', align: 'center' },
+  {
+    field: 'action',
+    label: '操作',
+    align: 'center',
+    width: '220',
+    slots: {
+      default: (data) => (
+        <>
+          {canUpdate ? (
+            <BaseButton link type="primary" onClick={() => openForm('update', data.row.id)}>
+              编辑
+            </BaseButton>
+          ) : null}
+          {canDelete ? (
+            <BaseButton link type="danger" onClick={() => handleDelete(data.row.id)}>
+              删除
+            </BaseButton>
+          ) : null}
+          {canClearQuota ? (
+            <BaseButton link type="danger" onClick={() => handleCleanQuota(data.row)}>
+              清空 API 配额
+            </BaseButton>
+          ) : null}
+        </>
+      )
+    }
+  }
+])
+
 onMounted(() => {
-  getList()
+  tableMethods.getList()
 })
 </script>

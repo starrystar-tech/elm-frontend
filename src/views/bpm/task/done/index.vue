@@ -112,10 +112,6 @@
         </el-popover>
       </el-form-item>
     </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
     <Table v-loading="loading" :data="list">
       <el-table-column align="center" label="流程" prop="processInstance.name" width="180" />
       <el-table-column label="摘要" prop="processInstance.summary" width="180">

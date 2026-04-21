@@ -1,199 +1,142 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <Search
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入名称"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="手机号码" prop="mobile">
-        <el-input
-          v-model="queryParams.mobile"
-          placeholder="请输入手机号码"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="联系电话" prop="telephone">
-        <el-input
-          v-model="queryParams.telephone"
-          placeholder="请输入联系电话"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['erp:customer:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['erp:customer:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
-        </el-button>
-      </el-form-item>
-    </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="名称" align="center" prop="name" />
-      <el-table-column label="联系人" align="center" prop="contact" />
-      <el-table-column label="手机号码" align="center" prop="mobile" />
-      <el-table-column label="联系电话" align="center" prop="telephone" />
-      <el-table-column label="电子邮箱" align="center" prop="email" />
-      <el-table-column label="备注" align="center" prop="remark" />
-      <el-table-column label="排序" align="center" prop="sort" />
-      <el-table-column label="状态" align="center" prop="status">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['erp:customer:update']"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['erp:customer:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </Table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+      <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+        导出
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      :stripe="true"
+      :show-overflow-tooltip="true"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <CustomerForm ref="formRef" @success="getList" />
+  <CustomerForm ref="formRef" @success="tableMethods.getList" />
 </template>
 
-<script setup lang="ts">
+<script setup lang="tsx">
+import { computed, reactive, ref } from 'vue'
 import { DICT_TYPE } from '@/utils/dict'
-import { dateFormatter } from '@/utils/formatTime'
-import download from '@/utils/download'
 import { CustomerApi, CustomerVO } from '@/api/erp/sale/customer'
 import CustomerForm from './CustomerForm.vue'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
-/** ERP 客户 列表 */
 defineOptions({ name: 'ErpCustomer' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canCreate = hasPermission(['erp:customer:create'])
+const canUpdate = hasPermission(['erp:customer:update'])
+const canDelete = hasPermission(['erp:customer:delete'])
+const canExport = hasPermission(['erp:customer:export'])
 
-const loading = ref(true) // 列表的加载中
-const list = ref<CustomerVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  name: undefined,
-  mobile: undefined,
-  telephone: undefined
-})
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
+const message = useMessage()
+const formRef = ref<InstanceType<typeof CustomerForm>>()
 
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await CustomerApi.getCustomerPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'name',
+    label: '名称',
+    component: 'Input',
+    componentProps: { placeholder: '请输入名称', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'mobile',
+    label: '手机号码',
+    component: 'Input',
+    componentProps: { placeholder: '请输入手机号码', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'telephone',
+    label: '联系电话',
+    component: 'Input',
+    componentProps: { placeholder: '请输入联系电话', clearable: true, style: { width: '240px' } }
   }
+])
+
+const { tableObject, tableMethods, register: tableRegister } = useTable<CustomerVO>({
+  getListApi: async (params) => await CustomerApi.getCustomerPage(params),
+  exportListApi: async (params) => await CustomerApi.exportCustomer(params)
+})
+
+const exportLoading = computed(() => tableObject.exportLoading)
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
 }
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const formRef = ref()
 const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
+  formRef.value?.open(type, id)
 }
 
-/** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起删除
     await CustomerApi.deleteCustomer(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
+    message.success('删除成功')
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 导出按钮操作 */
 const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await CustomerApi.exportCustomer(queryParams)
-    download.excel(data, '客户.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
+  await tableMethods.exportList('客户.xls')
 }
 
-/** 初始化 **/
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'name', label: '名称', align: 'center' },
+  { field: 'contact', label: '联系人', align: 'center' },
+  { field: 'mobile', label: '手机号码', align: 'center' },
+  { field: 'telephone', label: '联系电话', align: 'center' },
+  { field: 'email', label: '电子邮箱', align: 'center' },
+  { field: 'remark', label: '备注', align: 'center' },
+  { field: 'sort', label: '排序', align: 'center' },
+  {
+    field: 'status',
+    label: '状态',
+    align: 'center',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} />
+    }
+  },
+  {
+    field: 'action',
+    label: '操作',
+    align: 'center',
+    width: '140px',
+    slots: {
+      default: (data) => (
+        <>
+          {canUpdate ? (
+            <BaseButton link type="primary" onClick={() => openForm('update', data.row.id)}>
+              编辑
+            </BaseButton>
+          ) : null}
+          {canDelete ? (
+            <BaseButton link type="danger" onClick={() => handleDelete(data.row.id)}>
+              删除
+            </BaseButton>
+          ) : null}
+        </>
+      )
+    }
+  }
+])
+
 onMounted(() => {
-  getList()
+  tableMethods.getList()
 })
 </script>

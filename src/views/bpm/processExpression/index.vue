@@ -1,181 +1,144 @@
 <template>
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <Search
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="名字" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入名字"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-240px">
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
-        <el-date-picker
-          v-model="queryParams.createTime"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['bpm:process-expression:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-      </el-form-item>
-    </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="编号" align="center" prop="id" />
-      <el-table-column label="名字" align="center" prop="name" />
-      <el-table-column label="状态" align="center" prop="status">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column label="表达式" align="center" prop="expression" />
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        :formatter="dateFormatter"
-        width="180px"
-      />
-      <el-table-column label="操作" align="center">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['bpm:process-expression:update']"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['bpm:process-expression:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </Table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton
+        v-hasPermi="['bpm:process-expression:create']"
+        type="primary"
+        @click="openForm('create')"
+      >
+        新增
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <ProcessExpressionForm ref="formRef" @success="getList" />
+  <ProcessExpressionForm ref="formRef" @success="tableMethods.getList" />
 </template>
 
-<script setup lang="ts">
-import { getIntDictOptions, DICT_TYPE } from '@/utils/dict'
+<script setup lang="tsx">
+import { reactive, ref } from 'vue'
+import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import { ProcessExpressionApi, ProcessExpressionVO } from '@/api/bpm/processExpression'
 import ProcessExpressionForm from './ProcessExpressionForm.vue'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
 
-/** BPM 流程表达式列表 */
 defineOptions({ name: 'BpmProcessExpression' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const message = useMessage()
+const { t } = useI18n()
 
-const loading = ref(true) // 列表的加载中
-const list = ref<ProcessExpressionVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  name: undefined,
-  status: undefined,
-  createTime: []
-})
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
+const formRef = ref<InstanceType<typeof ProcessExpressionForm>>()
 
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await ProcessExpressionApi.getProcessExpressionPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'name',
+    label: '名字',
+    component: 'Input',
+    componentProps: { placeholder: '请输入名字', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'status',
+    label: '状态',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择状态',
+      clearable: true,
+      options: getIntDictOptions(DICT_TYPE.COMMON_STATUS),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'createTime',
+    label: '创建时间',
+    component: 'DatePicker',
+    componentProps: {
+      type: 'daterange',
+      valueFormat: 'YYYY-MM-DD HH:mm:ss',
+      startPlaceholder: '开始日期',
+      endPlaceholder: '结束日期',
+      defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
+      style: { width: '240px' }
+    }
   }
-}
+])
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
+const { tableObject, tableMethods, register: tableRegister } = useTable<ProcessExpressionVO>({
+  getListApi: async (params) => await ProcessExpressionApi.getProcessExpressionPage(params)
+})
 
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const formRef = ref()
 const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
+  formRef.value?.open(type, id)
 }
 
-/** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起删除
     await ProcessExpressionApi.deleteProcessExpression(id)
     message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 初始化 **/
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
+}
+
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'id', label: '编号' },
+  { field: 'name', label: '名字' },
+  {
+    field: 'status',
+    label: '状态',
+    slots: {
+      default: (data) => <dict-tag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} />
+    }
+  },
+  { field: 'expression', label: '表达式' },
+  { field: 'createTime', label: '创建时间', width: '180px', formatter: dateFormatter },
+  {
+    field: 'action',
+    label: '操作',
+    slots: {
+      default: (data) => (
+        <>
+          <BaseButton
+            v-hasPermi={['bpm:process-expression:update']}
+            link
+            type="primary"
+            onClick={() => openForm('update', data.row.id)}
+          >
+            编辑
+          </BaseButton>
+          <BaseButton
+            v-hasPermi={['bpm:process-expression:delete']}
+            link
+            type="danger"
+            onClick={() => handleDelete(data.row.id)}
+          >
+            删除
+          </BaseButton>
+        </>
+      )
+    }
+  }
+])
+
 onMounted(() => {
-  getList()
+  tableMethods.getList()
 })
 </script>

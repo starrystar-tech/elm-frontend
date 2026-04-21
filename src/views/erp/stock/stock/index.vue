@@ -1,183 +1,104 @@
 <!-- ERP 产品库存列表 -->
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <Search
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="产品" prop="productId">
-        <el-select
-          v-model="queryParams.productId"
-          clearable
-          filterable
-          placeholder="请选择产品"
-          class="!w-240px"
-        >
-          <el-option
-            v-for="item in productList"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="仓库" prop="warehouseId">
-        <el-select
-          v-model="queryParams.warehouseId"
-          clearable
-          filterable
-          placeholder="请选择仓库"
-          class="!w-240px"
-        >
-          <el-option
-            v-for="item in warehouseList"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['erp:stock:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['erp:stock:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
-        </el-button>
-      </el-form-item>
-    </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="产品名称" align="center" prop="productName" />
-      <el-table-column label="产品单位" align="center" prop="unitName" />
-      <el-table-column label="产品分类" align="center" prop="categoryName" />
-      <el-table-column
-        label="库存量"
-        align="center"
-        prop="count"
-        :formatter="erpCountTableColumnFormatter"
-      />
-      <el-table-column label="仓库" align="center" prop="warehouseName" />
-    </Table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+        导出
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      :stripe="true"
+      :show-overflow-tooltip="true"
+      @register="tableRegister"
     />
   </ContentWrap>
 </template>
 
-<script setup lang="ts">
-import download from '@/utils/download'
+<script setup lang="tsx">
+import { computed, onMounted, ref } from 'vue'
 import { StockApi, StockVO } from '@/api/erp/stock/stock'
 import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
 import { erpCountTableColumnFormatter } from '@/utils'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
-/** ERP 产品库存列表 */
 defineOptions({ name: 'ErpStock' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canExport = hasPermission(['erp:stock:export'])
 
-const loading = ref(true) // 列表的加载中
-const list = ref<StockVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  productId: undefined,
-  warehouseId: undefined
+const productList = ref<ProductVO[]>([])
+const warehouseList = ref<WarehouseVO[]>([])
+
+const searchSchema = computed<FormSchema[]>(() => [
+  {
+    field: 'productId',
+    label: '产品',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择产品',
+      clearable: true,
+      filterable: true,
+      options: productList.value.map((item) => ({ label: item.name, value: item.id })),
+      style: { width: '240px' }
+    }
+  },
+  {
+    field: 'warehouseId',
+    label: '仓库',
+    component: 'Select',
+    componentProps: {
+      placeholder: '请选择仓库',
+      clearable: true,
+      filterable: true,
+      options: warehouseList.value.map((item) => ({ label: item.name, value: item.id })),
+      style: { width: '240px' }
+    }
+  }
+])
+
+const { tableObject, tableMethods, register: tableRegister } = useTable<StockVO>({
+  getListApi: async (params) => await StockApi.getStockPage(params),
+  exportListApi: async (params) => await StockApi.exportStock(params)
 })
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
-const productList = ref<ProductVO[]>([]) // 产品列表
-const warehouseList = ref<WarehouseVO[]>([]) // 仓库列表
 
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await StockApi.getStockPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
+const exportLoading = computed(() => tableObject.exportLoading)
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
 }
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
-}
-
-/** 删除按钮操作 */
-const handleDelete = async (id: number) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await StockApi.deleteStock(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-  } catch {}
-}
-
-/** 导出按钮操作 */
 const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await StockApi.exportStock(queryParams)
-    download.excel(data, '产品库存.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
+  await tableMethods.exportList('产品库存.xls')
 }
 
-/** 初始化 **/
+const tableColumns = computed<TableColumn[]>(() => [
+  { field: 'productName', label: '产品名称', align: 'center' },
+  { field: 'unitName', label: '产品单位', align: 'center' },
+  { field: 'categoryName', label: '产品分类', align: 'center' },
+  {
+    field: 'count',
+    label: '库存量',
+    align: 'center',
+    formatter: erpCountTableColumnFormatter
+  },
+  { field: 'warehouseName', label: '仓库', align: 'center' }
+])
+
 onMounted(async () => {
-  await getList()
-  // 加载产品、仓库列表
+  await tableMethods.getList()
   productList.value = await ProductApi.getProductSimpleList()
   warehouseList.value = await WarehouseApi.getWarehouseSimpleList()
 })

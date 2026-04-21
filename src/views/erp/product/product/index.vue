@@ -1,221 +1,168 @@
 <!-- ERP 产品列表 -->
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <Search
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="68px"
-    >
-      <el-form-item label="名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入名称"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item label="分类" prop="categoryId">
-        <el-tree-select
-          v-model="queryParams.categoryId"
-          :data="categoryList"
-          :props="defaultProps"
-          check-strictly
-          default-expand-all
-          placeholder="请输入分类"
-          class="!w-240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['erp:product:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['erp:product:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
-        </el-button>
-      </el-form-item>
-    </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <Table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="条码" align="center" prop="barCode" />
-      <el-table-column label="名称" align="center" prop="name" />
-      <el-table-column label="规格" align="center" prop="standard" />
-      <el-table-column label="分类" align="center" prop="categoryName" />
-      <el-table-column label="单位" align="center" prop="unitName" />
-      <el-table-column
-        label="采购价格"
-        align="center"
-        prop="purchasePrice"
-        :formatter="erpPriceTableColumnFormatter"
-      />
-      <el-table-column
-        label="销售价格"
-        align="center"
-        prop="salePrice"
-        :formatter="erpPriceTableColumnFormatter"
-      />
-      <el-table-column
-        label="最低价格"
-        align="center"
-        prop="minPrice"
-        :formatter="erpPriceTableColumnFormatter"
-      />
-      <el-table-column label="状态" align="center" prop="status">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        :formatter="dateFormatter"
-        width="180px"
-      />
-      <el-table-column label="操作" align="center" width="110">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['erp:product:update']"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['erp:product:delete']"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </Table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
+      <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+        导出
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      :stripe="true"
+      :show-overflow-tooltip="true"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <ProductForm ref="formRef" @success="getList" />
+  <ProductForm ref="formRef" @success="tableMethods.getList" />
 </template>
 
-<script setup lang="ts">
+<script setup lang="tsx">
+import { computed, onMounted, ref } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
-import download from '@/utils/download'
 import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { ProductCategoryApi, ProductCategoryVO } from '@/api/erp/product/category'
 import ProductForm from './ProductForm.vue'
 import { DICT_TYPE } from '@/utils/dict'
 import { defaultProps, handleTree } from '@/utils/tree'
 import { erpPriceTableColumnFormatter } from '@/utils'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
-/** ERP 产品列表 */
 defineOptions({ name: 'ErpProduct' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const canCreate = hasPermission(['erp:product:create'])
+const canUpdate = hasPermission(['erp:product:update'])
+const canDelete = hasPermission(['erp:product:delete'])
+const canExport = hasPermission(['erp:product:export'])
 
-const loading = ref(true) // 列表的加载中
-const list = ref<ProductVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  name: undefined,
-  categoryId: undefined
-})
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
-const categoryList = ref<ProductCategoryVO[]>([]) // 产品分类列表
+const message = useMessage()
+const formRef = ref<InstanceType<typeof ProductForm>>()
+const categoryList = ref<ProductCategoryVO[]>([])
 
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await ProductApi.getProductPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
+const searchSchema = computed<FormSchema[]>(() => [
+  {
+    field: 'name',
+    label: '名称',
+    component: 'Input',
+    componentProps: { placeholder: '请输入名称', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'categoryId',
+    label: '分类',
+    component: 'TreeSelect',
+    componentProps: {
+      data: categoryList.value,
+      props: defaultProps,
+      checkStrictly: true,
+      defaultExpandAll: true,
+      placeholder: '请输入分类',
+      clearable: true,
+      style: { width: '240px' }
+    }
   }
+])
+
+const { tableObject, tableMethods, register: tableRegister } = useTable<ProductVO>({
+  getListApi: async (params) => await ProductApi.getProductPage(params),
+  exportListApi: async (params) => await ProductApi.exportProduct(params)
+})
+
+const exportLoading = computed(() => tableObject.exportLoading)
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
 }
 
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const formRef = ref()
 const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
+  formRef.value?.open(type, id)
 }
 
-/** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起删除
     await ProductApi.deleteProduct(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
+    message.success('删除成功')
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 导出按钮操作 */
 const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await ProductApi.exportProduct(queryParams)
-    download.excel(data, '产品.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
+  await tableMethods.exportList('产品.xls')
 }
 
-/** 初始化 **/
+const tableColumns = computed<TableColumn[]>(() => [
+  { field: 'barCode', label: '条码', align: 'center' },
+  { field: 'name', label: '名称', align: 'center' },
+  { field: 'standard', label: '规格', align: 'center' },
+  { field: 'categoryName', label: '分类', align: 'center' },
+  { field: 'unitName', label: '单位', align: 'center' },
+  {
+    field: 'purchasePrice',
+    label: '采购价格',
+    align: 'center',
+    formatter: erpPriceTableColumnFormatter
+  },
+  {
+    field: 'salePrice',
+    label: '销售价格',
+    align: 'center',
+    formatter: erpPriceTableColumnFormatter
+  },
+  {
+    field: 'minPrice',
+    label: '最低价格',
+    align: 'center',
+    formatter: erpPriceTableColumnFormatter
+  },
+  {
+    field: 'status',
+    label: '状态',
+    align: 'center',
+    slots: {
+      default: (data) => <DictTag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} />
+    }
+  },
+  { field: 'createTime', label: '创建时间', align: 'center', width: '180px', formatter: dateFormatter },
+  {
+    field: 'action',
+    label: '操作',
+    align: 'center',
+    width: '140px',
+    slots: {
+      default: (data) => (
+        <>
+          {canUpdate ? (
+            <BaseButton link type="primary" onClick={() => openForm('update', data.row.id)}>
+              编辑
+            </BaseButton>
+          ) : null}
+          {canDelete ? (
+            <BaseButton link type="danger" onClick={() => handleDelete(data.row.id)}>
+              删除
+            </BaseButton>
+          ) : null}
+        </>
+      )
+    }
+  }
+])
+
 onMounted(async () => {
-  await getList()
-  // 产品分类
+  await tableMethods.getList()
   const categoryData = await ProductCategoryApi.getProductCategorySimpleList()
   categoryList.value = handleTree(categoryData, 'id', 'parentId')
 })

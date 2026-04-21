@@ -1,203 +1,156 @@
 <template>
   <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <Search
-      ref="queryFormRef"
-      :inline="true"
-      :model="queryParams"
-      class="-mb-15px"
-      label-width="68px"
-    >
-      <el-form-item label="表单名" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          class="!w-240px"
-          clearable
-          placeholder="请输入表单名"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery">
-          <Icon class="mr-5px" icon="ep:search" />
-          搜索
-        </el-button>
-        <el-button @click="resetQuery">
-          <Icon class="mr-5px" icon="ep:refresh" />
-          重置
-        </el-button>
-        <el-button v-hasPermi="['bpm:form:create']" plain type="primary" @click="openForm">
-          <Icon class="mr-5px" icon="ep:plus" />
-          新增
-        </el-button>
-      </el-form-item>
-    </Search>
-  </ContentWrap>
-
-  <!-- 列表 -->
-  <ContentWrap>
-    <Table v-loading="loading" :data="list">
-      <el-table-column align="center" label="编号" prop="id" />
-      <el-table-column align="center" label="表单名" prop="name" />
-      <el-table-column align="center" label="状态" prop="status">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="备注" prop="remark" />
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="创建时间"
-        prop="createTime"
-      />
-      <el-table-column align="center" label="操作">
-        <template #default="scope">
-          <el-button
-            v-hasPermi="['bpm:form:update']"
-            link
-            type="primary"
-            @click="openForm('copy', scope.row.id)"
-          >
-            复制
-          </el-button>
-          <el-button
-            v-hasPermi="['bpm:form:update']"
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-          >
-            编辑
-          </el-button>
-          <el-button v-hasPermi="['bpm:form:query']" link @click="openDetail(scope.row.id)">
-            详情
-          </el-button>
-          <el-button
-            v-hasPermi="['bpm:form:delete']"
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </Table>
-    <!-- 分页 -->
-    <Pagination
-      v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
-      :total="total"
-      @pagination="getList"
+    <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+    <div class="mb-10px">
+      <BaseButton v-hasPermi="['bpm:form:create']" type="primary" @click="openForm('create')">
+        新增
+      </BaseButton>
+    </div>
+    <Table
+      v-model:currentPage="tableObject.currentPage"
+      v-model:pageSize="tableObject.pageSize"
+      :columns="tableColumns"
+      :data="tableObject.tableList"
+      :loading="tableObject.loading"
+      :pagination="{ total: tableObject.total }"
+      @register="tableRegister"
     />
   </ContentWrap>
 
-  <!-- 表单详情的弹窗 -->
   <Dialog v-model="detailVisible" title="表单详情" width="800">
     <form-create :option="detailData.option" :rule="detailData.rule" />
   </Dialog>
 </template>
 
-<script lang="ts" setup>
+<script lang="tsx" setup>
+import { reactive, ref, watch } from 'vue'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import * as FormApi from '@/api/bpm/form'
 import { setConfAndFields2 } from '@/utils/formCreate'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { Dialog } from '@/components/Dialog'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
 
 defineOptions({ name: 'BpmForm' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
-const { currentRoute, push } = useRouter() // 路由
+const message = useMessage()
+const { t } = useI18n()
+const { currentRoute, push } = useRouter()
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  name: null
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'name',
+    label: '表单名',
+    component: 'Input',
+    componentProps: { placeholder: '请输入表单名', clearable: true, style: { width: '240px' } }
+  }
+])
+
+const { tableObject, tableMethods, register: tableRegister } = useTable({
+  getListApi: async (params) => await FormApi.getFormPage(params)
 })
-const queryFormRef = ref() // 搜索的表单
 
-/** 查询列表 */
-const getList = async () => {
-  loading.value = true
-  try {
-    const data = await FormApi.getFormPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
-
-/** 搜索按钮操作 */
-const handleQuery = () => {
-  queryParams.pageNo = 1
-  getList()
-}
-
-/** 重置按钮操作 */
-const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  handleQuery()
-}
-
-/** 添加/修改操作 */
-const openForm = (type: string, id?: number) => {
-  const toRouter: { name: string; query: { type: string; id?: number } } = {
+const openForm = (type: string, id?: number | string) => {
+  const toRouter: { name: string; query: { type: string; id?: number | string } } = {
     name: 'BpmFormEditor',
-    query: {
-      type
-    }
+    query: { type }
   }
-  console.log(typeof id)
-  // 表单新建的时候id传的是event需要排除
   if (typeof id === 'number' || typeof id === 'string') {
     toRouter.query.id = id
   }
   push(toRouter)
 }
 
-/** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起删除
     await FormApi.deleteForm(id)
     message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
+    await tableMethods.getList()
   } catch {}
 }
 
-/** 详情操作 */
 const detailVisible = ref(false)
 const detailData = ref({
   rule: [],
   option: {}
 })
-const openDetail = async (rowId: number) => {
-  // 设置表单
-  const data = await FormApi.getForm(rowId)
+
+const openDetail = async (id: number) => {
+  const data = await FormApi.getForm(id)
   setConfAndFields2(detailData, data.conf, data.fields)
-  // 弹窗打开
   detailVisible.value = true
 }
-/**表单保存返回后重新加载列表 */
+
+const setSearchParams = (params: Recordable) => {
+  tableMethods.setSearchParams(params)
+}
+
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'id', label: '编号' },
+  { field: 'name', label: '表单名' },
+  {
+    field: 'status',
+    label: '状态',
+    slots: {
+      default: (data) => <dict-tag type={DICT_TYPE.COMMON_STATUS} value={data.row.status} />
+    }
+  },
+  { field: 'remark', label: '备注' },
+  { field: 'createTime', label: '创建时间', formatter: dateFormatter },
+  {
+    field: 'action',
+    label: '操作',
+    slots: {
+      default: (data) => (
+        <>
+          <BaseButton
+            v-hasPermi={['bpm:form:update']}
+            link
+            type="primary"
+            onClick={() => openForm('copy', data.row.id)}
+          >
+            复制
+          </BaseButton>
+          <BaseButton
+            v-hasPermi={['bpm:form:update']}
+            link
+            type="primary"
+            onClick={() => openForm('update', data.row.id)}
+          >
+            编辑
+          </BaseButton>
+          <BaseButton
+            v-hasPermi={['bpm:form:query']}
+            link
+            onClick={() => openDetail(data.row.id)}
+          >
+            详情
+          </BaseButton>
+          <BaseButton
+            v-hasPermi={['bpm:form:delete']}
+            link
+            type="danger"
+            onClick={() => handleDelete(data.row.id)}
+          >
+            删除
+          </BaseButton>
+        </>
+      )
+    }
+  }
+])
+
 watch(
   () => currentRoute.value,
   () => {
-    getList()
+    tableMethods.getList()
   },
-  {
-    immediate: true
-  }
+  { immediate: true }
 )
-/** 初始化 **/
-onMounted(() => {
-  getList()
-})
 </script>
