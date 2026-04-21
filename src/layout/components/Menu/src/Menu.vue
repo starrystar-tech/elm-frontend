@@ -192,6 +192,20 @@ $prefix-cls: #{$namespace}-menu;
     padding: 8px 0 16px;
   }
 
+  .v-menu__icon-wrap {
+    width: 15px;
+    min-width: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .v-menu__title {
+    flex: 1;
+    min-width: 0;
+  }
+
   // 一级菜单项（可折叠）
   .v-menu-submenu {
     width: 100%;
@@ -232,8 +246,8 @@ $prefix-cls: #{$namespace}-menu;
       }
 
       :deep(.app-iconify) {
-        width: 15px;
-        min-width: 15px;
+        width: 100%;
+        min-width: 100%;
         font-size: 15px;
         color: #666;
       }
@@ -292,8 +306,8 @@ $prefix-cls: #{$namespace}-menu;
     }
 
     :deep(.app-iconify) {
-      width: 15px;
-      min-width: 15px;
+      width: 100%;
+      min-width: 100%;
       font-size: 15px;
       color: #666;
     }
@@ -313,8 +327,8 @@ $prefix-cls: #{$namespace}-menu;
     width: 100%;
     padding: 8px 10px;
     border-radius: 6px;
-    justify-content: center;
-    text-align: center;
+    justify-content: flex-start;
+    text-align: left;
 
     &:hover {
       color: #2f3136 !important;

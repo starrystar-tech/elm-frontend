@@ -7,17 +7,23 @@ export const useRenderMenuTitle = () => {
     const { t } = useI18n()
     const { title = 'Please set title', icon } = meta
 
-    return icon && showIcon ? (
+    if (!showIcon) {
+      return (
+        <span class="v-menu__title overflow-hidden overflow-ellipsis whitespace-nowrap">
+          {t(title as string)}
+        </span>
+      )
+    }
+
+    return (
       <>
-        <Icon icon={meta.icon}></Icon>
-        <span class="v-menu__title overflow-hidden overflow-ellipsis whitespace-nowrap pl-[3px]">
+        <span class="v-menu__icon-wrap">
+          {icon ? <Icon icon={meta.icon}></Icon> : null}
+        </span>
+        <span class="v-menu__title overflow-hidden overflow-ellipsis whitespace-nowrap">
           {t(title as string)}
         </span>
       </>
-    ) : (
-      <span class="v-menu__title overflow-hidden overflow-ellipsis whitespace-nowrap">
-        {t(title as string)}
-      </span>
     )
   }
 
