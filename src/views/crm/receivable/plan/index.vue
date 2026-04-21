@@ -1,7 +1,7 @@
 <template>
     <ContentWrap>
         <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
-        <el-tabs v-model="activeName" @tab-click="handleTabClick" class="p-10px">
+        <el-tabs v-model="activeName" @tab-click="handleTabClick" class="list-tabs-compact">
             <el-tab-pane label="我负责的" name="1" />
             <el-tab-pane label="下属负责的" name="3" />
         </el-tabs>
