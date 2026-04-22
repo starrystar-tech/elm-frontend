@@ -11,7 +11,7 @@
             >
             <BaseButton
                 v-if="canExport"
-                type="success"
+                type="primary" plain
                 :loading="exportLoading"
                 @click="handleExport"
             >

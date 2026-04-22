@@ -2,7 +2,7 @@
   <ContentWrap>
     <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
     <div class="mb-10px">
-      <BaseButton v-if="canCreate" type="primary" @click="openImportTable">导入</BaseButton>
+      <BaseButton v-if="canCreate" type="primary" plain @click="openImportTable">导入</BaseButton>
       <BaseButton
         v-if="canDelete"
         type="danger"

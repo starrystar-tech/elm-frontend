@@ -48,7 +48,7 @@
           v-hasPermi="['iot:product:export']"
           :loading="exportLoading"
           plain
-          type="success"
+          type="primary"
           @click="handleExport"
         >
           <Icon class="mr-5px" icon="ep:download" />

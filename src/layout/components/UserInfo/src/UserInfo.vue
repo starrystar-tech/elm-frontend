@@ -66,6 +66,10 @@ const toDocument = () => {
       <span class="pl-[5px] text-14px text-[var(--top-header-text-color)] <lg:hidden">
         {{ userName }}
       </span>
+      <Icon
+        icon="ep:arrow-down"
+        class="ml-4px text-12px text-[var(--top-header-text-color)] <lg:hidden"
+      />
     </div>
     <template #dropdown>
       <ElDropdownMenu>

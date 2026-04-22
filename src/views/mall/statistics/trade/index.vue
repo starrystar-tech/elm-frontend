@@ -64,6 +64,8 @@
           <ShortcutDateRangePicker ref="shortcutDateRangePicker" @change="getTradeTrendData">
             <el-button
               class="ml-4"
+              type="primary"
+              plain
               @click="handleExport"
               :loading="exportLoading"
               v-hasPermi="['statistics:trade:export']"

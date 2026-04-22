@@ -62,7 +62,7 @@
           v-hasPermi="['product:spu:export']"
           :loading="exportLoading"
           plain
-          type="success"
+          type="primary"
           @click="handleExport"
         >
           <Icon class="mr-5px" icon="ep:download" />

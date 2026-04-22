@@ -211,6 +211,11 @@ export default defineComponent({
       return bindValue
     })
 
+    const defaultEmptyText = computed(() => {
+      const attrsEmptyText = (attrs.emptyText || attrs['empty-text']) as string | undefined
+      return attrsEmptyText || '暂无数据'
+    })
+
     const renderTableSelection = () => {
       const { selection, reserveSelection, align, headerAlign } = unref(getProps)
       // 渲染多选
@@ -330,6 +335,7 @@ export default defineComponent({
           // @ts-ignore
           ref={elTableRef}
           data={unref(getProps).data}
+          emptyText={unref(defaultEmptyText)}
           class="crm-soft-table"
           rowClassName={getRowClassName}
           onSelection-change={selectionChange}

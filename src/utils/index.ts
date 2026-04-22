@@ -319,6 +319,7 @@ export const getSumValue = (values: number[]): number => {
 export const formatToFraction = (num: number | string | undefined): string => {
   if (typeof num === 'undefined') return '0.00'
   const parsedNumber = typeof num === 'string' ? parseFloat(num) : num
+  if (!Number.isFinite(parsedNumber)) return '0.00'
   return (parsedNumber / 100.0).toFixed(2)
 }
 
@@ -330,25 +331,7 @@ export const formatToFraction = (num: number | string | undefined): string => {
  */
 // TODO @worker：看看怎么融合掉
 export const floatToFixed2 = (num: number | string | undefined): string => {
-  let str = '0.00'
-  if (typeof num === 'undefined') {
-    return str
-  }
-  const f = formatToFraction(num)
-  const decimalPart = f.toString().split('.')[1]
-  const len = decimalPart ? decimalPart.length : 0
-  switch (len) {
-    case 0:
-      str = f.toString() + '.00'
-      break
-    case 1:
-      str = f.toString() + '0'
-      break
-    case 2:
-      str = f.toString()
-      break
-  }
-  return str
+  return formatToFraction(num)
 }
 
 /**
@@ -359,6 +342,7 @@ export const floatToFixed2 = (num: number | string | undefined): string => {
 export const convertToInteger = (num: number | string | undefined): number => {
   if (typeof num === 'undefined') return 0
   const parsedNumber = typeof num === 'string' ? parseFloat(num) : num
+  if (!Number.isFinite(parsedNumber)) return 0
   // TODO 分转元后还有小数则四舍五入
   return Math.round(parsedNumber * 100)
 }

@@ -11,7 +11,7 @@
       >
         批量删除
       </BaseButton>
-      <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+      <BaseButton v-if="canExport" type="primary" plain :loading="exportLoading" @click="handleExport">
         导出
       </BaseButton>
     </div>

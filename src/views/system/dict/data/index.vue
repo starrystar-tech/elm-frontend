@@ -3,7 +3,7 @@
     <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
     <div class="mb-10px">
       <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
-      <BaseButton v-if="canExport" type="success" :loading="exportLoading" @click="handleExport">
+      <BaseButton v-if="canExport" type="primary" plain :loading="exportLoading" @click="handleExport">
         导出
       </BaseButton>
       <BaseButton

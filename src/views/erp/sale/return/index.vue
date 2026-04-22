@@ -165,7 +165,7 @@
           <Icon icon="ep:plus" class="mr-5px" /> 新增
         </el-button>
         <el-button
-          type="success"
+          type="primary"
           plain
           @click="handleExport"
           :loading="exportLoading"

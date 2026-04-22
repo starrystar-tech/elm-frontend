@@ -65,6 +65,7 @@
       <el-button
         :disabled="tableList.length === 0 || dbTableLoading"
         type="primary"
+        plain
         @click="handleImportTable"
       >
         导入

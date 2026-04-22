@@ -115,15 +115,14 @@
           新增
         </el-button>
         <el-button
-          type="success"
-          plain
+          type="primary" plain
           @click="handleExport"
           :loading="exportLoading"
           v-hasPermi="['iot:device:export']"
         >
           <Icon icon="ep:download" class="mr-5px" /> 导出
         </el-button>
-        <el-button type="warning" plain @click="handleImport" v-hasPermi="['iot:device:import']">
+        <el-button type="primary" plain @click="handleImport" v-hasPermi="['iot:device:import']">
           <Icon icon="ep:upload" /> 导入
         </el-button>
         <el-button

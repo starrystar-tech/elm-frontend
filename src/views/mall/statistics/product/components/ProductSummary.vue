@@ -8,6 +8,8 @@
         <ShortcutDateRangePicker ref="shortcutDateRangePicker" @change="getProductTrendData">
           <el-button
             class="ml-4"
+            type="primary"
+            plain
             @click="handleExport"
             :loading="exportLoading"
             v-hasPermi="['statistics:product:export']"

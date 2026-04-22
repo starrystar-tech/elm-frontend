@@ -10,10 +10,10 @@
             <BaseButton v-if="canCreate" type="primary" @click="openForm('create')"
                 >新增</BaseButton
             >
-            <BaseButton v-if="canImport" type="warning" @click="handleImport">导入</BaseButton>
+            <BaseButton v-if="canImport" type="primary" plain @click="handleImport">导入</BaseButton>
             <BaseButton
                 v-if="canExport"
-                type="success"
+                type="primary" plain
                 :loading="exportLoading"
                 @click="handleExport"
             >
