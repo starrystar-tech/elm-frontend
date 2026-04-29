@@ -261,11 +261,13 @@ export default defineComponent({
                 v.children && v.children.length
                   ? rnderTableColumn(v.children)
                   : // @ts-ignore
+                    v?.slots?.default?.(data) ||
+                    // @ts-ignore
                     getSlot(slots, v.field, data) ||
                     v?.formatter?.(data.row, data.column, data.row[v.field], data.$index) ||
                     data.row[v.field],
               // @ts-ignore
-              header: getSlot(slots, `${v.field}-header`)
+              header: () => v?.slots?.header?.() || getSlot(slots, `${v.field}-header`) || v.label
             }}
           </ElTableColumn>
         )
@@ -316,11 +318,13 @@ export default defineComponent({
                     v.children && v.children.length
                       ? rnderTreeTableColumn(v.children)
                       : // @ts-ignore
+                        v?.slots?.default?.(data) ||
+                        // @ts-ignore
                         getSlot(slots, v.field, data) ||
                         v?.formatter?.(data.row, data.column, data.row[v.field], data.$index) ||
                         data.row[v.field],
                   // @ts-ignore
-                  header: () => getSlot(slots, `${v.field}-header`) || v.label
+                  header: () => v?.slots?.header?.() || getSlot(slots, `${v.field}-header`) || v.label
                 }}
               </ElTableColumn>
             )
