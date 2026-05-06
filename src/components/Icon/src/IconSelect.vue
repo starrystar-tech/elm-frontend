@@ -138,25 +138,21 @@ watch(
   <div class="selector">
     <ElInput
       v-model="inputValue"
-      @click="visible = !visible"
       :clearable="props.clearable"
       @clear="clearIcon"
     >
       <template #append>
         <ElPopover
+          v-model:visible="visible"
           :popper-options="{
             placement: 'auto'
           }"
-          :visible="visible"
           :width="355"
           popper-class="pure-popper"
           trigger="click"
         >
           <template #reference>
-            <div
-              class="h-32px w-40px flex cursor-pointer items-center justify-center"
-              @click="visible = !visible"
-            >
+            <div class="h-32px w-40px flex cursor-pointer items-center justify-center">
               <Icon :icon="currentActiveType + icon" />
             </div>
           </template>

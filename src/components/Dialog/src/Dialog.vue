@@ -85,12 +85,14 @@ function closedHandler() {
     @closed="closedHandler"
   >
     <template #header="{ close }">
-      <div class="relative h-54px flex items-center justify-between pl-15px pr-15px">
-        <slot name="title">
-          {{ title }}
-        </slot>
+      <div class="com-dialog__header relative h-48px flex items-center justify-between pl-15px pr-15px">
+        <div class="com-dialog__title flex h-full items-center">
+          <slot name="title">
+            {{ title }}
+          </slot>
+        </div>
         <div
-          class="absolute right-15px top-[50%] h-54px flex translate-y-[-50%] items-center justify-between"
+          class="absolute right-15px top-[50%] h-48px flex translate-y-[-50%] items-center justify-between"
         >
           <Icon
             v-if="fullscreen"
@@ -135,7 +137,7 @@ function closedHandler() {
     margin: 0 !important;
 
     &__header {
-      height: 54px;
+      height: 48px;
       padding: 0;
       margin-right: 0 !important;
       border-bottom: 1px solid var(--el-border-color);
@@ -152,6 +154,13 @@ function closedHandler() {
     &__headerbtn {
       top: 0;
     }
+  }
+
+  .com-dialog__title {
+    font-size: var(--el-dialog-title-font-size);
+    font-weight: var(--el-dialog-title-font-weight);
+    line-height: 1;
+    color: var(--el-text-color-primary);
   }
 }
 </style>
