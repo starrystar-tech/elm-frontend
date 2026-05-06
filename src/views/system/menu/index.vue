@@ -6,41 +6,35 @@
       <BaseButton type="danger" @click="toggleExpandAll">展开/折叠</BaseButton>
       <BaseButton @click="refreshMenu">刷新菜单缓存</BaseButton>
     </div>
-  </ContentWrap>
 
-  <ContentWrap>
-    <el-auto-resizer>
-      <template #default="{ width }">
-        <Table-v2
-          v-model:expanded-row-keys="expandedRowKeys"
-          :columns="columns"
-          :data="list"
-          :expand-column-key="columns[0].key"
-          :height="1000"
-          :width="width"
-          fixed
-          row-key="id"
-        />
-      </template>
-    </el-auto-resizer>
+    <Table
+      :columns="tableColumns"
+      :data="list"
+      :loading="loading"
+      row-key="id"
+      :tree-props="{ children: 'children' }"
+      :default-expand-all="isExpandAll"
+      @register="tableRegister"
+    />
   </ContentWrap>
 
   <MenuForm ref="formRef" @success="getList" />
 </template>
 
-<script lang="tsx" setup>
+<script setup lang="tsx">
 import { reactive, ref } from 'vue'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { handleTree } from '@/utils/tree'
 import * as MenuApi from '@/api/system/menu'
-import { MenuVO } from '@/api/system/menu'
+import type { MenuVO } from '@/api/system/menu'
 import MenuForm from './MenuForm.vue'
-import DictTag from '@/components/DictTag/src/DictTag.vue'
-import { Icon } from '@/components/Icon'
-import { BaseButton } from '@/components/Button'
 import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
-import { ElButton, TableV2FixedDir, ElSwitch } from 'element-plus'
+import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
+import { Icon } from '@/components/Icon'
+import { ElSwitch } from 'element-plus'
 import type { FormSchema } from '@/types/form'
 import { checkPermi } from '@/utils/permission'
 import { CommonStatusEnum } from '@/utils/constants'
@@ -49,107 +43,89 @@ import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
 defineOptions({ name: 'SystemMenu' })
 
 const canCreate = checkPermi(['system:menu:create'])
+const { wsCache } = useCache()
+const message = useMessage()
 
-const columns = [
+const list = ref<MenuVO[]>([])
+const loading = ref(false)
+const isExpandAll = ref(false)
+const queryParams = reactive({
+  name: undefined,
+  status: undefined
+})
+const formRef = ref<InstanceType<typeof MenuForm>>()
+const tableRef = ref<any>()
+
+const tableColumns = reactive<TableColumn[]>([
+  { field: 'name', label: '菜单名称', minWidth: '220px' },
   {
-    key: 'name',
-    title: '菜单名称',
-    dataKey: 'name',
-    width: 250,
-    fixed: TableV2FixedDir.LEFT
-  },
-  {
-    key: 'icon',
-    title: '图标',
-    dataKey: 'icon',
-    width: 100,
-    align: 'center',
-    cellRenderer: ({ cellData: icon }) => <Icon icon={icon} />
-  },
-  {
-    key: 'sort',
-    title: '排序',
-    dataKey: 'sort',
-    width: 60
-  },
-  {
-    key: 'permission',
-    title: '权限标识',
-    dataKey: 'permission',
-    width: 300
-  },
-  {
-    key: 'component',
-    title: '组件路径',
-    dataKey: 'component',
-    width: 500
-  },
-  {
-    key: 'componentName',
-    title: '组件名称',
-    dataKey: 'componentName',
-    width: 200
-  },
-  {
-    key: 'status',
-    title: '状态',
-    dataKey: 'status',
-    width: 60,
-    fixed: TableV2FixedDir.RIGHT,
-    cellRenderer: ({ rowData }) => {
-      if (!checkPermi(['system:menu:update'])) {
-        return <DictTag type={DICT_TYPE.COMMON_STATUS} value={rowData.status} />
+    field: 'icon',
+    label: '图标',
+    width: '120px',
+    slots: {
+      default: ({ row }) => {
+        const menu = row as MenuVO
+        return menu.icon ? <Icon icon={menu.icon} /> : '-'
       }
-      return (
-        <ElSwitch
-          v-model={rowData.status}
-          active-value={CommonStatusEnum.ENABLE}
-          inactive-value={CommonStatusEnum.DISABLE}
-          loading={menuStatusUpdating[rowData.id]}
-          class="ml-4px"
-          onChange={(val) => handleStatusChanged(rowData, val)}
-        />
-      )
+    }
+  },
+  { field: 'sort', label: '排序', width: '90px' },
+  { field: 'permission', label: '权限标识', minWidth: '260px' },
+  { field: 'component', label: '组件路径', minWidth: '280px' },
+  { field: 'componentName', label: '组件名称', minWidth: '180px' },
+  {
+    field: 'status',
+    label: '状态',
+    width: '120px',
+    slots: {
+      default: ({ row }) => {
+        const menu = row as MenuVO
+        if (!checkPermi(['system:menu:update'])) {
+          return <DictTag type={DICT_TYPE.COMMON_STATUS} value={menu.status} />
+        }
+        return (
+          <ElSwitch
+            v-model={menu.status}
+            active-value={CommonStatusEnum.ENABLE}
+            inactive-value={CommonStatusEnum.DISABLE}
+            loading={!!menuStatusUpdating.value[menu.id]}
+            onChange={(val) => handleStatusChanged(menu, val as number)}
+          />
+        )
+      }
     }
   },
   {
-    key: 'operations',
-    title: '操作',
-    align: 'center',
-    width: 160,
-    fixed: TableV2FixedDir.RIGHT,
-    cellRenderer: ({ rowData }) => {
-      const buttons: JSX.Element[] = []
-      if (checkPermi(['system:menu:update'])) {
-        buttons.push(
-          <ElButton key="edit" link type="primary" onClick={() => openForm('update', rowData.id)}>
-            修改
-          </ElButton>
+    field: 'action',
+    label: '操作',
+    width: '200px',
+    fixed: 'right',
+    slots: {
+      default: ({ row }) => {
+        const menu = row as MenuVO
+        return (
+          <>
+            {checkPermi(['system:menu:update']) ? (
+              <BaseButton link type="primary" onClick={() => openForm('update', menu.id)}>
+                修改
+              </BaseButton>
+            ) : null}
+            {checkPermi(['system:menu:create']) ? (
+              <BaseButton link type="primary" onClick={() => openForm('create', undefined, menu.id)}>
+                新增
+              </BaseButton>
+            ) : null}
+            {checkPermi(['system:menu:delete']) ? (
+              <BaseButton link type="danger" onClick={() => handleDelete(menu.id)}>
+                删除
+              </BaseButton>
+            ) : null}
+          </>
         )
       }
-      if (checkPermi(['system:menu:create'])) {
-        buttons.push(
-          <ElButton
-            key="create"
-            link
-            type="primary"
-            onClick={() => openForm('create', undefined, rowData.id)}
-          >
-            新增
-          </ElButton>
-        )
-      }
-      if (checkPermi(['system:menu:delete'])) {
-        buttons.push(
-          <ElButton key="delete" link type="danger" onClick={() => handleDelete(rowData.id)}>
-            删除
-          </ElButton>
-        )
-      }
-      return buttons.length ? <>{buttons}</> : null
     }
   }
-]
+])
 
 const searchSchema = reactive<FormSchema[]>([
   {
@@ -175,21 +151,29 @@ const searchSchema = reactive<FormSchema[]>([
   }
 ])
 
-const { wsCache } = useCache()
-const message = useMessage()
-
-const list = ref<any[]>([])
-const queryParams = reactive({
-  name: undefined,
-  status: undefined
-})
-const isExpandAll = ref(false)
-const expandedRowKeys = ref<number[]>([])
-const formRef = ref<InstanceType<typeof MenuForm>>()
+const collectTreeNodes = (nodes: any[] = []) => {
+  const result: any[] = []
+  const loop = (items: any[]) => {
+    items.forEach((item) => {
+      result.push(item)
+      if (item.children?.length) {
+        loop(item.children)
+      }
+    })
+  }
+  loop(nodes)
+  return result
+}
 
 const getList = async () => {
-  const data = await MenuApi.getMenuList(queryParams)
-  list.value = handleTree(data)
+  loading.value = true
+  try {
+    const data = await MenuApi.getMenuList(queryParams)
+    const source = Array.isArray(data) ? data : data?.list || []
+    list.value = handleTree(source)
+  } finally {
+    loading.value = false
+  }
 }
 
 const setSearchParams = async (params: Recordable) => {
@@ -201,9 +185,14 @@ const openForm = (type: string, id?: number, parentId?: number) => {
   formRef.value?.open(type, id, parentId)
 }
 
+const tableRegister = (table: any) => {
+  tableRef.value = table
+}
+
 const toggleExpandAll = () => {
-  expandedRowKeys.value = isExpandAll.value ? [] : list.value.map((item) => item.id)
   isExpandAll.value = !isExpandAll.value
+  const nodes = collectTreeNodes(list.value)
+  nodes.forEach((node) => tableRef.value?.toggleRowExpansion?.(node, isExpandAll.value))
 }
 
 const refreshMenu = async () => {
@@ -224,7 +213,7 @@ const handleDelete = async (id: number) => {
   } catch {}
 }
 
-const menuStatusUpdating = ref({})
+const menuStatusUpdating = ref<Recordable>({})
 const handleStatusChanged = async (menu: MenuVO, val: number) => {
   menuStatusUpdating.value[menu.id] = true
   try {
