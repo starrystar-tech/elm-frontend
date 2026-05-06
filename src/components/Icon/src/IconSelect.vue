@@ -8,14 +8,14 @@ defineOptions({ name: 'IconSelect' })
 type ParameterCSSProperties = (item?: string) => CSSProperties | undefined
 
 const props = defineProps({
-  modelValue: {
-    require: false,
-    type: String
-  },
-  clearable: {
-    require: false,
-    type: Boolean
-  }
+    modelValue: {
+        require: false,
+        type: String
+    },
+    clearable: {
+        require: false,
+        type: Boolean
+    }
 })
 const emit = defineEmits<{ (e: 'update:modelValue', v: string) }>()
 
@@ -34,14 +34,14 @@ const currentPage = ref(1)
 const filterValue = ref('')
 
 const tabsList = [
-  {
-    label: 'Element Plus',
-    name: 'ep:'
-  },
-  {
-    label: '本地图标',
-    name: 'svg-icon:'
-  }
+    {
+        label: 'Element Plus',
+        name: 'ep:'
+    },
+    {
+        label: '本地图标',
+        name: 'svg-icon:'
+    }
 ]
 
 // 本地SVG图标列表
@@ -49,203 +49,202 @@ const localSvgIcons = ref<string[]>([])
 
 // 模拟获取本地SVG图标列表（实际项目中可以通过构建工具或API获取）
 onMounted(() => {
-  // 这里我们手动添加一些本地SVG图标作为示例
-  // 实际项目中，你可以通过扫描src/assets/svgs目录来获取所有SVG图标
-  const localIcons = ['menu-crm', 'menu-gzh']
+    // 这里我们手动添加一些本地SVG图标作为示例
+    // 实际项目中，你可以通过扫描src/assets/svgs目录来获取所有SVG图标
+    const localIcons = ['menu-crm', 'menu-gzh', 'wework']
 
-  localSvgIcons.value = localIcons
-  // 将本地图标添加到iconList中
-  iconList.value['svg-icon:'] = localIcons
-  copyIconList['svg-icon:'] = localIcons
+    localSvgIcons.value = localIcons
+    // 将本地图标添加到iconList中
+    iconList.value['svg-icon:'] = localIcons
+    copyIconList['svg-icon:'] = localIcons
 })
 
 const pageList = computed(() => {
-  if (currentPage.value === 1) {
-    return copyIconList[currentActiveType.value]
-      ?.filter((v) => v.includes(filterValue.value))
-      .slice(currentPage.value - 1, pageSize.value)
-  } else {
-    return copyIconList[currentActiveType.value]
-      ?.filter((v) => v.includes(filterValue.value))
-      .slice(
-        pageSize.value * (currentPage.value - 1),
-        pageSize.value * (currentPage.value - 1) + pageSize.value
-      )
-  }
+    if (currentPage.value === 1) {
+        return copyIconList[currentActiveType.value]
+            ?.filter((v) => v.includes(filterValue.value))
+            .slice(currentPage.value - 1, pageSize.value)
+    } else {
+        return copyIconList[currentActiveType.value]
+            ?.filter((v) => v.includes(filterValue.value))
+            .slice(
+                pageSize.value * (currentPage.value - 1),
+                pageSize.value * (currentPage.value - 1) + pageSize.value
+            )
+    }
 })
 const iconCount = computed(() => {
-  return copyIconList[currentActiveType.value] == undefined
-    ? 0
-    : copyIconList[currentActiveType.value].length
+    return copyIconList[currentActiveType.value] == undefined
+        ? 0
+        : copyIconList[currentActiveType.value].length
 })
 
 const iconItemStyle = computed((): ParameterCSSProperties => {
-  return (item) => {
-    if (inputValue.value === currentActiveType.value + item) {
-      return {
-        borderColor: 'var(--el-color-primary)',
-        color: 'var(--el-color-primary)'
-      }
+    return (item) => {
+        if (inputValue.value === currentActiveType.value + item) {
+            return {
+                borderColor: 'var(--el-color-primary)',
+                color: 'var(--el-color-primary)'
+            }
+        }
     }
-  }
 })
 
 function handleClick({ props }) {
-  currentPage.value = 1
-  currentActiveType.value = props.name
-  emit('update:modelValue', currentActiveType.value + iconList.value[currentActiveType.value][0])
-  icon.value = iconList.value[currentActiveType.value][0]
+    currentPage.value = 1
+    currentActiveType.value = props.name
+    emit('update:modelValue', currentActiveType.value + iconList.value[currentActiveType.value][0])
+    icon.value = iconList.value[currentActiveType.value][0]
 }
 
 function onChangeIcon(item) {
-  icon.value = item
-  emit('update:modelValue', currentActiveType.value + item)
-  visible.value = false
+    icon.value = item
+    emit('update:modelValue', currentActiveType.value + item)
+    visible.value = false
 }
 
 function onCurrentChange(page) {
-  currentPage.value = page
+    currentPage.value = page
 }
 
 function clearIcon() {
-  icon.value = ''
-  emit('update:modelValue', '')
-  visible.value = false
+    icon.value = ''
+    emit('update:modelValue', '')
+    visible.value = false
 }
 
 watch(
-  () => {
-    return props.modelValue
-  },
-  () => {
-    if (props.modelValue && props.modelValue.indexOf(':') >= 0) {
-      currentActiveType.value = props.modelValue.substring(0, props.modelValue.indexOf(':') + 1)
-      icon.value = props.modelValue.substring(props.modelValue.indexOf(':') + 1)
+    () => {
+        return props.modelValue
+    },
+    () => {
+        if (props.modelValue && props.modelValue.indexOf(':') >= 0) {
+            currentActiveType.value = props.modelValue.substring(
+                0,
+                props.modelValue.indexOf(':') + 1
+            )
+            icon.value = props.modelValue.substring(props.modelValue.indexOf(':') + 1)
+        }
     }
-  }
 )
 watch(
-  () => {
-    return filterValue.value
-  },
-  () => {
-    currentPage.value = 1
-  }
+    () => {
+        return filterValue.value
+    },
+    () => {
+        currentPage.value = 1
+    }
 )
 </script>
 
 <template>
-  <div class="selector">
-    <ElInput
-      v-model="inputValue"
-      :clearable="props.clearable"
-      @clear="clearIcon"
-    >
-      <template #append>
-        <ElPopover
-          v-model:visible="visible"
-          :popper-options="{
-            placement: 'auto'
-          }"
-          :width="355"
-          popper-class="pure-popper"
-          trigger="click"
-        >
-          <template #reference>
-            <div class="h-32px w-40px flex cursor-pointer items-center justify-center">
-              <Icon :icon="currentActiveType + icon" />
-            </div>
-          </template>
+    <div class="selector">
+        <ElInput v-model="inputValue" :clearable="props.clearable" @clear="clearIcon">
+            <template #append>
+                <ElPopover
+                    v-model:visible="visible"
+                    :popper-options="{
+                        placement: 'auto'
+                    }"
+                    :width="355"
+                    popper-class="pure-popper"
+                    trigger="click"
+                >
+                    <template #reference>
+                        <div class="h-32px w-40px flex cursor-pointer items-center justify-center">
+                            <Icon :icon="currentActiveType + icon" />
+                        </div>
+                    </template>
 
-          <ElInput v-model="filterValue" class="p-2" clearable placeholder="搜索图标" />
-          <ElDivider border-style="dashed" />
+                    <ElInput v-model="filterValue" class="p-2" clearable placeholder="搜索图标" />
+                    <ElDivider border-style="dashed" />
 
-          <ElTabs v-model="currentActiveType" @tab-click="handleClick">
-            <ElTabPane
-              v-for="(pane, index) in tabsList"
-              :key="index"
-              :label="pane.label"
-              :name="pane.name"
-            >
-              <ElDivider border-style="dashed" class="tab-divider" />
-              <ElScrollbar height="220px">
-                <ul class="ml-2 flex flex-wrap">
-                  <li
-                    v-for="(item, key) in pageList"
-                    :key="key"
-                    :style="iconItemStyle(item)"
-                    :title="item"
-                    class="icon-item mr-2 mt-1 w-1/10 flex cursor-pointer items-center justify-center border border-solid p-2"
-                    @click="onChangeIcon(item)"
-                  >
-                    <Icon :icon="currentActiveType + item" />
-                  </li>
-                </ul>
-              </ElScrollbar>
-            </ElTabPane>
-          </ElTabs>
-          <ElDivider border-style="dashed" />
+                    <ElTabs v-model="currentActiveType" @tab-click="handleClick">
+                        <ElTabPane
+                            v-for="(pane, index) in tabsList"
+                            :key="index"
+                            :label="pane.label"
+                            :name="pane.name"
+                        >
+                            <ElDivider border-style="dashed" class="tab-divider" />
+                            <ElScrollbar height="220px">
+                                <ul class="ml-2 flex flex-wrap">
+                                    <li
+                                        v-for="(item, key) in pageList"
+                                        :key="key"
+                                        :style="iconItemStyle(item)"
+                                        :title="item"
+                                        class="icon-item mr-2 mt-1 w-1/10 flex cursor-pointer items-center justify-center border border-solid p-2"
+                                        @click="onChangeIcon(item)"
+                                    >
+                                        <Icon :icon="currentActiveType + item" />
+                                    </li>
+                                </ul>
+                            </ElScrollbar>
+                        </ElTabPane>
+                    </ElTabs>
+                    <ElDivider border-style="dashed" />
 
-          <ElPagination
-            :current-page="currentPage"
-            :page-size="pageSize"
-            :total="iconCount"
-            background
-            class="h-10 flex items-center justify-center"
-            layout="prev, pager, next"
-            size="small"
-            @current-change="onCurrentChange"
-          />
-        </ElPopover>
-      </template>
-    </ElInput>
-  </div>
+                    <ElPagination
+                        :current-page="currentPage"
+                        :page-size="pageSize"
+                        :total="iconCount"
+                        background
+                        class="h-10 flex items-center justify-center"
+                        layout="prev, pager, next"
+                        size="small"
+                        @current-change="onCurrentChange"
+                    />
+                </ElPopover>
+            </template>
+        </ElInput>
+    </div>
 </template>
 
 <style lang="scss" scoped>
 .el-divider--horizontal {
-  margin: 1px auto !important;
+    margin: 1px auto !important;
 }
 
 .tab-divider.el-divider--horizontal {
-  margin: 0 !important;
+    margin: 0 !important;
 }
 
 .icon-item {
-  &:hover {
-    color: var(--el-color-primary);
-    border-color: var(--el-color-primary);
-    transform: scaleX(1.05);
-    transition: all 0.4s;
-  }
+    &:hover {
+        color: var(--el-color-primary);
+        border-color: var(--el-color-primary);
+        transform: scaleX(1.05);
+        transition: all 0.4s;
+    }
 }
 
 :deep(.el-tabs__nav-next) {
-  font-size: 15px;
-  line-height: 32px;
-  box-shadow: -5px 0 5px -6px #ccc;
+    font-size: 15px;
+    line-height: 32px;
+    box-shadow: -5px 0 5px -6px #ccc;
 }
 
 :deep(.el-tabs__nav-prev) {
-  font-size: 15px;
-  line-height: 32px;
-  box-shadow: 5px 0 5px -6px #ccc;
+    font-size: 15px;
+    line-height: 32px;
+    box-shadow: 5px 0 5px -6px #ccc;
 }
 
 :deep(.el-input-group__append) {
-  padding: 0;
+    padding: 0;
 }
 
 :deep(.el-tabs__item) {
-  height: 30px;
-  font-size: 12px;
-  font-weight: normal;
-  line-height: 30px;
+    height: 30px;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 30px;
 }
 
 :deep(.el-tabs__header),
 :deep(.el-tabs__nav-wrap) {
-  position: static;
-  margin: 0;
+    position: static;
+    margin: 0;
 }
 </style>
