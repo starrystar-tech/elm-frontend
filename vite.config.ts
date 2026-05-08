@@ -19,10 +19,19 @@ function normalizePath(path: string) {
 export default ({command, mode}: ConfigEnv): UserConfig => {
     let env = {} as any
     const isBuild = command === 'build'
-    if (!isBuild) {
-        env = loadEnv((process.argv[3] === '--mode' ? process.argv[4] : process.argv[3]), root)
-    } else {
-        env = loadEnv(mode, root)
+    env = loadEnv(mode, root)
+    let proxy = {}
+    // 本地请求各个环境的真实接口
+    if (env.VITE_USE_MOCK === 'false') {
+        proxy = {
+            ['/admin-api']: {
+                target: env.VITE_PROXY_API_URL,
+                ws: true,
+                changeOrigin: true,
+                secure: false,
+                // rewrite: (path) => path.replace(new RegExp(`^/admin-api`), ''),
+            },
+        }
     }
     return {
         base: env.VITE_BASE_PATH,
@@ -31,16 +40,8 @@ export default ({command, mode}: ConfigEnv): UserConfig => {
         server: {
             port: env.VITE_PORT, // 端口号
             host: "0.0.0.0",
-            open: env.VITE_OPEN === 'true',
-            // 本地跨域代理. 目前注释的原因：暂时没有用途，server 端已经支持跨域
-            // proxy: {
-            //   ['/admin-api']: {
-            //     target: env.VITE_BASE_URL,
-            //     ws: false,
-            //     changeOrigin: true,
-            //     rewrite: (path) => path.replace(new RegExp(`^/admin-api`), ''),
-            //   },
-            // },
+            // open: env.VITE_OPEN === 'true',
+            proxy
         },
         // 项目使用的vite插件。 单独提取到build/vite/plugin中管理
         plugins: createVitePlugins(),

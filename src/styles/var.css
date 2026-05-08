@@ -1,85 +1,85 @@
 :root {
-  --login-bg-color: #293146;
+    --login-bg-color: #293146;
 
-  --left-menu-max-width: 210px;
+    --left-menu-max-width: 210px;
 
-  --left-menu-min-width: 72px;
+    --left-menu-min-width: 72px;
 
-  --left-menu-bg-color: #ffffff;
+    --left-menu-bg-color: #ffffff;
 
-  --left-menu-bg-light-color: #f7fbff;
+    --left-menu-bg-light-color: #f7fbff;
 
-  --left-menu-bg-active-color: rgba(24, 144, 255, 0.1);
+    --left-menu-bg-active-color: rgba(24, 144, 255, 0.1);
 
-  --left-menu-text-color: #595959;
+    --left-menu-text-color: #595959;
 
-  --left-menu-text-active-color: #1890ff;
+    --left-menu-text-active-color: #1890ff;
 
-  --left-menu-collapse-bg-active-color: rgba(24, 144, 255, 0.12);
+    --left-menu-collapse-bg-active-color: rgba(24, 144, 255, 0.12);
 
-  --left-menu-divider-color: #eef2f6;
-  /* left menu end */
+    --left-menu-divider-color: #eef2f6;
+    /* left menu end */
 
-  /* logo start */
-  --logo-width: auto;
-  --logo-height: 50px;
+    /* logo start */
+    --logo-width: auto;
+    --logo-height: 50px;
 
-  --logo-title-text-color: #1f2a37;
-  /* logo end */
+    --logo-title-text-color: #1f2a37;
+    /* logo end */
 
-  /* header start */
-  --top-header-bg-color: #ffffff;
+    /* header start */
+    --top-header-bg-color: #ffffff;
 
-  --top-header-text-color: #1f2a37;
+    --top-header-text-color: #1f2a37;
 
-  --top-header-hover-color: #f3f6fb;
+    --top-header-hover-color: #f3f6fb;
 
-  --top-tool-height: var(--logo-height);
+    --top-tool-height: var(--logo-height);
 
-  --top-tool-p-x: 20px;
+    --top-tool-p-x: 20px;
 
-  --tags-view-height: 36px;
-  /* header start */
+    --tags-view-height: 36px;
+    /* header start */
 
-  /* tab menu start */
-  --tab-menu-max-width: 80px;
+    /* tab menu start */
+    --tab-menu-max-width: 80px;
 
-  --tab-menu-min-width: 30px;
+    --tab-menu-min-width: 30px;
 
-  --tab-menu-collapse-height: 36px;
-  /* tab menu end */
+    --tab-menu-collapse-height: 36px;
+    /* tab menu end */
 
-  --app-content-padding: 12px;
+    --app-content-padding: 12px;
 
-  --app-content-bg-color: #f4f7fb;
+    --app-content-bg-color: #f4f7fb;
 
-  --app-footer-height: 50px;
+    --app-footer-height: 50px;
 
-  --transition-time-02: 0.2s;
+    --transition-time-02: 0.2s;
 }
 
 .dark {
-  --app-content-bg-color: var(--el-bg-color);
+    --app-content-bg-color: var(--el-bg-color);
 }
 
 html,
 body {
-  /* 1. 强制使用灰度抗锯齿（最常用，能显著改善非 Mac 屏的模糊感） */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    /* 1. 强制使用灰度抗锯齿（最常用，能显著改善非 Mac 屏的模糊感） */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 
-  /* 2. 确保字体渲染不产生额外的模糊滤镜 */
-  text-rendering: optimizeLegibility;
+    /* 2. 确保字体渲染不产生额外的模糊滤镜 */
+    text-rendering: optimizeLegibility;
 
-  /* 3. 禁用某些浏览器默认的字体平滑过度处理 (针对旧版 Chrome/Android) */
-  /* 注意：现代浏览器通常忽略此属性，但在某些 Android 设备上有效 */
-  -webkit-text-size-adjust: 100%;
+    /* 3. 禁用某些浏览器默认的字体平滑过度处理 (针对旧版 Chrome/Android) */
+    /* 注意：现代浏览器通常忽略此属性，但在某些 Android 设备上有效 */
+    -webkit-text-size-adjust: 100%;
 }
 
 *,
 :after,
 :before {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
