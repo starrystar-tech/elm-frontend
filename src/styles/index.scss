@@ -18,6 +18,10 @@
     justify-content: flex-start;
 }
 
+div.action-btn-wrap {
+    padding: 10px 0 0 16px;
+}
+
 /* nprogress 适配 element-plus 的主题色 */
 #nprogress {
     & .bar {

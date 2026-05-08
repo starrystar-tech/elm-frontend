@@ -6,13 +6,14 @@
             <el-tab-pane label="我参与的" name="2" />
             <el-tab-pane label="下属负责的" name="3" />
         </el-tabs>
-        <div class="mb-10px">
+        <div class="action-btn-wrap">
             <BaseButton v-if="canCreate" type="primary" @click="openForm('create')"
                 >新增</BaseButton
             >
             <BaseButton
                 v-if="canExport"
-                type="primary" plain
+                type="primary"
+                plain
                 :loading="exportLoading"
                 @click="handleExport"
             >
