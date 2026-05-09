@@ -275,12 +275,14 @@ const tableColumns = reactive<TableColumn[]>([
                             'system:permission:assign-user-role'
                         ]) ? (
                             <ElDropdown
+                                trigger="click"
                                 onCommand={(command: string) => handleCommand(command, row)}
-                            >
-                                <ElButton link type="primary">
-                                    更多
-                                </ElButton>
-                                {{
+                                v-slots={{
+                                    default: () => (
+                                        <ElButton link type="primary">
+                                            更多
+                                        </ElButton>
+                                    ),
                                     dropdown: () => (
                                         <ElDropdownMenu>
                                             {checkPermi(['system:user:delete']) ? (
@@ -301,7 +303,7 @@ const tableColumns = reactive<TableColumn[]>([
                                         </ElDropdownMenu>
                                     )
                                 }}
-                            </ElDropdown>
+                            />
                         ) : null}
                     </div>
                 )

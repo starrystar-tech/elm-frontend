@@ -127,6 +127,61 @@ const remainingRouter: AppRouteRecordRaw[] = [
       }
     ]
   },
+  {
+    path: '/system',
+    component: Layout,
+    name: 'SystemConfigRoute',
+    meta: {
+      hidden: true
+    },
+    children: [
+      {
+        path: 'config',
+        component: () => import('@/views/system/config/index.vue'),
+        name: 'SystemConfigTab',
+        redirect: '/system/config/clue',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '系统配置',
+          activeMenu: '/system/config'
+        },
+        children: [
+          {
+            path: 'clue',
+            component: () => import('@/views/system/config/components/ClueConfigTab.vue'),
+            name: 'SystemConfigClue',
+            meta: { hidden: true, canTo: true, noCache: true, activeMenu: '/system/config' }
+          },
+          {
+            path: 'order',
+            component: () => import('@/views/system/config/components/OrderConfigTab.vue'),
+            name: 'SystemConfigOrder',
+            meta: { hidden: true, canTo: true, noCache: true, activeMenu: '/system/config' }
+          },
+          {
+            path: 'student',
+            component: () => import('@/views/system/config/components/StudentConfigTab.vue'),
+            name: 'SystemConfigStudent',
+            meta: { hidden: true, canTo: true, noCache: true, activeMenu: '/system/config' }
+          },
+          {
+            path: 'tag',
+            component: () => import('@/views/system/config/components/TagConfigTab.vue'),
+            name: 'SystemConfigTag',
+            meta: { hidden: true, canTo: true, noCache: true, activeMenu: '/system/config' }
+          },
+          {
+            path: 'other',
+            component: () => import('@/views/system/config/components/OtherConfigTab.vue'),
+            name: 'SystemConfigOther',
+            meta: { hidden: true, canTo: true, noCache: true, activeMenu: '/system/config' }
+          }
+        ]
+      }
+    ]
+  },
 
   {
     path: '/codegen',
