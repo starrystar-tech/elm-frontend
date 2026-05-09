@@ -10,6 +10,7 @@ export interface WeappConfigVO {
   appSecret: string
   token?: string
   encodingAesKey?: string
+  num?: string
   contactSecret?: string
   customerSecret?: string
   enabled: boolean

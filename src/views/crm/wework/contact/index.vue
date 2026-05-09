@@ -161,11 +161,19 @@ const handleSync = async () => {
 }
 
 const handleUpdateRemarkMobile = async (row: WeworkContactApi.WeworkContactVO) => {
-    const result = await ElMessageBox.prompt('请输入备注手机号，多个请用英文逗号分隔', '备注手机号', {
+    const result = await ElMessageBox.prompt('请输入1个手机号', '备注手机号', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         inputValue: row.mobile || '',
-        inputPlaceholder: '例如：13800000000,13900000000'
+        inputPlaceholder: '例如：13800000000',
+        inputValidator: (value) => {
+            const v = (value || '').trim()
+            if (!v) return true
+            if (!/^1\d{10}$/.test(v)) {
+                return '请输入正确的11位手机号'
+            }
+            return true
+        }
     })
     const mobile = (result.value || '').trim()
     await WeworkContactApi.updateWeworkRemarkMobile({ id: row.id, mobile })

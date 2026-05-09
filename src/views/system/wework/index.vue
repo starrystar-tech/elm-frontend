@@ -30,6 +30,9 @@
                                 @click="openForm('update', item)"
                                 >编辑</BaseButton
                             >
+                            <BaseButton link type="primary" @click="openDetail(item)"
+                                >详情</BaseButton
+                            >
                             <BaseButton
                                 v-if="canDelete"
                                 link
@@ -61,9 +64,38 @@
     </ContentWrap>
 
     <WeworkForm ref="formRef" @success="loadList" />
+
+    <el-dialog v-model="detailVisible" title="应用详情" width="720px">
+        <el-descriptions :column="1" border>
+            <el-descriptions-item label="应用名称">{{
+                detailData?.appName || '-'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="企业名称">{{
+                detailData?.companyName || '-'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="CorpId">{{
+                detailData?.corpId || '-'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="Token">{{
+                detailData?.token || '-'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="EncodingAESKey">{{
+                detailData?.encodingAesKey || '-'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="回调地址">
+                <div class="flex items-center gap-8px">
+                    <span class="break-all">{{ callbackUrl || '-' }}</span>
+                    <BaseButton v-if="callbackUrl" link type="primary" @click="copyCallbackUrl"
+                        >复制</BaseButton
+                    >
+                </div>
+            </el-descriptions-item>
+        </el-descriptions>
+    </el-dialog>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import * as WeappApi from '@/api/system/weapp'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
@@ -80,6 +112,12 @@ const canDelete = hasPermission(['system:weapp-config:delete'])
 const loading = ref(false)
 const list = ref<WeappApi.WeappConfigVO[]>([])
 const formRef = ref<InstanceType<typeof WeworkForm>>()
+const detailVisible = ref(false)
+const detailData = ref<WeappApi.WeappConfigVO>()
+const callbackUrl = computed(() => {
+    if (!detailData.value?.num) return ''
+    return `${window.location.origin}/admin-api/crm/wework-contact/callback/${detailData.value.num}`
+})
 
 const loadList = async () => {
     loading.value = true
@@ -92,6 +130,17 @@ const loadList = async () => {
 
 const openForm = (type: string, row?: WeappApi.WeappConfigVO) => {
     formRef.value?.open(type, row)
+}
+
+const openDetail = (row: WeappApi.WeappConfigVO) => {
+    detailData.value = row
+    detailVisible.value = true
+}
+
+const copyCallbackUrl = async () => {
+    if (!callbackUrl.value) return
+    await navigator.clipboard.writeText(callbackUrl.value)
+    message.success('回调地址已复制')
 }
 
 const handleDelete = async (id: number) => {
