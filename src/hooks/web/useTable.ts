@@ -157,11 +157,10 @@ export const useTable = <T = any>(config?: UseTableConfig<T>) => {
     },
     // 与Search组件结合
     setSearchParams: (data: Recordable) => {
-      tableObject.params = Object.assign(tableObject.params, {
-        pageSize: tableObject.pageSize,
-        pageNo: 1,
-        ...data
-      })
+      tableObject.params = {
+        ...(config?.defaultParams || {}),
+        ...(data || {})
+      }
       // 页码不等于1时更新页码重新获取数据，页码等于1时重新获取数据
       if (tableObject.currentPage !== 1) {
         tableObject.currentPage = 1

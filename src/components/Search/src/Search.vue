@@ -62,7 +62,18 @@ const useExternalActionBar = computed(
 )
 
 const newSchema = computed(() => {
-  let schema: FormSchema[] = cloneDeep(props.schema)
+  let schema: FormSchema[] = cloneDeep(props.schema).map((item) => {
+    if (item.component === 'Select' || item.component === 'SelectV2') {
+      return {
+        ...item,
+        componentProps: {
+          filterable: true,
+          ...item.componentProps
+        }
+      }
+    }
+    return item
+  })
   if ((props.showExpand || props.expand) && props.expandField && !unref(visible)) {
     const index = findIndex(schema, (v: FormSchema) => v.field === props.expandField)
     schema = schema.map((item, currentIndex) => ({
@@ -272,6 +283,14 @@ const onFormValidate = (prop: FormItemProp, isValid: boolean, message: string) =
   emit('validate', prop, isValid, message)
 }
 
+const onEnterSearch = (event: KeyboardEvent) => {
+  const target = event.target as HTMLElement | null
+  if (!target) return
+  const tagName = target.tagName?.toUpperCase()
+  if (tagName === 'TEXTAREA') return
+  search()
+}
+
 const defaultExpose = {
   setValues,
   setProps,
@@ -314,6 +333,7 @@ defineExpose(defaultExpose)
         :model="model"
         :inline="inline"
         :label-width="labelWidth"
+        @keydown.enter="onEnterSearch"
       >
         <slot></slot>
       </ElForm>
@@ -340,6 +360,7 @@ defineExpose(defaultExpose)
           hide-required-asterisk
           @register="register"
           @validate="onFormValidate"
+          @keydown.enter="onEnterSearch"
         >
           <template #action>
             <div v-if="layout === 'inline'">

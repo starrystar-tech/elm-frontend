@@ -25,15 +25,18 @@
 
 <script setup lang="tsx">
 import { reactive, ref } from 'vue'
-import { type TabsPaneContext } from 'element-plus'
+import { ElMessageBox, type TabsPaneContext } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
+import { DICT_TYPE, getStrDictOptions } from '@/utils/dict'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
 import type { FormSchema } from '@/types/form'
 import { useTable } from '@/hooks/web/useTable'
 import * as WeworkContactApi from '@/api/crm/wework/contact'
+import * as WeappApi from '@/api/system/weapp'
 
 defineOptions({ name: 'CrmWeworkContact' })
 
@@ -43,16 +46,17 @@ const hasPhone = ref(true)
 const activeName = ref('1')
 const companyOptions = ref<{ label: string; value: string }[]>([])
 const memberOptions = ref<{ label: string; value: string }[]>([])
+const corpCompanyMap = ref<Record<string, string>>({})
 
 const searchSchema = reactive<FormSchema[]>([
     {
         field: 'companyName',
-        label: '企业',
+        label: '企微',
         component: 'Select',
         componentProps: {
             options: [],
             clearable: true,
-            placeholder: '请选择企业',
+            placeholder: '请选择企微',
             style: { width: '220px' }
         }
     },
@@ -90,10 +94,11 @@ const searchSchema = reactive<FormSchema[]>([
     {
         field: 'addWay',
         label: '添加方式',
-        component: 'Input',
+        component: 'Select',
         componentProps: {
             clearable: true,
-            placeholder: '请输入添加方式编码',
+            placeholder: '请选择添加方式',
+            options: getStrDictOptions(DICT_TYPE.WEWORK_FOLLOW_USER_ADD_WAY),
             style: { width: '220px' }
         }
     },
@@ -135,7 +140,8 @@ const setSearchParams = (params: Recordable) => {
 }
 
 const handlePhoneTabChange = () => {
-    tableMethods.setSearchParams({ ...tableObject.params, hasPhone: hasPhone.value })
+    const params = { ...(tableObject.params || {}) }
+    tableMethods.setSearchParams({ ...params, hasPhone: hasPhone.value })
 }
 
 const handleTabClick = (tab: TabsPaneContext) => {
@@ -148,21 +154,43 @@ const handleSync = async () => {
     syncLoading.value = true
     try {
         const resp = await WeworkContactApi.syncWeworkContacts()
-        message.success(`同步完成：成员 ${resp.staffCount}，客户 ${resp.customerCount}`)
-        await loadFilterOptions()
-        await tableMethods.getList()
+        message.success(resp?.message || '已提交后台同步任务，请稍后刷新列表查看结果')
     } finally {
         syncLoading.value = false
     }
 }
 
+const handleUpdateRemarkMobile = async (row: WeworkContactApi.WeworkContactVO) => {
+    const result = await ElMessageBox.prompt('请输入备注手机号，多个请用英文逗号分隔', '备注手机号', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        inputValue: row.mobile || '',
+        inputPlaceholder: '例如：13800000000,13900000000'
+    })
+    const mobile = (result.value || '').trim()
+    await WeworkContactApi.updateWeworkRemarkMobile({ id: row.id, mobile })
+    message.success('保存成功')
+    await tableMethods.getList()
+}
+
 const loadFilterOptions = async () => {
-    const [companies, members] = await Promise.all([
-        WeworkContactApi.getWeworkCompanySimpleList(),
+    const [weappList, members] = await Promise.all([
+        WeappApi.getWeappConfigList(),
         WeworkContactApi.getWeworkMemberSimpleList()
     ])
 
-    companyOptions.value = companies.map((item: string) => ({ label: item, value: item }))
+    const appList = (weappList || []).filter((item) => !!item?.corpId)
+    corpCompanyMap.value = appList.reduce(
+        (acc: Record<string, string>, item) => {
+            acc[item.corpId] = item.companyName || item.corpId
+            return acc
+        },
+        {} as Record<string, string>
+    )
+    companyOptions.value = appList.map((item) => ({
+        label: item.companyName || item.corpId,
+        value: item.corpId
+    }))
     memberOptions.value = members.map((item: any) => ({ label: item.name, value: item.userId }))
 
     searchSchema[0].componentProps = {
@@ -189,7 +217,14 @@ const tableColumns = reactive<TableColumn[]>([
                             {(row.customerName || '客').slice(0, 1)}
                         </el-avatar>
                         <div>
-                            <div>{row.customerName || '-'}</div>
+                            <div>
+                                {row.customerName || '-'}@
+                                {row.corpName ? (
+                                    <span class="text-[#fa8c16]">{row.corpName}</span>
+                                ) : (
+                                    <span class="text-[#52c41a]">个微</span>
+                                )}
+                            </div>
                             <div class="text-12px text-[var(--el-text-color-secondary)]">
                                 昵称: {row.customerNickname || '-'}
                             </div>
@@ -218,7 +253,16 @@ const tableColumns = reactive<TableColumn[]>([
             }
         }
     },
-    { field: 'addWay', label: '添加方式', width: '120px' },
+    {
+        field: 'addWay',
+        label: '添加方式',
+        width: '180px',
+        slots: {
+            default: (data) => (
+                <DictTag type={DICT_TYPE.WEWORK_FOLLOW_USER_ADD_WAY} value={data.row.addWay} />
+            )
+        }
+    },
     {
         field: 'addTime',
         label: '添加时间',
@@ -226,11 +270,37 @@ const tableColumns = reactive<TableColumn[]>([
         formatter: dateFormatter
     },
     {
-        field: 'companyName',
-        label: '企业',
-        width: '180px'
+        field: 'corpName',
+        label: '所属企业',
+        width: '180px',
+        slots: {
+            default: (data) => {
+                const row = data.row as WeworkContactApi.WeworkContactVO
+                return corpCompanyMap.value[row.corpId] || '-'
+            }
+        }
     },
-    { field: 'remark', label: '备注', showOverflowTooltip: true }
+    { field: 'remark', label: '备注', showOverflowTooltip: true },
+    {
+        field: 'action',
+        label: '操作',
+        width: '120px',
+        fixed: 'right',
+        hidden: hasPhone.value,
+        slots: {
+            default: (data) => {
+                const row = data.row as WeworkContactApi.WeworkContactVO
+                if (hasPhone.value) {
+                    return null
+                }
+                return (
+                    <BaseButton link type="primary" onClick={() => handleUpdateRemarkMobile(row)}>
+                        备注手机号
+                    </BaseButton>
+                )
+            }
+        }
+    }
 ])
 
 onMounted(async () => {

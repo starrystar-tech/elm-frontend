@@ -2,8 +2,8 @@ import request from '@/config/axios'
 
 export interface WeworkContactVO {
   id: number
-  companyName: string
   corpId: string
+  corpName: string
   externalUserId: string
   customerName: string
   customerNickname: string
@@ -44,4 +44,8 @@ export const getWeworkMemberSimpleList = async () => {
 
 export const getWeworkCompanySimpleList = async () => {
   return await request.get({ url: '/crm/wework-contact/company-simple-list' })
+}
+
+export const updateWeworkRemarkMobile = async (data: { id: number; mobile: string }) => {
+  return await request.put({ url: '/crm/wework-contact/update-remark-mobile', data })
 }

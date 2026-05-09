@@ -5,7 +5,7 @@
         <el-input v-model="formData.appName" placeholder="请输入应用名称" clearable />
       </el-form-item>
       <el-form-item label="应用图片" prop="appLogo">
-        <el-input v-model="formData.appLogo" placeholder="请输入图片 URL" clearable />
+        <UploadImg v-model="formData.appLogo" :limit="1" height="80px" width="80px" />
       </el-form-item>
       <el-form-item label="应用状态" prop="enabled">
         <el-switch v-model="formData.enabled" active-text="上线" inactive-text="下线" />
