@@ -68,6 +68,7 @@ import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
@@ -230,6 +231,16 @@ const tableColumns = reactive<TableColumn[]>([
     { field: 'id', label: '用户编号' },
     { field: 'username', label: '用户名称', showOverflowTooltip: true },
     { field: 'nickname', label: '用户昵称', showOverflowTooltip: true },
+    {
+        field: 'userLevel',
+        label: '用户等级',
+        width: '100px',
+        slots: {
+            default: (data) => (
+                <DictTag type={'system_user_level'} value={data.row.userLevel || data.row.level} />
+            )
+        }
+    },
     { field: 'deptName', label: '部门', showOverflowTooltip: true },
     { field: 'mobile', label: '手机号码', width: '120px' },
     {
