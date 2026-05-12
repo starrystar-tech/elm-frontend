@@ -1,5 +1,5 @@
 <template>
-    <Dialog v-model="dialogVisible" :title="dialogTitle">
+    <Dialog v-model="dialogVisible" :title="dialogTitle" width="900px">
         <el-form
             ref="formRef"
             v-loading="formLoading"
@@ -9,10 +9,96 @@
         >
             <el-row>
                 <el-col :span="12">
-                    <el-form-item label="用户昵称" prop="nickname">
-                        <el-input v-model="formData.nickname" placeholder="请输入用户昵称" />
+                    <el-form-item label="姓名" prop="nickname">
+                        <el-input v-model="formData.nickname" placeholder="请输入姓名" />
                     </el-form-item>
                 </el-col>
+                <el-col :span="12">
+                    <el-form-item label="成员ID" prop="memberId">
+                        <el-input v-model="formData.memberId" placeholder="请输入成员ID" />
+                    </el-form-item>
+                </el-col>
+            </el-row>
+
+            <!-- <el-row>
+                <el-col :span="12">
+                    <el-form-item label="账号类型" prop="accountType">
+                        <el-select v-model="formData.accountType" placeholder="请选择账号类型">
+                            <el-option label="付费账号" value="paid" />
+                            <el-option label="免费账号" value="free" />
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12" />
+            </el-row> -->
+
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="登录邮箱" prop="email">
+                        <el-input
+                            v-model="formData.email"
+                            maxlength="50"
+                            placeholder="请输入邮箱"
+                        />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="到期时间" prop="expireTime">
+                        <el-date-picker
+                            v-model="formData.expireTime"
+                            type="datetime"
+                            value-format="YYYY-MM-DD HH:mm:ss"
+                            placeholder="请选择到期时间"
+                            style="width: 100%"
+                        />
+                    </el-form-item>
+                </el-col>
+            </el-row>
+
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="管理企业" prop="manageCompanyIds">
+                        <el-select
+                            v-model="formData.manageCompanyIds"
+                            multiple
+                            clearable
+                            placeholder="请选择管理企业"
+                        >
+                            <el-option
+                                v-for="item in weappList"
+                                :key="item.id"
+                                :label="item.companyName || item.appName || item.corpId"
+                                :value="item.id!"
+                            />
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="状态" prop="status">
+                        <el-radio-group v-model="formData.status">
+                            <el-radio :value="0">启用</el-radio>
+                            <el-radio :value="1">禁用</el-radio>
+                        </el-radio-group>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="呼叫工号" prop="callNo">
+                        <el-input v-model="formData.callNo" placeholder="请输入呼叫工号" />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="呼叫分机" prop="callExt">
+                        <el-input v-model="formData.callExt" placeholder="请输入呼叫分机" />
+                    </el-form-item>
+                </el-col>
+            </el-row>
+
+            <el-divider content-position="left">基础信息</el-divider>
+
+            <el-row>
                 <el-col :span="12">
                     <el-form-item label="归属部门" prop="deptId">
                         <el-tree-select
@@ -25,7 +111,20 @@
                         />
                     </el-form-item>
                 </el-col>
+                <el-col :span="12">
+                    <el-form-item label="岗位">
+                        <el-select v-model="formData.postIds" multiple placeholder="请选择岗位">
+                            <el-option
+                                v-for="item in postList"
+                                :key="item.id"
+                                :label="item.name"
+                                :value="item.id!"
+                            />
+                        </el-select>
+                    </el-form-item>
+                </el-col>
             </el-row>
+
             <el-row>
                 <el-col :span="12">
                     <el-form-item label="手机号码" prop="mobile">
@@ -37,15 +136,19 @@
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item label="邮箱" prop="email">
-                        <el-input
-                            v-model="formData.email"
-                            maxlength="50"
-                            placeholder="请输入邮箱"
-                        />
+                    <el-form-item label="用户性别">
+                        <el-select v-model="formData.sex" placeholder="请选择">
+                            <el-option
+                                v-for="dict in getIntDictOptions(DICT_TYPE.SYSTEM_USER_SEX)"
+                                :key="dict.value"
+                                :label="dict.label"
+                                :value="dict.value"
+                            />
+                        </el-select>
                     </el-form-item>
                 </el-col>
             </el-row>
+
             <el-row>
                 <el-col :span="12">
                     <el-form-item v-if="formData.id === undefined" label="用户名称" prop="username">
@@ -63,19 +166,8 @@
                     </el-form-item>
                 </el-col>
             </el-row>
+
             <el-row>
-                <el-col :span="12">
-                    <el-form-item label="用户性别">
-                        <el-select v-model="formData.sex" placeholder="请选择">
-                            <el-option
-                                v-for="dict in getIntDictOptions(DICT_TYPE.SYSTEM_USER_SEX)"
-                                :key="dict.value"
-                                :label="dict.label"
-                                :value="dict.value"
-                            />
-                        </el-select>
-                    </el-form-item>
-                </el-col>
                 <el-col :span="12">
                     <el-form-item label="用户等级">
                         <el-select
@@ -92,22 +184,9 @@
                         </el-select>
                     </el-form-item>
                 </el-col>
-            </el-row>
-            <el-row>
-                <el-col :span="12">
-                    <el-form-item label="岗位">
-                        <el-select v-model="formData.postIds" multiple placeholder="请选择">
-                            <el-option
-                                v-for="item in postList"
-                                :key="item.id"
-                                :label="item.name"
-                                :value="item.id!"
-                            />
-                        </el-select>
-                    </el-form-item>
-                </el-col>
                 <el-col :span="12" />
             </el-row>
+
             <el-row>
                 <el-col :span="24">
                     <el-form-item label="备注">
@@ -119,13 +198,70 @@
                     </el-form-item>
                 </el-col>
             </el-row>
+
+            <el-divider content-position="left">企微绑定</el-divider>
+
+            <el-row>
+                <el-col :span="24">
+                    <el-form-item label="绑定账号">
+                        <div style="width: 100%">
+                            <el-button type="primary" plain @click="openWecomSelector">
+                                选择企微账号
+                            </el-button>
+                            <el-table
+                                :data="formData.wecomBindList"
+                                border
+                                style="margin-top: 12px"
+                                empty-text="暂无绑定账号"
+                            >
+                                <el-table-column label="企微公司" min-width="180">
+                                    <template #default="{ row }">
+                                        {{ getCorpName(row.corpId) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="企微账号" min-width="180">
+                                    <template #default="{ row }">
+                                        {{ row.staffName || row.staffUserId }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column
+                                    label="账号ID"
+                                    min-width="180"
+                                    prop="staffUserId"
+                                />
+                                <el-table-column label="操作" width="100" fixed="right">
+                                    <template #default="{ $index }">
+                                        <el-button
+                                            link
+                                            type="danger"
+                                            @click="removeWecomBindRow($index)"
+                                        >
+                                            删除
+                                        </el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                    </el-form-item>
+                </el-col>
+            </el-row>
         </el-form>
+
         <template #footer>
             <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
             <el-button @click="dialogVisible = false">取 消</el-button>
         </template>
     </Dialog>
+
+    <WeworkAccountSelector
+        v-model="wecomSelectorVisible"
+        :members="wecomMemberList"
+        :selected="formData.wecomBindList"
+        :occupied-keys="occupiedWecomKeys"
+        @confirm="handleWecomSelectorConfirm"
+    />
 </template>
+
 <script lang="ts" setup>
 import { DICT_TYPE, getIntDictOptions, getStrDictOptions } from '@/utils/dict'
 import { CommonStatusEnum } from '@/utils/constants'
@@ -133,43 +269,49 @@ import { defaultProps, handleTree } from '@/utils/tree'
 import * as PostApi from '@/api/system/post'
 import * as DeptApi from '@/api/system/dept'
 import * as UserApi from '@/api/system/user'
+import * as WeappApi from '@/api/system/weapp'
+import * as WeworkContactApi from '@/api/crm/wework/contact'
+import WeworkAccountSelector from './components/WeworkAccountSelector.vue'
 import { FormRules } from 'element-plus'
 
 defineOptions({ name: 'SystemUserForm' })
 
-const { t } = useI18n() // 国际化
-const message = useMessage() // 消息弹窗
+const { t } = useI18n()
+const message = useMessage()
 
-const dialogVisible = ref(false) // 弹窗的是否展示
-const dialogTitle = ref('') // 弹窗的标题
-const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
-const formType = ref('') // 表单的类型：create - 新增；update - 修改
+const dialogVisible = ref(false)
+const dialogTitle = ref('')
+const formLoading = ref(false)
+const formType = ref('')
+
 const formData = ref({
     nickname: '',
-    deptId: '',
+    memberId: '',
+    accountType: 'free',
+    roleIds: [] as number[],
+    deptId: undefined as number | undefined,
+    postIds: [] as number[],
     mobile: '',
     email: '',
-    id: undefined,
+    id: undefined as number | undefined,
     username: '',
     password: '',
-    sex: undefined,
-    userLevel: undefined,
-    postIds: [],
+    sex: undefined as number | undefined,
+    userLevel: undefined as string | undefined,
     remark: '',
     status: CommonStatusEnum.ENABLE,
-    roleIds: []
+    expireTime: undefined as string | undefined,
+    callNo: '',
+    callExt: '',
+    manageCompanyIds: [] as number[],
+    wecomBindList: [] as UserApi.UserWecomBindVO[]
 })
+
 const formRules = reactive<FormRules>({
     username: [{ required: true, message: '用户名称不能为空', trigger: 'blur' }],
     nickname: [{ required: true, message: '用户昵称不能为空', trigger: 'blur' }],
     password: [{ required: true, message: '用户密码不能为空', trigger: 'blur' }],
-    email: [
-        {
-            type: 'email',
-            message: '请输入正确的邮箱地址',
-            trigger: ['blur', 'change']
-        }
-    ],
+    email: [{ type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }],
     mobile: [
         {
             pattern:
@@ -179,63 +321,130 @@ const formRules = reactive<FormRules>({
         }
     ]
 })
-const formRef = ref() // 表单 Ref
-const deptList = ref<Tree[]>([]) // 树形结构
-const postList = ref([] as PostApi.PostVO[]) // 岗位列表
 
-/** 打开弹窗 */
+const formRef = ref()
+const deptList = ref<Tree[]>([])
+const postList = ref([] as PostApi.PostVO[])
+const weappList = ref([] as WeappApi.WeappConfigVO[])
+const wecomMemberList = ref([] as WeworkContactApi.WeworkMemberSimpleVO[])
+const occupiedWecomKeys = ref<string[]>([])
+
+const corpOptions = computed(() => {
+    const map = new Map<string, { corpId: string; corpName: string }>()
+    wecomMemberList.value.forEach((item) => {
+        if (!item.corpId || map.has(item.corpId)) return
+        map.set(item.corpId, {
+            corpId: item.corpId,
+            corpName: item.corpName || item.corpId
+        })
+    })
+    return Array.from(map.values())
+})
+
+const getCorpName = (corpId?: string) => {
+    if (!corpId) return ''
+    const fromWeapp = weappList.value.find((item) => item.corpId === corpId)
+    if (fromWeapp) return fromWeapp.companyName || fromWeapp.appName || fromWeapp.corpId
+    return corpOptions.value.find((item) => item.corpId === corpId)?.corpName || corpId
+}
+
+const wecomSelectorVisible = ref(false)
+
+const openWecomSelector = () => {
+    wecomSelectorVisible.value = true
+}
+
+const handleWecomSelectorConfirm = (rows: UserApi.UserWecomBindVO[]) => {
+    formData.value.wecomBindList = rows
+}
+
+const removeWecomBindRow = (index: number) => {
+    formData.value.wecomBindList.splice(index, 1)
+}
+
 const open = async (type: string, id?: number) => {
     dialogVisible.value = true
-    dialogTitle.value = t('action.' + type)
+    dialogTitle.value = type === 'update' ? '编辑用户' : t('action.' + type)
     formType.value = type
     resetForm()
-    // 修改时，设置数据
+
+    const [deptData, postData, weappData, wecomMembers] = await Promise.all([
+        DeptApi.getSimpleDeptList(),
+        PostApi.getSimplePostList(),
+        WeappApi.getWeappConfigList(),
+        WeworkContactApi.getWeworkMemberSimpleList()
+    ])
+    deptList.value = handleTree(deptData)
+    postList.value = postData
+    weappList.value = weappData || []
+    wecomMemberList.value = (wecomMembers || []).map((item: any) => ({
+        corpId: item.corpId,
+        corpName: item.corpName || item.corpId,
+        staffUserId: item.staffUserId || item.userId,
+        staffName: item.staffName || item.name
+    }))
+    occupiedWecomKeys.value = await UserApi.getWecomBindOccupied(id)
+
     if (id) {
         formLoading.value = true
         try {
-            formData.value = await UserApi.getUser(id)
+            const detail = await UserApi.getUser(id)
+            formData.value = {
+                ...formData.value,
+                ...detail,
+                postIds: detail.postIds || [],
+                roleIds: detail.roleIds || [],
+                manageCompanyIds: detail.manageCompanyIds || [],
+                wecomBindList: detail.wecomBindList || [],
+                accountType: detail.accountType || 'free',
+                memberId: detail.memberId || '',
+                callNo: detail.callNo || '',
+                callExt: detail.callExt || ''
+            }
         } finally {
             formLoading.value = false
         }
     }
-    // 加载部门树
-    deptList.value = handleTree(await DeptApi.getSimpleDeptList())
-    // 加载岗位列表
-    postList.value = await PostApi.getSimplePostList()
 }
-defineExpose({ open }) // 提供 open 方法，用于打开弹窗
+defineExpose({ open })
 
-/** 提交表单 */
-const emit = defineEmits(['success']) // 定义 success 事件，用于操作成功后的回调
+const emit = defineEmits(['success'])
 const submitForm = async () => {
-    // 校验表单
     if (!formRef) return
     const valid = await formRef.value.validate()
     if (!valid) return
-    // 提交请求
+
     formLoading.value = true
     try {
-        const data = formData.value as unknown as UserApi.UserVO
+        const data: UserApi.UserVO = {
+            ...formData.value,
+            wecomBindList: formData.value.wecomBindList.filter(
+                (item) => item.corpId && item.staffUserId
+            )
+        }
         if (formType.value === 'create') {
             await UserApi.createUser(data)
             message.success(t('common.createSuccess'))
         } else {
-            await UserApi.updateUser(data)
+            const { password, ...updateData } = data as UserApi.UserVO & { password?: string }
+            await UserApi.updateUser(updateData as UserApi.UserVO)
             message.success(t('common.updateSuccess'))
         }
         dialogVisible.value = false
-        // 发送操作成功的事件
         emit('success')
     } finally {
         formLoading.value = false
     }
 }
 
-/** 重置表单 */
 const resetForm = () => {
     formData.value = {
         nickname: '',
-        deptId: '',
+        memberId: '',
+        accountType: 'free',
+        roleIds: [],
+        deptId: undefined,
+        postIds: [],
         mobile: '',
         email: '',
         id: undefined,
@@ -243,10 +452,13 @@ const resetForm = () => {
         password: '',
         sex: undefined,
         userLevel: undefined,
-        postIds: [],
         remark: '',
         status: CommonStatusEnum.ENABLE,
-        roleIds: []
+        expireTime: undefined,
+        callNo: '',
+        callExt: '',
+        manageCompanyIds: [],
+        wecomBindList: []
     }
     formRef.value?.resetFields()
 }

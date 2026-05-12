@@ -8,16 +8,15 @@
         <el-col :span="19" :xs="24">
             <ContentWrap>
                 <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
-                <div class="mb-10px">
+
+                <div class="action-btn-wrap">
                     <BaseButton v-if="canCreate" type="primary" @click="openForm('create')"
                         >新增</BaseButton
                     >
-                    <BaseButton v-if="canImport" type="primary" plain @click="handleImport"
-                        >导入</BaseButton
-                    >
                     <BaseButton
                         v-if="canExport"
-                        type="primary" plain
+                        type="primary"
+                        plain
                         :loading="exportLoading"
                         @click="handleExport"
                     >
@@ -31,7 +30,11 @@
                     >
                         批量删除
                     </BaseButton>
+                    <BaseButton type="primary" plain @click="handleSetDataPermission"
+                        >设置数据权限</BaseButton
+                    >
                 </div>
+
                 <Table
                     v-model:currentPage="tableObject.currentPage"
                     v-model:pageSize="tableObject.pageSize"
@@ -48,8 +51,28 @@
     </el-row>
 
     <UserForm ref="formRef" @success="tableMethods.getList" />
-    <UserImportForm ref="importFormRef" @success="tableMethods.getList" />
+    <UserImportForm ref="importFormRef" @success="handleImportSuccess" />
     <UserAssignRoleForm ref="assignRoleFormRef" @success="tableMethods.getList" />
+
+    <Dialog v-model="uploadResultVisible" title="用户上传结果" width="720px">
+        <el-empty v-if="!lastImportResult" description="暂无上传记录" />
+        <template v-else>
+            <el-descriptions :column="1" border>
+                <el-descriptions-item label="新增成功">
+                    {{ lastImportResult.createUsernames.length }} 人
+                </el-descriptions-item>
+                <el-descriptions-item label="更新成功">
+                    {{ lastImportResult.updateUsernames.length }} 人
+                </el-descriptions-item>
+                <el-descriptions-item label="更新失败">
+                    {{ Object.keys(lastImportResult.failureUsernames).length }} 人
+                </el-descriptions-item>
+            </el-descriptions>
+        </template>
+        <template #footer>
+            <el-button type="primary" @click="uploadResultVisible = false">关闭</el-button>
+        </template>
+    </Dialog>
 </template>
 
 <script setup lang="tsx">
@@ -84,26 +107,42 @@ const message = useMessage()
 
 const deptId = ref<number | undefined>(undefined)
 const checkedIds = ref<number[]>([])
+const showAll = ref(true)
+const uploadResultVisible = ref(false)
+const lastImportResult = ref<any | null>(null)
 
 const searchSchema = reactive<FormSchema[]>([
     {
-        field: 'username',
-        label: '用户名称',
+        field: 'deptKeyword',
+        label: '企业名称',
         component: 'Input',
         componentProps: {
-            placeholder: '请输入用户名称',
+            placeholder: '请输入企业名称',
             clearable: true,
-            style: { width: '240px' }
+            style: { width: '220px' }
         }
     },
     {
-        field: 'mobile',
-        label: '手机号码',
+        field: 'queryType',
+        label: '姓名帐号',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择',
+            options: [
+                { label: '姓名', value: 'nickname' },
+                { label: '帐号', value: 'username' }
+            ],
+            style: { width: '140px' }
+        }
+    },
+    {
+        field: 'keyword',
+        label: '关键字',
         component: 'Input',
         componentProps: {
-            placeholder: '请输入手机号码',
+            placeholder: '请输入姓名或帐号',
             clearable: true,
-            style: { width: '240px' }
+            style: { width: '220px' }
         }
     },
     {
@@ -114,7 +153,7 @@ const searchSchema = reactive<FormSchema[]>([
             placeholder: '请选择用户状态',
             clearable: true,
             options: getIntDictOptions(DICT_TYPE.COMMON_STATUS),
-            style: { width: '240px' }
+            style: { width: '180px' }
         }
     },
     {
@@ -126,7 +165,7 @@ const searchSchema = reactive<FormSchema[]>([
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
             startPlaceholder: '开始日期',
             endPlaceholder: '结束日期',
-            style: { width: '240px' }
+            style: { width: '280px' }
         }
     }
 ])
@@ -141,6 +180,17 @@ const openForm = (type: string, id?: number) => {
 
 const handleImport = () => {
     importFormRef.value?.open()
+}
+
+const handleShowUploadResult = () => {
+    uploadResultVisible.value = true
+}
+
+const handleImportSuccess = (result?: any) => {
+    if (result) {
+        lastImportResult.value = result
+    }
+    tableMethods.getList()
 }
 
 const handleRole = (row: UserApi.UserVO) => {
@@ -160,12 +210,36 @@ const {
 const exportLoading = computed(() => tableObject.exportLoading)
 
 const setSearchParams = (params: Recordable) => {
-    tableMethods.setSearchParams({ ...params, deptId: deptId.value })
+    const queryType = params.queryType || 'username'
+    const keyword = params.keyword || ''
+    const mappedParams = {
+        ...params,
+        username: queryType === 'username' ? keyword : undefined,
+        mobile: undefined,
+        nickname: queryType === 'nickname' ? keyword : undefined,
+        deptId: deptId.value
+    }
+    delete mappedParams.queryType
+    delete mappedParams.keyword
+    delete mappedParams.deptKeyword
+    tableMethods.setSearchParams(mappedParams)
 }
 
 const handleDeptNodeClick = async (row: any) => {
     deptId.value = row?.id
     tableMethods.setSearchParams({ deptId: deptId.value })
+}
+
+const handleToggleShowAll = async (val: boolean) => {
+    if (val) {
+        tableMethods.setSearchParams({ deptId: deptId.value, status: undefined })
+        return
+    }
+    tableMethods.setSearchParams({ deptId: deptId.value, status: CommonStatusEnum.ENABLE })
+}
+
+const handleSetDataPermission = () => {
+    message.info('该功能待后续接入，当前可通过角色的数据权限进行配置')
 }
 
 const handleStatusChange = async (row: UserApi.UserVO) => {
@@ -227,25 +301,31 @@ const handleCommand = (command: string, row: UserApi.UserVO) => {
     }
 }
 
+const textCell = (value?: string | number) => value || '--'
+
 const tableColumns = reactive<TableColumn[]>([
-    { field: 'id', label: '用户编号' },
-    { field: 'username', label: '用户名称', showOverflowTooltip: true },
-    { field: 'nickname', label: '用户昵称', showOverflowTooltip: true },
+    { field: 'nickname', label: '姓名', minWidth: 100 },
+    {
+        field: 'memberId',
+        label: '成员ID',
+        minWidth: 120,
+        formatter: (_, __, value, row) => textCell(value || row.username)
+    },
+    { field: 'id', label: 'ID', width: 80 },
     {
         field: 'userLevel',
-        label: '用户等级',
-        width: '100px',
+        label: '角色/等级',
+        minWidth: 110,
         slots: {
             default: (data) => (
                 <DictTag type={'system_user_level'} value={data.row.userLevel || data.row.level} />
             )
         }
     },
-    { field: 'deptName', label: '部门', showOverflowTooltip: true },
-    { field: 'mobile', label: '手机号码', width: '120px' },
     {
         field: 'status',
         label: '状态',
+        width: 80,
         slots: {
             default: (data) => (
                 <ElSwitch
@@ -261,11 +341,70 @@ const tableColumns = reactive<TableColumn[]>([
             )
         }
     },
-    { field: 'createTime', label: '创建时间', width: '180px', formatter: dateFormatter },
+    {
+        field: 'companyName',
+        label: '管理企业',
+        minWidth: 140,
+        formatter: (_, __, value) => textCell(value)
+    },
+    {
+        field: 'wechatBindInfo',
+        label: '绑定企业',
+        minWidth: 220,
+        slots: {
+            default: (data) => {
+                const raw = (data.row.wechatBindInfo || '').trim()
+                if (!raw) return <span>--</span>
+                const items = raw
+                    .split('；')
+                    .map((item) => item.trim())
+                    .filter(Boolean)
+                    .map((item) => {
+                        const parts = item.split('-')
+                        if (parts.length < 2) return { name: item, corp: '' }
+                        return {
+                            corp: parts[0].trim(),
+                            name: parts.slice(1).join('-').trim()
+                        }
+                    })
+                return (
+                    <div>
+                        {items.map((item, idx) => (
+                            <div key={`${item.name}-${item.corp}-${idx}`}>
+                                <span>{item.name || '--'}@</span>
+                                <span style={{ color: '#fa8c16' }}>{item.corp || '--'}</span>
+                            </div>
+                        ))}
+                    </div>
+                )
+            }
+        }
+    },
+    {
+        field: 'expireTime',
+        label: '到期时间',
+        minWidth: 120,
+        formatter: (_, __, value) => textCell(value)
+    },
+    { field: 'createTime', label: '创建时间', width: 180, formatter: dateFormatter },
+    { field: 'deptName', label: '所属部门', minWidth: 120, showOverflowTooltip: true },
+    {
+        field: 'callNo',
+        label: '呼叫工号',
+        width: 100,
+        formatter: (_, __, value) => textCell(value)
+    },
+    {
+        field: 'callExt',
+        label: '呼叫分机',
+        width: 100,
+        formatter: (_, __, value) => textCell(value)
+    },
     {
         field: 'action',
         label: '操作',
         width: '220px',
+        fixed: 'right',
         slots: {
             default: (data) => {
                 const row = data.row as UserApi.UserVO
@@ -329,7 +468,16 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.system-user-dept-panel {
-    min-height: calc(100vh - 180px);
+.top-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+
+    .title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--el-text-color-primary);
+    }
 }
 </style>

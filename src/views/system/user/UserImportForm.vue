@@ -108,7 +108,7 @@ const submitFormSuccess = (response: any) => {
   formLoading.value = false
   dialogVisible.value = false
   // 发送操作成功的事件
-  emits('success')
+  emits('success', data)
 }
 
 /** 上传错误提示 */

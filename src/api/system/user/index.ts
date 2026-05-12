@@ -4,9 +4,11 @@ export interface UserVO {
   id: number
   username: string
   nickname: string
+  memberId?: string
   userLevel?: string
+  accountType?: string
   deptId: number
-  postIds: string[]
+  postIds: number[]
   email: string
   mobile: string
   sex: number
@@ -14,8 +16,22 @@ export interface UserVO {
   loginIp: string
   status: number
   remark: string
+  expireTime?: Date
+  callNo?: string
+  callExt?: string
+  manageCompanyIds?: number[]
+  companyName?: string
+  wechatBindInfo?: string
+  wecomBindList?: UserWecomBindVO[]
+  roleIds?: number[]
   loginDate: Date
   createTime: Date
+}
+
+export interface UserWecomBindVO {
+  corpId: string
+  staffUserId: string
+  staffName?: string
 }
 
 // 查询用户管理列表
@@ -79,4 +95,9 @@ export const updateUserStatus = (id: number, status: number) => {
 // 获取用户精简信息列表
 export const getSimpleUserList = (): Promise<UserVO[]> => {
   return request.get({ url: '/system/user/simple-list' })
+}
+
+// 获取已被其他用户绑定的企微账号 key 列表：corpId__staffUserId
+export const getWecomBindOccupied = (excludeUserId?: number): Promise<string[]> => {
+  return request.get({ url: '/system/user/wecom-bind-occupied', params: { excludeUserId } })
 }

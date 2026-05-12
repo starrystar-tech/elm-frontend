@@ -19,6 +19,15 @@ export interface WeworkContactVO {
   createTime: Date
 }
 
+export interface WeworkMemberSimpleVO {
+  corpId: string
+  corpName: string
+  staffUserId: string
+  staffName: string
+  userId?: string
+  name?: string
+}
+
 export interface WeworkContactPageReqVO extends PageParam {
   companyName?: string
   staffUserId?: string
