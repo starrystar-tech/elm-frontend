@@ -63,7 +63,7 @@ const filterNode = (name: string, data: Tree) => {
 let currentNode: any = {}
 const handleNodeClick = async (row: { [key: string]: any }, treeNode: any) => {
     // 判断选中状态
-    if (currentNode && currentNode.name === row.name) {
+    if (currentNode && currentNode.id === row.id) {
         treeNode.checked = !treeNode.checked
     } else {
         treeNode.checked = true

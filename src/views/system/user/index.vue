@@ -30,8 +30,8 @@
                     >
                         批量删除
                     </BaseButton>
-                    <BaseButton type="primary" plain @click="handleSetDataPermission"
-                        >设置数据权限</BaseButton
+                    <BaseButton type="primary" plain @click="handleSetDeptPermission"
+                        >设置部门权限</BaseButton
                     >
                 </div>
 
@@ -46,13 +46,85 @@
                     @register="tableRegister"
                     @selection-change="handleRowCheckboxChange"
                 />
+                <div v-if="currentDeptPermission" class="permission-panel">
+                    <div class="permission-header">
+                        <div class="title">部门权限 - {{ currentDeptPermission.name }}</div>
+                        <BaseButton type="primary" plain @click="openDeptPermissionForm"
+                            >修改部门权限</BaseButton
+                        >
+                    </div>
+                    <div class="scope-block">
+                        <div class="scope-block__label">校区权限</div>
+                        <div class="scope-block__content">
+                            <template v-if="currentDeptPermission.campuses?.length">
+                                <span
+                                    v-for="item in currentDeptPermission.campuses"
+                                    :key="`campus-${item.id}`"
+                                    class="scope-tag scope-tag--green"
+                                >
+                                    {{ item.name }}
+                                </span>
+                            </template>
+                            <span v-else class="scope-empty">--</span>
+                        </div>
+                    </div>
+                    <div class="scope-block">
+                        <div class="scope-block__label">管辖地域</div>
+                        <div class="scope-block__content">
+                            <template v-if="areaGroupRows.length">
+                                <div
+                                    v-for="group in areaGroupRows"
+                                    :key="`area-group-${group.parent}`"
+                                    class="scope-area-group"
+                                >
+                                    <div class="scope-area-group__name">{{ group.parent }}</div>
+                                    <div class="scope-area-group__tags">
+                                        <span
+                                            v-for="item in group.list"
+                                            :key="`area-${item.id}`"
+                                            class="scope-tag scope-tag--blue"
+                                        >
+                                            {{ item.name }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div
+                                    v-if="areaGroups.length > areaGroupRows.length"
+                                    class="scope-more"
+                                    @click="areaExpanded = !areaExpanded"
+                                >
+                                    {{ areaExpanded ? '收起' : '展开更多' }}
+                                </div>
+                            </template>
+                            <span v-else class="scope-empty">--</span>
+                        </div>
+                    </div>
+                    <div class="scope-block">
+                        <div class="scope-block__label">管辖产品</div>
+                        <div class="scope-block__content">
+                            <template v-if="currentDeptPermission.categories?.length">
+                                <span
+                                    v-for="item in currentDeptPermission.categories"
+                                    :key="`category-${item.id}`"
+                                    class="scope-tag scope-tag--orange"
+                                >
+                                    {{ item.name }}
+                                </span>
+                            </template>
+                            <span v-else class="scope-empty">--</span>
+                        </div>
+                    </div>
+                </div>
             </ContentWrap>
         </el-col>
     </el-row>
 
     <UserForm ref="formRef" @success="tableMethods.getList" />
+    <UserDetail ref="detailRef" />
     <UserImportForm ref="importFormRef" @success="handleImportSuccess" />
     <UserAssignRoleForm ref="assignRoleFormRef" @success="tableMethods.getList" />
+    <UserPermissionForm ref="permissionFormRef" @success="tableMethods.getList" />
+    <DeptPermissionForm ref="deptPermissionFormRef" @success="handleDeptPermissionSuccess" />
 
     <Dialog v-model="uploadResultVisible" title="用户上传结果" width="720px">
         <el-empty v-if="!lastImportResult" description="暂无上传记录" />
@@ -83,9 +155,13 @@ import { checkPermi } from '@/utils/permission'
 import { dateFormatter } from '@/utils/formatTime'
 import { CommonStatusEnum } from '@/utils/constants'
 import * as UserApi from '@/api/system/user'
+import * as DeptApi from '@/api/system/dept'
 import UserForm from './UserForm.vue'
+import UserDetail from './UserDetail.vue'
 import UserImportForm from './UserImportForm.vue'
 import UserAssignRoleForm from './UserAssignRoleForm.vue'
+import UserPermissionForm from './UserPermissionForm.vue'
+import DeptPermissionForm from './DeptPermissionForm.vue'
 import DeptTree from './DeptTree.vue'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -171,8 +247,12 @@ const searchSchema = reactive<FormSchema[]>([
 ])
 
 const formRef = ref<InstanceType<typeof UserForm>>()
+const detailRef = ref<InstanceType<typeof UserDetail>>()
 const importFormRef = ref<InstanceType<typeof UserImportForm>>()
 const assignRoleFormRef = ref<InstanceType<typeof UserAssignRoleForm>>()
+const permissionFormRef = ref<InstanceType<typeof UserPermissionForm>>()
+const deptPermissionFormRef = ref<InstanceType<typeof DeptPermissionForm>>()
+const currentDeptPermission = ref<DeptApi.DeptVO | null>(null)
 
 const openForm = (type: string, id?: number) => {
     formRef.value?.open(type, id)
@@ -195,6 +275,27 @@ const handleImportSuccess = (result?: any) => {
 
 const handleRole = (row: UserApi.UserVO) => {
     assignRoleFormRef.value?.open(row)
+}
+
+const handleDetail = (row: UserApi.UserVO) => {
+    detailRef.value?.open(row.id)
+}
+
+const openPermissionForm = (row?: UserApi.UserVO) => {
+    const target = row
+    if (!target) {
+        message.warning('请先勾选一个用户')
+        return
+    }
+    permissionFormRef.value?.open(target)
+}
+
+const openDeptPermissionForm = () => {
+    if (!deptId.value || !currentDeptPermission.value) {
+        message.warning('请先选择一个部门')
+        return
+    }
+    deptPermissionFormRef.value?.open(currentDeptPermission.value)
 }
 
 const {
@@ -227,6 +328,11 @@ const setSearchParams = (params: Recordable) => {
 
 const handleDeptNodeClick = async (row: any) => {
     deptId.value = row?.id
+    if (deptId.value) {
+        currentDeptPermission.value = await DeptApi.getDept(deptId.value)
+    } else {
+        currentDeptPermission.value = null
+    }
     tableMethods.setSearchParams({ deptId: deptId.value })
 }
 
@@ -238,8 +344,14 @@ const handleToggleShowAll = async (val: boolean) => {
     tableMethods.setSearchParams({ deptId: deptId.value, status: CommonStatusEnum.ENABLE })
 }
 
-const handleSetDataPermission = () => {
-    message.info('该功能待后续接入，当前可通过角色的数据权限进行配置')
+const handleSetDeptPermission = () => {
+    openDeptPermissionForm()
+}
+
+const handleDeptPermissionSuccess = async () => {
+    if (deptId.value) {
+        currentDeptPermission.value = await DeptApi.getDept(deptId.value)
+    }
 }
 
 const handleStatusChange = async (row: UserApi.UserVO) => {
@@ -298,10 +410,32 @@ const handleCommand = (command: string, row: UserApi.UserVO) => {
         case 'handleRole':
             handleRole(row)
             break
+        case 'handlePermission':
+            openPermissionForm(row)
+            break
     }
 }
 
 const textCell = (value?: string | number) => value || '--'
+const areaExpanded = ref(false)
+const areaGroups = computed(() => {
+    const areaList = currentDeptPermission.value?.areas || []
+    const groupMap = new Map<string, { parent: string; list: any[] }>()
+    areaList.forEach((item: any) => {
+        const parent = item.parentName || '其他'
+        if (!groupMap.has(parent)) {
+            groupMap.set(parent, { parent, list: [] })
+        }
+        groupMap.get(parent)!.list.push({
+            id: item.id,
+            name: item.name || item.displayName || item.id
+        })
+    })
+    return Array.from(groupMap.values())
+})
+const areaGroupRows = computed(() =>
+    areaExpanded.value ? areaGroups.value : areaGroups.value.slice(0, 2)
+)
 
 const tableColumns = reactive<TableColumn[]>([
     { field: 'nickname', label: '姓名', minWidth: 100 },
@@ -389,6 +523,24 @@ const tableColumns = reactive<TableColumn[]>([
     { field: 'createTime', label: '创建时间', width: 180, formatter: dateFormatter },
     { field: 'deptName', label: '所属部门', minWidth: 120, showOverflowTooltip: true },
     {
+        field: 'campusNames',
+        label: '校区权限',
+        minWidth: 180,
+        formatter: (_, __, value) => textCell(value)
+    },
+    {
+        field: 'areaNames',
+        label: '管辖地区',
+        minWidth: 220,
+        formatter: (_, __, value) => textCell(value)
+    },
+    {
+        field: 'categoryNames',
+        label: '管辖产品',
+        minWidth: 220,
+        formatter: (_, __, value) => textCell(value)
+    },
+    {
         field: 'callNo',
         label: '呼叫工号',
         width: 100,
@@ -403,7 +555,7 @@ const tableColumns = reactive<TableColumn[]>([
     {
         field: 'action',
         label: '操作',
-        width: '220px',
+        width: '160px',
         fixed: 'right',
         slots: {
             default: (data) => {
@@ -419,6 +571,9 @@ const tableColumns = reactive<TableColumn[]>([
                                 修改
                             </BaseButton>
                         ) : null}
+                        <BaseButton link type="primary" onClick={() => handleDetail(row)}>
+                            详情
+                        </BaseButton>
                         {checkPermi([
                             'system:user:delete',
                             'system:user:update-password',
@@ -450,6 +605,11 @@ const tableColumns = reactive<TableColumn[]>([
                                                     分配角色
                                                 </ElDropdownItem>
                                             ) : null}
+                                            {checkPermi(['system:user:update']) ? (
+                                                <ElDropdownItem command="handlePermission">
+                                                    数据权限
+                                                </ElDropdownItem>
+                                            ) : null}
                                         </ElDropdownMenu>
                                     )
                                 }}
@@ -479,5 +639,101 @@ onMounted(() => {
         font-weight: 600;
         color: var(--el-text-color-primary);
     }
+}
+
+.permission-panel {
+    margin-top: 16px;
+    border-top: 1px solid var(--el-border-color-lighter);
+    padding: 14px;
+}
+
+.permission-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+
+    .title {
+        font-size: 14px;
+        font-weight: 600;
+    }
+}
+
+.scope-block {
+    border-top: 1px solid var(--el-border-color-lighter);
+    padding: 14px 0;
+}
+
+.scope-block:first-of-type {
+    border-top: none;
+}
+
+.scope-block__label {
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    margin-bottom: 10px;
+}
+
+.scope-block__content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.scope-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 14px;
+    font-size: 12px;
+    border: 1px solid transparent;
+}
+
+.scope-tag--green {
+    color: #52a822;
+    background: #f2faeb;
+    border-color: #9ed972;
+}
+
+.scope-tag--blue {
+    color: #2a6df5;
+    background: #eef4ff;
+    border-color: #a9c4ff;
+}
+
+.scope-tag--orange {
+    color: #d97706;
+    background: #fff6e8;
+    border-color: #f6c37a;
+}
+
+.scope-empty {
+    color: var(--el-text-color-secondary);
+}
+
+.scope-area-group {
+    width: 100%;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.scope-area-group__name {
+    min-width: 56px;
+    color: var(--el-text-color-primary);
+}
+
+.scope-area-group__tags {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.scope-more {
+    cursor: pointer;
+    color: var(--el-color-primary);
+    font-size: 12px;
 }
 </style>

@@ -10,7 +10,15 @@ export interface DeptVO {
   phone: string
   email: string
   createTime: Date
+  campusIds?: number[]
+  areaIds?: number[]
+  categoryIds?: number[]
+  campuses?: { id: number; name: string }[]
+  areas?: { id: number; name: string; displayName?: string }[]
+  categories?: { id: number; name: string; level?: number }[]
 }
+
+export type DeptDetailVO = DeptVO
 
 // 查询部门（精简)列表
 export const getSimpleDeptList = (): Promise<DeptVO[]> => {
@@ -29,7 +37,19 @@ export const getDeptPage = async (params: PageParam) => {
 
 // 查询部门详情
 export const getDept = (id: number) => {
-  return request.get({ url: '/system/dept/get?id=' + id })
+  return request.get<DeptDetailVO>({ url: '/system/dept/get?id=' + id })
+}
+
+export const updateDeptCampusScope = (data: { deptId: number; campusIds: number[] }) => {
+  return request.put({ url: '/system/dept/update-campus-scope', data })
+}
+
+export const updateDeptAreaScope = (data: { deptId: number; areaIds: number[] }) => {
+  return request.put({ url: '/system/dept/update-area-scope', data })
+}
+
+export const updateDeptCategoryScope = (data: { deptId: number; categoryIds: number[] }) => {
+  return request.put({ url: '/system/dept/update-category-scope', data })
 }
 
 // 新增部门

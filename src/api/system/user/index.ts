@@ -21,6 +21,14 @@ export interface UserVO {
   callExt?: string
   manageCompanyIds?: number[]
   companyName?: string
+  campusIds?: number[]
+  campusNames?: string
+  areaIds?: number[]
+  areaNames?: string
+  categoryIds?: number[]
+  categoryNames?: string
+  permissionDeptIds?: number[]
+  permissionDeptNames?: string
   wechatBindInfo?: string
   wecomBindList?: UserWecomBindVO[]
   roleIds?: number[]
@@ -52,6 +60,10 @@ export const createUser = (data: UserVO) => {
 // 修改用户
 export const updateUser = (data: UserVO) => {
   return request.put({ url: '/system/user/update', data })
+}
+
+export const updateUserPermission = (data: UserVO) => {
+  return request.put({ url: '/system/user/update-permission', data })
 }
 
 // 删除用户

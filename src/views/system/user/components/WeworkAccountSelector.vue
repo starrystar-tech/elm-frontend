@@ -48,7 +48,12 @@
                                 :disabled="isOccupied(staff.corpId, staff.staffUserId)"
                             >
                                 <div class="selector-staff-item">
-                                    {{ staff.staffName }}
+                                    <div class="selector-staff-item__name">
+                                        {{ staff.staffName || staff.staffUserId }}
+                                    </div>
+                                    <div class="selector-staff-item__meta">
+                                        {{ staff.staffUserId }}
+                                    </div>
                                 </div>
                             </el-checkbox>
                         </el-checkbox-group>
@@ -237,7 +242,7 @@ const confirm = () => {
 
 .selector-corp-item {
     width: 100%;
-    min-height: 42px;
+    min-height: 48px;
     padding: 0 12px;
     margin-bottom: 8px;
     border-radius: 6px;
@@ -268,7 +273,7 @@ const confirm = () => {
 
 .selector-check-group {
     width: 100%;
-    height: 280px;
+    height: 300px;
     overflow-y: auto;
 }
 
@@ -279,8 +284,23 @@ const confirm = () => {
 }
 
 .selector-staff-item {
-    min-height: 34px;
-    line-height: 34px;
+    min-height: 44px;
+    line-height: 1.2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.selector-staff-item__name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.selector-staff-item__meta {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

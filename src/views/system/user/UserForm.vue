@@ -199,6 +199,66 @@
                 </el-col>
             </el-row>
 
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="校区权限">
+                        <el-select
+                            v-model="formData.campusIds"
+                            multiple
+                            clearable
+                            collapse-tags
+                            collapse-tags-tooltip
+                            placeholder="请选择校区"
+                        >
+                            <el-option
+                                v-for="item in campusList"
+                                :key="item.id"
+                                :label="item.name"
+                                :value="item.id!"
+                            />
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="管辖地区">
+                        <el-tree-select
+                            v-model="formData.areaIds"
+                            :data="areaTreeList"
+                            :props="defaultProps"
+                            multiple
+                            show-checkbox
+                            check-strictly
+                            node-key="id"
+                            value-key="id"
+                            placeholder="请选择管辖地区"
+                        />
+                    </el-form-item>
+                </el-col>
+            </el-row>
+
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="管辖产品">
+                        <el-select
+                            v-model="formData.categoryIds"
+                            multiple
+                            clearable
+                            collapse-tags
+                            collapse-tags-tooltip
+                            placeholder="请选择一级产品分类"
+                        >
+                            <el-option
+                                v-for="item in rootCategoryList"
+                                :key="item.id"
+                                :label="item.name"
+                                :value="item.id!"
+                            />
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12" />
+            </el-row>
+
             <el-divider content-position="left">企微绑定</el-divider>
 
             <el-row>
@@ -271,8 +331,12 @@ import * as DeptApi from '@/api/system/dept'
 import * as UserApi from '@/api/system/user'
 import * as WeappApi from '@/api/system/weapp'
 import * as WeworkContactApi from '@/api/crm/wework/contact'
+import * as CampusApi from '@/api/system/campus'
+import * as AreaApi from '@/api/system/area'
+import * as ProductCategoryApi from '@/api/crm/product/category'
 import WeworkAccountSelector from './components/WeworkAccountSelector.vue'
 import { FormRules } from 'element-plus'
+import { normalizeAreaIds } from '@/utils/areaScope'
 
 defineOptions({ name: 'SystemUserForm' })
 
@@ -304,6 +368,9 @@ const formData = ref({
     callNo: '',
     callExt: '',
     manageCompanyIds: [] as number[],
+    campusIds: [] as number[],
+    areaIds: [] as number[],
+    categoryIds: [] as number[],
     wecomBindList: [] as UserApi.UserWecomBindVO[]
 })
 
@@ -326,6 +393,9 @@ const formRef = ref()
 const deptList = ref<Tree[]>([])
 const postList = ref([] as PostApi.PostVO[])
 const weappList = ref([] as WeappApi.WeappConfigVO[])
+const campusList = ref([] as CampusApi.CampusVO[])
+const areaTreeList = ref<Tree[]>([])
+const rootCategoryList = ref<any[]>([])
 const wecomMemberList = ref([] as WeworkContactApi.WeworkMemberSimpleVO[])
 const occupiedWecomKeys = ref<string[]>([])
 
@@ -368,15 +438,22 @@ const open = async (type: string, id?: number) => {
     formType.value = type
     resetForm()
 
-    const [deptData, postData, weappData, wecomMembers] = await Promise.all([
+    const [deptData, postData, weappData, wecomMembers, campusData, areaData, categoryData] =
+        await Promise.all([
         DeptApi.getSimpleDeptList(),
         PostApi.getSimplePostList(),
         WeappApi.getWeappConfigList(),
-        WeworkContactApi.getWeworkMemberSimpleList()
+        WeworkContactApi.getWeworkMemberSimpleList(),
+        CampusApi.getSimpleCampusList(),
+        AreaApi.getAreaTree(),
+        ProductCategoryApi.getProductCategorySimpleList()
     ])
     deptList.value = handleTree(deptData)
     postList.value = postData
     weappList.value = weappData || []
+    campusList.value = campusData || []
+    areaTreeList.value = areaData || []
+    rootCategoryList.value = (categoryData || []).filter((item: any) => Number(item.level) === 1)
     wecomMemberList.value = (wecomMembers || []).map((item: any) => ({
         corpId: item.corpId,
         corpName: item.corpName || item.corpId,
@@ -395,6 +472,9 @@ const open = async (type: string, id?: number) => {
                 postIds: detail.postIds || [],
                 roleIds: detail.roleIds || [],
                 manageCompanyIds: detail.manageCompanyIds || [],
+                campusIds: detail.campusIds || [],
+                areaIds: detail.areaIds || [],
+                categoryIds: detail.categoryIds || [],
                 wecomBindList: detail.wecomBindList || [],
                 accountType: detail.accountType || 'free',
                 memberId: detail.memberId || '',
@@ -418,6 +498,7 @@ const submitForm = async () => {
     try {
         const data: UserApi.UserVO = {
             ...formData.value,
+            areaIds: normalizeAreaIds(formData.value.areaIds || [], areaTreeList.value as any[]),
             wecomBindList: formData.value.wecomBindList.filter(
                 (item) => item.corpId && item.staffUserId
             )
@@ -458,6 +539,9 @@ const resetForm = () => {
         callNo: '',
         callExt: '',
         manageCompanyIds: [],
+        campusIds: [],
+        areaIds: [],
+        categoryIds: [],
         wecomBindList: []
     }
     formRef.value?.resetFields()
