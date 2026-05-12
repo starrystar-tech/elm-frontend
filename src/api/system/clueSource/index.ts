@@ -4,7 +4,9 @@ export interface ClueSourceVO {
   id?: number
   name: string
   status: number
+  sort: number
   updater?: string
+  updaterName?: string
   updateTime?: Date
 }
 
@@ -13,6 +15,7 @@ export interface ClueSourcePageReqVO {
   pageSize?: number
   name?: string
   status?: number
+  sort?: number
 }
 
 export const getClueSourcePage = (params: ClueSourcePageReqVO) => {

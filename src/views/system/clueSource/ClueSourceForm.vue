@@ -20,6 +20,9 @@
           />
         </el-select>
       </el-form-item>
+      <el-form-item label="排序" prop="sort">
+        <el-input-number v-model="formData.sort" :min="0" :max="9999" controls-position="right" />
+      </el-form-item>
     </el-form>
     <template #footer>
       <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
@@ -47,7 +50,8 @@ const formRef = ref()
 const formData = ref<ClueSourceApi.ClueSourceVO>({
   id: undefined,
   name: '',
-  status: CommonStatusEnum.ENABLE
+  status: CommonStatusEnum.ENABLE,
+  sort: 0
 })
 
 const formRules = reactive({
@@ -55,14 +59,16 @@ const formRules = reactive({
     { required: true, message: '来源名称不能为空', trigger: 'blur' },
     { max: 64, message: '来源名称不能超过 64 个字符', trigger: 'blur' }
   ],
-  status: [{ required: true, message: '状态不能为空', trigger: 'change' }]
+  status: [{ required: true, message: '状态不能为空', trigger: 'change' }],
+  sort: [{ required: true, message: '排序不能为空', trigger: 'change' }]
 })
 
 const resetForm = () => {
   formData.value = {
     id: undefined,
     name: '',
-    status: CommonStatusEnum.ENABLE
+    status: CommonStatusEnum.ENABLE,
+    sort: 0
   }
   formRef.value?.resetFields()
 }

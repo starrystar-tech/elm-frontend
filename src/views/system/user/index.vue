@@ -8,7 +8,6 @@
         <el-col :span="19" :xs="24">
             <ContentWrap>
                 <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
-
                 <div class="action-btn-wrap">
                     <BaseButton v-if="canCreate" type="primary" @click="openForm('create')"
                         >新增</BaseButton
@@ -195,12 +194,12 @@ const searchSchema = reactive<FormSchema[]>([
         componentProps: {
             placeholder: '请输入企业名称',
             clearable: true,
-            style: { width: '220px' }
+            style: { width: '200px' }
         }
     },
     {
         field: 'queryType',
-        label: '姓名帐号',
+        label: '搜索方式',
         component: 'Select',
         componentProps: {
             placeholder: '请选择',
@@ -208,28 +207,28 @@ const searchSchema = reactive<FormSchema[]>([
                 { label: '姓名', value: 'nickname' },
                 { label: '帐号', value: 'username' }
             ],
-            style: { width: '140px' }
+            style: { width: '200px' }
         }
     },
     {
         field: 'keyword',
-        label: '关键字',
+        label: '用户名称',
         component: 'Input',
         componentProps: {
             placeholder: '请输入姓名或帐号',
             clearable: true,
-            style: { width: '220px' }
+            style: { width: '200px' }
         }
     },
     {
         field: 'status',
-        label: '状态',
+        label: '用户状态',
         component: 'Select',
         componentProps: {
             placeholder: '请选择用户状态',
             clearable: true,
             options: getIntDictOptions(DICT_TYPE.COMMON_STATUS),
-            style: { width: '180px' }
+            style: { width: '200px' }
         }
     },
     {
@@ -241,7 +240,7 @@ const searchSchema = reactive<FormSchema[]>([
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
             startPlaceholder: '开始日期',
             endPlaceholder: '结束日期',
-            style: { width: '280px' }
+            style: { width: '200px' }
         }
     }
 ])
@@ -716,7 +715,7 @@ onMounted(() => {
     width: 100%;
     display: flex;
     gap: 12px;
-    align-items: flex-start;
+    align-items: center;
 }
 
 .scope-area-group__name {

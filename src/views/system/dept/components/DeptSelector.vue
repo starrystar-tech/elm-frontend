@@ -59,6 +59,7 @@ const emit = defineEmits<{
 const visible = ref(false)
 const treeRef = ref()
 const deptList = ref<Tree[]>([])
+const loaded = ref(false)
 const modelIds = computed<number[]>(() => {
     if (props.multiple) return Array.isArray(props.modelValue) ? props.modelValue : []
     if (props.modelValue === 0 || props.modelValue) return [props.modelValue as number]
@@ -78,9 +79,11 @@ const selectedLabels = computed(() => {
 })
 
 const loadDept = async () => {
-    const res = await DeptApi.getSimpleDeptList()
-    const tree = handleTree(res)
-    deptList.value = [{ id: 0, name: '顶级部门', children: tree } as any]
+  if (loaded.value) return
+  const res = await DeptApi.getSimpleDeptList()
+  const tree = handleTree(res)
+  deptList.value = [{ id: 0, name: '顶级部门', children: tree } as any]
+  loaded.value = true
 }
 
 const remove = (id: number) => {
@@ -107,13 +110,24 @@ const confirm = () => {
 }
 
 watch(
-    () => visible.value,
-    async (val) => {
-        if (val) {
-            await loadDept()
-            treeRef.value?.setCheckedKeys(modelIds.value)
-        }
+  () => visible.value,
+  async (val) => {
+    if (val) {
+      await loadDept()
+      treeRef.value?.setCheckedKeys(modelIds.value)
     }
+  }
+)
+
+watch(
+  () => props.modelValue,
+  async (val) => {
+    const hasValue = Array.isArray(val) ? val.length > 0 : val === 0 || !!val
+    if (hasValue && !loaded.value) {
+      await loadDept()
+    }
+  },
+  { immediate: true }
 )
 
 const placeholder = computed(() => props.placeholder || '请选择部门')
