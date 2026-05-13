@@ -40,15 +40,15 @@ export const getDept = (id: number) => {
   return request.get<DeptDetailVO>({ url: '/system/dept/get?id=' + id })
 }
 
-export const updateDeptCampusScope = (data: { deptId: number; campusIds: number[] }) => {
+export const updateDeptCampusScope = (data: { deptId: number; campusIds: number[]; syncChildren?: boolean }) => {
   return request.put({ url: '/system/dept/update-campus-scope', data })
 }
 
-export const updateDeptAreaScope = (data: { deptId: number; areaIds: number[] }) => {
+export const updateDeptAreaScope = (data: { deptId: number; areaIds: number[]; syncChildren?: boolean }) => {
   return request.put({ url: '/system/dept/update-area-scope', data })
 }
 
-export const updateDeptCategoryScope = (data: { deptId: number; categoryIds: number[] }) => {
+export const updateDeptCategoryScope = (data: { deptId: number; categoryIds: number[]; syncChildren?: boolean }) => {
   return request.put({ url: '/system/dept/update-category-scope', data })
 }
 
