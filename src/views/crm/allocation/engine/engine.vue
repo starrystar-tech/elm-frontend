@@ -2,33 +2,34 @@
     <div>
         <Search
             :schema="engineSearchSchema"
+            :model="engineSearchForm"
             @search="setEngineSearchParams"
             @reset="setEngineSearchParams"
         >
-            <template #callGroupId="form">
+            <template #callGroupId>
                 <CallGroupSelect
-                    v-model="form.callGroupId"
+                    v-model="engineSearchForm.callGroupId"
                     placeholder="请选择呼叫组"
                     style="width: 220px"
                 />
             </template>
-            <template #sourceCode="form">
+            <template #sourceCode>
                 <SourceSelect
-                    v-model="form.sourceCode"
+                    v-model="engineSearchForm.sourceCode"
                     placeholder="请选择来源"
                     style="width: 220px"
                 />
             </template>
-            <template #projectCode="form">
+            <template #projectCode>
                 <ProjectSelect
-                    v-model="form.projectCode"
+                    v-model="engineSearchForm.projectCode"
                     placeholder="请选择项目"
                     style="width: 220px"
                 />
             </template>
-            <template #regionId="form">
+            <template #regionId>
                 <AreaSelect
-                    v-model="form.regionId"
+                    v-model="engineSearchForm.regionId"
                     :data="areaTree"
                     placeholder="请选择地区"
                     style="width: 220px"
@@ -158,8 +159,32 @@ const {
     getListApi: async (params) => await EngineApi.getAllocationEnginePage(params)
 })
 
-const setEngineSearchParams = (params: Recordable) => {
-    engineTableMethods.setSearchParams(params)
+const engineSearchForm = reactive({
+    engineName: '',
+    status: undefined as number | undefined,
+    callGroupId: undefined as number | undefined,
+    sourceCode: '',
+    projectCode: '',
+    regionId: undefined as number | undefined
+})
+
+const normalizeRegionId = (value: unknown): number | undefined => {
+    if (value === null || value === undefined || value === '') return undefined
+    if (Array.isArray(value)) {
+        const last = value[value.length - 1]
+        const numberValue = Number(last)
+        return Number.isFinite(numberValue) ? numberValue : undefined
+    }
+    const numberValue = Number(value)
+    return Number.isFinite(numberValue) ? numberValue : undefined
+}
+
+const setEngineSearchParams = () => {
+    const regionId = normalizeRegionId(engineSearchForm.regionId)
+    engineTableMethods.setSearchParams({
+        ...engineSearchForm,
+        regionId
+    })
 }
 
 const engineColumns = computed<TableColumn[]>(() => [

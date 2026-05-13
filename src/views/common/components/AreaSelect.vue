@@ -21,6 +21,12 @@
 import { defaultProps } from '@/utils/tree'
 import * as AreaApi from '@/api/system/area'
 
+const ALL_AREA_NODE = {
+  id: 0,
+  name: '全国',
+  children: []
+}
+
 const props = defineProps<{
   modelValue?: number | number[]
   data?: any[]
@@ -38,6 +44,12 @@ const emit = defineEmits<{
 const innerValue = ref<number | number[] | undefined>(props.modelValue)
 const innerData = ref<any[]>(props.data || [])
 
+const mergeAreaData = (data: any[] = []) => {
+  const list = Array.isArray(data) ? data : []
+  if (list.some((item) => Number(item?.id) === 0)) return list
+  return [ALL_AREA_NODE, ...list]
+}
+
 watch(
   () => props.modelValue,
   (val) => {
@@ -49,14 +61,14 @@ watch(
 watch(
   () => props.data,
   (val) => {
-    innerData.value = val || []
+    innerData.value = mergeAreaData(val || [])
   },
   { immediate: true, deep: true }
 )
 
 const loadAreaTree = async () => {
   if (innerData.value.length) return
-  innerData.value = (await AreaApi.getAreaTree()) || []
+  innerData.value = mergeAreaData((await AreaApi.getAreaTree()) || [])
 }
 
 const handleChange = (val: number | number[] | undefined) => {

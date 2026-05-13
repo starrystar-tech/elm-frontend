@@ -19,6 +19,7 @@ export interface UserVO {
   expireTime?: Date
   callNo?: string
   callExt?: string
+  mobileCopyLimitTimes?: number
   manageCompanyIds?: number[]
   companyName?: string
   campusIds?: number[]
@@ -42,6 +43,11 @@ export interface UserWecomBindVO {
   staffName?: string
 }
 
+export interface UserBatchUpdateReqVO {
+  ids: number[]
+  mobileCopyLimitTimes?: number
+}
+
 // 查询用户管理列表
 export const getUserPage = (params: PageParam) => {
   return request.get({ url: '/system/user/page', params })
@@ -60,6 +66,10 @@ export const createUser = (data: UserVO) => {
 // 修改用户
 export const updateUser = (data: UserVO) => {
   return request.put({ url: '/system/user/update', data })
+}
+
+export const batchUpdateUser = (data: UserBatchUpdateReqVO) => {
+  return request.put({ url: '/system/user/batch-update', data })
 }
 
 export const updateUserPermission = (data: UserVO) => {

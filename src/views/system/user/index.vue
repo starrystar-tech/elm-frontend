@@ -29,6 +29,15 @@
                     >
                         批量删除
                     </BaseButton>
+                    <BaseButton
+                        v-if="canUpdate"
+                        type="primary"
+                        plain
+                        :disabled="checkedIds.length === 0"
+                        @click="openBatchUpdateForm"
+                    >
+                        批量修改复制次数
+                    </BaseButton>
                     <BaseButton type="primary" plain @click="handleSetDeptPermission"
                         >设置部门权限</BaseButton
                     >
@@ -125,6 +134,25 @@
     <UserPermissionForm ref="permissionFormRef" @success="tableMethods.getList" />
     <DeptPermissionForm ref="deptPermissionFormRef" @success="handleDeptPermissionSuccess" />
 
+    <Dialog v-model="batchUpdateVisible" title="批量修改复制次数" width="420px">
+        <el-form :model="batchUpdateForm" label-width="120px">
+            <el-form-item label="批量复制次数" required>
+                <el-input-number
+                    v-model="batchUpdateForm.mobileCopyLimitTimes"
+                    :min="0"
+                    :controls="false"
+                    style="width: 100%"
+                />
+            </el-form-item>
+        </el-form>
+        <template #footer>
+            <el-button @click="batchUpdateVisible = false">取消</el-button>
+            <el-button type="primary" :loading="batchUpdateSaving" @click="handleBatchUpdate">
+                确定
+            </el-button>
+        </template>
+    </Dialog>
+
     <Dialog v-model="uploadResultVisible" title="用户上传结果" width="720px">
         <el-empty v-if="!lastImportResult" description="暂无上传记录" />
         <template v-else>
@@ -177,6 +205,7 @@ const canCreate = hasPermission(['system:user:create'])
 const canImport = hasPermission(['system:user:import'])
 const canExport = hasPermission(['system:user:export'])
 const canDelete = hasPermission(['system:user:delete'])
+const canUpdate = hasPermission(['system:user:update'])
 
 const message = useMessage()
 
@@ -185,6 +214,11 @@ const checkedIds = ref<number[]>([])
 const showAll = ref(true)
 const uploadResultVisible = ref(false)
 const lastImportResult = ref<any | null>(null)
+const batchUpdateVisible = ref(false)
+const batchUpdateSaving = ref(false)
+const batchUpdateForm = reactive({
+    mobileCopyLimitTimes: undefined as number | undefined
+})
 
 const searchSchema = reactive<FormSchema[]>([
     {
@@ -389,6 +423,33 @@ const handleDeleteBatch = async () => {
     } catch {}
 }
 
+const openBatchUpdateForm = () => {
+    batchUpdateForm.mobileCopyLimitTimes = undefined
+    batchUpdateVisible.value = true
+}
+
+const handleBatchUpdate = async () => {
+    if (
+        batchUpdateForm.mobileCopyLimitTimes === undefined ||
+        batchUpdateForm.mobileCopyLimitTimes === null
+    ) {
+        message.warning('请输入批量复制次数')
+        return
+    }
+    batchUpdateSaving.value = true
+    try {
+        await UserApi.batchUpdateUser({
+            ids: checkedIds.value,
+            mobileCopyLimitTimes: batchUpdateForm.mobileCopyLimitTimes
+        })
+        message.success('修改成功')
+        batchUpdateVisible.value = false
+        await tableMethods.getList()
+    } finally {
+        batchUpdateSaving.value = false
+    }
+}
+
 const handleResetPwd = async (row: UserApi.UserVO) => {
     try {
         const result = await message.prompt(`请输入"${row.username}"的新密码`, '提醒')
@@ -437,7 +498,7 @@ const areaGroupRows = computed(() =>
 )
 
 const tableColumns = reactive<TableColumn[]>([
-    { field: 'nickname', label: '姓名', minWidth: 100 },
+    { field: 'nickname', label: '姓名', minWidth: 100, fixed: 'left' },
     {
         field: 'memberId',
         label: '成员ID',
@@ -550,6 +611,12 @@ const tableColumns = reactive<TableColumn[]>([
         label: '呼叫分机',
         width: 100,
         formatter: (_, __, value) => textCell(value)
+    },
+    {
+        field: 'mobileCopyLimitTimes',
+        label: '批量复制次数',
+        width: 120,
+        formatter: (_, __, value) => (value === null || value === undefined ? '--' : value)
     },
     {
         field: 'action',

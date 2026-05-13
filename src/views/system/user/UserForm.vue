@@ -176,7 +176,16 @@
                         />
                     </el-form-item>
                 </el-col>
-                <el-col :span="12" />
+                <el-col :span="12">
+                    <el-form-item label="复制次数">
+                        <el-input-number
+                            v-model="formData.mobileCopyLimitTimes"
+                            :min="0"
+                            :controls="false"
+                            style="width: 100%"
+                        />
+                    </el-form-item>
+                </el-col>
             </el-row>
 
             <el-row>
@@ -360,6 +369,7 @@ const formData = ref({
     expireTime: undefined as string | undefined,
     callNo: '',
     callExt: '',
+    mobileCopyLimitTimes: undefined as number | undefined,
     manageCompanyIds: [] as number[],
     campusIds: [] as number[],
     areaIds: [] as number[],
@@ -433,14 +443,14 @@ const open = async (type: string, id?: number) => {
 
     const [deptData, postData, weappData, wecomMembers, campusData, areaData, categoryData] =
         await Promise.all([
-        DeptApi.getSimpleDeptList(),
-        PostApi.getSimplePostList(),
-        WeappApi.getWeappConfigList(),
-        WeworkContactApi.getWeworkMemberSimpleList(),
-        CampusApi.getSimpleCampusList(),
-        AreaApi.getAreaTree(),
-        ProductCategoryApi.getProductCategorySimpleList()
-    ])
+            DeptApi.getSimpleDeptList(),
+            PostApi.getSimplePostList(),
+            WeappApi.getWeappConfigList(),
+            WeworkContactApi.getWeworkMemberSimpleList(),
+            CampusApi.getSimpleCampusList(),
+            AreaApi.getAreaTree(),
+            ProductCategoryApi.getProductCategorySimpleList()
+        ])
     deptList.value = handleTree(deptData)
     postList.value = postData
     weappList.value = weappData || []
@@ -472,7 +482,8 @@ const open = async (type: string, id?: number) => {
                 accountType: detail.accountType || 'free',
                 memberId: detail.memberId || '',
                 callNo: detail.callNo || '',
-                callExt: detail.callExt || ''
+                callExt: detail.callExt || '',
+                mobileCopyLimitTimes: detail.mobileCopyLimitTimes
             }
         } finally {
             formLoading.value = false
@@ -531,6 +542,7 @@ const resetForm = () => {
         expireTime: undefined,
         callNo: '',
         callExt: '',
+        mobileCopyLimitTimes: undefined,
         manageCompanyIds: [],
         campusIds: [],
         areaIds: [],
