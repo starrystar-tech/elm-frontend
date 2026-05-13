@@ -25,14 +25,14 @@ const validTabs: TabType[] = ['engine', 'repurchase']
 
 const normalizeTab = (tab?: unknown): TabType => {
     const raw = String(tab || '')
-    const value = raw === 'list' ? 'engine' : raw
+    const value = raw === 'engine' ? 'engine' : raw
     return validTabs.includes(value) ? value : 'engine'
 }
 
 const handleTabChange = (name: string | number) => {
     const tab = normalizeTab(name)
     const target =
-        tab === 'engine' ? '/crm/allocation/engine/list' : '/crm/allocation/engine/repurchase'
+        tab === 'engine' ? '/crm/allocation/engine/engine' : '/crm/allocation/engine/repurchase'
     if (route.path !== target) {
         router.push(target)
     }
