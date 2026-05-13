@@ -89,7 +89,10 @@
                 </el-form-item>
 
                 <el-form-item label="成单时间范围" prop="dealTimeRangeType">
-                    <el-radio-group v-model="repurchaseForm.dealTimeRangeType">
+                    <el-radio-group
+                        v-model="repurchaseForm.dealTimeRangeType"
+                        @change="changeRepurchaseDealTimeRangeType"
+                    >
                         <el-radio value="unlimited">不限</el-radio>
                         <el-radio value="custom">自定义</el-radio>
                     </el-radio-group>
@@ -175,6 +178,7 @@
 </template>
 
 <script setup lang="ts">
+import dayjs from 'dayjs'
 import { reactive, ref } from 'vue'
 import { CardTitle } from '@/components/Card'
 import * as RepurchasePoolApi from '@/api/crm/customer/repurchasePoolConfig'
@@ -210,11 +214,69 @@ const repurchaseRules = reactive({
     paymentAmountType: [{ required: true, message: '付款金额类型不能为空', trigger: 'change' }]
 })
 
+const normalizeTimeValue = (value: unknown): string | undefined => {
+    if (value === null || value === undefined || value === '') return undefined
+    if (Array.isArray(value)) {
+        if (value.length < 2) return undefined
+        const hour = Number(value[0])
+        const minute = Number(value[1])
+        const second = Number(value[2] ?? 0)
+        if ([hour, minute, second].every((item) => Number.isFinite(item))) {
+            return [hour, minute, second].map((item) => String(item).padStart(2, '0')).join(':')
+        }
+        return undefined
+    }
+    if (typeof value === 'string') {
+        const match = value.match(/(\d{2}:\d{2}:\d{2})/)
+        if (match?.[1]) return match[1]
+        return undefined
+    }
+    if (typeof value === 'object') {
+        const obj = value as Record<string, unknown>
+        const hour = Number(obj.hour ?? obj.hours)
+        const minute = Number(obj.minute ?? obj.minutes)
+        const second = Number(obj.second ?? obj.seconds ?? 0)
+        if ([hour, minute, second].every((item) => Number.isFinite(item))) {
+            return [hour, minute, second].map((item) => String(item).padStart(2, '0')).join(':')
+        }
+    }
+    return undefined
+}
+
+const normalizeDateValue = (value: unknown): string | undefined => {
+    if (value === null || value === undefined || value === '') return undefined
+    if (Array.isArray(value)) {
+        if (value.length < 3) return undefined
+        const year = Number(value[0])
+        const month = Number(value[1])
+        const day = Number(value[2])
+        if (![year, month, day].every((item) => Number.isFinite(item))) return undefined
+        return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    }
+    if (typeof value === 'string') {
+        const date = dayjs(value)
+        return date.isValid() ? date.format('YYYY-MM-DD') : undefined
+    }
+    if (typeof value === 'number') {
+        const date = dayjs(value)
+        return date.isValid() ? date.format('YYYY-MM-DD') : undefined
+    }
+    return undefined
+}
+
 const getRepurchaseConfig = async () => {
     repurchaseLoading.value = true
     try {
         const data = await RepurchasePoolApi.getCustomerRepurchasePoolConfig()
-        if (data) Object.assign(repurchaseForm, data)
+        if (data) {
+            Object.assign(repurchaseForm, data)
+            repurchaseForm.startTime = normalizeTimeValue(data.startTime)
+            repurchaseForm.endTime = normalizeTimeValue(data.endTime)
+            repurchaseForm.dealStartDate = normalizeDateValue(data.dealStartDate)
+            repurchaseForm.dealEndDate = normalizeDateValue(data.dealEndDate)
+            repurchaseForm.signStartDate = normalizeDateValue(data.signStartDate)
+            repurchaseForm.signEndDate = normalizeDateValue(data.signEndDate)
+        }
         if (!productList.value.length) productList.value = await ProductApi.getProductSimpleList()
     } finally {
         repurchaseLoading.value = false
@@ -259,6 +321,13 @@ const changeRepurchaseProductScopeType = () => {
     }
 }
 
+const changeRepurchaseDealTimeRangeType = () => {
+    if (repurchaseForm.dealTimeRangeType !== 'custom') {
+        repurchaseForm.dealStartDate = undefined
+        repurchaseForm.dealEndDate = undefined
+    }
+}
+
 const saveRepurchaseConfig = async () => {
     const valid = await repurchaseFormRef.value?.validate()
     if (!valid) return
@@ -266,7 +335,7 @@ const saveRepurchaseConfig = async () => {
     try {
         await RepurchasePoolApi.saveCustomerRepurchasePoolConfig(repurchaseForm)
         message.success(t('common.updateSuccess'))
-        // await getRepurchaseConfig()
+        await getRepurchaseConfig()
     } finally {
         repurchaseLoading.value = false
     }
