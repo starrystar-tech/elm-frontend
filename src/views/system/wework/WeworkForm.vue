@@ -7,6 +7,7 @@
             :rules="formRules"
             label-width="130px"
         >
+            <div class="form-section-title">应用信息配置</div>
             <el-form-item label="应用名称" prop="appName">
                 <el-input v-model="formData.appName" placeholder="请输入应用名称" clearable />
             </el-form-item>
@@ -52,12 +53,38 @@
                     </template>
                 </el-input>
             </el-form-item>
-            <!-- <el-form-item label="通讯录 Secret" prop="contactSecret">
-        <el-input v-model="formData.contactSecret" type="password" show-password placeholder="通讯录场景可填" clearable />
-      </el-form-item>
-      <el-form-item label="客户联系 Secret" prop="customerSecret">
-        <el-input v-model="formData.customerSecret" type="password" show-password placeholder="客户联系场景可填" clearable />
-      </el-form-item> -->
+            <el-divider />
+            <div class="form-section-title">企业会话存档配置</div>
+            <el-form-item label="privateKey" prop="archivePrivateKey">
+                <el-input
+                    v-model="formData.archivePrivateKey"
+                    type="textarea"
+                    :rows="3"
+                    placeholder="请输入 privateKey"
+                    clearable
+                />
+            </el-form-item>
+            <el-form-item label="version" prop="archiveVersion">
+                <el-input v-model="formData.archiveVersion" placeholder="请输入 version" clearable />
+            </el-form-item>
+            <el-form-item label="secret" prop="archiveSecret">
+                <el-input
+                    v-model="formData.archiveSecret"
+                    type="password"
+                    show-password
+                    placeholder="请输入 secret"
+                    clearable
+                />
+            </el-form-item>
+            <el-form-item label="publicKey" prop="archivePublicKey">
+                <el-input
+                    v-model="formData.archivePublicKey"
+                    type="textarea"
+                    :rows="3"
+                    placeholder="请输入 publicKey"
+                    clearable
+                />
+            </el-form-item>
         </el-form>
         <template #footer>
             <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
@@ -99,6 +126,10 @@ const formData = ref<WeappApi.WeappConfigVO>({
     num: '',
     contactSecret: '',
     customerSecret: '',
+    archivePrivateKey: '',
+    archiveVersion: '',
+    archiveSecret: '',
+    archivePublicKey: '',
     enabled: true
 })
 
@@ -124,6 +155,10 @@ const resetForm = () => {
         num: generateCallbackCode(),
         contactSecret: '',
         customerSecret: '',
+        archivePrivateKey: '',
+        archiveVersion: '',
+        archiveSecret: '',
+        archivePublicKey: '',
         enabled: true
     }
     formRef.value?.resetFields()
@@ -161,3 +196,15 @@ const submitForm = async () => {
     }
 }
 </script>
+
+<style scoped>
+.form-section-title {
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    background: var(--el-fill-color-lighter);
+    border-left: 4px solid var(--el-color-primary);
+    border-radius: 4px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+}
+</style>

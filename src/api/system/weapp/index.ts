@@ -13,6 +13,10 @@ export interface WeappConfigVO {
   num?: string
   contactSecret?: string
   customerSecret?: string
+  archivePrivateKey?: string
+  archiveVersion?: string
+  archiveSecret?: string
+  archivePublicKey?: string
   enabled: boolean
   createTime?: Date
   updateTime?: Date

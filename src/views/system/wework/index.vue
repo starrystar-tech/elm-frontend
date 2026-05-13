@@ -90,6 +90,18 @@
                     >
                 </div>
             </el-descriptions-item>
+            <el-descriptions-item label="会话存档 privateKey">{{
+                detailData?.archivePrivateKey || '-'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="会话存档 version">{{
+                detailData?.archiveVersion || '-'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="会话存档 secret">{{
+                detailData?.archiveSecret || '-'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="会话存档 publicKey">{{
+                detailData?.archivePublicKey || '-'
+            }}</el-descriptions-item>
         </el-descriptions>
     </el-dialog>
 </template>
