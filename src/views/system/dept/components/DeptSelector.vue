@@ -79,11 +79,11 @@ const selectedLabels = computed(() => {
 })
 
 const loadDept = async () => {
-  if (loaded.value) return
-  const res = await DeptApi.getSimpleDeptList()
-  const tree = handleTree(res)
-  deptList.value = [{ id: 0, name: '顶级部门', children: tree } as any]
-  loaded.value = true
+    if (loaded.value) return
+    const res = await DeptApi.getSimpleDeptList()
+    const tree = handleTree(res)
+    deptList.value = [{ id: 0, name: '顶级部门', children: tree } as any]
+    loaded.value = true
 }
 
 const remove = (id: number) => {
@@ -110,30 +110,33 @@ const confirm = () => {
 }
 
 watch(
-  () => visible.value,
-  async (val) => {
-    if (val) {
-      await loadDept()
-      treeRef.value?.setCheckedKeys(modelIds.value)
+    () => visible.value,
+    async (val) => {
+        if (val) {
+            await loadDept()
+            treeRef.value?.setCheckedKeys(modelIds.value)
+        }
     }
-  }
 )
 
 watch(
-  () => props.modelValue,
-  async (val) => {
-    const hasValue = Array.isArray(val) ? val.length > 0 : val === 0 || !!val
-    if (hasValue && !loaded.value) {
-      await loadDept()
-    }
-  },
-  { immediate: true }
+    () => props.modelValue,
+    async (val) => {
+        const hasValue = Array.isArray(val) ? val.length > 0 : val === 0 || !!val
+        if (hasValue && !loaded.value) {
+            await loadDept()
+        }
+    },
+    { immediate: true }
 )
 
 const placeholder = computed(() => props.placeholder || '请选择部门')
 </script>
 
 <style scoped>
+.dept-selector {
+    width: 100%;
+}
 .dept-selector__value {
     min-height: 32px;
     padding: 4px 30px 4px 8px;
