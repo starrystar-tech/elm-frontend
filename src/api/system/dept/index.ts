@@ -4,6 +4,7 @@ export interface DeptVO {
   id: number
   name: string
   parentId: number
+  deptType: string
   status: number
   sort: number
   leaderUserId: number

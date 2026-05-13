@@ -170,18 +170,10 @@
             <el-row>
                 <el-col :span="12">
                     <el-form-item label="用户等级">
-                        <el-select
+                        <UserLevelSelect
                             v-model="formData.userLevel"
-                            clearable
                             placeholder="请选择用户等级"
-                        >
-                            <el-option
-                                v-for="dict in getStrDictOptions('system_user_level')"
-                                :key="dict.value"
-                                :label="dict.label"
-                                :value="dict.value"
-                            />
-                        </el-select>
+                        />
                     </el-form-item>
                 </el-col>
                 <el-col :span="12" />
@@ -335,6 +327,7 @@ import * as CampusApi from '@/api/system/campus'
 import * as AreaApi from '@/api/system/area'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import WeworkAccountSelector from './components/WeworkAccountSelector.vue'
+import UserLevelSelect from '@/views/common/components/UserLevelSelect.vue'
 import { FormRules } from 'element-plus'
 import { normalizeAreaIds } from '@/utils/areaScope'
 

@@ -138,8 +138,8 @@ const placeholder = computed(() => props.placeholder || '请选择部门')
     width: 100%;
 }
 .dept-selector__value {
-    min-height: 32px;
-    padding: 4px 30px 4px 8px;
+    min-height: 30px;
+    padding: 0px 30px 0px 8px;
     border: 1px solid var(--el-border-color, #dcdfe6);
     border-radius: 4px;
     display: flex;
@@ -163,7 +163,6 @@ const placeholder = computed(() => props.placeholder || '请选择部门')
 
 .dept-selector__placeholder {
     color: var(--el-text-color-placeholder);
-    font-size: 13px;
 }
 
 .dept-selector__tags {

@@ -13,6 +13,16 @@
             <el-form-item label="部门名称" prop="name">
                 <el-input v-model="formData.name" placeholder="请输入部门名称" />
             </el-form-item>
+            <el-form-item label="部门类型" prop="deptType">
+                <el-select v-model="formData.deptType" clearable placeholder="请选择部门类型">
+                    <el-option
+                        v-for="dict in getStrDictOptions('system_dept_type')"
+                        :key="dict.value"
+                        :label="dict.label"
+                        :value="dict.value"
+                    />
+                </el-select>
+            </el-form-item>
             <el-form-item label="显示排序" prop="sort">
                 <el-input-number v-model="formData.sort" :min="0" controls-position="right" />
             </el-form-item>
@@ -50,7 +60,7 @@
     </Dialog>
 </template>
 <script lang="ts" setup>
-import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
+import { DICT_TYPE, getIntDictOptions, getStrDictOptions } from '@/utils/dict'
 import * as DeptApi from '@/api/system/dept'
 import * as UserApi from '@/api/system/user'
 import { CommonStatusEnum } from '@/utils/constants'
@@ -71,6 +81,7 @@ const formData = ref({
     title: '',
     parentId: undefined,
     name: undefined,
+    deptType: undefined,
     sort: undefined,
     leaderUserId: undefined,
     phone: undefined,
@@ -80,6 +91,7 @@ const formData = ref({
 const formRules = reactive<FormRules>({
     parentId: [{ required: true, message: '上级部门不能为空', trigger: 'blur' }],
     name: [{ required: true, message: '部门名称不能为空', trigger: 'blur' }],
+    deptType: [{ required: true, message: '部门类型不能为空', trigger: 'change' }],
     sort: [{ required: true, message: '显示排序不能为空', trigger: 'blur' }],
     email: [{ type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }],
     phone: [
@@ -147,6 +159,7 @@ const resetForm = () => {
         title: '',
         parentId: undefined,
         name: undefined,
+        deptType: undefined,
         sort: undefined,
         leaderUserId: undefined,
         phone: undefined,
@@ -155,5 +168,4 @@ const resetForm = () => {
     }
     formRef.value?.resetFields()
 }
-
 </script>

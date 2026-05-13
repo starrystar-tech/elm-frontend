@@ -1,21 +1,21 @@
 <template>
-  <el-form label-width="80px" :model="formData" :rules="rules">
-    <el-form-item label="页面描述" prop="description">
-      <el-input
-        type="textarea"
-        v-model="formData!.description"
-        placeholder="用户通过微信分享给朋友时，会自动显示页面描述"
-      />
-    </el-form-item>
-    <el-form-item label="背景颜色" prop="backgroundColor">
-      <ColorInput v-model="formData!.backgroundColor" />
-    </el-form-item>
-    <el-form-item label="背景图片" prop="backgroundImage">
-      <UploadImg v-model="formData!.backgroundImage" :limit="1">
-        <template #tip>建议宽度 750px</template>
-      </UploadImg>
-    </el-form-item>
-  </el-form>
+    <el-form label-width="100px" :model="formData" :rules="rules">
+        <el-form-item label="页面描述" prop="description">
+            <el-input
+                type="textarea"
+                v-model="formData!.description"
+                placeholder="用户通过微信分享给朋友时，会自动显示页面描述"
+            />
+        </el-form-item>
+        <el-form-item label="背景颜色" prop="backgroundColor">
+            <ColorInput v-model="formData!.backgroundColor" />
+        </el-form-item>
+        <el-form-item label="背景图片" prop="backgroundImage">
+            <UploadImg v-model="formData!.backgroundImage" :limit="1">
+                <template #tip>建议宽度 750px</template>
+            </UploadImg>
+        </el-form-item>
+    </el-form>
 </template>
 
 <script setup lang="ts">

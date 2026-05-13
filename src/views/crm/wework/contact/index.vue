@@ -111,7 +111,7 @@ const searchSchema = reactive<FormSchema[]>([
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
             startPlaceholder: '开始时间',
             endPlaceholder: '结束时间',
-            style: { width: '300px' }
+            style: { width: '220px' }
         }
     }
 ])

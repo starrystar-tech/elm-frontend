@@ -1,6 +1,10 @@
 <template>
   <ContentWrap>
-    <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
+    <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams">
+      <template #levelCode="form">
+        <UserLevelSelect v-model="form.levelCode" placeholder="请选择用户等级" style="width: 220px" />
+      </template>
+    </Search>
     <div class="mb-10px flex items-center justify-between px-15px">
       <BaseButton v-if="canCreate" type="success" @click="openForm('create')">新增</BaseButton>
       <span class="text-14px text-[var(--el-text-color-secondary)]">
@@ -21,14 +25,7 @@
   <Dialog v-model="dialogVisible" :title="dialogTitle" width="520px">
     <el-form ref="formRef" :model="formData" :rules="formRules" label-width="90px">
       <el-form-item label="用户等级" prop="levelCode">
-        <el-select v-model="formData.levelCode" clearable placeholder="请选择用户等级">
-          <el-option
-            v-for="dict in getStrDictOptions('system_user_level')"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        <UserLevelSelect v-model="formData.levelCode" placeholder="请选择用户等级" style="width: 100%" />
       </el-form-item>
       <el-form-item label="权重" prop="weight">
         <el-input-number
@@ -64,7 +61,6 @@
 import { computed, reactive, ref } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
 import type { FormSchema } from '@/types/form'
-import { getStrDictOptions } from '@/utils/dict'
 import { Search } from '@/components/Search'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
@@ -72,6 +68,7 @@ import { Table, type TableColumn } from '@/components/Table'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import { useTable } from '@/hooks/web/useTable'
 import * as AllocationWeightApi from '@/api/crm/allocation/weight'
+import UserLevelSelect from '@/views/common/components/UserLevelSelect.vue'
 
 defineOptions({ name: 'CrmAllocationWeight' })
 
@@ -84,14 +81,9 @@ const searchSchema = reactive<FormSchema[]>([
   {
     field: 'levelCode',
     label: '用户等级',
-    component: 'Select',
+    component: 'Input',
     componentProps: {
       clearable: true,
-      placeholder: '请选择用户等级',
-      options: getStrDictOptions('system_user_level').map((item) => ({
-        label: item.label,
-        value: item.value
-      })),
       style: { width: '220px' }
     }
   },

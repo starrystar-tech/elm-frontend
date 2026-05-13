@@ -144,6 +144,13 @@ const handleDeleteBatch = async () => {
 const tableColumns = computed<TableColumn[]>(() => [
   { field: 'name', label: '部门名称' },
   {
+    field: 'deptType',
+    label: '部门类型',
+    slots: {
+      default: (data) => <DictTag type="system_dept_type" value={data.row.deptType} />
+    }
+  },
+  {
     field: 'leader',
     label: '负责人',
     slots: {
