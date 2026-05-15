@@ -1,5 +1,12 @@
 <template>
-    <div>
-        <h1>企业微信聊天审计</h1>
-    </div>
+  <ContentWrap>
+    <ChatAuditTab />
+  </ContentWrap>
 </template>
+
+<script setup lang="ts">
+import { ContentWrap } from '@/components/ContentWrap'
+import ChatAuditTab from '../chat/components/ChatAuditTab.vue'
+
+defineOptions({ name: 'CrmWeworkChatAudit' })
+</script>

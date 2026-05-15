@@ -1,5 +1,12 @@
 <template>
-    <div>
-        <h1>企业微信聊天分析</h1>
-    </div>
+  <ContentWrap>
+    <ChatAnalysisTab />
+  </ContentWrap>
 </template>
+
+<script setup lang="ts">
+import { ContentWrap } from '@/components/ContentWrap'
+import ChatAnalysisTab from '../chat/components/ChatAnalysisTab.vue'
+
+defineOptions({ name: 'CrmWeworkChatAnalysis' })
+</script>
