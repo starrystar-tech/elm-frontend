@@ -702,17 +702,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
                 },
                 component: () => import('@/views/crm/contact/detail/index.vue')
             },
-            {
-                path: 'product/detail/:id',
-                name: 'CrmProductDetail',
-                meta: {
-                    title: '产品详情',
-                    noCache: true,
-                    hidden: true,
-                    activeMenu: '/crm/product'
-                },
-                component: () => import('@/views/crm/product/detail/index.vue')
-            }
         ]
     },
     {
@@ -819,14 +808,25 @@ const remainingRouter: AppRouteRecordRaw[] = [
         ]
     },
     {
-        path: '/:pathMatch(.*)*',
-        component: () => import('@/views/Error/404.vue'),
-        name: '',
+        path: '/order',
+        component: Layout,
+        name: 'OrderHidden',
         meta: {
-            title: '404',
-            hidden: true,
-            breadcrumb: false
-        }
+            hidden: true
+        },
+        children: [
+            {
+                path: 'product/detail/:id',
+                name: 'OrderProductDetail',
+                meta: {
+                    title: '商品详情',
+                    noCache: true,
+                    hidden: true,
+                    activeMenu: '/order/product'
+                },
+                component: () => import('@/views/order/product/detail/index.vue')
+            }
+        ]
     },
     {
         path: '/iot',
@@ -870,6 +870,16 @@ const remainingRouter: AppRouteRecordRaw[] = [
                 component: () => import('@/views/iot/ota/firmware/detail/index.vue')
             }
         ]
+    },
+    {
+        path: '/:pathMatch(.*)*',
+        component: () => import('@/views/Error/404.vue'),
+        name: '',
+        meta: {
+            title: '404',
+            hidden: true,
+            breadcrumb: false
+        }
     }
 ]
 
