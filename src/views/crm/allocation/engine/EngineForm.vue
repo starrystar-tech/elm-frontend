@@ -125,8 +125,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import CallGroupSelect from '@/views/common/components/CallGroupSelect.vue'
-import UserLevelSelect from '@/views/common/components/UserLevelSelect.vue'
+import CallGroupSelect from '@/components/CallGroupSelect.vue'
+import UserLevelSelect from '@/components/UserLevelSelect.vue'
 import EngineRuleDialog from './EngineRuleDialog.vue'
 
 const props = defineProps<{

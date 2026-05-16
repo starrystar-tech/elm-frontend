@@ -22,10 +22,16 @@ export interface WeworkContactVO {
 export interface WeworkMemberSimpleVO {
   corpId: string
   corpName: string
-  staffUserId: string
-  staffName: string
-  userId?: string
-  name?: string
+  userId: string
+  name: string
+  avatar?: string
+}
+
+export interface WeworkCorpSimpleVO {
+  id: number
+  corpId: string
+  companyName: string
+  label: string
 }
 
 export interface WeworkContactPageReqVO extends PageParam {
@@ -47,12 +53,12 @@ export const syncWeworkContacts = async () => {
   return await request.post({ url: '/crm/wework-contact/sync' })
 }
 
-export const getWeworkMemberSimpleList = async () => {
-  return await request.get({ url: '/crm/wework-contact/member-simple-list' })
+export const getWeworkMemberSimpleList = async (corpId?: string) => {
+  return await request.get<WeworkMemberSimpleVO[]>({ url: '/crm/wework-contact/member-simple-list', params: { corpId } })
 }
 
 export const getWeworkCompanySimpleList = async () => {
-  return await request.get({ url: '/crm/wework-contact/company-simple-list' })
+  return await request.get<WeworkCorpSimpleVO[]>({ url: '/crm/wework-contact/company-simple-list' })
 }
 
 export const updateWeworkRemarkMobile = async (data: { id: number; mobile: string }) => {

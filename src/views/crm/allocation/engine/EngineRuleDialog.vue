@@ -20,9 +20,9 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import SourceSelect from '@/views/common/components/SourceSelect.vue'
-import ProjectSelect from '@/views/common/components/ProjectSelect.vue'
-import AreaSelect from '@/views/common/components/AreaSelect.vue'
+import SourceSelect from '@/components/SourceSelect.vue'
+import ProjectSelect from '@/components/ProjectSelect.vue'
+import AreaSelect from '@/components/AreaSelect.vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -78,4 +78,3 @@ watch(
   { immediate: true, deep: true }
 )
 </script>
-

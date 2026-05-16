@@ -49,4 +49,3 @@ const handleChange = (val: string | string[] | undefined) => {
 const multiple = computed(() => props.multiple ?? false)
 const placeholder = computed(() => props.placeholder || '请选择用户等级')
 </script>
-

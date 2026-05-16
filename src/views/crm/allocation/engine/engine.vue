@@ -80,10 +80,10 @@ import { hasPermission } from '@/directives/permission/hasPermi'
 import * as EngineApi from '@/api/system/allocation/engine'
 import * as AreaApi from '@/api/system/area'
 import EngineForm from './EngineForm.vue'
-import SourceSelect from '@/views/common/components/SourceSelect.vue'
-import CallGroupSelect from '@/views/common/components/CallGroupSelect.vue'
-import ProjectSelect from '@/views/common/components/ProjectSelect.vue'
-import AreaSelect from '@/views/common/components/AreaSelect.vue'
+import SourceSelect from '@/components/SourceSelect.vue'
+import CallGroupSelect from '@/components/CallGroupSelect.vue'
+import ProjectSelect from '@/components/ProjectSelect.vue'
+import AreaSelect from '@/components/AreaSelect.vue'
 
 const message = useMessage()
 const userLevelOptions = getStrDictOptions('crm_allocation_user_level')

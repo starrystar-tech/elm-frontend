@@ -50,4 +50,3 @@ onMounted(() => {
 
 const placeholder = computed(() => props.placeholder || '请选择项目')
 </script>
-

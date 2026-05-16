@@ -57,6 +57,7 @@ export interface WeworkChatQualityRespVO {
   memberList: {
     userId: string
     name: string
+    avatar?: string
     sessionCount: number
     groupSessionCount: number
     singleSessionCount: number
@@ -69,6 +70,7 @@ export interface WeworkChatQualityRespVO {
     sessionType: string
     msgTime: number
     msgType: string
+    avatar?: string
   }[]
   messageList: {
     msgId: string
@@ -78,6 +80,7 @@ export interface WeworkChatQualityRespVO {
     content: string
     msgType: string
     msgTime: number
+    avatar?: string
   }[]
 }
 

@@ -68,7 +68,7 @@ import { Table, type TableColumn } from '@/components/Table'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import { useTable } from '@/hooks/web/useTable'
 import * as AllocationWeightApi from '@/api/crm/allocation/weight'
-import UserLevelSelect from '@/views/common/components/UserLevelSelect.vue'
+import UserLevelSelect from '@/components/UserLevelSelect.vue'
 
 defineOptions({ name: 'CrmAllocationWeight' })
 
