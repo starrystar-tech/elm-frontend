@@ -70,8 +70,12 @@ const loadOptions = async () => {
 
 watch(
   () => props.corpId,
-  () => {
-    emit('update:modelValue', '')
+  (corpId, previousCorpId) => {
+    const changedBetweenValidCorps =
+      !!previousCorpId && !!corpId && corpId !== previousCorpId
+    if (changedBetweenValidCorps) {
+      emit('update:modelValue', '')
+    }
     loadOptions()
   },
   { immediate: true }

@@ -163,6 +163,7 @@ const placeholder = computed(() => props.placeholder || '请选择部门')
 
 .dept-selector__placeholder {
     color: var(--el-text-color-placeholder);
+    font-size: 14px;
 }
 
 .dept-selector__tags {

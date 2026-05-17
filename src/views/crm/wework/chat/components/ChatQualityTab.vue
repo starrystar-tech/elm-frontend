@@ -179,6 +179,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
 import * as WeworkChatApi from '@/api/crm/wework/chat'
 import WeworkCorpSelect from '@/components/WeworkCorpSelect/index.vue'
@@ -193,6 +194,7 @@ const gradients = [
     'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
 ]
 
+const route = useRoute()
 const loading = ref(false)
 const selectedCorpId = ref('')
 const selectedMemberId = ref('')
@@ -303,7 +305,13 @@ watch(
     [selectedCorpId, selectedMemberId, selectedSessionId, activeSessionTab, dateRange],
     loadQualityView
 )
-onMounted(loadQualityView)
+onMounted(() => {
+    const queryCorpId = String(route.query.corpId || '')
+    const queryFromUser = String(route.query.fromUser || '')
+    if (queryCorpId) selectedCorpId.value = queryCorpId
+    if (queryFromUser) selectedMemberId.value = queryFromUser
+    loadQualityView()
+})
 </script>
 
 <style scoped lang="scss">

@@ -626,6 +626,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
                 ]
             },
             {
+                path: 'wework/chat/audit-detail',
+                name: 'CrmWeworkChatAuditDetail',
+                meta: {
+                    title: '审计详情',
+                    noCache: false,
+                    hidden: true,
+                    canTo: true,
+                    activeMenu: '/crm/wework/chatAudit'
+                },
+                component: () => import('@/views/crm/wework/chat/index.vue')
+            },
+            {
                 path: 'clue/detail/:id',
                 name: 'CrmClueDetail',
                 meta: {
