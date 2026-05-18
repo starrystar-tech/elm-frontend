@@ -103,6 +103,8 @@
                         <el-option label="图片" value="image" />
                         <el-option label="视频" value="video" />
                         <el-option label="文件" value="file" />
+                        <el-option label="语音" value="voice" />
+                        <el-option label="音频" value="audio" />
                     </el-select>
                     <el-input
                         v-model="messageKeyword"
@@ -130,7 +132,7 @@
                 <template v-if="displayMessages.length">
                     <div v-for="message in displayMessages" :key="message.id">
                         <div v-if="message.showTime" class="time-divider"
-                            ><span>{{ message.timeLabel }}</span></div
+                            ><span>{{ message.dividerLabel }}</span></div
                         >
                         <div
                             class="message-row"
@@ -150,10 +152,82 @@
                                 <template v-else>{{ message.sender.slice(0, 1) }}</template>
                             </div>
                             <div class="bubble-wrap">
-                                <div class="bubble-sender">{{ message.sender }}</div>
-                                <div class="bubble" :class="message.direction">{{
-                                    message.content
-                                }}</div>
+                                <div class="bubble-meta" :class="message.roleClass">
+                                    <span class="bubble-sender">{{ message.sender }}</span>
+                                    <span class="bubble-time">{{ message.timeLabel }}</span>
+                                </div>
+                                <div class="bubble" :class="[message.direction, `bubble-${message.msgType}`]">
+                                    <template v-if="message.msgType === 'image' && message.media?.url">
+                                        <el-image
+                                            :src="message.media.url"
+                                            :preview-src-list="[message.media.url]"
+                                            fit="cover"
+                                            class="media-image"
+                                            preview-teleported
+                                        />
+                                    </template>
+                                    <template v-else-if="message.msgType === 'image'">
+                                        <div class="media-image-fallback">
+                                            <div class="media-image-fallback-title">图片消息未成功加载</div>
+                                            <div class="media-image-fallback-desc">
+                                                {{ message.media?.debugMessage || message.content }}
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template
+                                        v-else-if="
+                                            message.msgType === 'video' &&
+                                            message.media?.url
+                                        "
+                                    >
+                                        <video
+                                            :src="message.media.url"
+                                            controls
+                                            preload="metadata"
+                                            class="media-video"
+                                        />
+                                    </template>
+                                    <template
+                                        v-else-if="
+                                            ['voice', 'audio'].includes(message.msgType) &&
+                                            message.media?.url
+                                        "
+                                    >
+                                        <div class="media-audio-card">
+                                            <div class="media-audio-title">{{
+                                                message.media?.name || '语音消息'
+                                            }}</div>
+                                            <audio
+                                                :src="message.media.url"
+                                                controls
+                                                preload="metadata"
+                                                class="media-audio"
+                                            />
+                                        </div>
+                                    </template>
+                                    <template
+                                        v-else-if="
+                                            message.msgType === 'file' &&
+                                            (message.media?.url || message.media?.name)
+                                        "
+                                    >
+                                        <a
+                                            class="media-file-card"
+                                            :href="message.media?.url || undefined"
+                                            :download="message.media?.name || true"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <div class="media-file-name">{{
+                                                message.media?.name || '文件'
+                                            }}</div>
+                                            <div class="media-file-meta">
+                                                {{ formatFileMeta(message.media) }}
+                                            </div>
+                                        </a>
+                                    </template>
+                                    <template v-else>{{ message.content }}</template>
+                                </div>
                             </div>
                             <div
                                 v-if="message.direction === 'outbound'"
@@ -184,6 +258,7 @@ import dayjs from 'dayjs'
 import * as WeworkChatApi from '@/api/crm/wework/chat'
 import WeworkCorpSelect from '@/components/WeworkCorpSelect/index.vue'
 import WeworkStaffSelect from '@/components/WeworkStaffSelect/index.vue'
+import { formatChatTime, resolveTimestamp } from '@/utils/formatTime'
 
 const fallbackGradient = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
 const gradients = [
@@ -239,7 +314,7 @@ const filteredSessions = computed(() =>
             type: item.sessionType,
             badge: item.sessionType === 'group' ? '群聊' : '',
             gradient: gradients[index % gradients.length],
-            timeLabel: item.msgTime ? dayjs.unix(item.msgTime).format('MM/DD') : '-'
+            timeLabel: formatChatTime(item.msgTime)
         }))
 )
 
@@ -258,15 +333,23 @@ const displayMessages = computed(() =>
         )
         .filter((item) => {
             if (dateRange.value.length !== 2) return true
-            const date = dayjs.unix(item.msgTime).format('YYYY-MM-DD')
+            const date = resolveTimestamp(item.msgTime)?.format('YYYY-MM-DD')
+            if (!date) return false
             return date >= dateRange.value[0] && date <= dateRange.value[1]
         })
         .map((item, index) => ({
             ...item,
             id: `${item.msgId}-${index}`,
-            timeLabel: item.msgTime ? dayjs.unix(item.msgTime).format('MM-DD HH:mm') : '-',
+            timeLabel: formatChatTime(item.msgTime),
+            dividerLabel: resolveTimestamp(item.msgTime)?.format('YYYY-MM-DD HH:mm') || '-',
             avatarColor: gradients[index % gradients.length],
-            showTime: index === 0
+            roleClass: item.direction === 'outbound' ? 'staff-role' : 'customer-role',
+            showTime:
+                index === 0 ||
+                resolveTimestamp(item.msgTime)?.format('YYYY-MM-DD HH:mm') !==
+                    resolveTimestamp(qualityData.value.messageList[index - 1]?.msgTime)?.format(
+                        'YYYY-MM-DD HH:mm'
+                    )
         }))
 )
 
@@ -312,6 +395,30 @@ onMounted(() => {
     if (queryFromUser) selectedMemberId.value = queryFromUser
     loadQualityView()
 })
+
+const formatFileMeta = (media?: {
+    size?: number
+    duration?: number
+    mimeType?: string
+}) => {
+    const parts: string[] = []
+    if (media?.size) {
+        if (media.size >= 1024 * 1024) {
+            parts.push(`${(media.size / 1024 / 1024).toFixed(1)} MB`)
+        } else if (media.size >= 1024) {
+            parts.push(`${(media.size / 1024).toFixed(1)} KB`)
+        } else {
+            parts.push(`${media.size} B`)
+        }
+    }
+    if (media?.duration) {
+        parts.push(`${media.duration}s`)
+    }
+    if (media?.mimeType) {
+        parts.push(media.mimeType)
+    }
+    return parts.join(' · ') || '点击查看'
+}
 </script>
 
 <style scoped lang="scss">
@@ -472,7 +579,7 @@ onMounted(() => {
 .chat-panel {
     display: flex;
     flex-direction: column;
-    background: #e8e8e8;
+    background: #eef3f7;
 }
 .chat-toolbar {
     padding: 12px 14px;
@@ -501,17 +608,20 @@ onMounted(() => {
 }
 .chat-messages {
     flex: 1;
-    padding: 16px;
+    padding: 18px 22px 26px;
+    background:
+        radial-gradient(circle at top right, rgba(167, 219, 255, 0.22), transparent 28%),
+        linear-gradient(180deg, #f7f8fb 0%, #edf3f7 100%);
 }
 .time-divider {
     text-align: center;
-    margin-bottom: 16px;
+    margin: 16px 0;
 }
 .time-divider span {
     display: inline-block;
-    padding: 4px 12px;
+    padding: 5px 12px;
     border-radius: 999px;
-    background: #d0d3d8;
+    background: rgba(121, 132, 156, 0.68);
     color: #fff;
     font-size: 12px;
 }
@@ -519,7 +629,7 @@ onMounted(() => {
     display: flex;
     gap: 12px;
     margin-bottom: 16px;
-    align-items: flex-start;
+    align-items: flex-end;
 }
 .message-row.outbound {
     justify-content: flex-end;
@@ -528,27 +638,115 @@ onMounted(() => {
     width: 36px;
     height: 36px;
     flex-shrink: 0;
+    box-shadow: 0 8px 18px rgba(69, 97, 130, 0.16);
 }
 .bubble-wrap {
-    max-width: 420px;
+    max-width: min(68%, 720px);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 .message-row.outbound .bubble-wrap {
-    text-align: right;
+    align-items: flex-end;
+}
+.bubble-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    padding: 0 4px;
+}
+.message-row.outbound .bubble-meta {
+    justify-content: flex-end;
+}
+.bubble-time {
+    color: #8f9aae;
+}
+.bubble-meta.customer-role .bubble-sender {
+    color: #5b677d;
+    font-weight: 600;
+}
+.bubble-meta.staff-role .bubble-sender {
+    color: #2d6fd2;
+    font-weight: 600;
 }
 .bubble {
-    display: inline-block;
-    margin-top: 4px;
-    padding: 9px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    line-height: 1.5;
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.6;
+    box-shadow: 0 10px 24px rgba(31, 53, 92, 0.08);
+    word-break: break-word;
+    border: 1px solid transparent;
 }
 .bubble.inbound {
-    background: #fff;
-    color: #303133;
+    background: linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%);
+    color: #2a3347;
+    border-color: rgba(194, 203, 217, 0.6);
+    border-bottom-left-radius: 6px;
 }
 .bubble.outbound {
-    background: #409eff;
-    color: #fff;
+    background: linear-gradient(135deg, #d9ecff 0%, #b9daff 100%);
+    color: #1f4f92;
+    border-color: rgba(111, 168, 255, 0.45);
+    border-bottom-right-radius: 6px;
+}
+.media-image {
+    width: min(260px, 42vw);
+    max-height: 320px;
+    border-radius: 14px;
+    overflow: hidden;
+    display: block;
+    background: rgba(255, 255, 255, 0.5);
+}
+.media-image-fallback {
+    width: min(260px, 42vw);
+    min-height: 110px;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fff8f1 0%, #ffe8d4 100%);
+    color: #8a4b19;
+}
+.media-image-fallback-title {
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.media-image-fallback-desc {
+    font-size: 12px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+.media-video {
+    width: min(320px, 46vw);
+    max-height: 320px;
+    border-radius: 14px;
+    display: block;
+    background: #000;
+}
+.media-audio-card,
+.media-file-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 220px;
+}
+.media-audio-title,
+.media-file-name {
+    font-weight: 600;
+}
+.media-audio {
+    width: min(320px, 46vw);
+}
+.media-file-card {
+    text-decoration: none;
+    color: inherit;
+    padding: 2px 0;
+}
+.media-file-meta {
+    font-size: 12px;
+    color: #7f8ba0;
+}
+.bubble-file {
+    min-width: 220px;
 }
 </style>

@@ -81,6 +81,17 @@ export interface WeworkChatQualityRespVO {
         msgType: string
         msgTime: number
         avatar?: string
+        media?: {
+            kind?: string
+            name?: string
+            url?: string
+            thumbUrl?: string
+            size?: number
+            duration?: number
+            mimeType?: string
+            status?: string
+            debugMessage?: string
+        }
     }[]
 }
 

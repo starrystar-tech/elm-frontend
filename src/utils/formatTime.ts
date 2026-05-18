@@ -73,6 +73,53 @@ export function formatDate(date: Date, format?: string): string {
 }
 
 /**
+ * 统一解析时间戳，兼容秒/毫秒
+ *
+ * @param value 时间值
+ * @returns dayjs 对象；无效值时返回 null
+ */
+export function resolveTimestamp(value?: string | number | null): dayjs.Dayjs | null {
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+  const numericValue = Number(value)
+  if (!Number.isFinite(numericValue)) {
+    const parsed = dayjs(value)
+    return parsed.isValid() ? parsed : null
+  }
+  const normalizedValue = Math.abs(numericValue) >= 1000000000000 ? numericValue : numericValue * 1000
+  const parsed = dayjs(normalizedValue)
+  return parsed.isValid() ? parsed : null
+}
+
+/**
+ * 聊天场景时间格式化
+ *
+ * @param value 时间值，兼容秒/毫秒
+ * @param now 用于测试或特殊场景覆盖当前时间
+ */
+export function formatChatTime(
+  value?: string | number | null,
+  now: dayjs.ConfigType = dayjs()
+): string {
+  const target = resolveTimestamp(value)
+  if (!target) {
+    return '-'
+  }
+  const current = dayjs(now)
+  if (target.isSame(current, 'day')) {
+    return target.format('HH:mm')
+  }
+  if (target.isSame(current.subtract(1, 'day'), 'day')) {
+    return `昨天 ${target.format('HH:mm')}`
+  }
+  if (target.isSame(current, 'year')) {
+    return target.format('MM-DD HH:mm')
+  }
+  return target.format('YYYY-MM-DD HH:mm')
+}
+
+/**
  * 获取当前的日期+时间
  */
 export function getNowDateTime() {
