@@ -10,13 +10,20 @@
   ② 代码优化：将 props 中的 reply 调成为 data 中对应的属性，并补充相关注释
 -->
 <template>
-  <div class="wx-voice-div" @click="playVoice">
-    <el-icon>
-      <Icon v-if="playing !== true" icon="ep:video-play" :size="32" />
-      <Icon v-else icon="ep:video-pause" :size="32" />
-      <span class="amr-duration" v-if="duration">{{ duration }} 秒</span>
-    </el-icon>
-    <div v-if="content">
+  <div class="wx-voice-div">
+    <template v-if="playbackMode === 'native'">
+      <audio class="native-audio" :src="url" controls preload="metadata" />
+    </template>
+    <template v-else>
+      <div class="amr-player-trigger" @click="playVoice">
+        <el-icon>
+          <Icon v-if="playing !== true" icon="ep:video-play" :size="32" />
+          <Icon v-else icon="ep:video-pause" :size="32" />
+        </el-icon>
+        <span class="amr-duration" v-if="duration">{{ duration }} 秒</span>
+      </div>
+    </template>
+    <div v-if="content" class="voice-content">
       <el-tag type="success" size="small">语音识别</el-tag>
       {{ content }}
     </div>
@@ -26,6 +33,8 @@
 <script lang="ts" setup>
 // 因为微信语音是 amr 格式，所以需要用到 amr 解码器：https://www.npmjs.com/package/benz-amr-recorder
 import BenzAMRRecorder from 'benz-amr-recorder'
+import { computed, onBeforeUnmount, ref } from 'vue'
+import { resolveAudioPlaybackMode } from './audioSource.mjs'
 
 defineOptions({ name: 'WxVoicePlayer' })
 
@@ -43,6 +52,7 @@ const props = defineProps({
 const amr = ref()
 const playing = ref(false)
 const duration = ref()
+const playbackMode = computed(() => resolveAudioPlaybackMode(props.url))
 
 /** 处理点击，播放或暂停 */
 const playVoice = () => {
@@ -84,22 +94,43 @@ const amrStop = () => {
   playing.value = false
   amr.value.stop()
 }
-// TODO worker：下面样式有点问题
+
+onBeforeUnmount(() => {
+  if (amr.value?.isPlaying?.()) {
+    amrStop()
+  }
+})
 </script>
 <style lang="scss" scoped>
 .wx-voice-div {
   display: flex;
-  width: 120px;
-  height: 50px;
+  min-width: 120px;
+  min-height: 50px;
   padding: 5px;
   background-color: #eaeaea;
   border-radius: 10px;
   justify-content: center;
   align-items: center;
+  gap: 8px;
+}
+
+.amr-player-trigger {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.native-audio {
+  width: 220px;
+  max-width: 100%;
 }
 
 .amr-duration {
   margin-left: 5px;
   font-size: 11px;
+}
+
+.voice-content {
+  line-height: 1.5;
 }
 </style>

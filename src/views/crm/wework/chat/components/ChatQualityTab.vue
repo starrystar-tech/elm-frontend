@@ -197,12 +197,7 @@
                                             <div class="media-audio-title">{{
                                                 message.media?.name || '语音消息'
                                             }}</div>
-                                            <audio
-                                                :src="message.media.url"
-                                                controls
-                                                preload="metadata"
-                                                class="media-audio"
-                                            />
+                                            <WxVoicePlayer :url="message.media.url" />
                                         </div>
                                     </template>
                                     <template
@@ -258,6 +253,7 @@ import dayjs from 'dayjs'
 import * as WeworkChatApi from '@/api/crm/wework/chat'
 import WeworkCorpSelect from '@/components/WeworkCorpSelect/index.vue'
 import WeworkStaffSelect from '@/components/WeworkStaffSelect/index.vue'
+import WxVoicePlayer from '@/views/mp/components/wx-voice-play/main.vue'
 import { formatChatTime, resolveTimestamp } from '@/utils/formatTime'
 
 const fallbackGradient = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
