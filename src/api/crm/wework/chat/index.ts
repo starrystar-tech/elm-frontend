@@ -152,7 +152,10 @@ export interface WeworkChatAnalysisDetailRespVO {
     ruleCountList: { ruleName: string; count: number }[]
     rows: {
         user: string
+        corpId?: string
+        fromUser?: string
         sender: string
+        senderAvatar?: string
         senderType: string
         receiver: string
         rule: string
@@ -160,6 +163,42 @@ export interface WeworkChatAnalysisDetailRespVO {
         msgTime: number
         msgId: string
     }[]
+}
+
+export interface WeworkChatMonitorSettingRespVO {
+    corpList: { corpId: string; corpName: string }[]
+    sensitiveWords: {
+        id: number
+        word: string
+        matchWords: string[]
+        corpScopeType: string
+        corpIds: string[]
+        scopeText: string
+    }[]
+    behaviorSetting: {
+        corpScopeType: string
+        corpIds: string[]
+        actions: { key: string; label: string; enabled: boolean }[]
+        timeoutMinutes: number
+        monitorTimeGroups: {
+            id?: number
+            weekdays: string[]
+            startTime: string
+            endTime: string
+        }[]
+    }
+}
+
+export interface WeworkChatMonitorSettingSaveReqVO {
+    behaviorSetting: WeworkChatMonitorSettingRespVO['behaviorSetting']
+}
+
+export interface WeworkChatSensitiveWordSaveReqVO {
+    id?: number
+    word: string
+    matchWords: string[]
+    corpScopeType: string
+    corpIds: string[]
 }
 
 export const syncWeworkChatArchive = async () => {
@@ -192,5 +231,39 @@ export const getWeworkChatAnalysisDetail = async (params: WeworkChatAnalysisDeta
     return await request.get<WeworkChatAnalysisDetailRespVO>({
         url: '/crm/wework-chat/analysis/detail',
         params
+    })
+}
+
+export const getWeworkChatMonitorSetting = async () => {
+    return await request.get<WeworkChatMonitorSettingRespVO>({
+        url: '/crm/wework-chat/analysis/setting'
+    })
+}
+
+export const saveWeworkChatMonitorSetting = async (data: WeworkChatMonitorSettingSaveReqVO) => {
+    return await request.put<boolean>({
+        url: '/crm/wework-chat/analysis/setting',
+        data
+    })
+}
+
+export const createWeworkChatSensitiveWord = async (data: WeworkChatSensitiveWordSaveReqVO) => {
+    return await request.post<number>({
+        url: '/crm/wework-chat/analysis/setting/sensitive-word',
+        data
+    })
+}
+
+export const updateWeworkChatSensitiveWord = async (data: WeworkChatSensitiveWordSaveReqVO) => {
+    return await request.put<boolean>({
+        url: '/crm/wework-chat/analysis/setting/sensitive-word',
+        data
+    })
+}
+
+export const deleteWeworkChatSensitiveWord = async (id: number) => {
+    return await request.delete<boolean>({
+        url: '/crm/wework-chat/analysis/setting/sensitive-word',
+        params: { id }
     })
 }
