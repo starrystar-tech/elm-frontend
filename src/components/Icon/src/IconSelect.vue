@@ -51,7 +51,7 @@ const localSvgIcons = ref<string[]>([])
 onMounted(() => {
     // 这里我们手动添加一些本地SVG图标作为示例
     // 实际项目中，你可以通过扫描src/assets/svgs目录来获取所有SVG图标
-    const localIcons = ['menu-crm', 'menu-gzh', 'wework']
+    const localIcons = ['menu-crm', 'menu-gzh', 'wework', 'aftersales']
 
     localSvgIcons.value = localIcons
     // 将本地图标添加到iconList中
