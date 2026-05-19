@@ -4,28 +4,19 @@
       <section class="config-section">
         <h4 class="section-title">通用设置</h4>
         <div class="section-body">
-          <el-form-item prop="exportNeedSuperAdminVerify">
+          <el-form-item prop="general.mobileCopyLimitEnabled">
             <div class="line-item">
-              <el-switch v-model="form.exportNeedSuperAdminVerify" />
-              <span>开启后，批量导出时需超管的验证码授权，超管手机号为</span>
-              <el-form-item prop="exportVerifySuperAdminMobile" class="inline-item">
-                <el-input v-model="form.exportVerifySuperAdminMobile" style="width: 160px" />
-              </el-form-item>
-            </div>
-          </el-form-item>
-          <el-form-item prop="mobileCopyLimitEnabled">
-            <div class="line-item">
-              <el-switch v-model="form.mobileCopyLimitEnabled" />
+              <el-switch v-model="form.general.mobileCopyLimitEnabled" />
               <span>开启后，每人每日最多复制</span>
-              <el-form-item prop="mobileCopyLimitTimes" class="inline-item">
-                <el-input-number v-model="form.mobileCopyLimitTimes" :min="0" :max="999" />
+              <el-form-item prop="general.mobileCopyLimitTimes" class="inline-item">
+                <el-input-number v-model="form.general.mobileCopyLimitTimes" :min="0" :max="999" />
               </el-form-item>
               <span>次手机号</span>
             </div>
           </el-form-item>
-          <el-form-item prop="mobileEncryptEnabled">
+          <el-form-item prop="general.mobileEncryptEnabled">
             <div class="line-item">
-              <el-switch v-model="form.mobileEncryptEnabled" />
+              <el-switch v-model="form.general.mobileEncryptEnabled" />
               <span>开启后，手机号中间 4 位加密</span>
             </div>
           </el-form-item>
@@ -35,18 +26,172 @@
       <el-divider />
 
       <section class="config-section">
-        <h4 class="section-title">工单设置</h4>
+        <h4 class="section-title">系统通知</h4>
         <div class="section-body">
-          <el-form-item prop="workOrderTimeoutWarningEnabled">
+          <el-form-item prop="systemNotify.newWorkOrderNotifyEnabled">
             <div class="line-item">
-              <el-switch v-model="form.workOrderTimeoutWarningEnabled" />
-              <span>领取工单后开启超时预警，超时</span>
-              <el-form-item prop="workOrderTimeoutWarningDays" class="inline-item">
-                <el-input-number v-model="form.workOrderTimeoutWarningDays" :min="0" :max="999" />
-              </el-form-item>
-              <span>天未处理发送预警</span>
+              <el-switch v-model="form.systemNotify.newWorkOrderNotifyEnabled" />
+              <span>开启后，有新分配的工单将收到通知</span>
             </div>
           </el-form-item>
+          <el-form-item prop="systemNotify.workOrderTimeoutWarningEnabled">
+            <div class="line-item">
+              <el-switch v-model="form.systemNotify.workOrderTimeoutWarningEnabled" />
+              <span>领取工单后超时</span>
+              <el-form-item prop="systemNotify.workOrderTimeoutWarningValue" class="inline-item">
+                <el-input-number
+                  v-model="form.systemNotify.workOrderTimeoutWarningValue"
+                  :min="0"
+                  :max="999"
+                />
+              </el-form-item>
+              <el-form-item prop="systemNotify.workOrderTimeoutWarningUnit" class="inline-item">
+                <el-select v-model="form.systemNotify.workOrderTimeoutWarningUnit" style="width: 96px">
+                  <el-option
+                    v-for="item in timeUnitOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </el-form-item>
+              <span>未处理发送预警</span>
+            </div>
+          </el-form-item>
+          <el-form-item prop="systemNotify.appointmentReminderValue">
+            <div class="line-item">
+              <span>距预约或回访时间</span>
+              <el-form-item prop="systemNotify.appointmentReminderValue" class="inline-item">
+                <el-input-number
+                  v-model="form.systemNotify.appointmentReminderValue"
+                  :min="0"
+                  :max="999"
+                />
+              </el-form-item>
+              <el-form-item prop="systemNotify.appointmentReminderUnit" class="inline-item">
+                <el-select v-model="form.systemNotify.appointmentReminderUnit" style="width: 96px">
+                  <el-option
+                    v-for="item in timeUnitOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </el-form-item>
+              <span>时提醒预约人</span>
+            </div>
+          </el-form-item>
+        </div>
+      </section>
+
+      <el-divider />
+
+      <section class="config-section">
+        <h4 class="section-title">短信通知</h4>
+        <div class="section-body">
+          <div class="notify-card">
+            <el-form-item prop="smsNotify.exportVerify.enabled">
+              <div class="line-item">
+                <el-switch v-model="form.smsNotify.exportVerify.enabled" />
+                <span>开启后，批量导出时需验证码授权</span>
+              </div>
+            </el-form-item>
+            <el-form-item prop="receiverTexts.exportVerify">
+              <div class="receiver-block">
+                <div class="receiver-label">接收手机号</div>
+                <el-input
+                  v-model="receiverTexts.exportVerify"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="每行一个手机号，或使用逗号分隔"
+                />
+              </div>
+            </el-form-item>
+          </div>
+
+          <div class="notify-card">
+            <el-form-item prop="smsNotify.mobileCopyWarning.enabled">
+              <div class="line-item">
+                <el-switch v-model="form.smsNotify.mobileCopyWarning.enabled" />
+                <span>开启后，</span>
+                <el-form-item prop="smsNotify.mobileCopyWarning.minutes" class="inline-item">
+                  <el-input-number v-model="form.smsNotify.mobileCopyWarning.minutes" :min="0" :max="999" />
+                </el-form-item>
+                <span>分钟内复制手机号达到</span>
+                <el-form-item prop="smsNotify.mobileCopyWarning.times" class="inline-item">
+                  <el-input-number v-model="form.smsNotify.mobileCopyWarning.times" :min="0" :max="999" />
+                </el-form-item>
+                <span>次时发送预警</span>
+              </div>
+            </el-form-item>
+            <el-form-item prop="receiverTexts.mobileCopyWarning">
+              <div class="receiver-block">
+                <div class="receiver-label">接收手机号</div>
+                <el-input
+                  v-model="receiverTexts.mobileCopyWarning"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="每行一个手机号，或使用逗号分隔"
+                />
+              </div>
+            </el-form-item>
+          </div>
+
+          <div class="notify-card">
+            <el-form-item prop="smsNotify.recordingDownloadWarning.enabled">
+              <div class="line-item">
+                <el-switch v-model="form.smsNotify.recordingDownloadWarning.enabled" />
+                <span>开启后，</span>
+                <el-form-item prop="smsNotify.recordingDownloadWarning.minutes" class="inline-item">
+                  <el-input-number
+                    v-model="form.smsNotify.recordingDownloadWarning.minutes"
+                    :min="0"
+                    :max="999"
+                  />
+                </el-form-item>
+                <span>分钟内下载录音达到</span>
+                <el-form-item prop="smsNotify.recordingDownloadWarning.times" class="inline-item">
+                  <el-input-number
+                    v-model="form.smsNotify.recordingDownloadWarning.times"
+                    :min="0"
+                    :max="999"
+                  />
+                </el-form-item>
+                <span>次时发送预警</span>
+              </div>
+            </el-form-item>
+            <el-form-item prop="receiverTexts.recordingDownloadWarning">
+              <div class="receiver-block">
+                <div class="receiver-label">接收手机号</div>
+                <el-input
+                  v-model="receiverTexts.recordingDownloadWarning"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="每行一个手机号，或使用逗号分隔"
+                />
+              </div>
+            </el-form-item>
+          </div>
+
+          <div class="notify-card">
+            <el-form-item prop="smsNotify.newIpLoginWarning.enabled">
+              <div class="line-item">
+                <el-switch v-model="form.smsNotify.newIpLoginWarning.enabled" />
+                <span>开启后，新 IP 登录时发送预警</span>
+              </div>
+            </el-form-item>
+            <el-form-item prop="receiverTexts.newIpLoginWarning">
+              <div class="receiver-block">
+                <div class="receiver-label">接收手机号</div>
+                <el-input
+                  v-model="receiverTexts.newIpLoginWarning"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="每行一个手机号，或使用逗号分隔"
+                />
+              </div>
+            </el-form-item>
+          </div>
         </div>
       </section>
 
@@ -58,9 +203,14 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import * as OtherSettingConfigApi from '@/api/crm/otherSettingConfig'
+import {
+  buildDefaultOtherSettingConfig,
+  parseReceiverText,
+  stringifyReceivers
+} from './otherConfigForm.mjs'
 
 defineOptions({ name: 'OtherConfigTab' })
 
@@ -71,34 +221,80 @@ const loading = ref(false)
 const saving = ref(false)
 const formRef = ref()
 
-const form = reactive<OtherSettingConfigApi.OtherSettingConfigVO>({
-  exportNeedSuperAdminVerify: false,
-  exportVerifySuperAdminMobile: '',
-  mobileCopyLimitEnabled: false,
-  mobileCopyLimitTimes: 0,
-  mobileEncryptEnabled: true,
-  workOrderTimeoutWarningEnabled: false,
-  workOrderTimeoutWarningDays: 1
+const timeUnitOptions = [
+  { label: '分钟', value: 1 },
+  { label: '小时', value: 2 },
+  { label: '天', value: 3 }
+]
+
+const form = reactive<OtherSettingConfigApi.OtherSettingConfigVO>(buildDefaultOtherSettingConfig())
+const receiverTexts = reactive({
+  exportVerify: '',
+  mobileCopyWarning: '',
+  recordingDownloadWarning: '',
+  newIpLoginWarning: ''
 })
 
 const rules = reactive({
-  exportNeedSuperAdminVerify: [{ required: true, message: '批量导出验证码授权开关不能为空', trigger: 'change' }],
-  exportVerifySuperAdminMobile: [
-    { required: true, message: '超管手机号不能为空', trigger: 'blur' },
-    { pattern: /^1\d{10}$/, message: '超管手机号格式不正确', trigger: 'blur' }
-  ],
-  mobileCopyLimitEnabled: [{ required: true, message: '每日复制手机号限制开关不能为空', trigger: 'change' }],
-  mobileCopyLimitTimes: [{ required: true, message: '每日复制手机号次数不能为空', trigger: 'change' }],
-  mobileEncryptEnabled: [{ required: true, message: '手机号加密开关不能为空', trigger: 'change' }],
-  workOrderTimeoutWarningEnabled: [{ required: true, message: '工单超时预警开关不能为空', trigger: 'change' }],
-  workOrderTimeoutWarningDays: [{ required: true, message: '工单超时预警天数不能为空', trigger: 'change' }]
+  'general.mobileCopyLimitEnabled': [{ required: true, message: '每日复制手机号限制开关不能为空', trigger: 'change' }],
+  'general.mobileCopyLimitTimes': [{ required: true, message: '每日复制手机号次数不能为空', trigger: 'change' }],
+  'general.mobileEncryptEnabled': [{ required: true, message: '手机号加密开关不能为空', trigger: 'change' }],
+  'systemNotify.newWorkOrderNotifyEnabled': [{ required: true, message: '新分配工单通知开关不能为空', trigger: 'change' }],
+  'systemNotify.workOrderTimeoutWarningEnabled': [{ required: true, message: '工单超时预警开关不能为空', trigger: 'change' }],
+  'systemNotify.workOrderTimeoutWarningValue': [{ required: true, message: '工单超时预警时间不能为空', trigger: 'change' }],
+  'systemNotify.workOrderTimeoutWarningUnit': [{ required: true, message: '工单超时预警时间单位不能为空', trigger: 'change' }],
+  'systemNotify.appointmentReminderValue': [{ required: true, message: '预约或回访提醒时间不能为空', trigger: 'change' }],
+  'systemNotify.appointmentReminderUnit': [{ required: true, message: '预约或回访提醒时间单位不能为空', trigger: 'change' }],
+  'smsNotify.exportVerify.enabled': [{ required: true, message: '导出验证码授权开关不能为空', trigger: 'change' }],
+  'smsNotify.mobileCopyWarning.enabled': [{ required: true, message: '复制手机号预警开关不能为空', trigger: 'change' }],
+  'smsNotify.mobileCopyWarning.minutes': [{ required: true, message: '复制手机号预警分钟数不能为空', trigger: 'change' }],
+  'smsNotify.mobileCopyWarning.times': [{ required: true, message: '复制手机号预警次数不能为空', trigger: 'change' }],
+  'smsNotify.recordingDownloadWarning.enabled': [{ required: true, message: '录音下载预警开关不能为空', trigger: 'change' }],
+  'smsNotify.recordingDownloadWarning.minutes': [{ required: true, message: '录音下载预警分钟数不能为空', trigger: 'change' }],
+  'smsNotify.recordingDownloadWarning.times': [{ required: true, message: '录音下载预警次数不能为空', trigger: 'change' }],
+  'smsNotify.newIpLoginWarning.enabled': [{ required: true, message: '新IP登录预警开关不能为空', trigger: 'change' }]
 })
+
+const syncReceiverTextsFromForm = () => {
+  receiverTexts.exportVerify = stringifyReceivers(form.smsNotify.exportVerify.receivers)
+  receiverTexts.mobileCopyWarning = stringifyReceivers(form.smsNotify.mobileCopyWarning.receivers)
+  receiverTexts.recordingDownloadWarning = stringifyReceivers(form.smsNotify.recordingDownloadWarning.receivers)
+  receiverTexts.newIpLoginWarning = stringifyReceivers(form.smsNotify.newIpLoginWarning.receivers)
+}
+
+const buildPayload = (): OtherSettingConfigApi.OtherSettingConfigVO => ({
+  ...form,
+  general: { ...form.general },
+  systemNotify: { ...form.systemNotify },
+  smsNotify: {
+    exportVerify: {
+      ...form.smsNotify.exportVerify,
+      receivers: parseReceiverText(receiverTexts.exportVerify)
+    },
+    mobileCopyWarning: {
+      ...form.smsNotify.mobileCopyWarning,
+      receivers: parseReceiverText(receiverTexts.mobileCopyWarning)
+    },
+    recordingDownloadWarning: {
+      ...form.smsNotify.recordingDownloadWarning,
+      receivers: parseReceiverText(receiverTexts.recordingDownloadWarning)
+    },
+    newIpLoginWarning: {
+      ...form.smsNotify.newIpLoginWarning,
+      receivers: parseReceiverText(receiverTexts.newIpLoginWarning)
+    }
+  }
+})
+
+const hasInvalidReceiver = (text: string) =>
+  parseReceiverText(text).some((item) => !/^1\d{10}$/.test(item))
 
 const loadConfig = async () => {
   loading.value = true
   try {
     const data = await OtherSettingConfigApi.getOtherSettingConfig()
-    if (data) Object.assign(form, data)
+    if (data) Object.assign(form, buildDefaultOtherSettingConfig(), data)
+    syncReceiverTextsFromForm()
   } finally {
     loading.value = false
   }
@@ -107,9 +303,18 @@ const loadConfig = async () => {
 const handleSave = async () => {
   const valid = await formRef.value?.validate()
   if (!valid) return
+  if (
+    hasInvalidReceiver(receiverTexts.exportVerify) ||
+    hasInvalidReceiver(receiverTexts.mobileCopyWarning) ||
+    hasInvalidReceiver(receiverTexts.recordingDownloadWarning) ||
+    hasInvalidReceiver(receiverTexts.newIpLoginWarning)
+  ) {
+    message.error('接收手机号格式不正确')
+    return
+  }
   saving.value = true
   try {
-    await OtherSettingConfigApi.saveOtherSettingConfig(form)
+    await OtherSettingConfigApi.saveOtherSettingConfig(buildPayload())
     message.success('保存成功')
     await loadConfig()
   } finally {
@@ -150,7 +355,7 @@ onMounted(() => {
   margin-left: 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 .line-item {
   display: flex;
@@ -160,6 +365,20 @@ onMounted(() => {
 }
 .inline-item {
   margin-bottom: 0;
+}
+.notify-card {
+  padding: 14px 16px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 10px;
+  background: var(--el-fill-color-extra-light);
+}
+.receiver-block {
+  width: min(560px, 100%);
+}
+.receiver-label {
+  margin-bottom: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 .action-wrap {
   margin-top: 8px;

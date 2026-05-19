@@ -1,14 +1,37 @@
 import request from '@/config/axios'
 
+export interface ReceiverSettingVO {
+  enabled: boolean
+  sceneCode: string
+  receivers: string[]
+}
+
+export interface ThresholdReceiverSettingVO extends ReceiverSettingVO {
+  minutes: number
+  times: number
+}
+
 export interface OtherSettingConfigVO {
   id?: number
-  exportNeedSuperAdminVerify: boolean
-  exportVerifySuperAdminMobile: string
-  mobileCopyLimitEnabled: boolean
-  mobileCopyLimitTimes: number
-  mobileEncryptEnabled: boolean
-  workOrderTimeoutWarningEnabled: boolean
-  workOrderTimeoutWarningDays: number
+  general: {
+    mobileCopyLimitEnabled: boolean
+    mobileCopyLimitTimes: number
+    mobileEncryptEnabled: boolean
+  }
+  systemNotify: {
+    newWorkOrderNotifyEnabled: boolean
+    workOrderTimeoutWarningEnabled: boolean
+    workOrderTimeoutWarningValue: number
+    workOrderTimeoutWarningUnit: number
+    appointmentReminderValue: number
+    appointmentReminderUnit: number
+  }
+  smsNotify: {
+    exportVerify: ReceiverSettingVO
+    mobileCopyWarning: ThresholdReceiverSettingVO
+    recordingDownloadWarning: ThresholdReceiverSettingVO
+    newIpLoginWarning: ReceiverSettingVO
+  }
 }
 
 export const getOtherSettingConfig = async () => {
