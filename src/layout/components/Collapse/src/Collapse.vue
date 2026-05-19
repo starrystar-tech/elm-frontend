@@ -10,7 +10,7 @@ const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('collapse')
 
 defineProps({
-  color: propTypes.string.def('')
+    color: propTypes.string.def('')
 })
 
 const appStore = useAppStore()
@@ -18,18 +18,18 @@ const appStore = useAppStore()
 const collapse = computed(() => appStore.getCollapse)
 
 const toggleCollapse = () => {
-  const collapsed = unref(collapse)
-  appStore.setCollapse(!collapsed)
+    const collapsed = unref(collapse)
+    appStore.setCollapse(!collapsed)
 }
 </script>
 
 <template>
-  <div :class="prefixCls" @click="toggleCollapse">
-    <Icon
-      :color="color"
-      :icon="collapse ? 'ep:expand' : 'ep:fold'"
-      :size="18"
-      class="cursor-pointer"
-    />
-  </div>
+    <div :class="prefixCls" @click="toggleCollapse">
+        <Icon
+            :color="color"
+            :icon="collapse ? 'ep:expand' : 'ep:fold'"
+            :size="18"
+            class="cursor-pointer"
+        />
+    </div>
 </template>

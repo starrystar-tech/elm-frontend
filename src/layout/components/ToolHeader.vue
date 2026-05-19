@@ -45,54 +45,68 @@ const message = computed(() => appStore.getMessage)
 
 // 租户切换权限
 const hasTenantVisitPermission = computed(
-  () => import.meta.env.VITE_APP_TENANT_ENABLE === 'true' && checkPermi(['system:tenant:visit'])
+    () => import.meta.env.VITE_APP_TENANT_ENABLE === 'true' && checkPermi(['system:tenant:visit'])
 )
 
 export default defineComponent({
-  name: 'ToolHeader',
-  setup() {
-    return () => (
-      <div
-        id={`${variables.namespace}-tool-header`}
-        class={[
-          prefixCls,
-          'h-[var(--top-tool-height)] relative px-[var(--top-tool-p-x)] flex items-center justify-between',
-          'dark:bg-[var(--el-bg-color)]'
-        ]}
-      >
-        {layout.value !== 'top' ? (
-          <div class="h-full flex items-center">
-            {hamburger.value && layout.value !== 'cutMenu' ? (
-              <Collapse class="custom-hover" color="var(--top-header-text-color)"></Collapse>
-            ) : undefined}
-            {breadcrumb.value ? <Breadcrumb class="lt-md:hidden"></Breadcrumb> : undefined}
-          </div>
-        ) : undefined}
-        <div class="h-full flex items-center">
-          {hasTenantVisitPermission.value ? <TenantVisit /> : undefined}
-          {screenfull.value ? (
-            <Screenfull class="custom-hover" color="var(--top-header-text-color)"></Screenfull>
-          ) : undefined}
-          {search.value ? (
-            <RouterSearch isModal={false} color="var(--top-header-text-color)" />
-          ) : undefined}
-          {size.value ? (
-            <SizeDropdown class="custom-hover" color="var(--top-header-text-color)"></SizeDropdown>
-          ) : undefined}
-          {locale.value ? (
-            <LocaleDropdown
-              class="custom-hover"
-              color="var(--top-header-text-color)"
-            ></LocaleDropdown>
-          ) : undefined}
-          {message.value ? (
-            <Message class="custom-hover" color="var(--top-header-text-color)"></Message>
-          ) : undefined}
-          <UserInfo></UserInfo>
-        </div>
-      </div>
-    )
-  }
+    name: 'ToolHeader',
+    setup() {
+        return () => (
+            <div
+                id={`${variables.namespace}-tool-header`}
+                class={[
+                    prefixCls,
+                    'h-[var(--top-tool-height)] relative px-[var(--top-tool-p-x)] flex items-center justify-between',
+                    'dark:bg-[var(--el-bg-color)]'
+                ]}
+            >
+                {layout.value !== 'top' ? (
+                    <div class="h-full flex items-center">
+                        {hamburger.value && layout.value !== 'cutMenu' ? (
+                            <Collapse
+                                class="custom-hover"
+                                color="var(--top-header-text-color)"
+                            ></Collapse>
+                        ) : undefined}
+                        {breadcrumb.value ? (
+                            <Breadcrumb class="lt-md:hidden"></Breadcrumb>
+                        ) : undefined}
+                    </div>
+                ) : undefined}
+                <div class="h-full flex items-center">
+                    {hasTenantVisitPermission.value ? <TenantVisit /> : undefined}
+                    {screenfull.value ? (
+                        <Screenfull
+                            class="custom-hover"
+                            color="var(--top-header-text-color)"
+                        ></Screenfull>
+                    ) : undefined}
+                    {search.value ? (
+                        <RouterSearch isModal={false} color="var(--top-header-text-color)" />
+                    ) : undefined}
+                    {size.value ? (
+                        <SizeDropdown
+                            class="custom-hover"
+                            color="var(--top-header-text-color)"
+                        ></SizeDropdown>
+                    ) : undefined}
+                    {locale.value ? (
+                        <LocaleDropdown
+                            class="custom-hover"
+                            color="var(--top-header-text-color)"
+                        ></LocaleDropdown>
+                    ) : undefined}
+                    {message.value ? (
+                        <Message
+                            class="custom-hover"
+                            color="var(--top-header-text-color)"
+                        ></Message>
+                    ) : undefined}
+                    <UserInfo></UserInfo>
+                </div>
+            </div>
+        )
+    }
 })
 </script>
 
@@ -100,6 +114,6 @@ export default defineComponent({
 $prefix-cls: #{$namespace}-tool-header;
 
 .#{$prefix-cls} {
-  transition: left var(--transition-time-02);
+    transition: left var(--transition-time-02);
 }
 </style>
