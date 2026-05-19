@@ -51,7 +51,7 @@ export const useAppStore = defineStore('app', {
 
       breadcrumb: true, // 面包屑
       breadcrumbIcon: true, // 面包屑图标
-      collapse: false, // 折叠菜单
+      collapse: wsCache.get(CACHE_KEY.COLLAPSE) ?? false, // 折叠菜单
       uniqueOpened: true, // 是否只保持一个子菜单的展开
       hamburger: true, // 折叠图标
       screenfull: false, // 全屏图标
@@ -225,6 +225,7 @@ export const useAppStore = defineStore('app', {
       this.breadcrumbIcon = breadcrumbIcon
     },
     setCollapse(collapse: boolean) {
+      wsCache.set(CACHE_KEY.COLLAPSE, collapse)
       this.collapse = collapse
     },
     setUniqueOpened(uniqueOpened: boolean) {

@@ -1,9 +1,10 @@
 <script lang="tsx">
 import { PropType, ref, watch } from 'vue'
-import { ElScrollbar } from 'element-plus'
+import { ElMenu, ElScrollbar } from 'element-plus'
 import { useAppStore } from '@/store/modules/app'
 import { usePermissionStore } from '@/store/modules/permission'
 import { useRenderMenuItem } from './components/useRenderMenuItem'
+import { useRenderCollapseMenuItem } from './components/useRenderCollapseMenuItem'
 import { isUrl } from '@/utils/is'
 import { useDesign } from '@/hooks/web/useDesign'
 import { pathResolve } from '@/utils/routerHelper'
@@ -48,6 +49,7 @@ export default defineComponent({
     )
 
     const collapse = computed(() => appStore.getCollapse)
+    const uniqueOpened = computed(() => appStore.getUniqueOpened)
 
     const activeMenu = computed(() => {
       const { meta, path } = unref(currentRoute)
@@ -141,6 +143,29 @@ export default defineComponent({
     }
 
     const renderMenu = () => {
+      const nativeCollapsedMenu =
+        unref(collapse) && unref(menuMode) === 'vertical' && unref(layout) !== 'cutMenu'
+
+      if (nativeCollapsedMenu) {
+        const { renderMenuItem } = useRenderCollapseMenuItem()
+        return (
+          <ElMenu
+            defaultActive={unref(activeMenu)}
+            mode="vertical"
+            collapse={true}
+            uniqueOpened={unref(uniqueOpened)}
+            backgroundColor="var(--left-menu-bg-color)"
+            textColor="var(--left-menu-text-color)"
+            activeTextColor="var(--left-menu-text-active-color)"
+            onSelect={menuSelect}
+          >
+            {{
+              default: () => renderMenuItem(unref(routers))
+            }}
+          </ElMenu>
+        )
+      }
+
       const { renderMenuItem } = useRenderMenuItem()
       return (
         <div class="v-menu-list">
@@ -190,6 +215,12 @@ $prefix-cls: #{$namespace}-menu;
   .v-menu-list {
     width: 100%;
     padding: 8px 0 16px;
+  }
+
+  :deep(.el-menu) {
+    width: 100%;
+    border-right: none;
+    background: transparent;
   }
 
   .v-menu__icon-wrap {
@@ -397,6 +428,64 @@ $prefix-cls: #{$namespace}-menu;
       background: linear-gradient(90deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.04));
     }
   }
+
+  :deep(.el-menu--collapse) {
+    width: 100%;
+
+    > .el-menu-item,
+    > .el-sub-menu > .el-sub-menu__title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+      margin: 0;
+      padding: 14px 0 !important;
+      border-bottom: 1px solid #f3f3f3;
+      color: #666;
+      transition: all var(--transition-time-02);
+
+      &:hover {
+        color: #444 !important;
+        background-color: #fafafa !important;
+      }
+    }
+
+    > .el-menu-item.is-active,
+    > .el-sub-menu.is-active > .el-sub-menu__title {
+      color: var(--el-color-primary) !important;
+      background-color: #f7fbff !important;
+    }
+
+    .el-sub-menu__icon-arrow,
+    .v-menu__title {
+      display: none;
+    }
+
+    .v-menu__icon-wrap {
+      width: 100%;
+      min-width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: auto;
+      overflow: visible;
+      visibility: visible;
+    }
+
+    > .el-menu-item .v-menu__icon-wrap,
+    > .el-sub-menu > .el-sub-menu__title .v-menu__icon-wrap {
+      display: inline-flex !important;
+    }
+
+    > .el-menu-item .v-menu__icon-wrap :deep(.app-iconify),
+    > .el-sub-menu > .el-sub-menu__title .v-menu__icon-wrap :deep(.app-iconify) {
+      width: 15px !important;
+      min-width: 15px !important;
+      font-size: 15px;
+      color: #666;
+      visibility: visible;
+    }
+  }
 }
 
 // 水平菜单
@@ -407,6 +496,111 @@ $prefix-cls: #{$namespace}-menu;
     display: flex;
     height: calc(var(--top-tool-height));
     align-items: center;
+  }
+}
+</style>
+
+<style lang="scss">
+.v-submenu-popper--vertical {
+  --el-popper-border-color: transparent;
+  --el-border-color-light: transparent;
+  max-height: min(72vh, 760px);
+  padding: 0 !important;
+  border: 1px solid #e9eef5 !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1) !important;
+  outline: none !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  &:focus,
+  &:focus-visible,
+  &.is-focus {
+    border-color: #e9eef5 !important;
+    outline: none !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1) !important;
+  }
+
+  .el-popper__arrow {
+    display: none !important;
+  }
+
+  .el-menu--popup-container {
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .el-menu {
+    border-right: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .el-menu-item,
+  .el-sub-menu__title {
+    min-height: 44px !important;
+    line-height: 44px !important;
+    padding: 0 18px !important;
+    margin: 0 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: #334155 !important;
+    font-size: 14px !important;
+    font-weight: 500;
+    background: transparent !important;
+  }
+
+  .el-menu-item:hover,
+  .el-sub-menu__title:hover {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: #f1f6fd !important;
+  }
+
+  .el-menu-item.is-active,
+  .el-sub-menu.is-active > .el-sub-menu__title {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: #e8f3ff !important;
+    color: #1677ff !important;
+  }
+
+  .el-menu-item:focus,
+  .el-sub-menu__title:focus,
+  .el-menu-item:focus-visible,
+  .el-sub-menu__title:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .v-menu__icon-wrap {
+    width: 15px;
+    min-width: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+  }
+
+  .v-menu__title {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .el-sub-menu__icon-arrow {
+    color: #94a3b8 !important;
   }
 }
 </style>

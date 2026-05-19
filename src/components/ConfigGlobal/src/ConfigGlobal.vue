@@ -42,7 +42,7 @@ watch(
       if (appStore.getMobile) {
         appStore.setMobile(false)
       }
-      setCssVar('--left-menu-min-width', '64px')
+      setCssVar('--left-menu-min-width', '60px')
     }
   },
   {

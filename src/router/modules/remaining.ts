@@ -671,17 +671,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
                 component: () => import('@/views/crm/business/detail/index.vue')
             },
             {
-                path: 'contract/detail/:id',
-                name: 'CrmContractDetail',
-                meta: {
-                    title: '合同详情',
-                    noCache: true,
-                    hidden: true,
-                    activeMenu: '/crm/contract'
-                },
-                component: () => import('@/views/crm/contract/detail/index.vue')
-            },
-            {
                 path: 'receivable-plan/detail/:id',
                 name: 'CrmReceivablePlanDetail',
                 meta: {
@@ -713,7 +702,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
                     activeMenu: '/crm/contact'
                 },
                 component: () => import('@/views/crm/contact/detail/index.vue')
-            },
+            }
         ]
     },
     {

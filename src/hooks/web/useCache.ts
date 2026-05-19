@@ -12,6 +12,7 @@ export const CACHE_KEY = {
   USER: 'user',
   VisitTenantId: 'visitTenantId',
   // 系统设置
+  COLLAPSE: 'collapse',
   IS_DARK: 'isDark',
   LANG: 'lang',
   THEME: 'theme',
