@@ -37,7 +37,9 @@ export default defineComponent({
     })
 
     const getBreadcrumb = () => {
-      const currentPath = currentRoute.value.matched.slice(-1)[0].path
+      const currentPath =
+        (currentRoute.value.meta.activeMenu as string) ||
+        currentRoute.value.matched.slice(-1)[0].path
 
       levelList.value = filter<AppRouteRecordRaw>(unref(menuRouters), (node: AppRouteRecordRaw) => {
         return node.path === currentPath
