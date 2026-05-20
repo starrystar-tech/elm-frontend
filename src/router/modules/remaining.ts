@@ -826,6 +826,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
                     activeMenu: '/order/product'
                 },
                 component: () => import('@/views/order/product/detail/index.vue')
+            },
+            {
+                path: 'detail/:id',
+                name: 'OrderDetail',
+                meta: {
+                    title: '订单详情',
+                    noCache: true,
+                    hidden: true,
+                    activeMenu: '/order/management'
+                },
+                component: () => import('@/views/order/detail/index.vue')
             }
         ]
     },
