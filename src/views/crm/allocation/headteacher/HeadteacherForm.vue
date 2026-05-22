@@ -22,26 +22,13 @@
                 />
             </el-form-item>
             <el-form-item label="班主任" prop="headteacherUserId">
-                <el-select
-                    v-model="formData.headteacherUserId"
-                    filterable
-                    clearable
-                    placeholder="请选择班主任"
-                    style="width: 100%"
-                >
-                    <el-option
-                        v-for="item in userOptions"
-                        :key="item.id"
-                        :label="item.nickname || item.username"
-                        :value="item.id"
-                    />
-                </el-select>
+                <HeadteacherSelect v-model="formData.headteacherUserId" />
             </el-form-item>
             <el-form-item label="负责类型" prop="scopeType">
                 <el-radio-group v-model="formData.scopeType">
                     <el-radio :label="HEADTEACHER_SCOPE_TYPE.ALL">全公司</el-radio>
                     <el-radio :label="HEADTEACHER_SCOPE_TYPE.DEPT">指定部门</el-radio>
-                    <el-radio :label="HEADTEACHER_SCOPE_TYPE.PROVINCE">指定省份</el-radio>
+                    <el-radio :label="HEADTEACHER_SCOPE_TYPE.AREA">指定区域</el-radio>
                 </el-radio-group>
             </el-form-item>
             <el-form-item
@@ -63,27 +50,16 @@
                 />
             </el-form-item>
             <el-form-item
-                v-if="formData.scopeType === HEADTEACHER_SCOPE_TYPE.PROVINCE"
-                label="负责省份"
+                v-if="formData.scopeType === HEADTEACHER_SCOPE_TYPE.AREA"
+                label="负责区域"
                 prop="scopeValueIds"
             >
-                <el-select
+                <AreaSelect
                     v-model="formData.scopeValueIds"
                     multiple
-                    filterable
-                    clearable
-                    collapse-tags
-                    collapse-tags-tooltip
-                    placeholder="请选择省份"
-                    style="width: 100%"
-                >
-                    <el-option
-                        v-for="item in provinceOptions"
-                        :key="item.id"
-                        :label="item.name"
-                        :value="item.id"
-                    />
-                </el-select>
+                    :include-all-node="false"
+                    placeholder="请选择区域"
+                />
             </el-form-item>
         </el-form>
         <template #footer>
@@ -97,10 +73,10 @@
 import { watch } from 'vue'
 import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
 import * as ProductCategoryApi from '@/api/crm/product/category'
-import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
-import * as AreaApi from '@/api/system/area'
 import { handleTree } from '@/utils/tree'
+import AreaSelect from '@/components/AreaSelect.vue'
+import HeadteacherSelect from '@/views/common/HeadteacherSelect.vue'
 
 defineOptions({ name: 'CrmHeadteacherAllocationForm' })
 
@@ -118,9 +94,7 @@ const formType = ref<'create' | 'update'>('create')
 const formRef = ref()
 
 const projectOptions = ref<any[]>([])
-const userOptions = ref<UserApi.UserVO[]>([])
 const deptOptions = ref<any[]>([])
-const provinceOptions = ref<any[]>([])
 
 const treeProps = {
     value: 'id',
@@ -151,7 +125,7 @@ const validateScopeValueIds = (_rule: any, value: number[], callback: (error?: E
         new Error(
             formData.value.scopeType === HEADTEACHER_SCOPE_TYPE.DEPT
                 ? '请选择负责部门'
-                : '请选择负责省份'
+                : '请选择负责区域'
         )
     )
 }
@@ -173,19 +147,12 @@ watch(
 )
 
 const loadOptions = async () => {
-    const [projectList, users, depts, areas] = await Promise.all([
+    const [projectList, depts] = await Promise.all([
         ProductCategoryApi.getProductCategorySimpleList(),
-        UserApi.getSimpleUserList(),
-        DeptApi.getSimpleDeptList(),
-        AreaApi.getAreaTree()
+        DeptApi.getSimpleDeptList()
     ])
     projectOptions.value = projectList || []
-    userOptions.value = users || []
     deptOptions.value = handleTree(depts || [])
-    provinceOptions.value = (areas || []).map((item: any) => ({
-        id: Number(item.id),
-        name: item.name
-    }))
 }
 
 const open = async (type: 'create' | 'update', id?: number) => {

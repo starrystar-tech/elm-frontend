@@ -45,6 +45,13 @@ const openForm = (type: 'create' | 'update', row?: HeadteacherApi.HeadteacherAll
     formRef.value?.open(type, row?.id)
 }
 
+const getScopeValueDisplay = (row: HeadteacherApi.HeadteacherAllocationRespVO) => {
+    if (row.scopeType === HeadteacherApi.HEADTEACHER_SCOPE_TYPE.ALL) {
+        return row.scopeTypeName || '全公司'
+    }
+    return row.scopeValueDisplay || '--'
+}
+
 const handleDelete = async (id?: number) => {
     if (!id) return
     try {
@@ -78,19 +85,19 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'scopeValueDisplay',
         label: '负责范围',
         minWidth: '220px',
-        slots: { default: (data) => <span>{data.row.scopeValueDisplay || '--'}</span> }
+        slots: { default: (data) => <span>{getScopeValueDisplay(data.row)}</span> }
     },
     {
         field: 'updater',
         label: '更新人',
         width: '120px',
-        slots: { default: (data) => <span>{data.row.updater || '-'}</span> }
+        slots: { default: (data) => <span>{data.row.updaterName || data.row.updater || '-'}</span> }
     },
     {
         field: 'updateTime',
         label: '更新时间',
         minWidth: '170px',
-        formatter: (_row: any, _column: any, value: Date) => dateFormatter(value)
+        formatter: (row: any, column: any, value: any) => dateFormatter(row, column, value)
     },
     {
         field: 'action',

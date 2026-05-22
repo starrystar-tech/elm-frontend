@@ -21,48 +21,50 @@ const collapse = computed(() => appStore.getCollapse)
 const layout = computed(() => appStore.getLayout)
 
 const handleClickOutside = () => {
-  appStore.setCollapse(true)
+    appStore.setCollapse(true)
 }
 
 const renderLayout = () => {
-  switch (unref(layout)) {
-    case 'classic':
-      const { renderClassic } = useRenderLayout()
-      return renderClassic()
-    case 'topLeft':
-      const { renderTopLeft } = useRenderLayout()
-      return renderTopLeft()
-    case 'top':
-      const { renderTop } = useRenderLayout()
-      return renderTop()
-    case 'cutMenu':
-      const { renderCutMenu } = useRenderLayout()
-      return renderCutMenu()
-    default:
-      break
-  }
+    switch (unref(layout)) {
+        case 'classic':
+            const { renderClassic } = useRenderLayout()
+            return renderClassic()
+        case 'topLeft':
+            const { renderTopLeft } = useRenderLayout()
+            return renderTopLeft()
+        case 'top':
+            const { renderTop } = useRenderLayout()
+            return renderTop()
+        case 'cutMenu':
+            const { renderCutMenu } = useRenderLayout()
+            return renderCutMenu()
+        default:
+            break
+    }
 }
 
 export default defineComponent({
-  name: 'Layout',
-  setup() {
-    return () => (
-      <section class={[prefixCls, `${prefixCls}__${layout.value}`, 'w-[100%] h-[100%] relative']}>
-        {mobile.value && !collapse.value ? (
-          <div
-            class="absolute left-0 top-0 z-99 h-full w-full bg-[var(--el-color-black)] opacity-30"
-            onClick={handleClickOutside}
-          ></div>
-        ) : undefined}
+    name: 'Layout',
+    setup() {
+        return () => (
+            <section
+                class={[prefixCls, `${prefixCls}__${layout.value}`, 'w-[100%] h-[100%] relative']}
+            >
+                {mobile.value && !collapse.value ? (
+                    <div
+                        class="absolute left-0 top-0 z-99 h-full w-full bg-[var(--el-color-black)] opacity-30"
+                        onClick={handleClickOutside}
+                    ></div>
+                ) : undefined}
 
-        {renderLayout()}
+                {renderLayout()}
 
-        <Backtop></Backtop>
+                <Backtop></Backtop>
 
-        <Setting></Setting>
-      </section>
-    )
-  }
+                {/* <Setting></Setting> */}
+            </section>
+        )
+    }
 })
 </script>
 
@@ -70,6 +72,6 @@ export default defineComponent({
 $prefix-cls: #{$namespace}-layout;
 
 .#{$prefix-cls} {
-  background-color: var(--app-content-bg-color);
+    background-color: var(--app-content-bg-color);
 }
 </style>

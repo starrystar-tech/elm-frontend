@@ -3,7 +3,7 @@ import request from '@/config/axios'
 export const HEADTEACHER_SCOPE_TYPE = {
     ALL: 'ALL',
     DEPT: 'DEPT',
-    PROVINCE: 'PROVINCE'
+    AREA: 'AREA'
 } as const
 
 export type HeadteacherScopeType =
@@ -35,8 +35,17 @@ export interface HeadteacherAllocationRespVO {
     scopeValueNames?: string[]
     scopeValueDisplay?: string
     updater?: string
+    updaterName?: string
     updateTime?: string
     createTime?: string
+}
+
+export interface HeadteacherUserSimpleVO {
+    id: number
+    nickname: string
+    username: string
+    deptId?: number
+    deptName?: string
 }
 
 export const getHeadteacherAllocationPage = (params: HeadteacherAllocationPageReqVO) => {
@@ -45,6 +54,10 @@ export const getHeadteacherAllocationPage = (params: HeadteacherAllocationPageRe
 
 export const getHeadteacherAllocation = (id: number) => {
     return request.get<HeadteacherAllocationRespVO>({ url: '/crm/headteacher/get', params: { id } })
+}
+
+export const getHeadteacherSimpleList = () => {
+    return request.get<HeadteacherUserSimpleVO[]>({ url: '/crm/headteacher/simple-list' })
 }
 
 export const createHeadteacherAllocation = (data: HeadteacherAllocationSaveReqVO) => {
