@@ -1,72 +1,102 @@
 <template>
-  <ContentWrap>
-    <el-collapse v-model="activeNames" class="">
-      <el-collapse-item name="basicInfo">
-        <template #title>
-          <span class="text-base font-bold">基本信息</span>
-        </template>
-        <el-descriptions :column="4">
-          <el-descriptions-item label="客户名称">
-            {{ customer.name }}
-          </el-descriptions-item>
-          <el-descriptions-item label="客户来源">
-            <dict-tag :type="DICT_TYPE.CRM_CUSTOMER_SOURCE" :value="customer.source" />
-          </el-descriptions-item>
-          <el-descriptions-item label="手机">{{ customer.mobile }}</el-descriptions-item>
-          <el-descriptions-item label="电话">{{ customer.telephone }}</el-descriptions-item>
-          <el-descriptions-item label="邮箱">{{ customer.email }}</el-descriptions-item>
-          <el-descriptions-item label="地址">
-            {{ customer.areaName }} {{ customer.detailAddress }}
-          </el-descriptions-item>
-          <el-descriptions-item label="QQ">{{ customer.qq }}</el-descriptions-item>
-          <el-descriptions-item label="微信">{{ customer.wechat }}</el-descriptions-item>
-          <el-descriptions-item label="客户行业">
-            <dict-tag :type="DICT_TYPE.CRM_CUSTOMER_INDUSTRY" :value="customer.industryId" />
-          </el-descriptions-item>
-          <el-descriptions-item label="客户级别">
-            <dict-tag :type="DICT_TYPE.CRM_CUSTOMER_LEVEL" :value="customer.level" />
-          </el-descriptions-item>
-          <el-descriptions-item label="下次联系时间">
-            {{ formatDate(customer.contactNextTime) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="备注">{{ customer.remark }}</el-descriptions-item>
-        </el-descriptions>
-      </el-collapse-item>
-      <el-collapse-item name="systemInfo">
-        <template #title>
-          <span class="text-base font-bold">系统信息</span>
-        </template>
-        <el-descriptions :column="4">
-          <el-descriptions-item label="负责人">{{ customer.ownerUserName }}</el-descriptions-item>
-          <el-descriptions-item label="最后跟进记录">
-            {{ customer.contactLastContent }}
-          </el-descriptions-item>
-          <el-descriptions-item label="最后跟进时间">
-            {{ formatDate(customer.contactLastTime) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="">&nbsp;</el-descriptions-item>
-          <el-descriptions-item label="创建人">{{ customer.creatorName }}</el-descriptions-item>
-          <el-descriptions-item label="创建时间">
-            {{ formatDate(customer.createTime) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="更新时间">
-            {{ formatDate(customer.updateTime) }}
-          </el-descriptions-item>
-        </el-descriptions>
-      </el-collapse-item>
-    </el-collapse>
-  </ContentWrap>
+    <ContentWrap>
+        <el-collapse v-model="activeNames">
+            <el-collapse-item name="basicInfo">
+                <template #title>
+                    <span class="text-base font-bold">基本信息</span>
+                </template>
+                <el-descriptions :column="4">
+                    <el-descriptions-item label="学员姓名">{{
+                        clue.name || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="联系电话">{{
+                        clue.mobile || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="性别">{{
+                        clue.genderName || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="出生日期">{{
+                        clue.birthday || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="年龄">{{
+                        clue.age ? `${clue.age}岁` : '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="微信">{{
+                        clue.wechat || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="微信备注名">{{
+                        clue.wechatRemark || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="QQ">{{ clue.qq || '--' }}</el-descriptions-item>
+                    <el-descriptions-item label="学历">{{
+                        clue.educationName || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="咨询项目">{{
+                        clue.consultProjectName || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="来源">{{
+                        clue.clueSourceName || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="详细地址">{{ addressText }}</el-descriptions-item>
+                    <el-descriptions-item label="邮箱">{{
+                        clue.email || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="意向度">{{
+                        clue.intentLevelName || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="备注" :span="2">{{
+                        clue.remark || '--'
+                    }}</el-descriptions-item>
+                </el-descriptions>
+            </el-collapse-item>
+            <el-collapse-item name="systemInfo">
+                <template #title>
+                    <span class="text-base font-bold">系统信息</span>
+                </template>
+                <el-descriptions :column="4">
+                    <el-descriptions-item label="班主任">{{
+                        clue.currentOwnerName || clue.ownerUserName || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="所属部门">{{
+                        clue.currentDepartmentName || clue.ownerUserDept || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="最近跟进时间">{{
+                        formatDate(clue.contactLastTime) || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="下次联系时间">{{
+                        formatDate(clue.contactNextTime) || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="最近跟进记录" :span="2">{{
+                        clue.contactLastContent || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="创建人">{{
+                        clue.creatorName || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="创建时间">{{
+                        formatDate(clue.createTime) || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="更新时间">{{
+                        formatDate(clue.updateTime) || '--'
+                    }}</el-descriptions-item>
+                </el-descriptions>
+            </el-collapse-item>
+        </el-collapse>
+    </ContentWrap>
 </template>
+
 <script lang="ts" setup>
-import * as CustomerApi from '@/api/crm/customer'
-import { DICT_TYPE } from '@/utils/dict'
+import * as ClueApi from '@/api/crm/clue'
 import { formatDate } from '@/utils/formatTime'
 
-defineOptions({ name: 'CrmCustomerDetailsInfo' })
-const { customer } = defineProps<{
-  customer: CustomerApi.CustomerVO // 客户明细
+const props = defineProps<{
+    clue: ClueApi.ClueVO
 }>()
 
-const activeNames = ref(['basicInfo', 'systemInfo']) // 展示的折叠面板
+const activeNames = ref(['basicInfo', 'systemInfo'])
+
+const addressText = computed(() => {
+    const names = [props.clue.province, props.clue.city, props.clue.district].filter(Boolean)
+    const region = names.join(' / ')
+    return [region, props.clue.detailAddress].filter(Boolean).join(' ') || '--'
+})
 </script>
-<style lang="scss" scoped></style>

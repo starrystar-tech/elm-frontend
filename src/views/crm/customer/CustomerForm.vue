@@ -1,5 +1,5 @@
 <template>
-    <Dialog v-model="dialogVisible" :title="dialogTitle">
+    <Dialog v-model="dialogVisible" :title="dialogTitle" width="760px">
         <el-form
             ref="formRef"
             v-loading="formLoading"
@@ -9,17 +9,13 @@
         >
             <el-row>
                 <el-col :span="12">
-                    <el-form-item label="客户名称" prop="name">
-                        <el-input v-model="formData.name" placeholder="请输入客户名称" />
+                    <el-form-item label="学员姓名" prop="name">
+                        <el-input v-model="formData.name" placeholder="请输入学员姓名" />
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item label="客户来源" prop="source">
-                        <el-select
-                            v-model="formData.source"
-                            placeholder="请选择客户来源"
-                            class="w-1/1"
-                        >
+                    <el-form-item label="来源" prop="source">
+                        <el-select v-model="formData.source" placeholder="请选择来源" class="w-1/1">
                             <el-option
                                 v-for="dict in getIntDictOptions(DICT_TYPE.CRM_CUSTOMER_SOURCE)"
                                 :key="dict.value"
@@ -32,12 +28,12 @@
             </el-row>
             <el-row>
                 <el-col :span="12">
-                    <el-form-item label="手机" prop="mobile">
-                        <el-input v-model="formData.mobile" placeholder="请输入手机" />
+                    <el-form-item label="手机号" prop="mobile">
+                        <el-input v-model="formData.mobile" placeholder="请输入手机号" />
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item label="负责人" prop="ownerUserId">
+                    <el-form-item label="班主任" prop="ownerUserId">
                         <el-select
                             v-model="formData.ownerUserId"
                             :disabled="formType !== 'create'"
@@ -46,7 +42,7 @@
                             <el-option
                                 v-for="item in userOptions"
                                 :key="item.id"
-                                :label="item.nickname"
+                                :label="item.nickname || item.username"
                                 :value="item.id"
                             />
                         </el-select>
@@ -160,24 +156,25 @@
         </template>
     </Dialog>
 </template>
+
 <script lang="ts" setup>
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
-import * as CustomerApi from '@/api/crm/customer'
+import * as ClueApi from '@/api/crm/clue'
 import * as AreaApi from '@/api/system/area'
-import { defaultProps } from '@/utils/tree'
 import * as UserApi from '@/api/system/user'
+import { defaultProps } from '@/utils/tree'
 import { useUserStore } from '@/store/modules/user'
 
-const { t } = useI18n() // 国际化
-const message = useMessage() // 消息弹窗
+const message = useMessage()
 
-const dialogVisible = ref(false) // 弹窗的是否展示
-const dialogTitle = ref('') // 弹窗的标题
-const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
-const formType = ref('') // 表单的类型：create - 新增；update - 修改
-const areaList = ref([]) // 地区列表
-const userOptions = ref<UserApi.UserVO[]>([]) // 用户列表
-const formData = ref({
+const dialogVisible = ref(false)
+const dialogTitle = ref('')
+const formLoading = ref(false)
+const formType = ref<'create' | 'update'>('create')
+const areaList = ref([])
+const userOptions = ref<UserApi.UserVO[]>([])
+const formRef = ref()
+const formData = ref<ClueApi.ClueVO>({
     id: undefined,
     name: undefined,
     contactNextTime: undefined,
@@ -194,65 +191,12 @@ const formData = ref({
     source: undefined,
     remark: undefined
 })
+
 const formRules = reactive({
-    name: [{ required: true, message: '客户名称不能为空', trigger: 'blur' }],
-    ownerUserId: [{ required: true, message: '负责人不能为空', trigger: 'blur' }]
+    name: [{ required: true, message: '学员姓名不能为空', trigger: 'blur' }],
+    ownerUserId: [{ required: true, message: '班主任不能为空', trigger: 'change' }]
 })
-const formRef = ref() // 表单 Ref
 
-/** 打开弹窗 */
-const open = async (type: string, id?: number) => {
-    dialogVisible.value = true
-    dialogTitle.value = t('action.' + type)
-    formType.value = type
-    resetForm()
-    // 修改时，设置数据
-    if (id) {
-        formLoading.value = true
-        try {
-            formData.value = await CustomerApi.getCustomer(id)
-        } finally {
-            formLoading.value = false
-        }
-    }
-    // 获得地区列表
-    areaList.value = await AreaApi.getAreaTree()
-    // 获得用户列表
-    userOptions.value = await UserApi.getSimpleUserList()
-    // 默认新建时选中自己
-    if (formType.value === 'create') {
-        formData.value.ownerUserId = useUserStore().getUser.id
-    }
-}
-defineExpose({ open }) // 提供 open 方法，用于打开弹窗
-
-/** 提交表单 */
-const emit = defineEmits(['success']) // 定义 success 事件，用于操作成功后的回调
-const submitForm = async () => {
-    // 校验表单
-    if (!formRef) return
-    const valid = await formRef.value.validate()
-    if (!valid) return
-    // 提交请求
-    formLoading.value = true
-    try {
-        const data = formData.value as unknown as CustomerApi.CustomerVO
-        if (formType.value === 'create') {
-            await CustomerApi.createCustomer(data)
-            message.success(t('common.createSuccess'))
-        } else {
-            await CustomerApi.updateCustomer(data)
-            message.success(t('common.updateSuccess'))
-        }
-        dialogVisible.value = false
-        // 发送操作成功的事件
-        emit('success')
-    } finally {
-        formLoading.value = false
-    }
-}
-
-/** 重置表单 */
 const resetForm = () => {
     formData.value = {
         id: undefined,
@@ -272,5 +216,58 @@ const resetForm = () => {
         remark: undefined
     }
     formRef.value?.resetFields()
+}
+
+const loadOptions = async () => {
+    const [areas, users] = await Promise.all([AreaApi.getAreaTree(), UserApi.getSimpleUserList()])
+    areaList.value = areas || []
+    userOptions.value = users || []
+}
+
+const open = async (type: 'create' | 'update', id?: number) => {
+    dialogVisible.value = true
+    dialogTitle.value = type === 'create' ? '新增学员' : '编辑学员'
+    formType.value = type
+    resetForm()
+    await loadOptions()
+    if (id) {
+        formLoading.value = true
+        try {
+            const detail = await ClueApi.getClue(id)
+            formData.value = {
+                ...detail,
+                ownerUserId: detail.ownerUserId || detail.currentOwnerId || 0
+            }
+        } finally {
+            formLoading.value = false
+        }
+    }
+    if (type === 'create') {
+        formData.value.ownerUserId = useUserStore().getUser.id
+    }
+}
+
+defineExpose({ open })
+
+const emit = defineEmits(['success'])
+
+const submitForm = async () => {
+    const valid = await formRef.value?.validate()
+    if (!valid) return
+    formLoading.value = true
+    try {
+        const data = formData.value as ClueApi.ClueVO
+        if (formType.value === 'create') {
+            await ClueApi.createClue(data)
+            message.success('新增成功')
+        } else {
+            await ClueApi.updateClue(data)
+            message.success('修改成功')
+        }
+        dialogVisible.value = false
+        emit('success')
+    } finally {
+        formLoading.value = false
+    }
 }
 </script>

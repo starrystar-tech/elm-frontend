@@ -1,19 +1,9 @@
 <template>
-    <!-- 列表 -->
     <ContentWrap>
-        <el-tabs class="list-tabs-compact mb-10px">
-            <el-tab-pane label="拥有客户数限制">
-                <CustomerLimitConfigList :confType="LimitConfType.CUSTOMER_QUANTITY_LIMIT" />
-            </el-tab-pane>
-            <el-tab-pane label="锁定客户数限制">
-                <CustomerLimitConfigList :confType="LimitConfType.CUSTOMER_LOCK_LIMIT" />
-            </el-tab-pane>
-        </el-tabs>
+        <el-empty description="学员体系已不再使用客户数量限制配置。" />
     </ContentWrap>
 </template>
-<script setup lang="ts">
-import CustomerLimitConfigList from './CustomerLimitConfigList.vue'
-import { LimitConfType } from '@/api/crm/customer/limitConfig'
 
+<script setup lang="ts">
 defineOptions({ name: 'CrmCustomerLimitConfig' })
 </script>
