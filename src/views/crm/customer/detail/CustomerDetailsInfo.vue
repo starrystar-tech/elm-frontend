@@ -55,28 +55,16 @@
                 </template>
                 <el-descriptions :column="4">
                     <el-descriptions-item label="班主任">{{
-                        clue.currentOwnerName || clue.ownerUserName || '--'
+                        clue.currentOwnerName || '--'
                     }}</el-descriptions-item>
                     <el-descriptions-item label="所属部门">{{
-                        clue.currentDepartmentName || clue.ownerUserDept || '--'
+                        clue.currentDepartmentName || '--'
                     }}</el-descriptions-item>
-                    <el-descriptions-item label="最近跟进时间">{{
-                        formatDate(clue.contactLastTime) || '--'
-                    }}</el-descriptions-item>
-                    <el-descriptions-item label="下次联系时间">{{
-                        formatDate(clue.contactNextTime) || '--'
-                    }}</el-descriptions-item>
-                    <el-descriptions-item label="最近跟进记录" :span="2">{{
-                        clue.contactLastContent || '--'
-                    }}</el-descriptions-item>
-                    <el-descriptions-item label="创建人">{{
-                        clue.creatorName || '--'
+                    <el-descriptions-item label="报名状态">{{
+                        clue.customerId ? '已报名' : '未报名'
                     }}</el-descriptions-item>
                     <el-descriptions-item label="创建时间">{{
                         formatDate(clue.createTime) || '--'
-                    }}</el-descriptions-item>
-                    <el-descriptions-item label="更新时间">{{
-                        formatDate(clue.updateTime) || '--'
                     }}</el-descriptions-item>
                 </el-descriptions>
             </el-collapse-item>

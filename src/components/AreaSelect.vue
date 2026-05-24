@@ -42,6 +42,13 @@ const emit = defineEmits<{
     (e: 'update:modelValue', value: number | number[] | undefined): void
 }>()
 
+const multiple = computed(() => props.multiple ?? false)
+const includeAllNode = computed(() => props.includeAllNode ?? true)
+const checkStrictly = computed(() => props.checkStrictly ?? true)
+const checkOnClickNode = computed(() => props.checkOnClickNode ?? true)
+const expandOnClickNode = computed(() => props.expandOnClickNode ?? false)
+const placeholder = computed(() => props.placeholder || '请选择地区')
+
 const innerValue = ref<number | number[] | undefined>(props.modelValue)
 const innerData = ref<any[]>(props.data || [])
 
@@ -88,11 +95,4 @@ const handleNodeClick = (data: any) => {
 onMounted(() => {
     loadAreaTree()
 })
-
-const multiple = computed(() => props.multiple ?? false)
-const includeAllNode = computed(() => props.includeAllNode ?? true)
-const checkStrictly = computed(() => props.checkStrictly ?? true)
-const checkOnClickNode = computed(() => props.checkOnClickNode ?? true)
-const expandOnClickNode = computed(() => props.expandOnClickNode ?? false)
-const placeholder = computed(() => props.placeholder || '请选择地区')
 </script>

@@ -1,6 +1,6 @@
 <template>
     <CustomerDetailsHeader :clue="clue" :loading="loading">
-        <el-button v-hasPermi="['crm:clue:update']" type="primary" @click="openForm"
+        <el-button v-hasPermi="['crm:clue:basic-info:update']" type="primary" @click="openForm"
             >编辑</el-button
         >
         <el-button type="default" @click="goBack">返回</el-button>

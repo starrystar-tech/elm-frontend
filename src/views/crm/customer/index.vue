@@ -184,9 +184,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         label: '班主任',
         width: '120px',
         slots: {
-            default: (data) => (
-                <span>{data.row.currentOwnerName || data.row.ownerUserName || '--'}</span>
-            )
+            default: (data) => <span>{data.row.currentOwnerName || '--'}</span>
         }
     },
     {
@@ -195,7 +193,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         width: '100px',
         slots: { default: (data) => <span>{buildEnrollStatus(data.row)}</span> }
     },
-    { field: 'contactLastTime', label: '最近跟进', minWidth: '170px', formatter: dateFormatter },
+    { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter },
     {
         field: 'action',
         label: '操作',

@@ -649,6 +649,39 @@ const remainingRouter: AppRouteRecordRaw[] = [
                 component: () => import('@/views/crm/clue/detail/index.vue')
             },
             {
+                path: 'clue/silent',
+                name: 'CrmClueSilent',
+                meta: {
+                    title: '静默线索',
+                    noCache: true,
+                    hidden: true,
+                    activeMenu: '/crm/clue'
+                },
+                component: () => import('@/views/crm/clue/silent.vue')
+            },
+            {
+                path: 'clue/import-task',
+                name: 'CrmClueImportTask',
+                meta: {
+                    title: '导入任务',
+                    noCache: true,
+                    hidden: true,
+                    activeMenu: '/crm/clue'
+                },
+                component: () => import('@/views/crm/clue/importTask.vue')
+            },
+            {
+                path: 'clue/allocation',
+                name: 'CrmClueAllocation',
+                meta: {
+                    title: '线索分配',
+                    noCache: true,
+                    hidden: true,
+                    activeMenu: '/crm/clue'
+                },
+                component: () => import('@/views/crm/clue/allocation.vue')
+            },
+            {
                 path: 'customer/detail/:id',
                 name: 'CrmCustomerDetail',
                 meta: {

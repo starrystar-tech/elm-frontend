@@ -16,7 +16,7 @@
         <el-descriptions :column="5" direction="vertical">
             <el-descriptions-item label="手机号">{{ clue.mobile || '--' }}</el-descriptions-item>
             <el-descriptions-item label="班主任">{{
-                clue.currentOwnerName || clue.ownerUserName || '--'
+                clue.currentOwnerName || '--'
             }}</el-descriptions-item>
             <el-descriptions-item label="地域">{{ regionText }}</el-descriptions-item>
             <el-descriptions-item label="报名状态">{{
