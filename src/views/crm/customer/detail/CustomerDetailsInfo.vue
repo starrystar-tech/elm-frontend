@@ -1,7 +1,7 @@
 <template>
     <ContentWrap>
         <el-collapse v-model="activeNames">
-            <el-collapse-item name="basicInfo">
+            <el-collapse-item name="basicInfo" class="p-10px">
                 <template #title>
                     <span class="text-base font-bold">基本信息</span>
                 </template>
@@ -49,7 +49,7 @@
                     }}</el-descriptions-item>
                 </el-descriptions>
             </el-collapse-item>
-            <el-collapse-item name="systemInfo">
+            <el-collapse-item name="systemInfo" class="p-10px">
                 <template #title>
                     <span class="text-base font-bold">系统信息</span>
                 </template>

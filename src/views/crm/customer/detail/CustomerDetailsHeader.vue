@@ -8,12 +8,12 @@
                 </div>
             </div>
             <div>
-                <slot />
+                <slot></slot>
             </div>
         </div>
     </div>
     <ContentWrap class="mt-10px">
-        <el-descriptions :column="5" direction="vertical">
+        <el-descriptions :column="5" direction="vertical" class="p-10px pb-0px">
             <el-descriptions-item label="手机号">{{ clue.mobile || '--' }}</el-descriptions-item>
             <el-descriptions-item label="班主任">{{
                 clue.currentOwnerName || '--'

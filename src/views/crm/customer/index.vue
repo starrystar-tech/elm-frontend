@@ -1,8 +1,20 @@
 <template>
     <ContentWrap>
-        <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+        <Search
+            ref="searchRef"
+            :schema="searchSchema"
+            :model="searchForm"
+            @reset="setSearchParams"
+            @search="setSearchParams"
+        />
         <div class="mb-12px flex items-center justify-between action-btn-wrap">
-            <BaseButton type="primary" disabled>设置班主任（待接入）</BaseButton>
+            <BaseButton
+                type="primary"
+                :disabled="selectionList.length === 0"
+                @click="openBatchHeadteacherForm"
+            >
+                设置班主任
+            </BaseButton>
         </div>
         <Table
             v-model:currentPage="tableObject.currentPage"
@@ -11,9 +23,15 @@
             :data="tableObject.tableList"
             :loading="tableObject.loading"
             :pagination="{ total: tableObject.total }"
-            @register="tableRegister"
+            row-key="id"
+            selection
+            reserve-selection
+            @register="registerTable"
+            @selection-change="handleSelectionChange"
         />
     </ContentWrap>
+
+    <BatchHeadteacherForm ref="batchHeadteacherFormRef" @success="handleBatchHeadteacherSuccess" />
 </template>
 
 <script lang="tsx" setup>
@@ -21,14 +39,17 @@ import { computed, reactive, ref } from 'vue'
 import { ElLink } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import * as ClueApi from '@/api/crm/clue'
-import * as UserApi from '@/api/system/user'
+import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
 import * as AreaApi from '@/api/system/area'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
+import { useCache } from '@/hooks/web/useCache'
 import type { FormSchema } from '@/types/form'
+import type { SearchExpose } from '@/components/Search'
+import BatchHeadteacherForm from './BatchHeadteacherForm.vue'
 
 interface AreaOption {
     label: string
@@ -39,13 +60,25 @@ interface StudentSearchParams {
     mobile?: string
     customer?: string
     areaId?: number
-    currentOwnerId?: number
+    headteacherUserId?: number
     enrollStatus?: 'registered' | 'unregistered'
+}
+
+interface CustomerListCacheState {
+    searchParams: StudentSearchParams
+    currentPage: number
+    pageSize: number
 }
 
 defineOptions({ name: 'CrmCustomer' })
 
-const ownerOptions = ref<{ label: string; value: number }[]>([])
+const CUSTOMER_LIST_CACHE_KEY = 'crmCustomerListState'
+const { wsCache } = useCache('sessionStorage')
+const searchRef = ref<SearchExpose>()
+const batchHeadteacherFormRef = ref<InstanceType<typeof BatchHeadteacherForm>>()
+const searchForm = reactive<StudentSearchParams>({})
+const selectionList = ref<ClueApi.ClueVO[]>([])
+const headteacherOptions = ref<{ label: string; value: number }[]>([])
 const areaOptions = ref<AreaOption[]>([])
 const searchSchema = reactive<FormSchema[]>([
     {
@@ -93,19 +126,20 @@ const searchSchema = reactive<FormSchema[]>([
         }
     },
     {
-        field: 'currentOwnerId',
+        field: 'headteacherUserId',
         label: '班主任',
         component: 'Select',
         componentProps: {
             clearable: true,
             filterable: true,
-            style: { width: '200px' },
-            options: ownerOptions.value
+            style: { width: '220px' },
+            options: headteacherOptions.value
         }
     }
 ])
 
 const { push } = useRouter()
+const tableRef = ref<any>()
 const {
     tableObject,
     tableMethods,
@@ -130,7 +164,7 @@ const buildListParams = (params: StudentSearchParams = {}) => {
         mobile: params.mobile,
         customer: params.customer,
         areaId: params.areaId,
-        currentOwnerId: params.currentOwnerId
+        headteacherUserId: params.headteacherUserId
     }
     if (params.enrollStatus === 'registered') {
         nextParams.minOrderCount = 1
@@ -141,8 +175,64 @@ const buildListParams = (params: StudentSearchParams = {}) => {
     return nextParams
 }
 
-const openDetail = (id: number) => {
+const syncSearchForm = (params: StudentSearchParams = {}) => {
+    Object.keys(searchForm).forEach((key) => {
+        delete searchForm[key as keyof StudentSearchParams]
+    })
+    Object.assign(searchForm, params)
+}
+
+const cacheListState = async () => {
+    const currentSearchParams = await searchRef.value?.getFormData<StudentSearchParams>()
+    wsCache.set(CUSTOMER_LIST_CACHE_KEY, {
+        searchParams: currentSearchParams || { ...searchForm },
+        currentPage: tableObject.currentPage,
+        pageSize: tableObject.pageSize
+    } as CustomerListCacheState)
+}
+
+const openDetail = async (id: number) => {
+    await cacheListState()
     push({ name: 'CrmCustomerDetail', params: { id } })
+}
+
+const registerTable = (table: any, elTable: any) => {
+    tableRegister(table, elTable)
+    tableRef.value = table
+}
+
+const restoreListState = async () => {
+    const cachedState = wsCache.get(CUSTOMER_LIST_CACHE_KEY) as CustomerListCacheState | undefined
+    if (!cachedState) {
+        tableMethods.getList()
+        return
+    }
+    wsCache.delete(CUSTOMER_LIST_CACHE_KEY)
+    syncSearchForm(cachedState.searchParams || {})
+    await searchRef.value?.setValues(cachedState.searchParams || {})
+    const pageSizeChanged = !!cachedState.pageSize && cachedState.pageSize !== tableObject.pageSize
+    const currentPageChanged =
+        !!cachedState.currentPage && cachedState.currentPage !== tableObject.currentPage
+    tableObject.pageSize = cachedState.pageSize || tableObject.pageSize
+    tableObject.currentPage = cachedState.currentPage || tableObject.currentPage
+    tableObject.params = buildListParams(cachedState.searchParams || {})
+    if (!pageSizeChanged && !currentPageChanged) {
+        await tableMethods.getList()
+    }
+}
+
+const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
+    selectionList.value = rows || []
+}
+
+const openBatchHeadteacherForm = () => {
+    batchHeadteacherFormRef.value?.open(selectionList.value.map((item) => Number(item.id)))
+}
+
+const handleBatchHeadteacherSuccess = async () => {
+    selectionList.value = []
+    tableRef.value?.clearSelection?.()
+    await tableMethods.getList()
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
@@ -180,11 +270,11 @@ const tableColumns = computed<TableColumn[]>(() => [
         slots: { default: (data) => <span>{buildAreaLabel(data.row)}</span> }
     },
     {
-        field: 'currentOwnerName',
+        field: 'headteacherName',
         label: '班主任',
         width: '120px',
         slots: {
-            default: (data) => <span>{data.row.currentOwnerName || '--'}</span>
+            default: (data) => <span>{data.row.headteacherName || '--'}</span>
         }
     },
     {
@@ -225,8 +315,11 @@ const flattenAreas = (nodes: any[] = [], parents: string[] = []): AreaOption[] =
 }
 
 const loadFilterOptions = async () => {
-    const [users, areas] = await Promise.all([UserApi.getSimpleUserList(), AreaApi.getAreaTree()])
-    ownerOptions.value = (users || []).map((item) => ({
+    const [headteachers, areas] = await Promise.all([
+        HeadteacherApi.getHeadteacherSimpleList(),
+        AreaApi.getAreaTree()
+    ])
+    headteacherOptions.value = (headteachers || []).map((item) => ({
         label: item.nickname || item.username,
         value: item.id
     }))
@@ -235,18 +328,19 @@ const loadFilterOptions = async () => {
     if (areaField?.componentProps) {
         areaField.componentProps.options = areaOptions.value
     }
-    const ownerField = searchSchema.find((item) => item.field === 'currentOwnerId')
-    if (ownerField?.componentProps) {
-        ownerField.componentProps.options = ownerOptions.value
+    const headteacherField = searchSchema.find((item) => item.field === 'headteacherUserId')
+    if (headteacherField?.componentProps) {
+        headteacherField.componentProps.options = headteacherOptions.value
     }
 }
 
 const setSearchParams = (params: StudentSearchParams) => {
+    syncSearchForm(params)
     tableMethods.setSearchParams(buildListParams(params))
 }
 
 onMounted(async () => {
     await loadFilterOptions()
-    tableMethods.getList()
+    await restoreListState()
 })
 </script>

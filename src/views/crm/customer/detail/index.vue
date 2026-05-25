@@ -1,45 +1,47 @@
 <template>
-    <CustomerDetailsHeader :clue="clue" :loading="loading">
-        <el-button v-hasPermi="['crm:clue:basic-info:update']" type="primary" @click="openForm"
-            >编辑</el-button
-        >
-        <el-button type="default" @click="goBack">返回</el-button>
-    </CustomerDetailsHeader>
+    <div class="detail-wrap">
+        <CustomerDetailsHeader :clue="clue" :loading="loading">
+            <el-button v-hasPermi="['crm:clue:basic-info:update']" type="primary" @click="openForm"
+                >编辑</el-button
+            >
+            <el-button type="default" @click="goBack">返回</el-button>
+        </CustomerDetailsHeader>
 
-    <el-col>
-        <el-tabs v-model="activeTabName">
-            <el-tab-pane label="基本信息" name="basicInfo">
-                <CustomerDetailsInfo :clue="clue" />
-            </el-tab-pane>
-            <el-tab-pane label="预约记录" name="reservations">
-                <ContentWrap>
-                    <el-empty description="预约记录暂未接入，当前仅展示学员基础资料。" />
-                </ContentWrap>
-            </el-tab-pane>
-            <el-tab-pane label="订单列表" name="orders">
-                <ContentWrap>
-                    <el-empty description="订单列表暂未接入，后续可按报名链路继续补充。" />
-                </ContentWrap>
-            </el-tab-pane>
-            <el-tab-pane label="工单记录" name="tickets">
-                <ContentWrap>
-                    <el-empty description="工单记录暂未接入。" />
-                </ContentWrap>
-            </el-tab-pane>
-            <el-tab-pane label="通话记录" name="calls">
-                <ContentWrap>
-                    <el-empty description="通话记录暂未接入。" />
-                </ContentWrap>
-            </el-tab-pane>
-            <el-tab-pane label="短信记录" name="sms">
-                <ContentWrap>
-                    <el-empty description="短信记录暂未接入。" />
-                </ContentWrap>
-            </el-tab-pane>
-        </el-tabs>
-    </el-col>
+        <el-col>
+            <el-tabs v-model="activeTabName">
+                <el-tab-pane label="基本信息" name="basicInfo">
+                    <CustomerDetailsInfo :clue="clue" />
+                </el-tab-pane>
+                <el-tab-pane label="预约记录" name="reservations">
+                    <ContentWrap>
+                        <el-empty description="预约记录暂未接入，当前仅展示学员基础资料。" />
+                    </ContentWrap>
+                </el-tab-pane>
+                <el-tab-pane label="订单列表" name="orders">
+                    <ContentWrap>
+                        <el-empty description="订单列表暂未接入，后续可按报名链路继续补充。" />
+                    </ContentWrap>
+                </el-tab-pane>
+                <el-tab-pane label="工单记录" name="tickets">
+                    <ContentWrap>
+                        <el-empty description="工单记录暂未接入。" />
+                    </ContentWrap>
+                </el-tab-pane>
+                <el-tab-pane label="通话记录" name="calls">
+                    <ContentWrap>
+                        <el-empty description="通话记录暂未接入。" />
+                    </ContentWrap>
+                </el-tab-pane>
+                <el-tab-pane label="短信记录" name="sms">
+                    <ContentWrap>
+                        <el-empty description="短信记录暂未接入。" />
+                    </ContentWrap>
+                </el-tab-pane>
+            </el-tabs>
+        </el-col>
 
-    <CustomerForm ref="formRef" @success="getClue" />
+        <CustomerForm ref="formRef" @success="getClue" />
+    </div>
 </template>
 
 <script lang="ts" setup>

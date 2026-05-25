@@ -45,6 +45,8 @@ export interface ClueVO {
     currentOwnerName?: string
     currentDepartmentId?: number
     currentDepartmentName?: string
+    headteacherUserId?: number
+    headteacherName?: string
     ownerUserId?: number
     ownerUserName?: string
     ownerUserDept?: string
@@ -76,6 +78,7 @@ export interface CluePageReqVO extends PageParam {
     clueSourceId?: number
     intentLevel?: number
     currentOwnerId?: number
+    headteacherUserId?: number
     beginAllocationTime?: string
     endAllocationTime?: string
     allocationType?: number
@@ -181,6 +184,11 @@ export interface ClueBatchBackToPublicSeaReqVO {
     clueIds: number[]
 }
 
+export interface ClueBatchUpdateHeadteacherReqVO {
+    clueIds: number[]
+    headteacherUserId: number
+}
+
 export interface ClueImportTaskVO {
     id: number
     fileName?: string
@@ -217,6 +225,10 @@ export const createClue = async (data: ClueCreateReqVO) => {
 
 export const updateClueBasicInfo = async (data: ClueUpdateBasicInfoReqVO) => {
     return await request.put({ url: '/crm/clue/update-basic-info', data })
+}
+
+export const batchUpdateHeadteacher = async (data: ClueBatchUpdateHeadteacherReqVO) => {
+    return await request.put({ url: '/crm/clue/batch-update-headteacher', data })
 }
 
 export const updateClue = async (data: ClueUpdateBasicInfoReqVO) => {
