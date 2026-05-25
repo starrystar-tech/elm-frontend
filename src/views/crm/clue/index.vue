@@ -8,25 +8,37 @@
         />
 
         <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
-            <div class="flex gap-8px flex-wrap">
-                <BaseButton :disabled="selectionList.length !== 2" @click="openMergeDialog"
+            <div class="flex gap-4px flex-wrap">
+                <BaseButton
+                    type="primary"
+                    plain
+                    :disabled="selectionList.length !== 2"
+                    @click="openMergeDialog"
                     >合并</BaseButton
                 >
                 <BaseButton
+                    type="primary"
+                    plain
                     :disabled="selectionList.length === 0"
                     @click="assignModeDialogVisible = true"
                     >修改分配方式</BaseButton
                 >
                 <BaseButton
+                    type="primary"
+                    plain
                     :disabled="selectionList.length === 0"
                     @click="silentDialogVisible = true"
                     >静默</BaseButton
                 >
-                <BaseButton :disabled="selectionList.length === 0" @click="tagDialogVisible = true"
+                <BaseButton
+                    type="primary"
+                    plain
+                    :disabled="selectionList.length === 0"
+                    @click="tagDialogVisible = true"
                     >标签</BaseButton
                 >
             </div>
-            <div class="flex gap-8px flex-wrap">
+            <div class="flex gap-4px flex-wrap mr-12px">
                 <BaseButton v-if="canCreate" type="primary" @click="openForm('create')"
                     >新增</BaseButton
                 >

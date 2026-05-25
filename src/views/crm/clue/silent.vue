@@ -1,64 +1,19 @@
 <template>
     <ContentWrap>
-        <el-form :inline="true" :model="searchForm" class="mb-12px">
-            <el-form-item label="联系电话">
-                <el-input
-                    v-model="searchForm.mobile"
-                    clearable
-                    placeholder="请输入联系电话"
-                    style="width: 220px"
-                />
-            </el-form-item>
-            <el-form-item label="姓名">
-                <el-input
-                    v-model="searchForm.customer"
-                    clearable
-                    placeholder="请输入姓名/客户编号"
-                    style="width: 220px"
-                />
-            </el-form-item>
-            <el-form-item label="归属人">
-                <el-select
-                    v-model="searchForm.currentOwnerId"
-                    clearable
-                    filterable
-                    placeholder="全部"
-                    style="width: 220px"
-                >
-                    <el-option
-                        v-for="item in userOptions"
-                        :key="item.id"
-                        :label="item.nickname || item.username"
-                        :value="item.id"
-                    />
-                </el-select>
-            </el-form-item>
-            <el-form-item label="静默时间">
-                <el-date-picker
-                    v-model="searchForm.silentTimeRange"
-                    type="datetimerange"
-                    value-format="YYYY-MM-DD HH:mm:ss"
-                    start-placeholder="开始时间"
-                    end-placeholder="结束时间"
-                    style="width: 320px"
-                />
-            </el-form-item>
-            <el-form-item>
-                <el-button type="primary" @click="handleSearch">查询</el-button>
-                <el-button @click="handleReset">重置</el-button>
-            </el-form-item>
-        </el-form>
+        <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
 
-        <div class="mb-12px flex gap-8px flex-wrap">
-            <BaseButton
-                :disabled="selectionList.length === 0"
-                type="primary"
-                @click="assignDialogVisible = true"
-                >批量分配</BaseButton
-            >
-            <BaseButton :disabled="selectionList.length === 0" plain @click="handleBackToPublicSea"
-                >一键回公海</BaseButton
-            >
+        <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
+            <div class="flex gap-8px flex-wrap">
+                <BaseButton
+                    type="primary"
+                    :disabled="selectionList.length === 0"
+                    @click="assignDialogVisible = true"
+                    >批量分配</BaseButton
+                >
+                <BaseButton :disabled="selectionList.length === 0" plain @click="handleBackToPublicSea"
+                    >一键回公海</BaseButton
+                >
+            </div>
         </div>
 
         <Table
@@ -87,9 +42,9 @@
                 >
                     <el-option
                         v-for="item in userOptions"
-                        :key="item.id"
-                        :label="item.nickname || item.username"
-                        :value="item.id"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
                     />
                 </el-select>
             </el-form-item>
@@ -107,52 +62,104 @@
 <script setup lang="tsx">
 import { computed, reactive, ref } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
+import { Search } from '@/components/Search'
+import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
+import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
 import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
-import { BaseButton } from '@/components/Button'
-import { ContentWrap } from '@/components/ContentWrap'
-import { Table, type TableColumn } from '@/components/Table'
-import { useTable } from '@/hooks/web/useTable'
 
 defineOptions({ name: 'CrmClueSilent' })
 
 const message = useMessage()
-const userOptions = ref<UserApi.UserVO[]>([])
+const userOptions = ref<{ label: string; value: number; deptId?: number }[]>([])
 const deptOptions = ref<DeptApi.DeptVO[]>([])
 const selectionList = ref<ClueApi.ClueVO[]>([])
 const assignDialogVisible = ref(false)
-
-const searchForm = reactive({
-    customer: '',
-    mobile: '',
-    currentOwnerId: undefined as number | undefined,
-    silentTimeRange: [] as string[]
-})
 
 const assignForm = reactive({
     ownerId: undefined as number | undefined
 })
 
-const buildParams = (): ClueApi.ClueSilentPageReqVO => ({
-    customer: searchForm.customer || undefined,
-    mobile: searchForm.mobile || undefined,
-    currentOwnerId: searchForm.currentOwnerId,
-    beginSilentTime: searchForm.silentTimeRange?.[0],
-    endSilentTime: searchForm.silentTimeRange?.[1]
-})
+const searchSchema = reactive<FormSchema[]>([
+    {
+        field: 'mobile',
+        label: '联系电话',
+        component: 'Input',
+        componentProps: {
+            placeholder: '请输入联系电话',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'customer',
+        label: '客户',
+        component: 'Input',
+        componentProps: {
+            placeholder: '请输入姓名/客户编号',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'currentOwnerId',
+        label: '归属人',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择归属人',
+            clearable: true,
+            filterable: true,
+            options: [],
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'minSilentCount',
+        label: '静默次数起',
+        component: 'InputNumber',
+        componentProps: {
+            min: 0,
+            controlsPosition: 'right',
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'maxSilentCount',
+        label: '静默次数止',
+        component: 'InputNumber',
+        componentProps: {
+            min: 0,
+            controlsPosition: 'right',
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'silentTimeRange',
+        label: '静默时间',
+        component: 'DatePicker',
+        componentProps: {
+            type: 'datetimerange',
+            valueFormat: 'YYYY-MM-DD HH:mm:ss',
+            startPlaceholder: '开始时间',
+            endPlaceholder: '结束时间',
+            style: { width: '220px' }
+        }
+    }
+])
 
 const {
     tableObject,
     tableMethods,
     register: tableRegister
 } = useTable<ClueApi.ClueVO>({
-    getListApi: async (params) => await ClueApi.getSilentCluePage({ ...buildParams(), ...params })
+    getListApi: async (params) => await ClueApi.getSilentCluePage(params as ClueApi.ClueSilentPageReqVO)
 })
 
-const selectedUser = computed(() =>
-    userOptions.value.find((item) => item.id === assignForm.ownerId)
-)
+const selectedUser = computed(() => userOptions.value.find((item) => item.value === assignForm.ownerId))
 const selectedDeptName = computed(() => {
     const dept = deptOptions.value.find((item) => item.id === selectedUser.value?.deptId)
     return dept?.name || '--'
@@ -163,38 +170,39 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'name', label: '姓名', width: '120px' },
     { field: 'currentOwnerName', label: '归属人', width: '120px' },
     { field: 'currentDepartmentName', label: '所属部门', width: '140px' },
-    { field: 'consultProjectName', label: '咨询项目', minWidth: '140px' },
+    { field: 'consultProjectName', label: '咨询项目', minWidth: '160px' },
+    { field: 'intentLevelName', label: '意向度', width: '100px' },
     { field: 'silentCount', label: '静默次数', width: '100px' },
-    { field: 'silentReason', label: '最近静默原因', minWidth: '180px' },
+    { field: 'silentReason', label: '最近静默原因', minWidth: '200px' },
     { field: 'lastSilentTime', label: '最近静默时间', minWidth: '170px', formatter: dateFormatter },
     { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter }
 ])
 
 const loadOptions = async () => {
-    const [users, depts] = await Promise.all([
-        UserApi.getSimpleUserList(),
-        DeptApi.getSimpleDeptList()
-    ])
-    userOptions.value = users || []
+    const [users, depts] = await Promise.all([UserApi.getSimpleUserList(), DeptApi.getSimpleDeptList()])
+    userOptions.value = (users || []).map((item) => ({
+        label: item.nickname || item.username,
+        value: item.id,
+        deptId: item.deptId
+    }))
     deptOptions.value = depts || []
+    const ownerField = searchSchema.find((item) => item.field === 'currentOwnerId')
+    if (ownerField?.componentProps) {
+        ownerField.componentProps.options = userOptions.value
+    }
 }
 
 const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
     selectionList.value = rows || []
 }
 
-const handleSearch = () => {
-    tableMethods.setSearchParams(buildParams())
-}
-
-const handleReset = () => {
-    Object.assign(searchForm, {
-        customer: '',
-        mobile: '',
-        currentOwnerId: undefined,
-        silentTimeRange: []
+const setSearchParams = (params: Record<string, any>) => {
+    const { silentTimeRange, ...rest } = params
+    tableMethods.setSearchParams({
+        ...rest,
+        beginSilentTime: silentTimeRange?.[0],
+        endSilentTime: silentTimeRange?.[1]
     })
-    tableMethods.setSearchParams({})
 }
 
 const handleBatchAssign = async () => {

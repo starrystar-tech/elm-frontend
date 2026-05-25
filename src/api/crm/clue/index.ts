@@ -95,6 +95,8 @@ export interface ClueSilentPageReqVO extends CluePageReqVO {
     endSilentTime?: string
 }
 
+export interface ClueAllocationPageReqVO extends CluePageReqVO {}
+
 export interface ClueCreateReqVO {
     mobile: string
     mobile2?: string
@@ -273,10 +275,26 @@ export const getSilentCluePage = async (params: ClueSilentPageReqVO) => {
     return await request.get({ url: '/crm/clue/silent-page', params })
 }
 
+export const getAllocationCluePage = async (params: ClueAllocationPageReqVO) => {
+    return await request.get({ url: '/crm/clue/allocation-page', params })
+}
+
 export const batchAssignSilentClue = async (data: ClueBatchAssignReqVO) => {
     return await request.put({ url: '/crm/clue/batch-assign', data })
 }
 
 export const batchBackToPublicSea = async (data: ClueBatchBackToPublicSeaReqVO) => {
     return await request.put({ url: '/crm/clue/batch-back-to-public-sea', data })
+}
+
+export const allocationBatchAssign = async (data: ClueBatchAssignReqVO) => {
+    return await request.put({ url: '/crm/clue/allocation-batch-assign', data })
+}
+
+export const allocationBatchSilent = async (data: ClueBatchSilentReqVO) => {
+    return await request.put({ url: '/crm/clue/allocation-batch-silent', data })
+}
+
+export const allocationMerge = async (data: ClueMergeReqVO) => {
+    return await request.put({ url: '/crm/clue/allocation-merge', data })
 }

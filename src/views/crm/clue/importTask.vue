@@ -1,48 +1,12 @@
 <template>
     <ContentWrap>
-        <el-form :inline="true" :model="searchForm" class="mb-12px">
-            <el-form-item label="文件名">
-                <el-input
-                    v-model="searchForm.fileName"
-                    clearable
-                    placeholder="请输入文件名"
-                    style="width: 220px"
-                />
-            </el-form-item>
-            <el-form-item label="任务状态">
-                <el-select
-                    v-model="searchForm.status"
-                    clearable
-                    placeholder="全部"
-                    style="width: 180px"
-                >
-                    <el-option label="处理中" :value="1" />
-                    <el-option label="已完成" :value="2" />
-                </el-select>
-            </el-form-item>
-            <el-form-item label="创建人">
-                <el-input
-                    v-model="searchForm.creator"
-                    clearable
-                    placeholder="请输入创建人"
-                    style="width: 220px"
-                />
-            </el-form-item>
-            <el-form-item label="创建时间">
-                <el-date-picker
-                    v-model="searchForm.createTimeRange"
-                    type="datetimerange"
-                    value-format="YYYY-MM-DD HH:mm:ss"
-                    start-placeholder="开始时间"
-                    end-placeholder="结束时间"
-                    style="width: 320px"
-                />
-            </el-form-item>
-            <el-form-item>
-                <el-button type="primary" @click="handleSearch">查询</el-button>
-                <el-button @click="handleReset">重置</el-button>
-            </el-form-item>
-        </el-form>
+        <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+
+        <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
+            <div class="flex gap-8px flex-wrap">
+                <BaseButton plain @click="tableMethods.getList">刷新</BaseButton>
+            </div>
+        </div>
 
         <Table
             v-model:currentPage="tableObject.currentPage"
@@ -59,49 +23,82 @@
 <script setup lang="tsx">
 import { computed, reactive } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
-import * as ClueApi from '@/api/crm/clue'
-import { ContentWrap } from '@/components/ContentWrap'
+import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
+import { ContentWrap } from '@/components/ContentWrap'
+import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
+import type { FormSchema } from '@/types/form'
+import * as ClueApi from '@/api/crm/clue'
 
 defineOptions({ name: 'CrmClueImportTask' })
 
-const searchForm = reactive({
-    fileName: '',
-    status: undefined as number | undefined,
-    creator: '',
-    createTimeRange: [] as string[]
-})
+const statusOptions = [
+    { label: '处理中', value: 1 },
+    { label: '已完成', value: 2 }
+]
 
-const buildParams = (): ClueApi.ClueImportTaskPageReqVO => ({
-    fileName: searchForm.fileName || undefined,
-    status: searchForm.status,
-    creator: searchForm.creator || undefined,
-    beginCreateTime: searchForm.createTimeRange?.[0],
-    endCreateTime: searchForm.createTimeRange?.[1]
-})
+const searchSchema = reactive<FormSchema[]>([
+    {
+        field: 'fileName',
+        label: '文件名',
+        component: 'Input',
+        componentProps: {
+            placeholder: '请输入文件名',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'status',
+        label: '任务状态',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择任务状态',
+            clearable: true,
+            options: statusOptions,
+            style: { width: '180px' }
+        }
+    },
+    {
+        field: 'creator',
+        label: '创建人',
+        component: 'Input',
+        componentProps: {
+            placeholder: '请输入创建人',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'createTimeRange',
+        label: '创建时间',
+        component: 'DatePicker',
+        componentProps: {
+            type: 'datetimerange',
+            valueFormat: 'YYYY-MM-DD HH:mm:ss',
+            startPlaceholder: '开始时间',
+            endPlaceholder: '结束时间',
+            style: { width: '220px' }
+        }
+    }
+])
 
 const {
     tableObject,
     tableMethods,
     register: tableRegister
 } = useTable<ClueApi.ClueImportTaskVO>({
-    getListApi: async (params) =>
-        await ClueApi.getClueImportTaskPage({ ...buildParams(), ...params })
+    getListApi: async (params) => await ClueApi.getClueImportTaskPage(params as ClueApi.ClueImportTaskPageReqVO)
 })
 
-const handleSearch = () => {
-    tableMethods.setSearchParams(buildParams())
-}
-
-const handleReset = () => {
-    Object.assign(searchForm, {
-        fileName: '',
-        status: undefined,
-        creator: '',
-        createTimeRange: []
+const setSearchParams = (params: Record<string, any>) => {
+    const { createTimeRange, ...rest } = params
+    tableMethods.setSearchParams({
+        ...rest,
+        beginCreateTime: createTimeRange?.[0],
+        endCreateTime: createTimeRange?.[1]
     })
-    tableMethods.setSearchParams({})
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
@@ -114,7 +111,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         slots: {
             default: (data) => (
                 <span>
-                    {data.row.status === 1 ? '处理中' : data.row.status === 2 ? '已完成' : '-'}
+                    {statusOptions.find((item) => item.value === data.row.status)?.label || '-'}
                 </span>
             )
         }
