@@ -201,6 +201,7 @@ import * as ClueApi from '@/api/crm/clue'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
+import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 
 interface FormData {
     id?: number
@@ -242,13 +243,7 @@ const treeProps = {
     children: 'children'
 }
 
-const educationOptions = [
-    { label: '初中及以下', value: 1 },
-    { label: '高中/中专', value: 2 },
-    { label: '大专', value: 3 },
-    { label: '本科', value: 4 },
-    { label: '硕士及以上', value: 5 }
-]
+const educationOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_EDUCATION)
 
 const createDefaultFormData = (): FormData => ({
     id: undefined,

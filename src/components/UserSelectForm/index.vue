@@ -1,5 +1,5 @@
 <template>
-    <Dialog v-model="dialogVisible" :title="dialogTitle" width="920">
+    <Dialog v-model="dialogVisible" :title="dialogTitle" width="920" append-to-body>
         <div class="user-select-layout" v-loading="formLoading">
             <div class="user-select-column">
                 <div class="user-select-panel">
@@ -71,7 +71,7 @@
         </div>
         <template #footer>
             <el-button
-                :disabled="formLoading || !selectedUserIdList?.length"
+                :disabled="formLoading"
                 type="primary"
                 @click="submitForm"
             >
@@ -298,9 +298,9 @@ const handleNodeClick = (row: UserTreeNode) => {
 const submitForm = async () => {
     formLoading.value = true
     try {
-        const emitUserList = await Promise.all(
-            selectedUserIdList.value.map((id) => UserApi.getUser(id))
-        )
+        const emitUserList = selectedUserIdList.value.length
+            ? await Promise.all(selectedUserIdList.value.map((id) => UserApi.getUser(id)))
+            : []
         dialogVisible.value = false
         emit('confirm', activityId.value, emitUserList)
     } finally {
