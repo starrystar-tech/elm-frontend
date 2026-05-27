@@ -1,5 +1,5 @@
 <template>
-    <Dialog v-model="dialogVisible" :title="dialogTitle" width="760px">
+    <Dialog v-model="dialogVisible" :title="dialogTitle" width="860px">
         <el-form
             ref="formRef"
             v-loading="formLoading"
@@ -7,65 +7,52 @@
             :rules="formRules"
             label-width="100px"
         >
-            <el-row :gutter="16">
+            <el-row :gutter="20">
                 <el-col :span="12">
-                    <el-form-item label="姓名" prop="name">
-                        <el-input v-model="formData.name" placeholder="请输入姓名" />
+                    <el-form-item label="手机号" prop="mobile">
+                        <el-input v-model="formData.mobile" placeholder="请输入手机号" />
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item label="联系电话" prop="mobile">
-                        <el-input v-model="formData.mobile" placeholder="请输入联系电话" />
+                    <el-form-item label="手机号2">
+                        <el-input v-model="formData.mobile2" placeholder="请输入手机号2" />
                     </el-form-item>
                 </el-col>
             </el-row>
 
-            <el-row :gutter="16">
+            <el-row :gutter="20">
                 <el-col :span="12">
-                    <el-form-item label="备用电话">
-                        <el-input v-model="formData.mobile2" placeholder="请输入备用电话" />
-                    </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                    <el-form-item label="微信">
+                    <el-form-item label="微信号">
                         <el-input v-model="formData.wechat" placeholder="请输入微信号" />
                     </el-form-item>
                 </el-col>
-            </el-row>
-
-            <el-row :gutter="16">
                 <el-col :span="12">
-                    <el-form-item label="微信2">
-                        <el-input v-model="formData.wechat2" placeholder="请输入第二微信号" />
-                    </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                    <el-form-item label="微信备注名">
-                        <el-input v-model="formData.wechatRemark" placeholder="请输入微信备注名" />
+                    <el-form-item label="微信号2">
+                        <el-input v-model="formData.wechat2" placeholder="请输入微信号2" />
                     </el-form-item>
                 </el-col>
             </el-row>
 
-            <el-row :gutter="16">
+            <el-row :gutter="20">
                 <el-col :span="12">
                     <el-form-item label="QQ">
                         <el-input v-model="formData.qq" placeholder="请输入QQ" />
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item label="邮箱">
-                        <el-input v-model="formData.email" placeholder="请输入邮箱" />
+                    <el-form-item label="姓名" prop="name">
+                        <el-input v-model="formData.name" placeholder="请输入姓名" />
                     </el-form-item>
                 </el-col>
             </el-row>
 
-            <el-row :gutter="16">
+            <el-row :gutter="20">
                 <el-col :span="12">
                     <el-form-item label="性别">
                         <el-select
                             v-model="formData.gender"
                             clearable
-                            placeholder="请选择性别"
+                            placeholder="请选择"
                             class="w-1/1"
                         >
                             <el-option label="男" :value="1" />
@@ -74,25 +61,11 @@
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item label="出生日期">
-                        <el-date-picker
-                            v-model="formData.birthday"
-                            value-format="YYYY-MM-DD"
-                            type="date"
-                            placeholder="请选择出生日期"
-                            class="!w-1/1"
-                        />
-                    </el-form-item>
-                </el-col>
-            </el-row>
-
-            <el-row :gutter="16">
-                <el-col :span="12">
                     <el-form-item label="学历">
                         <el-select
                             v-model="formData.education"
                             clearable
-                            placeholder="请选择学历"
+                            placeholder="请选择"
                             class="w-1/1"
                         >
                             <el-option
@@ -100,6 +73,49 @@
                                 :key="item.value"
                                 :label="item.label"
                                 :value="item.value"
+                            />
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+                <el-col :span="12">
+                    <el-form-item label="证件类型">
+                        <el-select
+                            v-model="formData.certificateType"
+                            clearable
+                            placeholder="请选择"
+                            class="w-1/1"
+                        >
+                            <el-option label="身份证" value="身份证" />
+                            <el-option label="护照" value="护照" />
+                            <el-option label="港澳通行证" value="港澳通行证" />
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="证件号码">
+                        <el-input v-model="formData.idCardNo" placeholder="请输入证件号码" />
+                    </el-form-item>
+                </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+                <el-col :span="12">
+                    <el-form-item label="来源" prop="clueSourceId">
+                        <el-select
+                            v-model="formData.clueSourceId"
+                            clearable
+                            filterable
+                            placeholder="请选择"
+                            class="w-1/1"
+                        >
+                            <el-option
+                                v-for="item in clueSourceOptions"
+                                :key="item.id"
+                                :label="item.name"
+                                :value="item.id"
                             />
                         </el-select>
                     </el-form-item>
@@ -115,7 +131,7 @@
                 </el-col>
             </el-row>
 
-            <el-row :gutter="16">
+            <el-row :gutter="20">
                 <el-col :span="12">
                     <el-form-item label="咨询项目" prop="consultProjectId">
                         <el-tree-select
@@ -127,40 +143,19 @@
                             clearable
                             filterable
                             default-expand-all
-                            placeholder="请选择咨询项目"
+                            placeholder="请选择"
                             style="width: 100%"
                         />
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item label="客户来源">
-                        <el-select
-                            v-model="formData.clueSourceId"
-                            clearable
-                            filterable
-                            placeholder="请选择客户来源"
-                            class="w-1/1"
-                        >
-                            <el-option
-                                v-for="item in clueSourceOptions"
-                                :key="item.id"
-                                :label="item.name"
-                                :value="item.id"
-                            />
-                        </el-select>
-                    </el-form-item>
-                </el-col>
-            </el-row>
-
-            <el-row :gutter="16">
-                <el-col :span="24">
                     <el-form-item label="标签">
                         <el-select
                             v-model="formData.tagIds"
                             multiple
                             filterable
                             clearable
-                            placeholder="请选择标签"
+                            placeholder="请点击选择标签"
                             class="w-1/1"
                         >
                             <el-option
@@ -174,14 +169,14 @@
                 </el-col>
             </el-row>
 
-            <el-row :gutter="16">
+            <el-row :gutter="20">
                 <el-col :span="24">
-                    <el-form-item label="备注">
+                    <el-form-item label="咨询备注" prop="remark">
                         <el-input
                             v-model="formData.remark"
                             type="textarea"
                             :rows="4"
-                            placeholder="请输入备注"
+                            placeholder="请输入咨询备注"
                         />
                     </el-form-item>
                 </el-col>
@@ -204,23 +199,22 @@ import * as TagGroupApi from '@/api/system/tag-group'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 
 interface FormData {
-    id?: number
-    name: string
     mobile: string
     mobile2?: string
     wechat?: string
     wechat2?: string
-    wechatRemark?: string
     qq?: string
-    email?: string
+    name: string
+    certificateType?: string
+    idCardNo?: string
     gender?: number
-    birthday?: string
     education?: number
     areaId?: number
     consultProjectId?: number
     clueSourceId?: number
     tagIds: number[]
-    remark?: string
+    remark: string
+    id?: number
 }
 
 const { t } = useI18n()
@@ -246,32 +240,32 @@ const treeProps = {
 const educationOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_EDUCATION)
 
 const createDefaultFormData = (): FormData => ({
-    id: undefined,
-    name: '',
     mobile: '',
     mobile2: '',
     wechat: '',
     wechat2: '',
-    wechatRemark: '',
     qq: '',
-    email: '',
+    name: '',
+    certificateType: '',
+    idCardNo: '',
     gender: undefined,
-    birthday: '',
     education: undefined,
     areaId: undefined,
     consultProjectId: undefined,
     clueSourceId: undefined,
     tagIds: [],
-    remark: ''
+    remark: '',
+    id: undefined
 })
 
 const formData = ref<FormData>(createDefaultFormData())
 
 const formRules = reactive({
-    name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
-    mobile: [{ required: true, message: '请输入联系电话', trigger: 'blur' }],
+    mobile: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
+    clueSourceId: [{ required: true, message: '请选择来源', trigger: 'change' }],
     areaId: [{ required: true, message: '请选择地区', trigger: 'change' }],
-    consultProjectId: [{ required: true, message: '请选择咨询项目', trigger: 'change' }]
+    consultProjectId: [{ required: true, message: '请选择咨询项目', trigger: 'change' }],
+    remark: [{ required: true, message: '请输入咨询备注', trigger: 'blur' }]
 })
 
 const loadOptions = async () => {
@@ -292,16 +286,15 @@ const loadOptions = async () => {
 
 const mapClueToForm = (detail: ClueApi.ClueVO): FormData => ({
     id: detail.id,
-    name: detail.name || '',
     mobile: detail.mobile || '',
     mobile2: detail.mobile2 || '',
     wechat: detail.wechat || '',
     wechat2: detail.wechat2 || '',
-    wechatRemark: detail.wechatRemark || '',
     qq: detail.qq || '',
-    email: detail.email || '',
+    name: detail.name || '',
+    certificateType: detail.certificateType || '',
+    idCardNo: detail.idCardNo || '',
     gender: detail.gender,
-    birthday: detail.birthday || '',
     education: detail.education,
     areaId: detail.areaId,
     consultProjectId: detail.consultProjectId,
@@ -341,12 +334,11 @@ const submitForm = async () => {
                 mobile2: formData.value.mobile2?.trim() || undefined,
                 wechat: formData.value.wechat?.trim() || undefined,
                 wechat2: formData.value.wechat2?.trim() || undefined,
-                wechatRemark: formData.value.wechatRemark?.trim() || undefined,
                 qq: formData.value.qq?.trim() || undefined,
-                email: formData.value.email?.trim() || undefined,
                 name: formData.value.name.trim() || undefined,
+                certificateType: formData.value.certificateType?.trim() || undefined,
+                idCardNo: formData.value.idCardNo?.trim() || undefined,
                 gender: formData.value.gender,
-                birthday: formData.value.birthday || undefined,
                 education: formData.value.education,
                 areaId: Number(formData.value.areaId),
                 consultProjectId: formData.value.consultProjectId
@@ -356,7 +348,7 @@ const submitForm = async () => {
                     ? Number(formData.value.clueSourceId)
                     : undefined,
                 tagIds: formData.value.tagIds.length ? formData.value.tagIds : undefined,
-                remark: formData.value.remark?.trim() || undefined
+                remark: formData.value.remark.trim() || undefined
             }
             await ClueApi.createClue(payload)
             message.success(t('common.createSuccess'))
@@ -368,15 +360,18 @@ const submitForm = async () => {
                 mobile2: formData.value.mobile2?.trim() || undefined,
                 wechat: formData.value.wechat?.trim() || undefined,
                 wechat2: formData.value.wechat2?.trim() || undefined,
-                wechatRemark: formData.value.wechatRemark?.trim() || undefined,
                 qq: formData.value.qq?.trim() || undefined,
+                certificateType: formData.value.certificateType?.trim() || undefined,
+                idCardNo: formData.value.idCardNo?.trim() || undefined,
                 gender: formData.value.gender,
-                birthday: formData.value.birthday || undefined,
                 education: formData.value.education,
                 areaId: Number(formData.value.areaId),
                 consultProjectId: Number(formData.value.consultProjectId),
+                clueSourceId: formData.value.clueSourceId
+                    ? Number(formData.value.clueSourceId)
+                    : undefined,
                 tagIds: formData.value.tagIds.length ? formData.value.tagIds : undefined,
-                remark: formData.value.remark?.trim() || undefined
+                remark: formData.value.remark.trim() || undefined
             }
             await ClueApi.updateClueBasicInfo(payload)
             message.success(t('common.updateSuccess'))

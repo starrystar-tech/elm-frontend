@@ -8,7 +8,7 @@
                 >
             </div>
             <div>
-                <slot />
+                <slot></slot>
             </div>
         </div>
     </div>

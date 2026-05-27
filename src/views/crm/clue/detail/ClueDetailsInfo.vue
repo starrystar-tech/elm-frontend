@@ -34,8 +34,11 @@
                         clue.wechatRemark || '--'
                     }}</el-descriptions-item>
                     <el-descriptions-item label="QQ">{{ clue.qq || '--' }}</el-descriptions-item>
-                    <el-descriptions-item label="邮箱">{{
-                        clue.email || '--'
+                    <el-descriptions-item label="证件类型">{{
+                        clue.certificateType || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="证件号码">{{
+                        clue.idCardNo || '--'
                     }}</el-descriptions-item>
                     <el-descriptions-item label="咨询项目">{{
                         clue.consultProjectName || '--'

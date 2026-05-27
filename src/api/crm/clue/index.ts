@@ -12,10 +12,11 @@ export interface ClueVO {
     wechat2?: string
     wechatRemark?: string
     qq?: string
-    nation?: string
-    email?: string
-    age?: number
     idCardNo?: string
+    certificateType?: string
+    occupation?: string
+    emergencyMobile?: string
+    emergencyContact?: string
     gender?: number
     genderName?: string
     birthday?: string
@@ -107,10 +108,11 @@ export interface ClueCreateReqVO {
     wechat2?: string
     wechatRemark?: string
     qq?: string
-    nation?: string
-    email?: string
-    age?: number
     idCardNo?: string
+    certificateType?: string
+    occupation?: string
+    emergencyMobile?: string
+    emergencyContact?: string
     name?: string
     gender?: number
     birthday?: string
@@ -131,11 +133,17 @@ export interface ClueUpdateBasicInfoReqVO {
     wechat2?: string
     wechatRemark?: string
     qq?: string
+    idCardNo?: string
+    certificateType?: string
+    occupation?: string
+    emergencyMobile?: string
+    emergencyContact?: string
     gender?: number
     birthday?: string
     education?: number
     areaId: number
     consultProjectId: number
+    clueSourceId?: number
     tagIds?: number[]
     remark?: string
 }

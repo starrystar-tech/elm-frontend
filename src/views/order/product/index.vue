@@ -64,7 +64,7 @@ const searchSchema = computed<FormSchema[]>(() => [
         label: '商品',
         component: 'Input',
         componentProps: {
-            placeholder: '请输入商品名称',
+            placeholder: '请输入商品名称/编号',
             clearable: true,
             style: { width: '240px' }
         }
@@ -155,6 +155,11 @@ const tableColumns = computed<TableColumn[]>(() => [
                 />
             )
         }
+    },
+    {
+        field: 'productNo',
+        label: '商品编号',
+        width: '150px'
     },
     {
         field: 'name',

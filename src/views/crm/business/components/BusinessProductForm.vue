@@ -164,7 +164,7 @@ const onChangeProduct = (productId, row) => {
   const product = productList.value.find((item) => item.id === productId)
   if (product) {
     row.productUnit = product.unit
-    row.productNo = product.no
+    row.productNo = product.productNo
     row.productPrice = product.price
     row.businessPrice = product.price
   }

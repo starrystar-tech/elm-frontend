@@ -299,7 +299,6 @@ const formRules = reactive<FormRules>({
     minPriceYuan: [{ required: true, message: '最低价不能为空', trigger: 'change' }],
     settlementType: [{ required: true, message: '结算方式不能为空', trigger: 'change' }],
     settlementValueInput: [{ required: true, message: '结算值不能为空', trigger: 'change' }],
-    channelCodes: [{ required: true, message: '上架渠道不能为空', trigger: 'change' }],
     shelfType: [{ required: true, message: '上架方式不能为空', trigger: 'change' }],
     promotionPriceYuan: [
         {

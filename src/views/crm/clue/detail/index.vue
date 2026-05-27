@@ -1,29 +1,12 @@
 <template>
-    <ClueDetailsHeader :clue="clue" :loading="loading">
-        <el-button v-if="canUpdate" type="primary" @click="openForm">编辑</el-button>
-    </ClueDetailsHeader>
-
-    <el-col>
-        <el-tabs>
-            <el-tab-pane label="跟进记录">
-                <FollowUpList :biz-id="clueId" :biz-type="BizTypeEnum.CRM_CLUE" />
-            </el-tab-pane>
-            <el-tab-pane label="基本信息">
-                <ClueDetailsInfo :clue="clue" />
-            </el-tab-pane>
-            <el-tab-pane label="团队成员">
-                <PermissionList
-                    ref="permissionListRef"
-                    :biz-id="clue.id!"
-                    :biz-type="BizTypeEnum.CRM_CLUE"
-                    :show-action="true"
-                />
-            </el-tab-pane>
-            <el-tab-pane label="操作日志">
-                <OperateLogV2 :log-list="logList" />
-            </el-tab-pane>
-        </el-tabs>
-    </el-col>
+    <ClueDetailContent
+        :clue="clue"
+        :clue-id="clueId"
+        :loading="loading"
+        :can-update="canUpdate"
+        :log-list="logList"
+        @edit="openForm"
+    />
 
     <ClueForm ref="formRef" @success="getClue" />
 </template>
@@ -35,10 +18,7 @@ import { BizTypeEnum } from '@/api/crm/permission'
 import type { OperateLogVO } from '@/api/system/operatelog'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import ClueForm from '@/views/crm/clue/ClueForm.vue'
-import FollowUpList from '@/views/crm/followup/index.vue'
-import PermissionList from '@/views/crm/permission/components/PermissionList.vue'
-import ClueDetailsHeader from './ClueDetailsHeader.vue'
-import ClueDetailsInfo from './ClueDetailsInfo.vue'
+import ClueDetailContent from './ClueDetailContent.vue'
 
 defineOptions({ name: 'CrmClueDetail' })
 
@@ -47,7 +27,6 @@ const loading = ref(true)
 const message = useMessage()
 const canUpdate = hasPermission(['crm:clue:basic-info:update'])
 
-const permissionListRef = ref<InstanceType<typeof PermissionList>>()
 const formRef = ref<InstanceType<typeof ClueForm>>()
 const clue = ref<ClueApi.ClueVO>({})
 const logList = ref<OperateLogVO[]>([])

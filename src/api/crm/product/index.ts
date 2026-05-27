@@ -56,7 +56,7 @@ export interface ProductRespVO {
     remark?: string
     creator?: string
     createTime?: string
-    no?: string
+    productNo?: string
     unit?: number
     description?: string
     ownerUserId?: number

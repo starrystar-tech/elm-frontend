@@ -16,6 +16,7 @@
                         <div
                             class="grid grid-cols-1 gap-y-6px text-[13px] text-[var(--el-text-color-secondary)] md:grid-cols-2 md:gap-x-24px"
                         >
+                            <span>商品编号：{{ product.productNo || '-' }}</span>
                             <span
                                 >商品分类：{{
                                     product.categoryPath || product.categoryName || '-'
@@ -49,6 +50,9 @@
                             <span class="font-600">详细资料</span>
                         </template>
                         <el-descriptions :column="2" border>
+                            <el-descriptions-item label="商品编号">{{
+                                product.productNo || '-'
+                            }}</el-descriptions-item>
                             <el-descriptions-item label="商品名称">{{
                                 product.name || '-'
                             }}</el-descriptions-item>

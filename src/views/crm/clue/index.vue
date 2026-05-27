@@ -62,6 +62,8 @@
     </ContentWrap>
 
     <ClueForm ref="formRef" @success="tableMethods.getList" />
+    <ClueDetailDrawer ref="detailRef" />
+    <ClueEnrollDialog ref="enrollRef" @success="tableMethods.getList" />
 
     <Dialog v-model="assignModeDialogVisible" title="修改分配方式" width="420px">
         <el-radio-group v-model="assignModeForm.assignMode">
@@ -194,6 +196,8 @@ import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 import ClueForm from './ClueForm.vue'
+import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
+import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'
 
 interface SearchParams {
     customer?: string
@@ -225,12 +229,13 @@ interface AreaOption {
 defineOptions({ name: 'CrmClue' })
 
 const message = useMessage()
-const { push } = useRouter()
 const canCreate = hasPermission(['crm:clue:create'])
 const canUpdate =
     hasPermission(['crm:clue:basic-info:update']) || hasPermission(['crm:clue:update'])
 
 const formRef = ref<InstanceType<typeof ClueForm>>()
+const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
+const enrollRef = ref<InstanceType<typeof ClueEnrollDialog>>()
 const uploadRef = ref()
 const importFileList = ref<UploadUserFile[]>([])
 const importLoading = ref(false)
@@ -309,10 +314,10 @@ const searchSchema = reactive<FormSchema[]>([
     },
     {
         field: 'areaId',
-        label: '地域',
+        label: '地区',
         component: 'Select',
         componentProps: {
-            placeholder: '请选择地域',
+            placeholder: '请选择地区',
             clearable: true,
             filterable: true,
             options: [],
@@ -512,13 +517,14 @@ const buildPageParams = (params: SearchParams = {}): ClueApi.CluePageReqVO => ({
 })
 
 const buildRegionText = (row: ClueApi.ClueVO) => {
-    const regions = [row.province, row.city].filter(Boolean)
+    const regions = [row.province, row.city, row.district].filter(Boolean)
     return regions.length ? regions.join(' / ') : row.areaName || '--'
 }
 
 const buildTagText = (row: ClueApi.ClueVO) => (row.tagNames?.length ? row.tagNames.join('、') : '-')
 
 const tableColumns = computed<TableColumn[]>(() => [
+    { field: 'customerId', label: '客户ID', width: '140px' },
     { field: 'mobile', label: '联系电话', width: '140px' },
     { field: 'intentLevelName', label: '意向度', width: '100px' },
     {
@@ -554,7 +560,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'currentOwnerName', label: '归属人', width: '110px' },
     {
         field: 'region',
-        label: '省份/城市',
+        label: '地区',
         minWidth: '160px',
         slots: { default: (data) => <span>{buildRegionText(data.row)}</span> }
     },
@@ -579,20 +585,17 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'action',
         label: '操作',
-        width: '120px',
+        width: '170px',
         fixed: 'right',
         slots: {
             default: (data) => (
                 <>
-                    {canUpdate ? (
-                        <BaseButton
-                            link
-                            type="primary"
-                            onClick={() => openForm('update', data.row.id)}
-                        >
-                            编辑
-                        </BaseButton>
-                    ) : null}
+                    <BaseButton link type="primary" onClick={() => openDetail(data.row.id)}>
+                        详情
+                    </BaseButton>
+                    <BaseButton link type="warning" onClick={() => openEnroll(data.row.id)}>
+                        报名
+                    </BaseButton>
                 </>
             )
         }
@@ -662,7 +665,12 @@ const setSearchParams = (params: SearchParams) => {
 }
 
 const openDetail = (id: number) => {
-    push({ name: 'CrmClueDetail', params: { id } })
+    detailRef.value?.open(id)
+}
+
+const openEnroll = async (id: number) => {
+    const detail = await ClueApi.getClue(id)
+    enrollRef.value?.open(detail)
 }
 
 const openForm = (type: 'create' | 'update', id?: number) => {
