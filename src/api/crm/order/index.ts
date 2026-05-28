@@ -122,6 +122,41 @@ export interface OrderDetailRespVO extends OrderPageRespVO {
   refunds: OrderRefundRespVO[]
 }
 
+export interface OrderCreateItemReqVO {
+  sort: number
+  productId: number
+  projectName?: string
+  productCode?: string
+  productName: string
+  productCategoryPath?: string
+  productPrice: number
+  payableAmount: number
+  remark?: string
+}
+
+export interface OrderCreateReqVO {
+  clueId?: number
+  customerId?: string
+  customerName: string
+  customerMobile: string
+  gender?: number
+  wechat?: string
+  campusId: number
+  campusName: string
+  projectName?: string
+  mainProductCategoryPath?: string
+  mainProductName?: string
+  mainProductCode?: string
+  ownerUserId?: number
+  ownerUserName?: string
+  cardOwnerUserId?: number
+  cardOwnerUserName?: string
+  enrollTime: string
+  payableAmount: number
+  remark?: string
+  items: OrderCreateItemReqVO[]
+}
+
 export interface OrderPayReqVO {
   orderId: number
   payAmount: number
@@ -193,6 +228,10 @@ export const getOrderPage = async (params: OrderPageReqVO) => {
 
 export const getOrder = async (id: number) => {
   return await request.get<OrderDetailRespVO>({ url: '/crm/order/get', params: { id } })
+}
+
+export const createOrder = async (data: OrderCreateReqVO) => {
+  return await request.post<number>({ url: '/crm/order/create', data })
 }
 
 export const payOrder = async (data: OrderPayReqVO) => {

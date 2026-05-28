@@ -159,54 +159,74 @@
             </section>
 
             <section v-show="currentStep === 2" class="enroll-section">
-                <div class="enroll-section__title">支付信息</div>
-                <div class="enroll-grid">
-                    <el-form-item label="支付状态" prop="payStatus">
-                        <el-radio-group v-model="formData.payStatus">
-                            <el-radio :label="'unpaid'">未支付</el-radio>
-                            <el-radio :label="'paid'">已支付</el-radio>
-                        </el-radio-group>
+                <div class="enroll-payment">
+                    <div class="enroll-payment__summary">
+                        <div class="enroll-payment__amount">
+                            <span class="enroll-payment__label">应付金额：</span>
+                            <strong>{{ totalPayableText }}</strong>
+                        </div>
+                        <div class="enroll-payment__amount">
+                            <span class="enroll-payment__label">已付金额：</span>
+                            <strong>{{ paidAmountText }}</strong>
+                        </div>
+                    </div>
+
+                    <el-form-item label="备注" prop="enrollRemark" class="enroll-payment__remark">
+                        <el-input v-model="formData.enrollRemark" placeholder="请输入备注" />
                     </el-form-item>
-                    <el-form-item label="支付方式">
-                        <el-select
-                            v-model="formData.payMethod"
-                            class="!w-full"
-                            placeholder="请选择支付方式"
+
+                    <div class="enroll-payment__records">
+                        <div class="enroll-payment__records-header">
+                            <span>支付记录</span>
+                            <el-button type="primary" link @click="addPayRecord">
+                                + 新增支付记录
+                            </el-button>
+                        </div>
+                        <div
+                            v-for="(record, index) in payRecords"
+                            :key="record.key"
+                            class="enroll-payment__record"
                         >
-                            <el-option label="微信" value="微信" />
-                            <el-option label="支付宝" value="支付宝" />
-                            <el-option label="银行卡" value="银行卡" />
-                            <el-option label="现金" value="现金" />
-                        </el-select>
-                    </el-form-item>
-                    <el-form-item label="实付金额">
-                        <el-input-number
-                            v-model="formData.paidAmount"
-                            :min="0"
-                            :precision="2"
-                            class="!w-full"
-                        />
-                    </el-form-item>
-                    <el-form-item label="支付时间">
-                        <el-date-picker
-                            v-model="formData.payTime"
-                            type="datetime"
-                            value-format="YYYY-MM-DD HH:mm:ss"
-                            class="!w-full"
-                            placeholder="请选择支付时间"
-                        />
-                    </el-form-item>
-                    <el-form-item label="流水号" class="enroll-grid__full">
-                        <el-input v-model="formData.channelPayNo" placeholder="请输入支付流水号" />
-                    </el-form-item>
-                    <el-form-item label="支付备注" class="enroll-grid__full">
-                        <el-input
-                            v-model="formData.payRemark"
-                            type="textarea"
-                            :rows="3"
-                            placeholder="请输入支付备注"
-                        />
-                    </el-form-item>
+                            <div class="enroll-payment__record-title">
+                                <span>第 {{ index + 1 }} 条</span>
+                                <el-button
+                                    link
+                                    type="danger"
+                                    @click="removePayRecord(record.key)"
+                                >
+                                    删除
+                                </el-button>
+                            </div>
+                            <div class="enroll-payment__detail">
+                                <el-form-item label="支付方式" :required="true">
+                                    <el-select
+                                        v-model="record.payMethod"
+                                        class="!w-full"
+                                        placeholder="请选择支付方式"
+                                    >
+                                        <el-option label="微信支付" value="微信支付" />
+                                        <el-option label="支付宝" value="支付宝" />
+                                        <el-option label="银行卡" value="银行卡" />
+                                        <el-option label="现金" value="现金" />
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="支付金额" :required="true">
+                                    <el-input-number
+                                        v-model="record.paidAmount"
+                                        :min="0"
+                                        :precision="2"
+                                        class="!w-full"
+                                    />
+                                </el-form-item>
+                                <el-form-item label="备注" class="enroll-payment__detail-full">
+                                    <el-input
+                                        v-model="record.payRemark"
+                                        placeholder="请输入备注"
+                                    />
+                                </el-form-item>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </el-form>
@@ -232,6 +252,7 @@
 import AreaSelect from '@/components/AreaSelect.vue'
 import { BaseButton } from '@/components/Button'
 import * as ClueApi from '@/api/crm/clue'
+import * as OrderApi from '@/api/crm/order'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import type { ProductVO } from '@/api/crm/product'
 import type { ProductCategoryVO } from '@/api/crm/product/category'
@@ -243,6 +264,7 @@ defineOptions({ name: 'ClueEnrollDialog' })
 
 type EnrollFormData = {
     clueId?: number
+    customerId: string
     clueName: string
     mobile: string
     mobile2: string
@@ -251,6 +273,7 @@ type EnrollFormData = {
     wechat2: string
     qq: string
     sourceName: string
+    ownerUserId?: number
     ownerName: string
     departmentName: string
     consultProjectId?: number
@@ -270,11 +293,6 @@ type EnrollFormData = {
     payableAmount?: number
     enrollRemark: string
     payStatus: 'unpaid' | 'paid'
-    payMethod: string
-    paidAmount?: number
-    payTime: string
-    channelPayNo: string
-    payRemark: string
 }
 
 type EnrollProductItem = {
@@ -285,6 +303,16 @@ type EnrollProductItem = {
     price: number
     minPrice: number
     payableAmount: number
+    productCode?: string
+    categoryPath?: string
+    projectName?: string
+}
+
+type EnrollPayRecordItem = {
+    key: string
+    payMethod: string
+    paidAmount?: number
+    payRemark: string
 }
 
 const emit = defineEmits<{
@@ -301,9 +329,18 @@ const projectOptions = ref<ProductCategoryVO[]>([])
 const categoryOptions = ref<ProductCategoryVO[]>([])
 const productPickerVisible = ref(false)
 const selectedProducts = ref<EnrollProductItem[]>([])
+const payRecords = ref<EnrollPayRecordItem[]>([])
+
+const createDefaultPayRecord = (): EnrollPayRecordItem => ({
+    key: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    payMethod: '',
+    paidAmount: undefined,
+    payRemark: ''
+})
 
 const createDefaultFormData = (): EnrollFormData => ({
     clueId: undefined,
+    customerId: '',
     clueName: '',
     mobile: '',
     mobile2: '',
@@ -312,6 +349,7 @@ const createDefaultFormData = (): EnrollFormData => ({
     wechat2: '',
     qq: '',
     sourceName: '',
+    ownerUserId: undefined,
     ownerName: '',
     departmentName: '',
     consultProjectId: undefined,
@@ -330,12 +368,7 @@ const createDefaultFormData = (): EnrollFormData => ({
     campusName: '',
     payableAmount: undefined,
     enrollRemark: '',
-    payStatus: 'unpaid',
-    payMethod: '',
-    paidAmount: undefined,
-    payTime: '',
-    channelPayNo: '',
-    payRemark: ''
+    payStatus: 'unpaid'
 })
 
 const formData = ref<EnrollFormData>(createDefaultFormData())
@@ -347,7 +380,8 @@ const formRules = reactive({
     certificateType: [{ required: true, message: '请选择证件类型', trigger: 'change' }],
     idCardNo: [{ required: true, message: '请输入证件号码', trigger: 'blur' }],
     enrollTime: [{ required: true, message: '请选择报名时间', trigger: 'change' }],
-    campusId: [{ required: true, message: '请选择报名分校', trigger: 'change' }]
+    campusId: [{ required: true, message: '请选择报名分校', trigger: 'change' }],
+    payableAmount: [{ required: true, message: '应付金额不能为空', trigger: 'change' }]
 })
 
 const loadOptions = async () => {
@@ -364,6 +398,10 @@ const totalPayableAmount = computed(() =>
 )
 
 const totalPayableText = computed(() => `¥${formatAmount(totalPayableAmount.value)}`)
+const totalPaidAmount = computed(() =>
+    payRecords.value.reduce((sum, item) => sum + Number(item.paidAmount || 0), 0)
+)
+const paidAmountText = computed(() => `¥${formatAmount(totalPaidAmount.value)}`)
 
 const handleCampusChange = (item?: CampusVO) => {
     formData.value.campusName = item?.name || ''
@@ -390,7 +428,10 @@ const appendProducts = (products: ProductVO[]) => {
             productName: product.name,
             price: Number(product.price || 0),
             minPrice: Number(product.minPrice || 0),
-            payableAmount: Number(product.price || 0)
+            payableAmount: Number(product.price || 0),
+            productCode: product.productNo,
+            categoryPath: product.categoryPath,
+            projectName: product.categoryName || category?.name || ''
         })
     })
     if (duplicateCount > 0) {
@@ -412,6 +453,18 @@ const removeProduct = (productId: number) => {
     formData.value.payableAmount = totalPayableAmount.value
 }
 
+const addPayRecord = () => {
+    payRecords.value.push(createDefaultPayRecord())
+}
+
+const removePayRecord = (recordKey: string) => {
+    if (payRecords.value.length <= 1) {
+        message.warning('至少保留一条支付记录')
+        return
+    }
+    payRecords.value = payRecords.value.filter((item) => item.key !== recordKey)
+}
+
 const formatAmount = (value?: number) => {
     return Number(value || 0).toFixed(0)
 }
@@ -421,9 +474,11 @@ const open = async (clue?: ClueApi.ClueVO) => {
     dialogVisible.value = true
     currentStep.value = 0
     selectedProducts.value = []
+    payRecords.value = [createDefaultPayRecord()]
     formData.value = {
         ...createDefaultFormData(),
         clueId: clue?.id,
+        customerId: clue?.customerId || '',
         clueName: clue?.name || '',
         mobile: clue?.mobile || '',
         mobile2: clue?.mobile2 || '',
@@ -432,6 +487,7 @@ const open = async (clue?: ClueApi.ClueVO) => {
         wechat2: clue?.wechat2 || '',
         qq: clue?.qq || '',
         sourceName: clue?.clueSourceName || '2505成考不限',
+        ownerUserId: clue?.currentOwnerId,
         ownerName: clue?.currentOwnerName || '',
         departmentName: clue?.currentDepartmentName || '',
         consultProjectId: clue?.consultProjectId,
@@ -448,7 +504,8 @@ const open = async (clue?: ClueApi.ClueVO) => {
         campusId: undefined,
         campusName: '',
         enrollTime: '',
-        payStatus: 'unpaid'
+        payStatus: 'unpaid',
+        payableAmount: 0
     }
     nextTick(() => formRef.value?.clearValidate())
 }
@@ -483,10 +540,31 @@ const prevStep = () => {
     currentStep.value = Math.max(currentStep.value - 1, 0)
 }
 
+const validatePayRecords = () => {
+    if (!payRecords.value.length) {
+        message.warning('请至少录入一条支付记录')
+        return false
+    }
+    const invalidIndex = payRecords.value.findIndex(
+        (item) => !item.payMethod || Number(item.paidAmount || 0) <= 0
+    )
+    if (invalidIndex >= 0) {
+        message.warning(`请完善第 ${invalidIndex + 1} 条支付记录`)
+        return false
+    }
+    if (totalPaidAmount.value > totalPayableAmount.value) {
+        message.warning('支付金额总和不能大于应付金额')
+        return false
+    }
+    return true
+}
+
 const submitForm = async () => {
     await formRef.value.validate()
+    if (!validatePayRecords()) return
     loading.value = true
     try {
+        formData.value.payStatus = totalPaidAmount.value > 0 ? 'paid' : 'unpaid'
         if (formData.value.clueId) {
             await ClueApi.updateClueBasicInfo({
                 id: formData.value.clueId,
@@ -508,10 +586,47 @@ const submitForm = async () => {
                 emergencyMobile: formData.value.emergencyMobile,
                 emergencyContact: formData.value.emergencyContact
             })
-        } else {
-            await new Promise((resolve) => setTimeout(resolve, 400))
         }
-        message.success('报名流程已按原型结构提交（待接真实创建订单接口）')
+        const orderId = await OrderApi.createOrder({
+            clueId: formData.value.clueId,
+            customerId: formData.value.customerId,
+            customerName: formData.value.clueName,
+            customerMobile: formData.value.mobile,
+            gender: formData.value.gender,
+            wechat: formData.value.wechat,
+            campusId: formData.value.campusId!,
+            campusName: formData.value.campusName,
+            projectName: selectedProducts.value[0]?.projectName || '',
+            mainProductCategoryPath: selectedProducts.value[0]?.categoryPath || '',
+            mainProductName: selectedProducts.value[0]?.productName || '',
+            mainProductCode: selectedProducts.value[0]?.productCode || '',
+            ownerUserId: formData.value.ownerUserId,
+            ownerUserName: formData.value.ownerName,
+            cardOwnerUserId: formData.value.ownerUserId,
+            cardOwnerUserName: formData.value.ownerName,
+            enrollTime: formData.value.enrollTime,
+            payableAmount: totalPayableAmount.value,
+            remark: formData.value.enrollRemark,
+            items: selectedProducts.value.map((item, index) => ({
+                sort: index + 1,
+                productId: item.id,
+                projectName: item.projectName || '',
+                productCode: item.productCode || '',
+                productName: item.productName,
+                productCategoryPath: item.categoryPath || '',
+                productPrice: Number(item.price || 0),
+                payableAmount: Number(item.payableAmount || 0),
+                remark: ''
+            }))
+        })
+        for (const item of payRecords.value) {
+            await OrderApi.payOrder({
+                orderId,
+                payAmount: Number(item.paidAmount || 0),
+                payMethod: item.payMethod
+            })
+        }
+        message.success('报名成功，订单及支付记录已创建')
         dialogVisible.value = false
         emit('success')
     } finally {
@@ -627,6 +742,84 @@ defineExpose({ open })
     color: #ff4d4f;
 }
 
+.enroll-payment {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.enroll-payment__summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.enroll-payment__amount {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    font-size: 14px;
+    color: #303133;
+}
+
+.enroll-payment__amount strong {
+    color: #ff4d4f;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.enroll-payment__label {
+    color: #606266;
+}
+
+.enroll-payment__remark {
+    max-width: 720px;
+    margin-bottom: 0;
+}
+
+.enroll-payment__records {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.enroll-payment__records-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #303133;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.enroll-payment__record {
+    border: 1px solid #ebeef5;
+    border-radius: 10px;
+    padding: 16px 16px 0;
+    background: #fff;
+}
+
+.enroll-payment__record-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: #606266;
+    font-size: 13px;
+}
+
+.enroll-payment__detail {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 18px;
+}
+
+.enroll-payment__detail-full {
+    grid-column: 1 / -1;
+}
+
 @media (max-width: 768px) {
     .enroll-grid {
         grid-template-columns: 1fr;
@@ -645,6 +838,11 @@ defineExpose({ open })
     .enroll-plan__choose {
         width: 100%;
         margin-left: 0;
+    }
+
+    .enroll-payment__summary,
+    .enroll-payment__detail {
+        grid-template-columns: 1fr;
     }
 }
 </style>
