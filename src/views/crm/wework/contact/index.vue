@@ -22,46 +22,10 @@
                 :columns="tableColumns"
                 :data="tableObject.tableList"
                 row-key="id"
-                expand
                 :loading="tableObject.loading"
                 :pagination="{ total: tableObject.total }"
                 @register="tableRegister"
-                @expand-change="handleExpandChange"
-            >
-                <template #expand="{ row }">
-                    <div v-if="row.clueId" class="wework-clue-expand">
-                        <div
-                            v-if="clueDetailLoadingMap[row.clueId]"
-                            class="wework-clue-expand__loading"
-                        >
-                            <el-skeleton animated :rows="6" />
-                        </div>
-                        <ClueDetailContent
-                            v-else-if="clueDetailMap[row.clueId]"
-                            class="wework-clue-expand__content"
-                            :clue="clueDetailMap[row.clueId]"
-                            :clue-id="row.clueId"
-                            :loading="false"
-                            :can-update="false"
-                            :log-list="clueLogMap[row.clueId] || []"
-                            :editing="false"
-                            :saving="false"
-                            :project-options="[]"
-                            :clue-source-options="[]"
-                            :tag-options="[]"
-                            :wework-contacts="clueWeworkMap[row.clueId] || []"
-                            @edit="undefined"
-                            @cancel-edit="undefined"
-                            @save="undefined"
-                            @sms="undefined"
-                            @enroll="undefined"
-                            @transfer="undefined"
-                            @tag="undefined"
-                        />
-                        <el-empty v-else description="名片详情加载失败" :image-size="72" />
-                    </div>
-                </template>
-            </Table>
+            />
         </div>
     </ContentWrap>
 
@@ -83,13 +47,7 @@ import type { FormSchema } from '@/types/form'
 import { useTable } from '@/hooks/web/useTable'
 import * as WeworkContactApi from '@/api/crm/wework/contact'
 import * as WeappApi from '@/api/system/weapp'
-import * as ClueApi from '@/api/crm/clue'
-import * as CustomerDetailApi from '@/api/crm/customerDetail'
-import { getOperateLogPage } from '@/api/crm/operateLog'
-import { BizTypeEnum } from '@/api/crm/permission'
-import type { OperateLogVO } from '@/api/system/operatelog'
 import ClueDetailDrawer from '@/views/crm/clue/detail/ClueDetailDrawer.vue'
-import ClueDetailContent from '@/views/crm/clue/detail/ClueDetailContent.vue'
 
 defineOptions({ name: 'CrmWeworkContact' })
 
@@ -103,43 +61,10 @@ const memberOptions = ref<{ label: string; value: string }[]>([])
 const allMemberList = ref<WeworkContactApi.WeworkMemberSimpleVO[]>([])
 const corpCompanyMap = ref<Record<string, string>>({})
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
-const clueDetailMap = ref<Record<number, ClueApi.ClueVO>>({})
-const clueDetailLoadingMap = ref<Record<number, boolean>>({})
-const clueLogMap = ref<Record<number, OperateLogVO[]>>({})
-const clueWeworkMap = ref<Record<number, CustomerDetailApi.CustomerWeworkContactItem[]>>({})
 
 const handleViewDetail = (row: WeworkContactApi.WeworkContactVO) => {
     if (row.clueId) {
         detailRef.value?.open(row.clueId)
-    }
-}
-
-const loadClueDetail = async (clueId?: number) => {
-    if (!clueId || clueDetailMap.value[clueId] || clueDetailLoadingMap.value[clueId]) {
-        return
-    }
-    clueDetailLoadingMap.value = { ...clueDetailLoadingMap.value, [clueId]: true }
-    try {
-        const [clue, logs, weworkInfo] = await Promise.all([
-            ClueApi.getClue(clueId),
-            getOperateLogPage({ bizType: BizTypeEnum.CRM_CLUE, bizId: clueId }),
-            CustomerDetailApi.getCustomerWeworkInfo(clueId)
-        ])
-        clueDetailMap.value = { ...clueDetailMap.value, [clueId]: clue || {} }
-        clueLogMap.value = { ...clueLogMap.value, [clueId]: logs?.list || [] }
-        clueWeworkMap.value = { ...clueWeworkMap.value, [clueId]: weworkInfo?.contacts || [] }
-    } finally {
-        clueDetailLoadingMap.value = { ...clueDetailLoadingMap.value, [clueId]: false }
-    }
-}
-
-const handleExpandChange = async (
-    row: WeworkContactApi.WeworkContactVO,
-    expandedRows: WeworkContactApi.WeworkContactVO[]
-) => {
-    const expanded = expandedRows.some((item) => item.id === row.id)
-    if (expanded && row.clueId) {
-        await loadClueDetail(row.clueId)
     }
 }
 
@@ -393,7 +318,12 @@ const tableColumns = reactive<TableColumn[]>([
                         <el-avatar size={28} src={row.staffAvatar}>
                             {(row.staffName || '员').slice(0, 1)}
                         </el-avatar>
-                        <span>{row.staffName || '-'}</span>
+                        <span>
+                            {row.staffName || '-'}{' '}
+                            <span class="text-[#fa8c16]">
+                                @{corpCompanyMap.value[row.corpId] || row.corpName || '个微'}
+                            </span>
+                        </span>
                     </div>
                 )
             }
@@ -471,23 +401,3 @@ onMounted(async () => {
     await tableMethods.getList()
 })
 </script>
-
-<style scoped lang="scss">
-.wework-clue-expand {
-    padding: 12px 16px 18px;
-    background: #f7f9fc;
-}
-
-.wework-clue-expand__loading,
-.wework-clue-expand__content {
-    border-radius: 16px;
-    overflow: hidden;
-}
-
-.wework-clue-expand__content {
-    :deep(.clue-hero__actions),
-    :deep(.clue-section__actions) {
-        display: none;
-    }
-}
-</style>

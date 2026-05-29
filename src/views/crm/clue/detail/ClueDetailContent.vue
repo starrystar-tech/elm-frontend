@@ -1,6 +1,9 @@
 <template>
     <div class="clue-card-query">
         <div class="clue-hero">
+            <el-button circle plain class="clue-hero__close" @click="emit('close')">
+                <Icon icon="ep:close" />
+            </el-button>
             <div class="clue-hero__main">
                 <el-avatar
                     v-if="clue.avatar"
@@ -422,6 +425,7 @@ const emit = defineEmits<{
     enroll: []
     transfer: []
     tag: []
+    close: []
 }>()
 
 const weworkCustomerCard = computed<CustomerWeworkContactItem | undefined>(
@@ -630,15 +634,26 @@ const basicInfoItems = computed(() => [
 }
 
 .clue-hero {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 16px 18px;
+    padding: 16px 72px 16px 18px;
     border-radius: 14px;
     color: #fff;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     box-shadow: 0 8px 24px rgba(102, 126, 234, 0.24);
+}
+
+.clue-hero__close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.22);
 }
 
 .clue-hero__main {
@@ -1085,6 +1100,12 @@ const basicInfoItems = computed(() => [
     .clue-hero {
         flex-direction: column;
         align-items: stretch;
+        padding: 16px 16px 20px;
+    }
+
+    .clue-hero__close {
+        top: 12px;
+        right: 12px;
     }
 
     .clue-hero__actions {

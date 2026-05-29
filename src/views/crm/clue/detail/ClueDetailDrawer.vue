@@ -9,13 +9,6 @@
         class="clue-detail-drawer"
     >
         <div class="clue-detail-drawer__shell">
-            <div class="clue-detail-drawer__header">
-                <div> </div>
-                <el-button circle plain @click="drawerVisible = false">
-                    <Icon icon="ep:close" />
-                </el-button>
-            </div>
-
             <div class="clue-detail-drawer__body">
                 <ClueDetailContent
                     :clue="clue"
@@ -36,13 +29,18 @@
                     @enroll="openEnroll"
                     @transfer="handleTransfer"
                     @tag="handleTag"
+                    @close="drawerVisible = false"
                 />
             </div>
         </div>
     </el-drawer>
 
     <ClueEnrollDialog ref="enrollRef" @success="handleEnrollSuccess" />
-    <CrmTransferForm ref="transferRef" :biz-type="BizTypeEnum.CRM_CLUE" @success="handleTransferSuccess" />
+    <CrmTransferForm
+        ref="transferRef"
+        :biz-type="BizTypeEnum.CRM_CLUE"
+        @success="handleTransferSuccess"
+    />
     <Dialog v-model="tagDialogVisible" title="加标签" width="520px">
         <el-form label-width="80px">
             <el-form-item label="标签" required>
@@ -252,22 +250,10 @@ defineExpose({ open })
     flex-direction: column;
 }
 
-.clue-detail-drawer__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: #2f3a4f;
-    margin-bottom: 12px;
-}
-
-.clue-detail-drawer__title {
-    font-size: 20px;
-    font-weight: 600;
-}
-
-.clue-detail-drawer__subtitle {
-    font-size: 12px;
-    color: #7a8699;
+.clue-detail-drawer__body {
+    flex: 1;
+    padding: 0px 0px 0;
+    overflow: auto;
 }
 
 :deep(.clue-detail-drawer .el-drawer) {
@@ -287,8 +273,8 @@ defineExpose({ open })
         border-radius: 0;
     }
 
-    .clue-detail-drawer__header {
-        padding: 18px 16px;
+    .clue-detail-drawer__body {
+        padding: 16px 16px 0;
     }
 }
 </style>
