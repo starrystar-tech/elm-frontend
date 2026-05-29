@@ -1,25 +1,20 @@
 <template>
-  <ContentWrap>
-    <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
-    <div class="action-btn-wrap">
-      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增合同变量</BaseButton>
-    </div>
-    <Table
-      v-model:currentPage="tableObject.currentPage"
-      v-model:pageSize="tableObject.pageSize"
-      :columns="tableColumns"
-      :data="tableObject.tableList"
-      :loading="tableObject.loading"
-      :pagination="{ total: tableObject.total }"
-      @register="tableRegister"
-    />
-  </ContentWrap>
-
-  <VariableForm ref="formRef" @success="tableMethods.getList" />
+    <ContentWrap>
+        <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
+        <Table
+            v-model:currentPage="tableObject.currentPage"
+            v-model:pageSize="tableObject.pageSize"
+            :columns="tableColumns"
+            :data="tableObject.tableList"
+            :loading="tableObject.loading"
+            :pagination="{ total: tableObject.total }"
+            @register="tableRegister"
+        />
+    </ContentWrap>
 </template>
 
 <script setup lang="tsx">
-import { reactive, ref } from 'vue'
+import { reactive } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -27,80 +22,218 @@ import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
+import { floatToFixed2 } from '@/utils'
 import { hasPermission } from '@/directives/permission/hasPermi'
-import * as VariableApi from '@/api/system/contract/variable'
-import VariableForm from './VariableForm.vue'
+import * as ContractApi from '@/api/system/contract'
 
 defineOptions({ name: 'ContractRecord' })
 
-const canCreate = hasPermission(['system:contract-variable:create'])
-const canUpdate = hasPermission(['system:contract-variable:update'])
-const canDelete = hasPermission(['system:contract-variable:delete'])
+const canDownload = hasPermission(['system:contract:download'])
 
-const message = useMessage()
-const formRef = ref<InstanceType<typeof VariableForm>>()
+const contractTypeOptions = [
+    { label: '普通合同', value: 1 },
+    { label: '解约合同', value: 2 }
+]
+
+const contractStatusOptions = [
+    { label: '待签署', value: 1 },
+    { label: '已拒签', value: 2 },
+    { label: '已撤销', value: 3 },
+    { label: '已签署', value: 4 }
+]
 
 const searchSchema = reactive<FormSchema[]>([
-  {
-    field: 'variableName',
-    label: '合同变量',
-    component: 'Input',
-    componentProps: {
-      placeholder: '请输入合同变量名',
-      clearable: true,
-      style: { width: '260px' }
+    {
+        field: 'mobile',
+        label: '联系电话',
+        component: 'Input',
+        componentProps: {
+            placeholder: '请输入联系电话',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'customer',
+        label: '客户',
+        component: 'Input',
+        componentProps: {
+            placeholder: '请输入客户ID/名称',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'status',
+        label: '合同状态',
+        component: 'Select',
+        componentProps: {
+            options: contractStatusOptions,
+            placeholder: '请选择合同状态',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'contractType',
+        label: '合同类型',
+        component: 'Select',
+        componentProps: {
+            options: contractTypeOptions,
+            placeholder: '请选择合同类型',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'createTimeRange',
+        label: '创建时间',
+        component: 'DatePicker',
+        componentProps: {
+            type: 'daterange',
+            valueFormat: 'YYYY-MM-DD HH:mm:ss',
+            startPlaceholder: '开始时间',
+            endPlaceholder: '结束时间',
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'contractNo',
+        label: '合同编号',
+        component: 'Input',
+        componentProps: {
+            placeholder: '请输入合同编号',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'orderNo',
+        label: '订单编号',
+        component: 'Input',
+        componentProps: {
+            placeholder: '请输入订单编号',
+            clearable: true,
+            style: { width: '220px' }
+        }
     }
-  }
 ])
 
-const { tableObject, tableMethods, register: tableRegister } = useTable<VariableApi.ContractVariableVO>({
-  getListApi: async (params) => await VariableApi.getContractVariablePage(params)
+const {
+    tableObject,
+    tableMethods,
+    register: tableRegister
+} = useTable<ContractApi.ContractPageRespVO>({
+    getListApi: async (params) => {
+        const createTimeRange = params.createTimeRange || []
+        return await ContractApi.getContractPage({
+            ...params,
+            beginCreateTime: createTimeRange[0],
+            endCreateTime: createTimeRange[1]
+        })
+    }
 })
 
 const setSearchParams = (params: Recordable) => {
-  tableMethods.setSearchParams(params)
+    tableMethods.setSearchParams(params)
 }
 
-const openForm = (type: 'create' | 'update', id?: number) => {
-  formRef.value?.open(type, id)
+const getContractTypeLabel = (value?: number) =>
+    contractTypeOptions.find((item) => item.value === value)?.label || '-'
+
+const getContractStatusMeta = (value?: number) => {
+    switch (value) {
+        case 1:
+            return { label: '待签署', type: 'warning' as const }
+        case 2:
+            return { label: '已拒签', type: 'danger' as const }
+        case 3:
+            return { label: '已撤销', type: 'info' as const }
+        case 4:
+            return { label: '已签署', type: 'success' as const }
+        default:
+            return { label: '-', type: 'info' as const }
+    }
 }
 
-const handleDelete = async (id: number) => {
-  await message.confirm('确认删除该合同变量吗？')
-  await VariableApi.deleteContractVariable(id)
-  message.success('删除成功')
-  await tableMethods.getList()
+const formatPayFee = (value?: number) => `￥${floatToFixed2(value)}`
+
+const handlePreview = async (id: number) => {
+    const url = await ContractApi.getContractPreviewUrl(id)
+    window.open(url, '_blank')
+}
+
+const handleDownload = async (id: number) => {
+    const url = await ContractApi.getContractDownloadUrl(id)
+    window.open(url, '_blank')
 }
 
 const tableColumns = reactive<TableColumn[]>([
-  { field: 'id', label: '编号', width: '90px' },
-  { field: 'variableName', label: '合同变量名', minWidth: '260px' },
-  { field: 'createTime', label: '创建时间', width: '180px', formatter: dateFormatter },
-  {
-    field: 'action',
-    label: '操作',
-    width: '150px',
-    fixed: 'right',
-    slots: {
-      default: (data) => (
-        <>
-          {canUpdate ? (
-            <BaseButton link type="primary" onClick={() => openForm('update', data.row.id)}>
-              编辑
-            </BaseButton>
-          ) : null}
-          {canDelete ? (
-            <BaseButton link type="danger" onClick={() => handleDelete(data.row.id)}>
-              删除
-            </BaseButton>
-          ) : null}
-        </>
-      )
+    { field: 'contractNo', label: '合同号', minWidth: '160px' },
+    { field: 'orderNo', label: '关联订单', minWidth: '160px' },
+    {
+        field: 'customerName',
+        label: '客户',
+        minWidth: '140px',
+        slots: {
+            default: (data) => data.row.customerName || data.row.customerId || '-'
+        }
+    },
+    { field: 'customerMobile', label: '手机号', minWidth: '140px' },
+    { field: 'docTitle', label: '合同名称', minWidth: '220px', showOverflowTooltip: true },
+    {
+        field: 'contractType',
+        label: '合同类型',
+        width: '120px',
+        slots: {
+            default: (data) => getContractTypeLabel(data.row.contractType)
+        }
+    },
+    {
+        field: 'status',
+        label: '合同状态',
+        width: '120px',
+        slots: {
+            default: (data) => {
+                const meta = getContractStatusMeta(data.row.status)
+                return <el-tag type={meta.type}>{meta.label}</el-tag>
+            }
+        }
+    },
+    { field: 'productName', label: '商品名称', minWidth: '200px', showOverflowTooltip: true },
+    {
+        field: 'payFee',
+        label: '支付金额',
+        width: '120px',
+        slots: {
+            default: (data) => formatPayFee(data.row.payFee)
+        }
+    },
+    { field: 'creatorName', label: '操作人', width: '120px' },
+    { field: 'createTime', label: '创建时间', width: '180px', formatter: dateFormatter },
+    {
+        field: 'action',
+        label: '操作',
+        width: '150px',
+        fixed: 'right',
+        slots: {
+            default: (data) => (
+                <>
+                    <BaseButton link type="primary" onClick={() => handlePreview(data.row.id)}>
+                        预览
+                    </BaseButton>
+                    {canDownload ? (
+                        <BaseButton link type="primary" onClick={() => handleDownload(data.row.id)}>
+                            下载
+                        </BaseButton>
+                    ) : null}
+                </>
+            )
+        }
     }
-  }
 ])
 
 onMounted(() => {
-  tableMethods.getList()
+    tableMethods.getList()
 })
 </script>

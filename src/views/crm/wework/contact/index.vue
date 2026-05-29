@@ -1,25 +1,31 @@
 <template>
     <ContentWrap>
-        <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
         <el-tabs v-model="activeName" @tab-click="handleTabClick" class="list-tabs-compact">
             <el-tab-pane label="有手机号" name="1" />
             <el-tab-pane label="无手机号" name="2" />
         </el-tabs>
-
-        <div class="action-btn-wrap">
-            <BaseButton type="primary" :loading="syncLoading" @click="handleSync"
-                >同步企微客户</BaseButton
-            >
+        <div class="tab-content-wrap">
+            <Search
+                ref="searchRef"
+                :schema="searchSchema"
+                @search="setSearchParams"
+                @reset="setSearchParams"
+            />
+            <div class="action-btn-wrap">
+                <BaseButton type="primary" :loading="syncLoading" @click="handleSync"
+                    >同步企微客户</BaseButton
+                >
+            </div>
+            <Table
+                v-model:currentPage="tableObject.currentPage"
+                v-model:pageSize="tableObject.pageSize"
+                :columns="tableColumns"
+                :data="tableObject.tableList"
+                :loading="tableObject.loading"
+                :pagination="{ total: tableObject.total }"
+                @register="tableRegister"
+            />
         </div>
-        <Table
-            v-model:currentPage="tableObject.currentPage"
-            v-model:pageSize="tableObject.pageSize"
-            :columns="tableColumns"
-            :data="tableObject.tableList"
-            :loading="tableObject.loading"
-            :pagination="{ total: tableObject.total }"
-            @register="tableRegister"
-        />
     </ContentWrap>
 </template>
 
@@ -33,6 +39,7 @@ import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import { DictTag } from '@/components/DictTag'
+import type { SearchExpose } from '@/components/Search'
 import type { FormSchema } from '@/types/form'
 import { useTable } from '@/hooks/web/useTable'
 import * as WeworkContactApi from '@/api/crm/wework/contact'
@@ -41,11 +48,13 @@ import * as WeappApi from '@/api/system/weapp'
 defineOptions({ name: 'CrmWeworkContact' })
 
 const message = useMessage()
+const searchRef = ref<SearchExpose>()
 const syncLoading = ref(false)
 const hasPhone = ref(true)
 const activeName = ref('1')
 const companyOptions = ref<{ label: string; value: string }[]>([])
 const memberOptions = ref<{ label: string; value: string }[]>([])
+const allMemberList = ref<WeworkContactApi.WeworkMemberSimpleVO[]>([])
 const corpCompanyMap = ref<Record<string, string>>({})
 
 const searchSchema = reactive<FormSchema[]>([
@@ -57,7 +66,10 @@ const searchSchema = reactive<FormSchema[]>([
             options: [],
             clearable: true,
             placeholder: '请选择企微',
-            style: { width: '220px' }
+            style: { width: '220px' },
+            onChange: (corpId?: string) => {
+                handleCompanyChange(corpId)
+            }
         }
     },
     {
@@ -135,7 +147,8 @@ const {
     }
 })
 
-const setSearchParams = (params: Recordable) => {
+const setSearchParams = async (params: Recordable) => {
+    await loadCorpMembers(params.companyName)
     tableMethods.setSearchParams({ ...params, hasPhone: hasPhone.value })
 }
 
@@ -181,6 +194,49 @@ const handleUpdateRemarkMobile = async (row: WeworkContactApi.WeworkContactVO) =
     await tableMethods.getList()
 }
 
+const buildMemberOptions = (members: WeworkContactApi.WeworkMemberSimpleVO[]) =>
+    members.map((item) => ({ label: item.name, value: item.userId }))
+
+const syncMemberOptions = async (options: { label: string; value: string }[]) => {
+    memberOptions.value = options
+    searchSchema[1].componentProps = {
+        ...(searchSchema[1].componentProps || {}),
+        options
+    }
+    await searchRef.value?.setSchema([
+        {
+            field: 'staffUserId',
+            path: 'componentProps.options',
+            value: options
+        }
+    ])
+}
+
+const loadCorpMembers = async (corpId?: string) => {
+    if (!corpId) {
+        await syncMemberOptions(buildMemberOptions(allMemberList.value))
+        return
+    }
+    const members = await WeworkContactApi.getWeworkMemberSimpleList(corpId)
+    const corpMembers =
+        members?.length > 0
+            ? members
+            : allMemberList.value.filter((item) => item.corpId === corpId)
+    await syncMemberOptions(buildMemberOptions(corpMembers))
+}
+
+const handleCompanyChange = async (corpId?: string) => {
+    await loadCorpMembers(corpId)
+    const formData = await searchRef.value?.getFormData<{ staffUserId?: string }>()
+    if (!formData?.staffUserId) {
+        return
+    }
+    const exists = memberOptions.value.some((item) => item.value === formData.staffUserId)
+    if (!exists) {
+        await searchRef.value?.setValues({ staffUserId: undefined })
+    }
+}
+
 const loadFilterOptions = async () => {
     const [weappList, members] = await Promise.all([
         WeappApi.getWeappConfigList(),
@@ -199,7 +255,8 @@ const loadFilterOptions = async () => {
         label: item.companyName || item.corpId,
         value: item.corpId
     }))
-    memberOptions.value = members.map((item: any) => ({ label: item.name, value: item.userId }))
+    allMemberList.value = members || []
+    memberOptions.value = buildMemberOptions(allMemberList.value)
 
     searchSchema[0].componentProps = {
         ...(searchSchema[0].componentProps || {}),
@@ -232,9 +289,6 @@ const tableColumns = reactive<TableColumn[]>([
                                 ) : (
                                     <span class="text-[#52c41a]">个微</span>
                                 )}
-                            </div>
-                            <div class="text-12px text-[var(--el-text-color-secondary)]">
-                                昵称: {row.customerNickname || '-'}
                             </div>
                         </div>
                     </div>

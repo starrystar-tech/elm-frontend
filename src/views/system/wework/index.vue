@@ -11,8 +11,8 @@
             <el-col
                 :xs="24"
                 :sm="12"
-                :md="8"
-                :lg="6"
+                :md="12"
+                :lg="8"
                 v-for="item in list"
                 :key="item.id"
                 class="mb-16px"
@@ -43,7 +43,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-12px">
-                        <el-avatar :size="48" shape="square" :src="item.appLogo">
+                        <el-avatar :size="60" shape="square" :src="item.appLogo">
                             {{ (item.appName || '应用').slice(0, 1) }}
                         </el-avatar>
                         <div class="app-meta">

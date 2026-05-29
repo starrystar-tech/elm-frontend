@@ -108,8 +108,10 @@ const corpId = ref('')
 const corpKeyword = ref('')
 const staffKeyword = ref('')
 const checkedKeys = ref<string[]>([])
+const remoteCorpOptions = ref<{ corpId: string; corpName: string }[]>([])
+const corpMemberMap = ref<Record<string, WeworkContactApi.WeworkMemberSimpleVO[]>>({})
 
-const corpOptions = computed(() => {
+const memberCorpOptions = computed(() => {
     const map = new Map<string, { corpId: string; corpName: string }>()
     props.members.forEach((item) => {
         if (!item.corpId || map.has(item.corpId)) return
@@ -121,7 +123,33 @@ const corpOptions = computed(() => {
     return Array.from(map.values())
 })
 
+const corpOptions = computed(() => {
+    const map = new Map<string, { corpId: string; corpName: string }>()
+    remoteCorpOptions.value.forEach((item) => {
+        if (!item.corpId || map.has(item.corpId)) return
+        map.set(item.corpId, item)
+    })
+    memberCorpOptions.value.forEach((item) => {
+        if (!item.corpId || map.has(item.corpId)) return
+        map.set(item.corpId, item)
+    })
+    return Array.from(map.values())
+})
+
 const buildStaffKey = (c: string, s: string) => `${c}__${s}`
+
+const normalizeCorpName = (item: any) =>
+    item?.companyName || item?.corpName || item?.label || item?.corpId || ''
+
+const normalizeMember = (item: any, targetCorpId?: string): WeworkContactApi.WeworkMemberSimpleVO => ({
+    corpId: item.corpId || targetCorpId || '',
+    corpName: item.corpName || targetCorpId || '',
+    staffUserId: item.staffUserId || item.userId,
+    staffName: item.staffName || item.name,
+    userId: item.userId || item.staffUserId,
+    name: item.name || item.staffName,
+    avatar: item.avatar
+})
 
 const filteredCorpNodes = computed(() => {
     const keyword = corpKeyword.value.trim().toLowerCase()
@@ -134,19 +162,28 @@ const filteredCorpNodes = computed(() => {
         }))
 })
 
+const resolvePreferredCorpId = (list: Array<{ corpId: string; count: number }>) => {
+    if (!list.length) return ''
+    const selectedCorpIds = new Set(props.selected.map((item) => item.corpId).filter(Boolean))
+    const selectedCorp = list.find((item) => selectedCorpIds.has(item.corpId))
+    if (selectedCorp) return selectedCorp.corpId
+    const firstWithMembers = list.find((item) => item.count > 0)
+    return firstWithMembers?.corpId || list[0].corpId
+}
+
 watch(filteredCorpNodes, (list) => {
     if (!list.length) {
         corpId.value = ''
         return
     }
     if (!list.some((item) => item.corpId === corpId.value)) {
-        corpId.value = list[0].corpId
+        corpId.value = resolvePreferredCorpId(list)
     }
 })
 
 const staffList = computed(() => {
     if (!corpId.value) return []
-    return props.members.filter((item) => item.corpId === corpId.value)
+    return corpMemberMap.value[corpId.value] || []
 })
 
 const filteredStaffList = computed(() => {
@@ -166,26 +203,106 @@ const isOccupied = (corpId: string, staffUserId: string) =>
     occupiedKeySet.value.has(buildStaffKey(corpId, staffUserId))
 
 const selectedRows = computed(() => {
-    const set = new Set(checkedKeys.value)
-    return props.members
-        .filter((item) => set.has(buildStaffKey(item.corpId, item.staffUserId)))
-        .map((item) => ({
-            corpId: item.corpId,
-            staffUserId: item.staffUserId,
-            staffName: item.staffName || item.name || item.staffUserId
-        }))
+    const mergedMembers = Object.values(corpMemberMap.value).flat()
+    const memberMap = new Map(
+        mergedMembers.map((item) => [
+            buildStaffKey(item.corpId, item.staffUserId),
+            {
+                corpId: item.corpId,
+                staffUserId: item.staffUserId,
+                staffName: item.staffName || item.name || item.staffUserId
+            }
+        ])
+    )
+    return checkedKeys.value
+        .map((key) => {
+            const member = memberMap.get(key)
+            if (member) return member
+            const [corpId, staffUserId] = key.split('__')
+            const selected = props.selected.find(
+                (item) => item.corpId === corpId && item.staffUserId === staffUserId
+            )
+            if (!corpId || !staffUserId) return null
+            return {
+                corpId,
+                staffUserId,
+                staffName: selected?.staffName || staffUserId
+            }
+        })
+        .filter(Boolean) as UserApi.UserWecomBindVO[]
 })
+
+const loadCorpOptions = async () => {
+    try {
+        const corpList = await WeworkContactApi.getWeworkCompanySimpleList()
+        remoteCorpOptions.value = (corpList || [])
+            .filter((item: any) => item?.corpId)
+            .map((item: any) => ({
+                corpId: item.corpId,
+                corpName: normalizeCorpName(item)
+            }))
+    } catch {
+        remoteCorpOptions.value = []
+    }
+}
+
+const seedCorpMemberMap = () => {
+    const map: Record<string, WeworkContactApi.WeworkMemberSimpleVO[]> = {}
+    props.members.forEach((item) => {
+        if (!item.corpId) return
+        if (!map[item.corpId]) {
+            map[item.corpId] = []
+        }
+        map[item.corpId].push(normalizeMember(item, item.corpId))
+    })
+    corpMemberMap.value = map
+}
+
+const loadCorpMembers = async (targetCorpId?: string) => {
+    if (!targetCorpId) {
+        return
+    }
+    try {
+        const members = await WeworkContactApi.getWeworkMemberSimpleList(targetCorpId)
+        corpMemberMap.value = {
+            ...corpMemberMap.value,
+            [targetCorpId]: (members || []).map((item: any) => normalizeMember(item, targetCorpId))
+        }
+    } catch {
+        if (!corpMemberMap.value[targetCorpId]) {
+            corpMemberMap.value = {
+                ...corpMemberMap.value,
+                [targetCorpId]: []
+            }
+        }
+    }
+}
+
+watch(
+    corpId,
+    async (val) => {
+        if (!val) return
+        staffKeyword.value = ''
+        await loadCorpMembers(val)
+    },
+    { flush: 'post' }
+)
 
 watch(
     () => props.modelValue,
-    (val) => {
-        if (!val) return
+    async (val) => {
+        if (!val) {
+            corpMemberMap.value = {}
+            return
+        }
+        seedCorpMemberMap()
+        await loadCorpOptions()
         corpKeyword.value = ''
         staffKeyword.value = ''
-        corpId.value = corpOptions.value[0]?.corpId || ''
         checkedKeys.value = props.selected.map((item) =>
             buildStaffKey(item.corpId, item.staffUserId)
         )
+        corpId.value = resolvePreferredCorpId(filteredCorpNodes.value)
     }
 )
 
@@ -243,12 +360,13 @@ const confirm = () => {
 .selector-corp-item {
     width: 100%;
     min-height: 48px;
-    padding: 0 12px;
+    padding: 10px 12px;
     margin-bottom: 8px;
     border-radius: 6px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 12px;
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
@@ -261,14 +379,16 @@ const confirm = () => {
 .selector-corp-item__name {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.4;
+    white-space: normal;
+    word-break: break-all;
 }
 
 .selector-corp-item__count {
     color: var(--el-text-color-secondary);
     font-size: 12px;
+    flex-shrink: 0;
+    padding-top: 2px;
 }
 
 .selector-check-group {
