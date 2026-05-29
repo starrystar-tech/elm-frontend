@@ -215,6 +215,7 @@ export enum DICT_TYPE {
     CRM_AFTERSALES_TYPE = 'crm_aftersales_type', // CRM 售后类型
     CRM_AFTERSALES_PRIORITY = 'crm_aftersales_priority', // CRM 售后优先级
     CRM_AFTERSALES_STATUS = 'crm_aftersales_status', // CRM 售后状态
+    CRM_CLUE_INTENT_LEVEL = 'crm_clue_intent_level', // 线索的意向等级
     WEWORK_FOLLOW_USER_ADD_WAY = 'wework_follow_user_add_way', // 企微客户添加来源
 
     // ========== ERP - 企业资源计划模块  ==========

@@ -141,6 +141,7 @@ export interface ClueUpdateBasicInfoReqVO {
     gender?: number
     birthday?: string
     education?: number
+    intentLevel?: number
     areaId: number
     consultProjectId: number
     clueSourceId?: number

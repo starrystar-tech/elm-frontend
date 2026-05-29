@@ -1,6 +1,6 @@
 <template>
     <div class="clue-card-query">
-        <div class="clue-hero" v-loading="loading">
+        <div class="clue-hero">
             <div class="clue-hero__main">
                 <div class="clue-avatar">{{ avatarText }}</div>
                 <div class="clue-hero__meta">
@@ -31,7 +31,7 @@
 
         <div class="clue-columns">
             <div class="clue-column">
-                <section class="clue-section">
+                <section class="clue-section" v-loading="loading">
                     <div class="clue-section__title">
                         <span>基本信息</span>
                         <div v-if="canUpdate" class="clue-section__actions">
@@ -72,6 +72,21 @@
                             </el-form-item>
                             <el-form-item label="手机号2">
                                 <el-input v-model="editForm.mobile2" placeholder="请输入手机号2" />
+                            </el-form-item>
+                            <el-form-item label="意向度">
+                                <el-select
+                                    v-model="editForm.intentLevel"
+                                    clearable
+                                    placeholder="请选择"
+                                    class="w-1/1"
+                                >
+                                    <el-option
+                                        v-for="item in intentLevelOptions"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value"
+                                    />
+                                </el-select>
                             </el-form-item>
                             <el-form-item label="微信号">
                                 <el-input v-model="editForm.wechat" placeholder="请输入微信号" />
@@ -129,6 +144,7 @@
                                     />
                                 </el-select>
                             </el-form-item>
+
                             <el-form-item label="来源" prop="clueSourceId">
                                 <el-select
                                     v-model="editForm.clueSourceId"
@@ -385,6 +401,7 @@ const treeProps = {
 }
 
 const educationOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_EDUCATION)
+const intentLevelOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_INTENT_LEVEL)
 
 const regionText = computed(() => {
     const names = [props.clue.province, props.clue.city, props.clue.district].filter(Boolean)
@@ -403,6 +420,7 @@ const editForm = reactive({
     name: '',
     gender: undefined as number | undefined,
     education: undefined as number | undefined,
+    intentLevel: undefined as number | undefined,
     areaId: undefined as number | undefined,
     consultProjectId: undefined as number | undefined,
     clueSourceId: undefined as number | undefined,
@@ -431,6 +449,7 @@ const syncEditForm = () => {
     editForm.name = props.clue.name || ''
     editForm.gender = props.clue.gender
     editForm.education = props.clue.education
+    editForm.intentLevel = props.clue.intentLevel
     editForm.areaId = props.clue.areaId
     editForm.consultProjectId = props.clue.consultProjectId
     editForm.clueSourceId = props.clue.clueSourceId
@@ -483,6 +502,7 @@ const basicInfoItems = computed(() => [
     { label: '姓名', value: props.clue.name || '--' },
     { label: '性别', value: props.clue.genderName || '--' },
     { label: '学历', value: props.clue.educationName || '--' },
+    { label: '意向度', value: props.clue.intentLevelName || '--' },
     { label: '来源', value: props.clue.clueSourceName || mockSummary[1].value },
     { label: '地区', value: regionText.value },
     { label: '咨询项目', value: props.clue.consultProjectName || mockSummary[0].value },

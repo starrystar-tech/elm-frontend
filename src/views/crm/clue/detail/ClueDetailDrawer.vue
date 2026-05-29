@@ -8,7 +8,7 @@
         :close-on-click-modal="false"
         class="clue-detail-drawer"
     >
-        <div class="clue-detail-drawer__shell" v-loading="loading">
+        <div class="clue-detail-drawer__shell">
             <div class="clue-detail-drawer__header">
                 <div> </div>
                 <el-button circle plain @click="drawerVisible = false">
@@ -139,6 +139,7 @@ const handleSave = async (payload: { formRef: any; formData: any }) => {
             certificateType: formData.certificateType?.trim() || undefined,
             gender: formData.gender,
             education: formData.education,
+            intentLevel: formData.intentLevel,
             areaId: Number(formData.areaId),
             consultProjectId: Number(formData.consultProjectId),
             clueSourceId: formData.clueSourceId ? Number(formData.clueSourceId) : undefined,
