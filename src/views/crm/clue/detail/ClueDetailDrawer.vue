@@ -28,6 +28,7 @@
                     :project-options="projectOptions"
                     :clue-source-options="clueSourceOptions"
                     :tag-options="tagOptions"
+                    :wework-contacts="weworkContacts"
                     @edit="openForm"
                     @cancel-edit="cancelEdit"
                     @save="handleSave"
@@ -41,10 +42,37 @@
     </el-drawer>
 
     <ClueEnrollDialog ref="enrollRef" @success="handleEnrollSuccess" />
+    <CrmTransferForm ref="transferRef" :biz-type="BizTypeEnum.CRM_CLUE" @success="handleTransferSuccess" />
+    <Dialog v-model="tagDialogVisible" title="加标签" width="520px">
+        <el-form label-width="80px">
+            <el-form-item label="标签" required>
+                <el-select
+                    v-model="tagForm.tagIds"
+                    multiple
+                    filterable
+                    clearable
+                    placeholder="请选择标签"
+                    style="width: 100%"
+                >
+                    <el-option
+                        v-for="item in tagOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                    />
+                </el-select>
+            </el-form-item>
+        </el-form>
+        <template #footer>
+            <el-button @click="tagDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="submitTag">确定</el-button>
+        </template>
+    </Dialog>
 </template>
 
 <script setup lang="ts">
 import * as ClueApi from '@/api/crm/clue'
+import * as CustomerDetailApi from '@/api/crm/customerDetail'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import { getOperateLogPage } from '@/api/crm/operateLog'
 import { BizTypeEnum } from '@/api/crm/permission'
@@ -52,6 +80,7 @@ import type { OperateLogVO } from '@/api/system/operatelog'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 import { hasPermission } from '@/directives/permission/hasPermi'
+import CrmTransferForm from '@/views/crm/permission/components/TransferForm.vue'
 import ClueEnrollDialog from './ClueEnrollDialog.vue'
 import ClueDetailContent from './ClueDetailContent.vue'
 
@@ -66,10 +95,14 @@ const clue = ref<ClueApi.ClueVO>({})
 const logList = ref<OperateLogVO[]>([])
 const canUpdate = hasPermission(['crm:clue:basic-info:update'])
 const enrollRef = ref<InstanceType<typeof ClueEnrollDialog>>()
+const transferRef = ref<InstanceType<typeof CrmTransferForm>>()
 const message = useMessage()
 const projectOptions = ref<{ id: number; name: string; children?: any[] }[]>([])
 const clueSourceOptions = ref<{ label: string; value: number }[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
+const weworkContacts = ref<CustomerDetailApi.CustomerWeworkContactItem[]>([])
+const tagDialogVisible = ref(false)
+const tagForm = reactive({ tagIds: [] as number[] })
 
 const loadOptions = async () => {
     const [projects, tagGroups, clueSources] = await Promise.all([
@@ -105,7 +138,12 @@ const getClue = async () => {
     if (!clueId.value) return
     loading.value = true
     try {
-        clue.value = await ClueApi.getClue(clueId.value)
+        const [clueResp, weworkResp] = await Promise.all([
+            ClueApi.getClue(clueId.value),
+            CustomerDetailApi.getCustomerWeworkInfo(clueId.value)
+        ])
+        clue.value = clueResp
+        weworkContacts.value = weworkResp?.contacts || []
         await getOperateLog()
     } finally {
         loading.value = false
@@ -135,6 +173,7 @@ const handleSave = async (payload: { formRef: any; formData: any }) => {
             wechat: formData.wechat?.trim() || undefined,
             wechat2: formData.wechat2?.trim() || undefined,
             qq: formData.qq?.trim() || undefined,
+            avatar: formData.avatar?.trim() || undefined,
             idCardNo: formData.idCardNo?.trim() || undefined,
             certificateType: formData.certificateType?.trim() || undefined,
             gender: formData.gender,
@@ -167,11 +206,32 @@ const handleSms = () => {
 }
 
 const handleTransfer = () => {
-    message.info('转移功能待接入')
+    if (!clue.value.id) return
+    transferRef.value?.open(Number(clue.value.id))
 }
 
 const handleTag = () => {
-    message.info('标签功能待接入')
+    tagForm.tagIds = (clue.value.tagIds || []).map((item) => Number(item))
+    tagDialogVisible.value = true
+}
+
+const handleTransferSuccess = async () => {
+    message.success('转移成功')
+    await getClue()
+}
+
+const submitTag = async () => {
+    if (!clue.value.id || !tagForm.tagIds.length) {
+        message.warning('请选择标签')
+        return
+    }
+    await ClueApi.batchAppendClueTags({
+        clueIds: [Number(clue.value.id)],
+        tagIds: tagForm.tagIds
+    })
+    message.success('加标签成功')
+    tagDialogVisible.value = false
+    await getClue()
 }
 
 const open = async (id: number) => {

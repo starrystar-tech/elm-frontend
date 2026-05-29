@@ -2,7 +2,13 @@
     <div class="clue-card-query">
         <div class="clue-hero">
             <div class="clue-hero__main">
-                <div class="clue-avatar">{{ avatarText }}</div>
+                <el-avatar
+                    v-if="clue.avatar"
+                    :size="52"
+                    :src="clue.avatar"
+                    class="clue-avatar-image"
+                />
+                <div v-else class="clue-avatar">{{ avatarText }}</div>
                 <div class="clue-hero__meta">
                     <div class="clue-hero__name-row">
                         <h3>{{ clue.name || '--' }}</h3>
@@ -211,6 +217,13 @@
                                     placeholder="请输入咨询备注"
                                 />
                             </el-form-item>
+                            <el-form-item label="头像" class="clue-edit-form__avatar">
+                                <UploadImg
+                                    v-model="editForm.avatar"
+                                    :limit="1"
+                                    :is-show-tip="false"
+                                />
+                            </el-form-item>
                         </div>
                     </el-form>
                     <div v-else class="clue-info-grid">
@@ -261,15 +274,87 @@
             <div class="clue-column clue-column--side">
                 <section class="clue-section">
                     <div class="clue-section__title">
-                        <span>咨询概览</span>
+                        <span>企微信息</span>
                     </div>
-                    <div class="summary-cards">
-                        <div v-for="item in mockSummary" :key="item.label" class="summary-card">
-                            <div class="summary-card__label">{{ item.label }}</div>
-                            <div class="summary-card__value">{{ item.value }}</div>
-                            <div class="summary-card__desc">{{ item.desc }}</div>
+                    <div v-if="weworkCustomerCard" class="wework-customer-list">
+                        <div class="wework-customer-card">
+                            <div>
+                                <el-avatar :size="45" :src="weworkCustomerCard.avatar">
+                                    {{
+                                        (
+                                            weworkCustomerCard.customerName ||
+                                            weworkCustomerCard.customerNickname ||
+                                            '客'
+                                        ).slice(0, 1)
+                                    }}
+                                </el-avatar>
+                            </div>
+                            <div class="wework-customer-card__meta">
+                                <div class="wework-customer-card__name-row">
+                                    <div class="wework-customer-card__main">
+                                        <strong>
+                                            {{
+                                                weworkCustomerCard.customerName ||
+                                                weworkCustomerCard.customerNickname ||
+                                                '--'
+                                            }}
+                                        </strong>
+                                        <span
+                                            v-if="weworkCustomerCard.customerNickname"
+                                            class="wework-customer-card__nickname"
+                                        >
+                                            {{ weworkCustomerCard.customerNickname }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    <div v-if="weworkStaffCards.length" class="wework-relation-grid">
+                        <div
+                            v-for="relation in weworkStaffCards"
+                            :key="relation.relationId"
+                            class="wework-relation-card"
+                        >
+                            <div class="wework-relation-card__user">
+                                <div>
+                                    <el-avatar
+                                        :size="60"
+                                        shape="square"
+                                        :src="relation.staffAvatar"
+                                    >
+                                        {{ (relation.staffName || '员').slice(0, 1) }}
+                                    </el-avatar>
+                                </div>
+                                <div class="wework-relation-card__user-meta">
+                                    <div class="wework-relation-card__name-row">
+                                        <strong>{{ relation.staffName || '--' }}</strong>
+                                        <span class="wework-relation-card__corp">
+                                            @{{ relation.corpName || '--' }}
+                                        </span>
+                                    </div>
+                                    <div
+                                        v-if="relation.remark || relation.mobile"
+                                        class="wework-relation-card__remark"
+                                    >
+                                        <span
+                                            v-if="relation.mobile"
+                                            class="wework-relation-card__remark-item"
+                                        >
+                                            备注手机号 {{ relation.mobile }}
+                                        </span>
+                                        <span class="wework-relation-card__remark-item">
+                                            添加方式 {{ formatAddWay(relation.addWay) }}
+                                        </span>
+                                        <span class="wework-relation-card__remark-item">
+                                            添加时间 {{ formatDateTime(relation.addTime) }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <el-empty v-else description="暂无企微关联信息" :image-size="72" />
                 </section>
 
                 <section class="clue-section">
@@ -308,9 +393,12 @@
 
 <script setup lang="ts">
 import AreaSelect from '@/components/AreaSelect.vue'
+import { UploadImg } from '@/components/UploadFile'
 import * as ClueApi from '@/api/crm/clue'
+import type { CustomerWeworkContactItem } from '@/api/crm/customerDetail'
 import type { OperateLogVO } from '@/api/system/operatelog'
-import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
+import { DICT_TYPE, getDictLabel, getIntDictOptions } from '@/utils/dict'
+import { dateFormatter } from '@/utils/formatTime'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
@@ -323,6 +411,7 @@ const props = defineProps<{
     projectOptions: { id: number; name: string; children?: any[] }[]
     clueSourceOptions: { label: string; value: number }[]
     tagOptions: { label: string; value: number }[]
+    weworkContacts?: CustomerWeworkContactItem[]
 }>()
 
 const emit = defineEmits<{
@@ -334,6 +423,25 @@ const emit = defineEmits<{
     transfer: []
     tag: []
 }>()
+
+const weworkCustomerCard = computed<CustomerWeworkContactItem | undefined>(
+    () => props.weworkContacts?.[0]
+)
+
+const weworkStaffCards = computed(() =>
+    (props.weworkContacts || []).flatMap((contact) =>
+        (contact.relations || []).map((relation) => ({
+            ...relation,
+            corpName: contact.corpName
+        }))
+    )
+)
+
+const formatAddWay = (value?: string) =>
+    value ? getDictLabel(DICT_TYPE.WEWORK_FOLLOW_USER_ADD_WAY, value) || value : '--'
+
+const formatDateTime = (value?: string) =>
+    value ? dateFormatter({} as any, {} as any, value) || value : '--'
 
 const mockSummary = [
     { label: '咨询项目', value: '自考本科', desc: '最近一次咨询项目' },
@@ -415,6 +523,7 @@ const editForm = reactive({
     wechat: '',
     wechat2: '',
     qq: '',
+    avatar: '',
     certificateType: '',
     idCardNo: '',
     name: '',
@@ -444,6 +553,7 @@ const syncEditForm = () => {
     editForm.wechat = props.clue.wechat || ''
     editForm.wechat2 = props.clue.wechat2 || ''
     editForm.qq = props.clue.qq || ''
+    editForm.avatar = props.clue.avatar || ''
     editForm.certificateType = props.clue.certificateType || ''
     editForm.idCardNo = props.clue.idCardNo || ''
     editForm.name = props.clue.name || ''
@@ -494,6 +604,8 @@ const basicInfoItems = computed(() => [
     { label: '客户ID', value: props.clue.customerId || '--' },
     { label: '手机号', value: props.clue.mobile || '--' },
     { label: '手机号2', value: props.clue.mobile2 || '--' },
+    { label: '报名次数', value: props.clue.orderCount ?? '--' },
+    { label: '意向度', value: props.clue.intentLevelName || '--' },
     { label: '微信号', value: props.clue.wechat || '--' },
     { label: '微信号2', value: props.clue.wechat2 || '--' },
     { label: 'QQ', value: props.clue.qq || '--' },
@@ -502,7 +614,6 @@ const basicInfoItems = computed(() => [
     { label: '姓名', value: props.clue.name || '--' },
     { label: '性别', value: props.clue.genderName || '--' },
     { label: '学历', value: props.clue.educationName || '--' },
-    { label: '意向度', value: props.clue.intentLevelName || '--' },
     { label: '来源', value: props.clue.clueSourceName || mockSummary[1].value },
     { label: '地区', value: regionText.value },
     { label: '咨询项目', value: props.clue.consultProjectName || mockSummary[0].value },
@@ -549,6 +660,11 @@ const basicInfoItems = computed(() => [
     font-size: 24px;
     font-weight: 700;
     flex-shrink: 0;
+}
+
+.clue-avatar-image {
+    flex-shrink: 0;
+    border: 3px solid rgba(255, 255, 255, 0.35);
 }
 
 .clue-hero__meta h3 {
@@ -747,6 +863,136 @@ const basicInfoItems = computed(() => [
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+.wework-contact-card__corp,
+.wework-relation-card__corp {
+    color: #fa8c16;
+    font-weight: 600;
+}
+
+.wework-customer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.wework-customer-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 12px;
+    border-radius: 14px;
+    border: 1px solid #e7f0fb;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 8px 20px rgba(22, 119, 255, 0.06);
+}
+
+.wework-customer-card__meta {
+    min-width: 0;
+    flex: 1;
+}
+
+.wework-customer-card__name-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+}
+
+.wework-customer-card__main {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.wework-customer-card__name-row strong {
+    font-size: 15px;
+    color: #303133;
+    line-height: 1.4;
+    white-space: normal;
+    word-break: break-all;
+}
+
+.wework-customer-card__nickname {
+    color: #606266;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: normal;
+    word-break: break-all;
+}
+
+.wework-customer-card__corp {
+    color: #67c23a;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .wework-customer-card__name-row {
+        flex-wrap: wrap;
+    }
+
+    .wework-customer-card__corp {
+        width: 100%;
+    }
+}
+
+.wework-relation-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.wework-relation-card {
+    border-radius: 12px;
+    border: 1px solid #ebeef5;
+    background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+    padding: 14px;
+    box-shadow: 0 8px 22px rgba(22, 119, 255, 0.06);
+}
+
+.wework-relation-card__user {
+    display: flex;
+    gap: 14px;
+}
+
+.wework-relation-card__user-meta {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.wework-relation-card__name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.wework-relation-card__name-row strong {
+    font-size: 15px;
+    color: #303133;
+}
+
+.wework-relation-card__remark {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: #606266;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.wework-relation-card__remark-item {
+    display: block;
+    word-break: break-all;
 }
 
 .summary-card {

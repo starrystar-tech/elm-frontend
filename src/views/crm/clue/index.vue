@@ -543,13 +543,22 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'name',
         label: '姓名',
-        width: '120px',
+        width: '180px',
         fixed: 'left',
         slots: {
             default: (data) => (
-                <el-link underline={false} type="primary" onClick={() => openDetail(data.row.id!)}>
-                    {data.row.name || '-'}
-                </el-link>
+                <div class="flex items-center gap-8px">
+                    <el-avatar size={32} src={data.row.avatar}>
+                        {(data.row.name || '线').slice(0, 1)}
+                    </el-avatar>
+                    <el-link
+                        underline={false}
+                        type="primary"
+                        onClick={() => openDetail(data.row.id!)}
+                    >
+                        {data.row.name || '-'}
+                    </el-link>
+                </div>
             )
         }
     },

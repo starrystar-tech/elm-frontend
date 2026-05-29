@@ -12,6 +12,7 @@ export interface ClueVO {
     wechat2?: string
     wechatRemark?: string
     qq?: string
+    avatar?: string
     idCardNo?: string
     certificateType?: string
     occupation?: string
@@ -58,6 +59,7 @@ export interface ClueVO {
     followUpStatus?: boolean
     transformStatus?: boolean
     remark?: string
+    orderCount?: number
     creator?: string
     creatorName?: string
     createTime?: string
@@ -108,6 +110,7 @@ export interface ClueCreateReqVO {
     wechat2?: string
     wechatRemark?: string
     qq?: string
+    avatar?: string
     idCardNo?: string
     certificateType?: string
     occupation?: string

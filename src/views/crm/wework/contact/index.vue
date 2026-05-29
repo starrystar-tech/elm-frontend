@@ -49,6 +49,7 @@
                             :project-options="[]"
                             :clue-source-options="[]"
                             :tag-options="[]"
+                            :wework-contacts="clueWeworkMap[row.clueId] || []"
                             @edit="undefined"
                             @cancel-edit="undefined"
                             @save="undefined"
@@ -83,6 +84,7 @@ import { useTable } from '@/hooks/web/useTable'
 import * as WeworkContactApi from '@/api/crm/wework/contact'
 import * as WeappApi from '@/api/system/weapp'
 import * as ClueApi from '@/api/crm/clue'
+import * as CustomerDetailApi from '@/api/crm/customerDetail'
 import { getOperateLogPage } from '@/api/crm/operateLog'
 import { BizTypeEnum } from '@/api/crm/permission'
 import type { OperateLogVO } from '@/api/system/operatelog'
@@ -104,6 +106,7 @@ const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
 const clueDetailMap = ref<Record<number, ClueApi.ClueVO>>({})
 const clueDetailLoadingMap = ref<Record<number, boolean>>({})
 const clueLogMap = ref<Record<number, OperateLogVO[]>>({})
+const clueWeworkMap = ref<Record<number, CustomerDetailApi.CustomerWeworkContactItem[]>>({})
 
 const handleViewDetail = (row: WeworkContactApi.WeworkContactVO) => {
     if (row.clueId) {
@@ -117,12 +120,14 @@ const loadClueDetail = async (clueId?: number) => {
     }
     clueDetailLoadingMap.value = { ...clueDetailLoadingMap.value, [clueId]: true }
     try {
-        const [clue, logs] = await Promise.all([
+        const [clue, logs, weworkInfo] = await Promise.all([
             ClueApi.getClue(clueId),
-            getOperateLogPage({ bizType: BizTypeEnum.CRM_CLUE, bizId: clueId })
+            getOperateLogPage({ bizType: BizTypeEnum.CRM_CLUE, bizId: clueId }),
+            CustomerDetailApi.getCustomerWeworkInfo(clueId)
         ])
         clueDetailMap.value = { ...clueDetailMap.value, [clueId]: clue || {} }
         clueLogMap.value = { ...clueLogMap.value, [clueId]: logs?.list || [] }
+        clueWeworkMap.value = { ...clueWeworkMap.value, [clueId]: weworkInfo?.contacts || [] }
     } finally {
         clueDetailLoadingMap.value = { ...clueDetailLoadingMap.value, [clueId]: false }
     }
