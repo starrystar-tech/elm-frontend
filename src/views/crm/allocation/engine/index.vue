@@ -4,9 +4,7 @@
             <el-tab-pane label="分配引擎" name="engine" />
             <el-tab-pane label="复购公海" name="repurchase" />
         </el-tabs>
-        <el-card shadow="never" class="config-card">
-            <router-view />
-        </el-card>
+        <router-view class="tab-content-wrap" />
     </ContentWrap>
 </template>
 
@@ -47,10 +45,3 @@ watch(
     { immediate: true }
 )
 </script>
-
-<style scoped>
-.config-card {
-    border-radius: 10px;
-    padding-bottom: 15px;
-}
-</style>

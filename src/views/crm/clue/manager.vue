@@ -8,46 +8,47 @@
                 :label="`${tab.label} (${counts[tab.countField] || 0})`"
             />
         </el-tabs>
+        <div class="tab-content-wrap">
+            <Search
+                :schema="searchSchema"
+                expand-field="allocationTimeRange"
+                @reset="setSearchParams"
+                @search="setSearchParams"
+            />
 
-        <Search
-            :schema="searchSchema"
-            expand-field="allocationTimeRange"
-            @reset="setSearchParams"
-            @search="setSearchParams"
-        />
-
-        <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
-            <div class="flex gap-8px flex-wrap">
-                <BaseButton
-                    type="primary"
-                    :disabled="selectionList.length === 0"
-                    @click="assignDialogVisible = true"
-                >
-                    批量分配
-                </BaseButton>
-                <BaseButton
-                    plain
-                    :disabled="selectionList.length === 0"
-                    @click="releaseDialogVisible = true"
-                >
-                    批量释放
-                </BaseButton>
+            <div class="action-btn-wrap">
+                <div class="flex gap-8px flex-wrap">
+                    <BaseButton
+                        type="primary"
+                        :disabled="selectionList.length === 0"
+                        @click="assignDialogVisible = true"
+                    >
+                        批量分配
+                    </BaseButton>
+                    <BaseButton
+                        plain
+                        :disabled="selectionList.length === 0"
+                        @click="releaseDialogVisible = true"
+                    >
+                        批量释放
+                    </BaseButton>
+                </div>
             </div>
-        </div>
 
-        <Table
-            v-model:currentPage="tableObject.currentPage"
-            v-model:pageSize="tableObject.pageSize"
-            :columns="tableColumns"
-            :data="tableObject.tableList"
-            :loading="tableObject.loading"
-            :pagination="{ total: tableObject.total }"
-            row-key="id"
-            selection
-            reserve-selection
-            @register="tableRegister"
-            @selection-change="handleSelectionChange"
-        />
+            <Table
+                v-model:currentPage="tableObject.currentPage"
+                v-model:pageSize="tableObject.pageSize"
+                :columns="tableColumns"
+                :data="tableObject.tableList"
+                :loading="tableObject.loading"
+                :pagination="{ total: tableObject.total }"
+                row-key="id"
+                selection
+                reserve-selection
+                @register="tableRegister"
+                @selection-change="handleSelectionChange"
+            />
+        </div>
     </ContentWrap>
 
     <ClueDetailDrawer ref="detailRef" />

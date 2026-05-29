@@ -8,49 +8,50 @@
                 :label="`${tab.label} (${publicSeaCounts[tab.countField] || 0})`"
             />
         </el-tabs>
+        <div class="tab-content-wrap">
+            <Search
+                :schema="searchSchema"
+                expand-field="enterPublicSeaTimeRange"
+                @reset="setSearchParams"
+                @search="setSearchParams"
+            />
 
-        <Search
-            :schema="searchSchema"
-            expand-field="enterPublicSeaTimeRange"
-            @reset="setSearchParams"
-            @search="setSearchParams"
-        />
+            <div class="flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
+                <div class="flex gap-8px flex-wrap">
+                    <BaseButton
+                        type="primary"
+                        :disabled="selectionList.length === 0"
+                        @click="handleBatchClaim()"
+                    >
+                        批量领取
+                    </BaseButton>
+                    <BaseButton
+                        plain
+                        :disabled="selectionList.length === 0"
+                        @click="assignDialogVisible = true"
+                    >
+                        批量分配
+                    </BaseButton>
+                </div>
+                <div class="text-13px pr-12px text-[var(--el-text-color-secondary)]">
+                    {{ claimSummaryText }}
+                </div>
+            </div>
 
-        <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
-            <div class="flex gap-8px flex-wrap">
-                <BaseButton
-                    type="primary"
-                    :disabled="selectionList.length === 0"
-                    @click="handleBatchClaim()"
-                >
-                    批量领取
-                </BaseButton>
-                <BaseButton
-                    plain
-                    :disabled="selectionList.length === 0"
-                    @click="assignDialogVisible = true"
-                >
-                    批量分配
-                </BaseButton>
-            </div>
-            <div class="text-13px pr-12px text-[var(--el-text-color-secondary)]">
-                {{ claimSummaryText }}
-            </div>
+            <Table
+                v-model:currentPage="tableObject.currentPage"
+                v-model:pageSize="tableObject.pageSize"
+                :columns="tableColumns"
+                :data="tableObject.tableList"
+                :loading="tableObject.loading"
+                :pagination="{ total: tableObject.total }"
+                row-key="id"
+                selection
+                reserve-selection
+                @register="tableRegister"
+                @selection-change="handleSelectionChange"
+            />
         </div>
-
-        <Table
-            v-model:currentPage="tableObject.currentPage"
-            v-model:pageSize="tableObject.pageSize"
-            :columns="tableColumns"
-            :data="tableObject.tableList"
-            :loading="tableObject.loading"
-            :pagination="{ total: tableObject.total }"
-            row-key="id"
-            selection
-            reserve-selection
-            @register="tableRegister"
-            @selection-change="handleSelectionChange"
-        />
     </ContentWrap>
 
     <ClueDetailDrawer ref="detailRef" />

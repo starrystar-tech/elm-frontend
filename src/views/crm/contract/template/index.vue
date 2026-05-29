@@ -1,6 +1,6 @@
 <template>
     <ContentWrap>
-        <el-tabs v-model="activeTab" class="list-tabs-compact">
+        <el-tabs v-model="activeTab" class="list-tabs-compact-in-pane">
             <el-tab-pane label="合同模板" name="templates">
                 <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
                 <div class="action-btn-wrap">

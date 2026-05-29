@@ -8,16 +8,14 @@
                 :label="`${tab.label} (${counts[tab.countField] || 0})`"
             />
         </el-tabs>
-
-        <Search
-            :schema="searchSchema"
-            expand-field="createTimeRange"
-            @reset="setSearchParams"
-            @search="setSearchParams"
-        />
-
-        <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
-            <div class="flex gap-8px flex-wrap">
+        <div class="tab-content-wrap">
+            <Search
+                :schema="searchSchema"
+                expand-field="createTimeRange"
+                @reset="setSearchParams"
+                @search="setSearchParams"
+            />
+            <div class="action-btn-wrap">
                 <BaseButton
                     type="primary"
                     plain
@@ -27,21 +25,20 @@
                     批量释放
                 </BaseButton>
             </div>
+            <Table
+                v-model:currentPage="tableObject.currentPage"
+                v-model:pageSize="tableObject.pageSize"
+                :columns="tableColumns"
+                :data="tableObject.tableList"
+                :loading="tableObject.loading"
+                :pagination="{ total: tableObject.total }"
+                row-key="id"
+                selection
+                reserve-selection
+                @register="tableRegister"
+                @selection-change="handleSelectionChange"
+            />
         </div>
-
-        <Table
-            v-model:currentPage="tableObject.currentPage"
-            v-model:pageSize="tableObject.pageSize"
-            :columns="tableColumns"
-            :data="tableObject.tableList"
-            :loading="tableObject.loading"
-            :pagination="{ total: tableObject.total }"
-            row-key="id"
-            selection
-            reserve-selection
-            @register="tableRegister"
-            @selection-change="handleSelectionChange"
-        />
     </ContentWrap>
 
     <ClueDetailDrawer ref="detailRef" />
