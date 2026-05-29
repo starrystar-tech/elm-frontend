@@ -112,7 +112,21 @@ export interface OrderRefundRespVO {
 export interface OrderDetailRespVO extends OrderPageRespVO {
   clueId?: number
   gender?: number
+  qq?: string
   wechat?: string
+  wechat2?: string
+  customerMobile2?: string
+  certificateType?: string
+  idCardNo?: string
+  occupation?: string
+  emergencyMobile?: string
+  emergencyContact?: string
+  birthday?: string
+  education?: number
+  areaId?: number
+  province?: string
+  city?: string
+  district?: string
   campusId?: number
   organizationName?: string
   ownerUserId?: number

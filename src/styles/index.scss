@@ -53,10 +53,24 @@ div.detail-wrap {
 
 // CRM/业务列表页：统一压缩 Tabs 与按钮区的垂直间距
 .list-tabs-compact {
-    padding: 6px 10px 0;
-
+    padding: 6px 16px 0 16px;
     .el-tabs__header {
         margin-bottom: 6px;
+    }
+    div.el-tab-pane {
+        padding-top: 10px;
+        .action-btn-wrap {
+            padding-top: 0;
+            padding-left: 0;
+            padding-right: 0;
+        }
+    }
+    .el-tabs__content {
+        padding-bottom: 12px;
+    }
+    .crm-soft-table-wrap {
+        padding-left: 0;
+        padding-right: 0;
     }
 }
 

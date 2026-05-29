@@ -2,20 +2,38 @@
     <div v-loading="loading">
         <ContentWrap class="mb-16px">
             <div class="flex flex-wrap items-start justify-between gap-16px">
-                <div>
-                    <div class="mb-8px flex items-center gap-12px">
-                        <span class="text-20px font-700">{{ detail.orderNo || '-' }}</span>
-                        <el-tag>{{ orderStatusLabel(detail.orderStatus) }}</el-tag>
+                <div class="order-detail-summary">
+                    <div class="order-detail-summary__item">
+                        <span class="label">订单编号：</span>
+                        <span>{{ detail.orderNo || '-' }}</span>
                     </div>
-                    <div
-                        class="grid grid-cols-1 gap-y-6px text-[13px] text-[var(--el-text-color-secondary)] md:grid-cols-2 md:gap-x-24px"
-                    >
-                        <span>客户：{{ detail.customerName || '-' }}</span>
-                        <span>客户ID：{{ detail.customerId || '-' }}</span>
-                        <span>手机号：{{ detail.customerMobile || '-' }}</span>
-                        <span>报名时间：{{ detail.enrollTime || '-' }}</span>
-                        <span>项目：{{ detail.projectName || '-' }}</span>
-                        <span>报名分校：{{ detail.campusName || '-' }}</span>
+                    <div class="order-detail-summary__item">
+                        <span class="label">报名时间：</span>
+                        <span>{{ detail.enrollTime || '-' }}</span>
+                    </div>
+                    <div class="order-detail-summary__item">
+                        <span class="label">订单状态：</span>
+                        <span>{{ orderStatusLabel(detail.orderStatus) }}</span>
+                    </div>
+                    <div class="order-detail-summary__item">
+                        <span class="label">应付金额：</span>
+                        <span>￥{{ formatAmount(detail.payableAmount) }}</span>
+                    </div>
+                    <div class="order-detail-summary__item">
+                        <span class="label">已付金额：</span>
+                        <span>￥{{ formatAmount(detail.paidAmount) }}</span>
+                    </div>
+                    <div class="order-detail-summary__item">
+                        <span class="label">已退费金额：</span>
+                        <span>￥{{ formatAmount(detail.refundAmount) }}</span>
+                    </div>
+                    <div class="order-detail-summary__item">
+                        <span class="label">订单归属：</span>
+                        <span>{{ orderOwnerText }}</span>
+                    </div>
+                    <div class="order-detail-summary__item">
+                        <span class="label">备注：</span>
+                        <span>{{ detail.remark || '-' }}</span>
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-8px">
@@ -28,32 +46,77 @@
             </div>
         </ContentWrap>
 
-        <ContentWrap class="mb-16px">
-            <el-descriptions :column="3" border>
-                <el-descriptions-item label="应付金额">{{ formatAmount(detail.payableAmount) }}</el-descriptions-item>
-                <el-descriptions-item label="已付金额">{{ formatAmount(detail.paidAmount) }}</el-descriptions-item>
-                <el-descriptions-item label="已退费金额">{{ formatAmount(detail.refundAmount) }}</el-descriptions-item>
-                <el-descriptions-item label="合同签署">{{ contractStatusLabel(detail.contractStatus) }}</el-descriptions-item>
-                <el-descriptions-item label="订单归属">{{ detail.ownerUserName || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="名片归属">{{ detail.cardOwnerUserName || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="机构">{{ detail.organizationName || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="微信号">{{ detail.wechat || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="到期时间">{{ detail.expireTime || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="备注" :span="3">{{ detail.remark || '-' }}</el-descriptions-item>
-            </el-descriptions>
-        </ContentWrap>
-
         <ContentWrap>
             <el-tabs v-model="activeTab">
                 <el-tab-pane label="学员信息" name="student">
-                    <el-descriptions :column="2" border>
-                        <el-descriptions-item label="姓名">{{ detail.customerName || '-' }}</el-descriptions-item>
-                        <el-descriptions-item label="客户ID">{{ detail.customerId || '-' }}</el-descriptions-item>
-                        <el-descriptions-item label="手机号">{{ detail.customerMobile || '-' }}</el-descriptions-item>
-                        <el-descriptions-item label="微信号">{{ detail.wechat || '-' }}</el-descriptions-item>
-                        <el-descriptions-item label="报名分校">{{ detail.campusName || '-' }}</el-descriptions-item>
-                        <el-descriptions-item label="项目">{{ detail.projectName || '-' }}</el-descriptions-item>
-                    </el-descriptions>
+                    <div class="order-detail-student">
+                        <div class="order-detail-student__grid">
+                            <div class="order-detail-student__item">
+                                <span class="label">姓名</span>
+                                <span>{{ detail.customerName || '-' }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">性别</span>
+                                <span>{{ genderText }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">手机号</span>
+                                <span>{{ detail.customerMobile || '-' }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">手机号2</span>
+                                <span>{{ detail.customerMobile2 || '-' }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">地区</span>
+                                <span>{{ areaText }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">微信</span>
+                                <span>{{ detail.wechat || '-' }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">微信2</span>
+                                <span>{{ detail.wechat2 || '-' }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">QQ</span>
+                                <span>{{ detail.qq || '-' }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">出生日期</span>
+                                <span>{{ detail.birthday || '-' }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">证件类型</span>
+                                <span>{{ detail.certificateType || '-' }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">证件号码</span>
+                                <span>{{ detail.idCardNo || '-' }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">最高学历</span>
+                                <span>{{ educationText }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">职业</span>
+                                <span>{{ detail.occupation || '-' }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">紧急联系号码</span>
+                                <span>{{ detail.emergencyMobile || '-' }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">紧急联系人</span>
+                                <span>{{ detail.emergencyContact || '-' }}</span>
+                            </div>
+                            <div class="order-detail-student__item">
+                                <span class="label">客户ID</span>
+                                <span>{{ detail.customerId || '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </el-tab-pane>
                 <el-tab-pane label="商品信息" name="goods">
                     <el-table :data="detail.items || []" border>
@@ -67,9 +130,6 @@
                             <template #default="{ row }">{{ formatAmount(row.payableAmount) }}</template>
                         </el-table-column>
                         <el-table-column prop="expireTime" label="到期时间" min-width="120" />
-                        <el-table-column prop="contractStatus" label="合同签署" min-width="100">
-                            <template #default="{ row }">{{ contractStatusLabel(row.contractStatus) }}</template>
-                        </el-table-column>
                     </el-table>
                 </el-tab-pane>
                 <el-tab-pane label="支付记录" name="pays">
@@ -108,6 +168,8 @@
                 </el-tab-pane>
             </el-tabs>
         </ContentWrap>
+
+        <RefundDialog ref="refundRef" @success="loadDetail" />
     </div>
 </template>
 
@@ -116,8 +178,9 @@ import { computed, onMounted, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
 import * as OrderApi from '@/api/crm/order'
+import { DICT_TYPE, getDictLabel } from '@/utils/dict'
+import RefundDialog from '../refund/RefundDialog.vue'
 import {
-    CONTRACT_STATUS_OPTIONS,
     ORDER_STATUS_OPTIONS,
     PAY_CONFIRM_STATUS_OPTIONS,
     PAY_STATUS_OPTIONS,
@@ -125,7 +188,6 @@ import {
     REFUND_TYPE_OPTIONS,
     formatAmount,
     getOptionLabel,
-    getRefundableAmount,
     getRemainingAmount
 } from '../utils'
 
@@ -135,17 +197,39 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 const loading = ref(false)
+const refundRef = ref<InstanceType<typeof RefundDialog>>()
 const detail = ref<OrderApi.OrderDetailRespVO>({ items: [], payRecords: [], refunds: [] } as any)
 const activeTab = ref((route.query.tab as string) || 'student')
 
 const orderId = computed(() => Number(route.params.id))
 
 const orderStatusLabel = (value?: number) => getOptionLabel(ORDER_STATUS_OPTIONS, value)
-const contractStatusLabel = (value?: number) => getOptionLabel(CONTRACT_STATUS_OPTIONS, value)
 const payStatusLabel = (value?: number) => getOptionLabel(PAY_STATUS_OPTIONS, value)
 const payConfirmStatusLabel = (value?: number) => getOptionLabel(PAY_CONFIRM_STATUS_OPTIONS, value)
 const refundStatusLabel = (value?: number) => getOptionLabel(REFUND_STATUS_OPTIONS, value)
 const refundTypeLabel = (value?: number) => getOptionLabel(REFUND_TYPE_OPTIONS, value)
+const genderText = computed(() => {
+    if (detail.value.gender === 1) return '男'
+    if (detail.value.gender === 2) return '女'
+    return '-'
+})
+const areaText = computed(() => {
+    const value = [detail.value.province, detail.value.city, detail.value.district]
+        .filter(Boolean)
+        .join(' / ')
+    return value || '-'
+})
+const educationText = computed(() =>
+    detail.value.education === undefined
+        ? '-'
+        : getDictLabel(DICT_TYPE.CRM_CLUE_EDUCATION, detail.value.education) ||
+          String(detail.value.education)
+)
+const orderOwnerText = computed(() => {
+    const owner = detail.value.ownerUserName || '-'
+    const campus = detail.value.campusName ? `（${detail.value.campusName}）` : ''
+    return `${owner}${campus}`
+})
 
 const loadDetail = async () => {
     if (!orderId.value) {
@@ -182,29 +266,7 @@ const handlePay = async () => {
 }
 
 const handleRefund = async () => {
-    const refundable = getRefundableAmount(detail.value.paidAmount, detail.value.refundAmount)
-    if (!refundable) {
-        message.warning('当前订单没有可退款金额')
-        return
-    }
-    const amountResult = await ElMessageBox.prompt('请输入退款金额（元）', '申请退款', {
-        inputValue: String(refundable),
-        inputPattern: /^(0|[1-9]\d*)(\.\d{1,2})?$/,
-        inputErrorMessage: '请输入正确金额'
-    })
-    const reasonResult = await ElMessageBox.prompt('请输入退款原因', '申请退款', {
-        inputValue: '学员申请退费'
-    })
-    await OrderApi.createRefund({
-        orderId: detail.value.id,
-        refundMethod: '原路返回',
-        refundType: 2,
-        refundAmount: Number(amountResult.value),
-        refundReason: reasonResult.value,
-        refundRemark: ''
-    })
-    message.success('退款单已创建')
-    await loadDetail()
+    refundRef.value?.open(detail.value)
 }
 
 const handleVoid = async () => {
@@ -229,3 +291,34 @@ onMounted(() => {
     loadDetail()
 })
 </script>
+
+<style scoped lang="scss">
+.order-detail-summary {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 32px;
+}
+
+.order-detail-summary__item {
+  font-size: 15px;
+  color: var(--el-text-color-primary);
+}
+
+.order-detail-summary__item .label,
+.order-detail-student__item .label {
+  margin-right: 4px;
+  color: var(--el-text-color-regular);
+}
+
+.order-detail-student__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 48px;
+}
+
+.order-detail-student__item {
+  font-size: 15px;
+  color: var(--el-text-color-primary);
+}
+</style>

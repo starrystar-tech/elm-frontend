@@ -18,6 +18,7 @@
     </ContentWrap>
 
     <ProductForm ref="formRef" @success="tableMethods.getList" />
+    <ProductDetailDrawer ref="detailRef" />
 </template>
 
 <script setup lang="tsx">
@@ -38,6 +39,7 @@ import { fenToYuan } from '@/utils'
 import * as ProductApi from '@/api/crm/product'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import ProductForm from './ProductForm.vue'
+import ProductDetailDrawer from './detail/ProductDetailDrawer.vue'
 import { CRM_PRODUCT_CHANNEL_DICT, formatSettlementValue, getShelfTypeLabel } from './constants'
 
 defineOptions({ name: 'OrderProduct' })
@@ -45,8 +47,8 @@ defineOptions({ name: 'OrderProduct' })
 const canCreate = hasPermission(['crm:product:create'])
 const canUpdate = hasPermission(['crm:product:update'])
 const formRef = ref<InstanceType<typeof ProductForm>>()
+const detailRef = ref<InstanceType<typeof ProductDetailDrawer>>()
 const categoryOptions = ref<any[]>([])
-const { push } = useRouter()
 const message = useMessage()
 
 const loadCategories = async () => {
@@ -117,7 +119,7 @@ const openForm = (type: 'create' | 'update', id?: number) => {
 }
 
 const openDetail = (id: number) => {
-    push({ name: 'OrderProductDetail', params: { id } })
+    detailRef.value?.open(id)
 }
 
 const toggleStatus = async (row: ProductApi.ProductRespVO) => {

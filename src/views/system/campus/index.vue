@@ -127,6 +127,17 @@ const tableColumns = reactive<TableColumn[]>([
     }
   },
   {
+    field: 'contractSignCompany',
+    label: '绑定签约公司',
+    minWidth: '180px',
+    slots: {
+      default: (data) =>
+        data.row.contractSignCompany?.companyShortName ||
+        data.row.contractSignCompany?.companyFullName ||
+        '-'
+    }
+  },
+  {
     field: 'status',
     label: '状态',
     width: '100px',

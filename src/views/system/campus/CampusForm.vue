@@ -16,6 +16,22 @@
       <el-form-item label="分配班主任" prop="hasTeacher">
         <el-switch v-model="formData.hasTeacher" active-text="是" inactive-text="否" />
       </el-form-item>
+      <el-form-item label="签约公司" prop="contractSignCompanyId">
+        <el-select
+          v-model="formData.contractSignCompanyId"
+          clearable
+          filterable
+          placeholder="请选择签约公司"
+          style="width: 100%"
+        >
+          <el-option
+            v-for="item in signCompanyOptions"
+            :key="item.id"
+            :label="item.companyShortName || item.companyFullName"
+            :value="item.id"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="formData.status" clearable placeholder="请选择状态" style="width: 100%">
           <el-option
@@ -47,6 +63,7 @@
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { CommonStatusEnum } from '@/utils/constants'
 import * as CampusApi from '@/api/system/campus'
+import * as SignCompanyApi from '@/api/system/contract/signCompany'
 
 defineOptions({ name: 'SystemCampusForm' })
 
@@ -58,12 +75,14 @@ const dialogTitle = ref('')
 const formLoading = ref(false)
 const formType = ref('')
 const formRef = ref()
+const signCompanyOptions = ref<SignCompanyApi.ContractSignCompanySimpleVO[]>([])
 
 const formData = ref<CampusApi.CampusVO>({
   id: undefined,
   name: '',
   isDefault: false,
   hasTeacher: true,
+  contractSignCompanyId: undefined,
   remark: '',
   status: CommonStatusEnum.ENABLE
 })
@@ -81,6 +100,7 @@ const resetForm = () => {
     name: '',
     isDefault: false,
     hasTeacher: true,
+    contractSignCompanyId: undefined,
     remark: '',
     status: CommonStatusEnum.ENABLE
   }
@@ -92,6 +112,7 @@ const open = async (type: string, id?: number) => {
   dialogTitle.value = t('action.' + type)
   formType.value = type
   resetForm()
+  signCompanyOptions.value = await SignCompanyApi.getSimpleContractSignCompanyList()
 
   if (id) {
     formLoading.value = true

@@ -188,6 +188,126 @@ export interface ClueBatchAssignReqVO {
     departmentId: number
 }
 
+export interface PublicSeaPageReqVO extends CluePageReqVO {
+    seaType: number
+    minEnterPublicSeaCount?: number
+    maxEnterPublicSeaCount?: number
+    beginEnterPublicSeaTime?: string
+    endEnterPublicSeaTime?: string
+}
+
+export interface PublicSeaPageRespVO extends ClueVO {
+    feedbackStatus?: number
+    feedbackStatusName?: string
+    enterPublicSeaTime?: string
+    enterPublicSeaReason?: string
+    enterPublicSeaCount?: number
+    lastClaimOwnerId?: number
+    lastClaimOwnerName?: string
+    lastClaimTime?: string
+    claimCount?: number
+    lastFeedbackTime?: string
+    nextFollowUpTime?: string
+    lastSignUpProductId?: number
+    lastSignUpProductName?: string
+    lastSignUpTime?: string
+    orderCount?: number
+}
+
+export interface PublicSeaCountRespVO {
+    firstConsultCount?: number
+    repurchaseCount?: number
+}
+
+export interface PublicSeaClaimSummaryRespVO {
+    unlimited?: boolean
+    dailyLimit?: number
+    claimedCount?: number
+    remainingCount?: number
+}
+
+export interface PublicSeaClaimReqVO {
+    seaType: number
+    clueIds: number[]
+}
+
+export interface PublicSeaAssignReqVO extends PublicSeaClaimReqVO {
+    ownerId: number
+    departmentId: number
+}
+
+export interface MyCluePageReqVO extends PageParam {
+    tabType: string
+    customer?: string
+    mobile?: string
+    wechat?: string
+    qq?: string
+    areaId?: number
+    tagId?: number
+    consultProjectId?: number
+    clueSourceId?: number
+    intentLevel?: number
+    minCallCount?: number
+    maxCallCount?: number
+    beginLastFeedbackTime?: string
+    endLastFeedbackTime?: string
+    minOrderCount?: number
+    maxOrderCount?: number
+    creator?: string
+    beginCreateTime?: string
+    endCreateTime?: string
+}
+
+export interface MyCluePageRespVO extends ClueVO {
+    claimSource?: number
+    claimSourceName?: string
+    feedbackStatus?: number
+    feedbackStatusName?: string
+    lastFeedbackTime?: string
+    allocationTime?: string
+    allocationType?: number
+    allocationTypeName?: string
+    orderCount?: number
+    todayCallCount?: number
+    todayConnectedCount?: number
+    todayCallDurationSeconds?: number
+    firstConsultTime?: string
+    lastConsultTime?: string
+    expireTime?: string
+    nextFollowUpTime?: string
+    lastSignUpProductId?: number
+    lastSignUpProductName?: string
+    lastSignUpTime?: string
+    returnVisitFlag?: number
+    returnVisitFlagName?: string
+}
+
+export interface MyClueCountRespVO {
+    firstCount?: number
+    seaCount?: number
+    repurchaseCount?: number
+    waitReturnCount?: number
+    returnedCount?: number
+}
+
+export interface MyClueReleaseReqVO {
+    clueIds: number[]
+    reason?: string
+}
+
+export interface ClueManagementPageReqVO extends MyCluePageReqVO {
+    ownerId?: number
+    beginAllocationTime?: string
+    endAllocationTime?: string
+    allocationType?: number
+}
+
+export interface ClueManagementPageRespVO extends MyCluePageRespVO {}
+
+export interface ClueManagementCountRespVO extends MyClueCountRespVO {}
+
+export interface ClueManagementReleaseReqVO extends MyClueReleaseReqVO {}
+
 export interface ClueBatchBackToPublicSeaReqVO {
     clueIds: number[]
 }
@@ -317,4 +437,55 @@ export const allocationBatchSilent = async (data: ClueBatchSilentReqVO) => {
 
 export const allocationMerge = async (data: ClueMergeReqVO) => {
     return await request.put({ url: '/crm/clue/allocation-merge', data })
+}
+
+export const getPublicSeaPage = async (params: PublicSeaPageReqVO) => {
+    return await request.get({ url: '/crm/clue/public-sea/page', params })
+}
+
+export const getPublicSeaCounts = async () => {
+    return await request.get<PublicSeaCountRespVO>({ url: '/crm/clue/public-sea/counts' })
+}
+
+export const getPublicSeaClaimSummary = async (seaType: number) => {
+    return await request.get<PublicSeaClaimSummaryRespVO>({
+        url: '/crm/clue/public-sea/claim-summary',
+        params: { seaType }
+    })
+}
+
+export const claimPublicSea = async (data: PublicSeaClaimReqVO) => {
+    return await request.put({ url: '/crm/clue/public-sea/claim', data })
+}
+
+export const assignPublicSea = async (data: PublicSeaAssignReqVO) => {
+    return await request.put({ url: '/crm/clue/public-sea/assign', data })
+}
+
+export const getMyClueCounts = async () => {
+    return await request.get<MyClueCountRespVO>({ url: '/crm/my-clue/counts' })
+}
+
+export const getMyCluePage = async (params: MyCluePageReqVO) => {
+    return await request.get({ url: '/crm/my-clue/page', params })
+}
+
+export const releaseMyClue = async (data: MyClueReleaseReqVO) => {
+    return await request.put({ url: '/crm/my-clue/release', data })
+}
+
+export const getClueManagementCounts = async () => {
+    return await request.get<ClueManagementCountRespVO>({ url: '/crm/clue-management/counts' })
+}
+
+export const getClueManagementPage = async (params: ClueManagementPageReqVO) => {
+    return await request.get({ url: '/crm/clue-management/page', params })
+}
+
+export const assignClueManagement = async (data: ClueBatchAssignReqVO) => {
+    return await request.put({ url: '/crm/clue-management/assign', data })
+}
+
+export const releaseClueManagement = async (data: ClueManagementReleaseReqVO) => {
+    return await request.put({ url: '/crm/clue-management/release', data })
 }

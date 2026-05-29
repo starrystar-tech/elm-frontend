@@ -5,6 +5,13 @@ export interface CampusVO {
   name: string
   isDefault: boolean
   hasTeacher: boolean
+  contractSignCompanyId?: number
+  contractSignCompany?: {
+    id: number
+    companyFullName: string
+    companyShortName: string
+    openCorpId?: string
+  }
   remark?: string
   status: number
   createTime?: Date
