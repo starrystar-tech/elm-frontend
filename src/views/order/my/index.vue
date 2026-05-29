@@ -17,6 +17,7 @@
     </ContentWrap>
 
     <OrderDetailDrawer ref="detailRef" />
+    <OrderContractSignDialog ref="contractSignRef" @success="tableMethods.getList" />
     <RefundDialog ref="refundRef" @success="tableMethods.getList" />
 </template>
 
@@ -40,12 +41,14 @@ import {
     getRemainingAmount
 } from '../utils'
 import OrderDetailDrawer from '../detail/OrderDetailDrawer.vue'
+import OrderContractSignDialog from '../detail/OrderContractSignDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 
 defineOptions({ name: 'OrderMy' })
 
 const message = useMessage()
 const detailRef = ref<InstanceType<typeof OrderDetailDrawer>>()
+const contractSignRef = ref<InstanceType<typeof OrderContractSignDialog>>()
 const refundRef = ref<InstanceType<typeof RefundDialog>>()
 
 const searchSchema = computed<FormSchema[]>(() => [
@@ -233,6 +236,10 @@ const handleBatchRepurchase = async () => {
     await tableMethods.getList()
 }
 
+const handleContractSign = (row: OrderApi.OrderPageRespVO) => {
+    contractSignRef.value?.open(row)
+}
+
 const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'orderNo',
@@ -283,7 +290,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'action',
         label: '操作',
-        width: '260px',
+        width: '320px',
         fixed: 'right',
         slots: {
             default: (data) => {
@@ -295,6 +302,9 @@ const tableColumns = computed<TableColumn[]>(() => [
                         </BaseButton>
                         <BaseButton link type="primary" onClick={() => openDetail(row.id, 'goods')}>
                             商品
+                        </BaseButton>
+                        <BaseButton link type="success" onClick={() => handleContractSign(row)}>
+                            签署合同
                         </BaseButton>
                         {getRemainingAmount(row.payableAmount, row.paidAmount) > 0 ? (
                             <BaseButton link type="primary" onClick={() => handlePay(row)}>

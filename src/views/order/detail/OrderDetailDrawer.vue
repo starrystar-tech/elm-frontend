@@ -38,6 +38,9 @@
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-8px">
+                        <el-button type="success" plain @click="handleContractSign()"
+                            >签署合同</el-button
+                        >
                         <el-button type="primary" plain @click="handlePay">支付</el-button>
                         <el-button type="warning" plain @click="handleRefund">退款</el-button>
                         <el-button type="danger" plain @click="handleVoid">作废</el-button>
@@ -140,6 +143,17 @@
                                 }}</template>
                             </el-table-column>
                             <el-table-column prop="expireTime" label="到期时间" min-width="120" />
+                            <el-table-column label="操作" min-width="120" fixed="right">
+                                <template #default="{ row }">
+                                    <el-button
+                                        link
+                                        type="success"
+                                        @click="handleContractSign(row.productId)"
+                                    >
+                                        签署合同
+                                    </el-button>
+                                </template>
+                            </el-table-column>
                         </el-table>
                     </el-tab-pane>
                     <el-tab-pane label="支付记录" name="pays">
@@ -198,6 +212,7 @@
     </Dialog>
 
     <RefundDialog ref="refundRef" @success="handleRefundSuccess" />
+    <OrderContractSignDialog ref="contractSignRef" @success="handleContractSignSuccess" />
 </template>
 
 <script setup lang="ts">
@@ -206,6 +221,7 @@ import { ElMessageBox } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
 import * as OrderApi from '@/api/crm/order'
 import { DICT_TYPE, getDictLabel } from '@/utils/dict'
+import OrderContractSignDialog from './OrderContractSignDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import {
     ORDER_STATUS_OPTIONS,
@@ -224,6 +240,7 @@ const message = useMessage()
 const dialogVisible = ref(false)
 const loading = ref(false)
 const refundRef = ref<InstanceType<typeof RefundDialog>>()
+const contractSignRef = ref<InstanceType<typeof OrderContractSignDialog>>()
 const detail = ref<OrderApi.OrderDetailRespVO>({ items: [], payRecords: [], refunds: [] } as any)
 const activeTab = ref('student')
 
@@ -308,7 +325,15 @@ const handleRepurchase = async () => {
     await loadDetail(detail.value.id)
 }
 
+const handleContractSign = (productId?: number) => {
+    contractSignRef.value?.open(detail.value, productId)
+}
+
 const handleRefundSuccess = async () => {
+    await loadDetail(detail.value.id)
+}
+
+const handleContractSignSuccess = async () => {
     await loadDetail(detail.value.id)
 }
 
