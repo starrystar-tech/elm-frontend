@@ -5,13 +5,12 @@
         direction="rtl"
         size="1120px"
         append-to-body
+        :close-on-click-modal="false"
         class="clue-detail-drawer"
     >
         <div class="clue-detail-drawer__shell" v-loading="loading">
             <div class="clue-detail-drawer__header">
-                <div>
-                    <div class="clue-detail-drawer__title">名片详情</div>
-                </div>
+                <div> </div>
                 <el-button circle plain @click="drawerVisible = false">
                     <Icon icon="ep:close" />
                 </el-button>
@@ -190,37 +189,24 @@ defineExpose({ open })
     height: 100%;
     display: flex;
     flex-direction: column;
-    background:
-        radial-gradient(circle at top left, rgba(120, 138, 189, 0.08), transparent 24%),
-        linear-gradient(180deg, #fbfcff 0%, #f7f9fc 100%);
 }
 
 .clue-detail-drawer__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 24px;
     color: #2f3a4f;
-    background: linear-gradient(180deg, #f7f9fd 0%, #eff3f9 100%);
-    border-bottom: 1px solid #ccc;
+    margin-bottom: 12px;
 }
 
 .clue-detail-drawer__title {
     font-size: 20px;
     font-weight: 600;
-    line-height: 1.2;
 }
 
 .clue-detail-drawer__subtitle {
-    margin-top: 6px;
     font-size: 12px;
     color: #7a8699;
-}
-
-.clue-detail-drawer__body {
-    flex: 1;
-    overflow: auto;
-    padding: 16px;
 }
 
 :deep(.clue-detail-drawer .el-drawer) {
@@ -242,10 +228,6 @@ defineExpose({ open })
 
     .clue-detail-drawer__header {
         padding: 18px 16px;
-    }
-
-    .clue-detail-drawer__body {
-        padding: 12px;
     }
 }
 </style>

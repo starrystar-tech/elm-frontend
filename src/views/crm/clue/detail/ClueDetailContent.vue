@@ -416,8 +416,7 @@ const editRules = reactive({
     name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
     clueSourceId: [{ required: true, message: '请选择来源', trigger: 'change' }],
     areaId: [{ required: true, message: '请选择地区', trigger: 'change' }],
-    consultProjectId: [{ required: true, message: '请选择咨询项目', trigger: 'change' }],
-    remark: [{ required: true, message: '请输入咨询备注', trigger: 'blur' }]
+    consultProjectId: [{ required: true, message: '请选择咨询项目', trigger: 'change' }]
 })
 
 const syncEditForm = () => {
@@ -458,6 +457,20 @@ watch(
     }
 )
 
+const tagText = computed(() => {
+    if (props.clue.tagNames?.length) {
+        return props.clue.tagNames.join('、')
+    }
+    if (!props.clue.tagIds?.length || !props.tagOptions.length) {
+        return '--'
+    }
+    const optionMap = new Map(props.tagOptions.map((item) => [Number(item.value), item.label]))
+    const labels = props.clue.tagIds
+        .map((item) => optionMap.get(Number(item)))
+        .filter((item): item is string => !!item)
+    return labels.length ? labels.join('、') : '--'
+})
+
 const basicInfoItems = computed(() => [
     { label: '客户ID', value: props.clue.customerId || '--' },
     { label: '手机号', value: props.clue.mobile || '--' },
@@ -473,7 +486,7 @@ const basicInfoItems = computed(() => [
     { label: '来源', value: props.clue.clueSourceName || mockSummary[1].value },
     { label: '地区', value: regionText.value },
     { label: '咨询项目', value: props.clue.consultProjectName || mockSummary[0].value },
-    { label: '标签', value: props.clue.tagNames?.join('、') || '--' },
+    { label: '标签', value: tagText.value },
     { label: '咨询备注', value: props.clue.remark || '--' }
 ])
 </script>

@@ -334,6 +334,12 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'claimSourceName', label: '领取来源', width: '110px' },
     { field: 'allocationTypeName', label: '分配类型', minWidth: '120px' },
     {
+        field: 'tagNames',
+        label: '标签',
+        minWidth: '150px',
+        slots: { default: (data) => <span>{(data.row.tagNames as string[])?.length ? (data.row.tagNames as string[]).join('、') : '-'}</span> }
+    },
+    {
         field: 'allocationTime',
         label: '分配时间',
         minWidth: '170px',
@@ -441,6 +447,10 @@ const handleAssign = async (ids?: number[]) => {
     message.success('分配成功')
     assignDialogVisible.value = false
     assignForm.ownerId = undefined
+    if (!ids) {
+        selectionList.value = []
+        await tableMethods.clearSelection()
+    }
     await Promise.all([tableMethods.getList(), loadCounts()])
 }
 
@@ -457,6 +467,10 @@ const handleRelease = async (ids?: number[]) => {
     message.success('释放成功')
     releaseDialogVisible.value = false
     releaseForm.reason = ''
+    if (!ids) {
+        selectionList.value = []
+        await tableMethods.clearSelection()
+    }
     await Promise.all([tableMethods.getList(), loadCounts()])
 }
 

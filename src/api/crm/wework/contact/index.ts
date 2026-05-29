@@ -17,6 +17,7 @@ export interface WeworkContactVO {
   addTime: Date
   state: string
   createTime: Date
+  clueId?: number
 }
 
 export interface WeworkMemberSimpleVO {

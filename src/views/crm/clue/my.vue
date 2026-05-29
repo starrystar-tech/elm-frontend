@@ -291,6 +291,12 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'feedbackStatusName', label: '反馈状态', width: '100px' },
     { field: 'allocationTypeName', label: '分配类型', minWidth: '120px' },
     {
+        field: 'tagNames',
+        label: '标签',
+        minWidth: '150px',
+        slots: { default: (data) => <span>{(data.row.tagNames as string[])?.length ? (data.row.tagNames as string[]).join('、') : '-'}</span> }
+    },
+    {
         field: 'lastFeedbackTime',
         label: '最近反馈时间',
         minWidth: '170px',
@@ -388,6 +394,10 @@ const handleRelease = async (ids?: number[]) => {
     message.success('释放成功')
     releaseDialogVisible.value = false
     releaseForm.reason = ''
+    if (!ids) {
+        selectionList.value = []
+        await tableMethods.clearSelection()
+    }
     await Promise.all([tableMethods.getList(), loadCounts()])
 }
 

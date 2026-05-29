@@ -172,6 +172,12 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'currentDepartmentName', label: '所属部门', width: '140px' },
     { field: 'consultProjectName', label: '咨询项目', minWidth: '160px' },
     { field: 'intentLevelName', label: '意向度', width: '100px' },
+    {
+        field: 'tagNames',
+        label: '标签',
+        minWidth: '150px',
+        slots: { default: (data) => <span>{(data.row.tagNames as string[])?.length ? (data.row.tagNames as string[]).join('、') : '-'}</span> }
+    },
     { field: 'silentCount', label: '静默次数', width: '100px' },
     { field: 'silentReason', label: '最近静默原因', minWidth: '200px' },
     { field: 'lastSilentTime', label: '最近静默时间', minWidth: '170px', formatter: dateFormatter },
@@ -223,6 +229,8 @@ const handleBatchAssign = async () => {
     message.success('批量分配成功')
     assignDialogVisible.value = false
     assignForm.ownerId = undefined
+    selectionList.value = []
+    await tableMethods.clearSelection()
     await tableMethods.getList()
 }
 
@@ -232,6 +240,8 @@ const handleBackToPublicSea = async () => {
         clueIds: selectionList.value.map((item) => Number(item.id))
     })
     message.success('回公海成功')
+    selectionList.value = []
+    await tableMethods.clearSelection()
     await tableMethods.getList()
 }
 

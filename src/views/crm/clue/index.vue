@@ -684,6 +684,8 @@ const handleBatchUpdateAssignMode = async () => {
     })
     message.success('修改分配方式成功')
     assignModeDialogVisible.value = false
+    selectionList.value = []
+    await tableMethods.clearSelection()
     await tableMethods.getList()
 }
 
@@ -703,6 +705,8 @@ const handleBatchSilent = async () => {
     silentForm.silentReason = ''
     silentForm.silentDays = 7
     silentForm.remark = ''
+    selectionList.value = []
+    await tableMethods.clearSelection()
     await tableMethods.getList()
 }
 
@@ -718,6 +722,8 @@ const handleBatchTag = async () => {
     message.success('批量打标签成功')
     tagDialogVisible.value = false
     tagForm.tagIds = []
+    selectionList.value = []
+    await tableMethods.clearSelection()
     await tableMethods.getList()
 }
 
@@ -745,6 +751,8 @@ const handleMerge = async () => {
     })
     message.success('线索合并成功')
     mergeDialogVisible.value = false
+    selectionList.value = []
+    await tableMethods.clearSelection()
     await tableMethods.getList()
 }
 

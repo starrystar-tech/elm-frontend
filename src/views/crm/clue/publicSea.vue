@@ -320,6 +320,12 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'intentLevelName', label: '意向度', width: '100px' },
     { field: 'feedbackStatusName', label: '反馈状态', width: '100px' },
     {
+        field: 'tagNames',
+        label: '标签',
+        minWidth: '150px',
+        slots: { default: (data) => <span>{(data.row.tagNames as string[])?.length ? (data.row.tagNames as string[]).join('、') : '-'}</span> }
+    },
+    {
         field: 'enterPublicSeaTime',
         label: '进入公海时间',
         minWidth: '170px',
@@ -418,6 +424,10 @@ const handleBatchClaim = async (ids?: number[]) => {
         clueIds
     })
     message.success('领取成功')
+    if (!ids) {
+        selectionList.value = []
+        await tableMethods.clearSelection()
+    }
     await Promise.all([tableMethods.getList(), loadCounts(), loadClaimSummary()])
 }
 
@@ -440,6 +450,8 @@ const handleBatchAssign = async () => {
     message.success('批量分配成功')
     assignDialogVisible.value = false
     assignForm.ownerId = undefined
+    selectionList.value = []
+    await tableMethods.clearSelection()
     await Promise.all([tableMethods.getList(), loadCounts(), loadClaimSummary()])
 }
 

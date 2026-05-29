@@ -210,6 +210,11 @@ export const useTable = <T = any>(config?: UseTableConfig<T>) => {
         .finally(() => {
           tableObject.exportLoading = false
         })
+    },
+    // 清空选择
+    clearSelection: async () => {
+      const table = await getTable()
+      table?.clearSelection?.()
     }
   }
 

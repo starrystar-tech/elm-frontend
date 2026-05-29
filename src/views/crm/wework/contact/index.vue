@@ -21,12 +21,50 @@
                 v-model:pageSize="tableObject.pageSize"
                 :columns="tableColumns"
                 :data="tableObject.tableList"
+                row-key="id"
+                expand
                 :loading="tableObject.loading"
                 :pagination="{ total: tableObject.total }"
                 @register="tableRegister"
-            />
+                @expand-change="handleExpandChange"
+            >
+                <template #expand="{ row }">
+                    <div v-if="row.clueId" class="wework-clue-expand">
+                        <div
+                            v-if="clueDetailLoadingMap[row.clueId]"
+                            class="wework-clue-expand__loading"
+                        >
+                            <el-skeleton animated :rows="6" />
+                        </div>
+                        <ClueDetailContent
+                            v-else-if="clueDetailMap[row.clueId]"
+                            class="wework-clue-expand__content"
+                            :clue="clueDetailMap[row.clueId]"
+                            :clue-id="row.clueId"
+                            :loading="false"
+                            :can-update="false"
+                            :log-list="clueLogMap[row.clueId] || []"
+                            :editing="false"
+                            :saving="false"
+                            :project-options="[]"
+                            :clue-source-options="[]"
+                            :tag-options="[]"
+                            @edit="undefined"
+                            @cancel-edit="undefined"
+                            @save="undefined"
+                            @sms="undefined"
+                            @enroll="undefined"
+                            @transfer="undefined"
+                            @tag="undefined"
+                        />
+                        <el-empty v-else description="名片详情加载失败" :image-size="72" />
+                    </div>
+                </template>
+            </Table>
         </div>
     </ContentWrap>
+
+    <ClueDetailDrawer ref="detailRef" />
 </template>
 
 <script setup lang="tsx">
@@ -44,6 +82,12 @@ import type { FormSchema } from '@/types/form'
 import { useTable } from '@/hooks/web/useTable'
 import * as WeworkContactApi from '@/api/crm/wework/contact'
 import * as WeappApi from '@/api/system/weapp'
+import * as ClueApi from '@/api/crm/clue'
+import { getOperateLogPage } from '@/api/crm/operateLog'
+import { BizTypeEnum } from '@/api/crm/permission'
+import type { OperateLogVO } from '@/api/system/operatelog'
+import ClueDetailDrawer from '@/views/crm/clue/detail/ClueDetailDrawer.vue'
+import ClueDetailContent from '@/views/crm/clue/detail/ClueDetailContent.vue'
 
 defineOptions({ name: 'CrmWeworkContact' })
 
@@ -56,6 +100,43 @@ const companyOptions = ref<{ label: string; value: string }[]>([])
 const memberOptions = ref<{ label: string; value: string }[]>([])
 const allMemberList = ref<WeworkContactApi.WeworkMemberSimpleVO[]>([])
 const corpCompanyMap = ref<Record<string, string>>({})
+const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
+const clueDetailMap = ref<Record<number, ClueApi.ClueVO>>({})
+const clueDetailLoadingMap = ref<Record<number, boolean>>({})
+const clueLogMap = ref<Record<number, OperateLogVO[]>>({})
+
+const handleViewDetail = (row: WeworkContactApi.WeworkContactVO) => {
+    if (row.clueId) {
+        detailRef.value?.open(row.clueId)
+    }
+}
+
+const loadClueDetail = async (clueId?: number) => {
+    if (!clueId || clueDetailMap.value[clueId] || clueDetailLoadingMap.value[clueId]) {
+        return
+    }
+    clueDetailLoadingMap.value = { ...clueDetailLoadingMap.value, [clueId]: true }
+    try {
+        const [clue, logs] = await Promise.all([
+            ClueApi.getClue(clueId),
+            getOperateLogPage({ bizType: BizTypeEnum.CRM_CLUE, bizId: clueId })
+        ])
+        clueDetailMap.value = { ...clueDetailMap.value, [clueId]: clue || {} }
+        clueLogMap.value = { ...clueLogMap.value, [clueId]: logs?.list || [] }
+    } finally {
+        clueDetailLoadingMap.value = { ...clueDetailLoadingMap.value, [clueId]: false }
+    }
+}
+
+const handleExpandChange = async (
+    row: WeworkContactApi.WeworkContactVO,
+    expandedRows: WeworkContactApi.WeworkContactVO[]
+) => {
+    const expanded = expandedRows.some((item) => item.id === row.id)
+    if (expanded && row.clueId) {
+        await loadClueDetail(row.clueId)
+    }
+}
 
 const searchSchema = reactive<FormSchema[]>([
     {
@@ -219,9 +300,7 @@ const loadCorpMembers = async (corpId?: string) => {
     }
     const members = await WeworkContactApi.getWeworkMemberSimpleList(corpId)
     const corpMembers =
-        members?.length > 0
-            ? members
-            : allMemberList.value.filter((item) => item.corpId === corpId)
+        members?.length > 0 ? members : allMemberList.value.filter((item) => item.corpId === corpId)
     await syncMemberOptions(buildMemberOptions(corpMembers))
 }
 
@@ -348,18 +427,35 @@ const tableColumns = reactive<TableColumn[]>([
         label: '操作',
         width: '120px',
         fixed: 'right',
-        hidden: hasPhone.value,
         slots: {
             default: (data) => {
                 const row = data.row as WeworkContactApi.WeworkContactVO
-                if (hasPhone.value) {
-                    return null
+                const actions = []
+                if (row.clueId) {
+                    actions.push(
+                        <BaseButton
+                            key="detail"
+                            link
+                            type="primary"
+                            onClick={() => handleViewDetail(row)}
+                        >
+                            详情
+                        </BaseButton>
+                    )
                 }
-                return (
-                    <BaseButton link type="primary" onClick={() => handleUpdateRemarkMobile(row)}>
-                        备注手机号
-                    </BaseButton>
-                )
+                if (!hasPhone.value) {
+                    actions.push(
+                        <BaseButton
+                            key="remark"
+                            link
+                            type="primary"
+                            onClick={() => handleUpdateRemarkMobile(row)}
+                        >
+                            备注手机号
+                        </BaseButton>
+                    )
+                }
+                return actions.length > 0 ? <span class="flex gap-12px">{actions}</span> : null
             }
         }
     }
@@ -370,3 +466,23 @@ onMounted(async () => {
     await tableMethods.getList()
 })
 </script>
+
+<style scoped lang="scss">
+.wework-clue-expand {
+    padding: 12px 16px 18px;
+    background: #f7f9fc;
+}
+
+.wework-clue-expand__loading,
+.wework-clue-expand__content {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.wework-clue-expand__content {
+    :deep(.clue-hero__actions),
+    :deep(.clue-section__actions) {
+        display: none;
+    }
+}
+</style>

@@ -265,6 +265,12 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'consultProjectName', label: '咨询项目', minWidth: '160px' },
     { field: 'assignModeName', label: '分配方式', width: '100px' },
     { field: 'allocationTypeName', label: '分配类型', minWidth: '130px' },
+    {
+        field: 'tagNames',
+        label: '标签',
+        minWidth: '150px',
+        slots: { default: (data) => <span>{(data.row.tagNames as string[])?.length ? (data.row.tagNames as string[]).join('、') : '-'}</span> }
+    },
     { field: 'intentLevelName', label: '意向度', width: '90px' },
     { field: 'todayCallCount', label: '当日外呼', width: '100px' },
     { field: 'todayConnectedCount', label: '当日接通', width: '100px' },
@@ -325,6 +331,8 @@ const handleBatchAssign = async () => {
     message.success('批量分配成功')
     assignDialogVisible.value = false
     assignForm.ownerId = undefined
+    selectionList.value = []
+    await tableMethods.clearSelection()
     await tableMethods.getList()
 }
 
@@ -342,6 +350,8 @@ const handleBatchSilent = async () => {
     message.success('批量静默成功')
     silentDialogVisible.value = false
     Object.assign(silentForm, { silentReason: '', silentDays: 7, remark: '' })
+    selectionList.value = []
+    await tableMethods.clearSelection()
     await tableMethods.getList()
 }
 
@@ -362,6 +372,8 @@ const handleMerge = async () => {
     })
     message.success('线索合并成功')
     mergeDialogVisible.value = false
+    selectionList.value = []
+    await tableMethods.clearSelection()
     await tableMethods.getList()
 }
 
