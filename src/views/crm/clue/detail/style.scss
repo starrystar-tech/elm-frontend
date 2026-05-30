@@ -1,0 +1,401 @@
+.clue-card-query {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.clue-hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 72px 16px 18px;
+    border-radius: 14px;
+    color: #fff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.24);
+}
+
+.clue-hero__close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+.clue-hero__main {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.clue-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.24);
+    border: 3px solid rgba(255, 255, 255, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.clue-avatar-image {
+    flex-shrink: 0;
+    border: 3px solid rgba(255, 255, 255, 0.35);
+}
+
+.clue-hero__meta h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.clue-hero__name-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.clue-hero__meta p,
+.clue-hero__subline {
+    margin: 6px 0 0;
+    font-size: 13px;
+    opacity: 0.95;
+}
+
+.clue-hero__subline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.clue-hero__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.clue-hero__actions :deep(.el-button--default) {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+.clue-hero__intent {
+    border: none;
+}
+
+.clue-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.92fr);
+    gap: 14px;
+    align-items: start;
+}
+
+.clue-column {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+}
+
+.clue-section {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.clue-section__title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #edf2ff;
+    position: relative;
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+.clue-section__title::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 42px;
+    height: 2px;
+    background: #764ba2;
+}
+
+.clue-section__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.clue-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 18px;
+}
+
+.clue-info-grid--edit {
+    align-items: start;
+}
+
+.clue-info-item label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #909399;
+}
+
+.clue-info-item div {
+    min-height: 22px;
+    color: #303133;
+    line-height: 1.65;
+    word-break: break-all;
+}
+
+.clue-edit-form :deep(.el-form-item) {
+    margin-bottom: 0;
+}
+
+.clue-edit-form__full {
+    grid-column: 1 / -1;
+}
+
+.consult-summary-grid,
+.consult-form__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 18px;
+}
+
+.consult-summary-grid {
+    margin-bottom: 14px;
+}
+
+.consult-product-picker {
+    width: 100%;
+}
+
+.consult-summary-item,
+.timeline-card__body,
+.wework-relation-card__remark {
+    line-height: 1.6;
+}
+
+.consult-summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.consult-summary-item .label {
+    font-size: 12px;
+    color: #909399;
+}
+
+.consult-form .is-full {
+    grid-column: 1 / -1;
+}
+
+.clue-record-tabs :deep(.el-tabs__header) {
+    margin-bottom: 14px;
+}
+
+.clue-record-tabs :deep(.el-tabs__content) {
+    overflow: visible;
+}
+
+.clue-timeline {
+    padding-left: 6px;
+}
+
+.clue-timeline :deep(.el-timeline-item__node--primary) {
+    background: #7b6dff;
+    border-color: #cfd5ff;
+    box-shadow: 0 0 0 4px rgba(123, 109, 255, 0.14);
+}
+
+.clue-timeline :deep(.el-timeline-item__tail) {
+    border-left: 2px solid #dbe3ff;
+}
+
+.clue-timeline :deep(.el-timeline-item__wrapper) {
+    top: -4px;
+    padding-left: 18px;
+}
+
+.clue-timeline :deep(.el-timeline-item:last-child .el-timeline-item__tail) {
+    display: none;
+}
+
+.timeline-card {
+    flex: 1;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #ebeef5;
+    padding: 16px 18px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.timeline-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.timeline-card__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #303133;
+}
+
+.timeline-card__meta {
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #909399;
+    text-align: right;
+}
+
+.timeline-card__body p {
+    margin: 0 0 8px;
+    color: #606266;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.timeline-card__body p:last-child {
+    margin-bottom: 0;
+}
+
+.wework-relation-card__corp {
+    color: #fa8c16;
+    font-weight: 600;
+}
+
+.wework-customer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.wework-customer-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 12px;
+    border-radius: 14px;
+    border: 1px solid #e7f0fb;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 8px 20px rgba(22, 119, 255, 0.06);
+}
+
+.wework-customer-card__meta,
+.wework-customer-card__main,
+.wework-relation-card__user-meta {
+    min-width: 0;
+    flex: 1;
+}
+
+.wework-customer-card__main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.wework-customer-card__detail,
+.wework-customer-card__nickname {
+    font-size: 13px;
+    color: #606266;
+    word-break: break-all;
+}
+
+.wework-relation-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.wework-relation-card {
+    border-radius: 12px;
+    border: 1px solid #ebeef5;
+    background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+    padding: 14px;
+    box-shadow: 0 8px 22px rgba(22, 119, 255, 0.06);
+}
+
+.wework-relation-card__user {
+    display: flex;
+    gap: 14px;
+}
+
+.wework-relation-card__name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.wework-relation-card__remark-item {
+    display: block;
+    word-break: break-all;
+    color: #606266;
+    font-size: 13px;
+}
+
+@media (max-width: 960px) {
+    .clue-columns,
+    .clue-info-grid,
+    .consult-summary-grid,
+    .consult-form__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .clue-hero {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px 16px 20px;
+    }
+
+    .clue-hero__close {
+        top: 12px;
+        right: 12px;
+    }
+
+    .clue-hero__actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .timeline-card__header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .timeline-card__meta {
+        text-align: left;
+    }
+}

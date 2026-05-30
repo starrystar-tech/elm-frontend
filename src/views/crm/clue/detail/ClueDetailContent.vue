@@ -24,8 +24,18 @@
                         <span v-if="clue.mobile2"> / {{ clue.mobile2 }} </span>
                     </p>
                     <div class="clue-hero__subline">
-                        <span>归属：{{ clue.currentOwnerName || '--' }}</span>
-                        <span>部门：{{ clue.currentDepartmentName || '--' }}</span>
+                        <span
+                            >归属：{{
+                                clue.currentOwnerName || customerBasicInfo?.ownerName || '--'
+                            }}</span
+                        >
+                        <span
+                            >部门：{{
+                                clue.currentDepartmentName ||
+                                customerBasicInfo?.departmentName ||
+                                '--'
+                            }}</span
+                        >
                         <span>名片编号：{{ clue.customerId || clue.id || '--' }}</span>
                     </div>
                 </div>
@@ -153,7 +163,6 @@
                                     />
                                 </el-select>
                             </el-form-item>
-
                             <el-form-item label="来源" prop="clueSourceId">
                                 <el-select
                                     v-model="editForm.clueSourceId"
@@ -178,17 +187,9 @@
                                 />
                             </el-form-item>
                             <el-form-item label="咨询项目" prop="consultProjectId">
-                                <el-tree-select
+                                <ProductTypeSelect
                                     v-model="editForm.consultProjectId"
-                                    :data="projectOptions"
-                                    :props="treeProps"
-                                    node-key="id"
-                                    check-strictly
-                                    clearable
-                                    filterable
-                                    default-expand-all
                                     placeholder="请选择"
-                                    style="width: 100%"
                                 />
                             </el-form-item>
                             <el-form-item label="标签">
@@ -208,11 +209,7 @@
                                     />
                                 </el-select>
                             </el-form-item>
-                            <el-form-item
-                                label="咨询备注"
-                                prop="remark"
-                                class="clue-edit-form__full"
-                            >
+                            <el-form-item label="咨询备注" class="clue-edit-form__full">
                                 <el-input
                                     v-model="editForm.remark"
                                     type="textarea"
@@ -242,39 +239,335 @@
                 </section>
 
                 <section class="clue-section">
-                    <div class="clue-section__title">
-                        <span>客户轨迹</span>
-                        <div class="clue-section__filters">
-                            <el-select model-value="" placeholder="请选择类型" style="width: 140px">
-                                <el-option label="全部" value="" />
-                            </el-select>
-                            <el-input
-                                model-value=""
-                                placeholder="开始时间 ~ 结束时间"
-                                style="width: 220px"
+                    <el-tabs v-model="recordTab" class="clue-record-tabs">
+                        <el-tab-pane label="预约记录" name="appointments">
+                            <el-table
+                                :data="appointments || []"
+                                border
+                                v-if="appointments.length > 0"
+                            >
+                                <el-table-column
+                                    prop="appointmentTypeName"
+                                    label="操作类型"
+                                    min-width="100"
+                                />
+                                <el-table-column
+                                    prop="appointmentTime"
+                                    label="预约时间"
+                                    min-width="160"
+                                >
+                                    <template #default="{ row }">
+                                        {{ formatDateTime(row.appointmentTime) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="campusName" label="校区" min-width="120" />
+                                <el-table-column
+                                    prop="projectName"
+                                    label="咨询项目"
+                                    min-width="160"
+                                />
+                                <el-table-column prop="productName" label="商品" min-width="160" />
+                                <el-table-column
+                                    prop="appointmentPrice"
+                                    label="预约价格"
+                                    min-width="100"
+                                />
+                                <el-table-column prop="creator" label="记录人" min-width="100" />
+                                <el-table-column
+                                    prop="consultContent"
+                                    label="备注"
+                                    min-width="220"
+                                />
+                            </el-table>
+                            <el-empty
+                                v-if="!appointments?.length"
+                                description="暂无预约记录"
+                                :image-size="60"
                             />
-                        </div>
-                    </div>
-                    <div class="timeline-list">
-                        <div v-for="item in mockTimeline" :key="item.id" class="timeline-item">
-                            <div class="timeline-dot"></div>
-                            <div class="timeline-card">
-                                <div class="timeline-card__header">
-                                    <span class="timeline-card__title">{{ item.title }}</span>
-                                    <span class="timeline-card__meta">
-                                        操作: {{ item.operator }} | {{ item.time }}
-                                    </span>
-                                </div>
-                                <div class="timeline-card__body">
-                                    <p v-for="line in item.lines" :key="line">{{ line }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        </el-tab-pane>
+                        <el-tab-pane label="报名记录" name="orders">
+                            <el-table
+                                :data="orderRecords || []"
+                                border
+                                v-if="orderRecords.length > 0"
+                            >
+                                <el-table-column prop="orderNo" label="订单编号" min-width="160" />
+                                <el-table-column
+                                    prop="createTime"
+                                    label="创建时间"
+                                    min-width="160"
+                                >
+                                    <template #default="{ row }">
+                                        {{ formatDateTime(row.createTime) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column
+                                    prop="mainProductName"
+                                    label="商品名称"
+                                    min-width="180"
+                                />
+                                <el-table-column prop="campusName" label="校区" min-width="120" />
+                                <el-table-column
+                                    prop="payableAmount"
+                                    label="应付金额"
+                                    min-width="100"
+                                />
+                                <el-table-column
+                                    prop="paidAmount"
+                                    label="已付金额"
+                                    min-width="100"
+                                />
+                                <el-table-column
+                                    prop="ownerUserName"
+                                    label="归属人"
+                                    min-width="100"
+                                />
+                            </el-table>
+                            <el-empty
+                                v-if="!orderRecords?.length"
+                                description="暂无报名记录"
+                                :image-size="60"
+                            />
+                        </el-tab-pane>
+                        <el-tab-pane label="工单记录" name="tickets">
+                            <el-table
+                                :data="ticketRecords || []"
+                                border
+                                v-if="ticketRecords.length > 0"
+                            >
+                                <el-table-column prop="ticketNo" label="工单号" min-width="160" />
+                                <el-table-column
+                                    prop="customerName"
+                                    label="客户姓名"
+                                    min-width="120"
+                                />
+                                <el-table-column prop="orderNo" label="订单编号" min-width="160" />
+                                <el-table-column
+                                    prop="handlerUserName"
+                                    label="处理人"
+                                    min-width="100"
+                                />
+                                <el-table-column label="状态" min-width="100">
+                                    <template #default="{ row }">
+                                        {{ getAftersalesStatusLabel(row.status) || '--' }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="reason" label="申请原因" min-width="180" />
+                                <el-table-column label="创建时间" min-width="160">
+                                    <template #default="{ row }">
+                                        {{ formatDateTime(row.createTime) }}
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            <el-empty
+                                v-if="!ticketRecords?.length"
+                                description="暂无工单记录"
+                                :image-size="60"
+                            />
+                        </el-tab-pane>
+                        <el-tab-pane label="客户轨迹" name="tracks">
+                            <el-timeline class="clue-timeline">
+                                <el-timeline-item
+                                    v-for="item in parsedTrackList"
+                                    :key="item.id"
+                                    :hide-timestamp="true"
+                                    type="primary"
+                                    hollow
+                                >
+                                    <div class="timeline-card">
+                                        <div class="timeline-card__header">
+                                            <span class="timeline-card__title">{{
+                                                item.typeName || '轨迹'
+                                            }}</span>
+                                            <span class="timeline-card__meta">
+                                                操作: {{ item.operator || '--' }} |
+                                                {{ formatDateTime(item.createTime) }}
+                                            </span>
+                                        </div>
+                                        <div class="timeline-card__body">
+                                            <template v-if="item.lines.length">
+                                                <p
+                                                    v-for="(line, index) in item.lines"
+                                                    :key="`${item.id}-${index}`"
+                                                >
+                                                    {{ line }}
+                                                </p>
+                                            </template>
+                                            <p v-else>{{ item.content || '--' }}</p>
+                                        </div>
+                                    </div>
+                                </el-timeline-item>
+                            </el-timeline>
+                            <el-empty
+                                v-if="!trackList?.length"
+                                description="暂无客户轨迹"
+                                :image-size="60"
+                            />
+                        </el-tab-pane>
+                    </el-tabs>
                 </section>
             </div>
 
             <div class="clue-column clue-column--side">
+                <section class="clue-section">
+                    <div class="clue-section__title">
+                        <span>咨询信息</span>
+                        <el-button
+                            type="primary"
+                            link
+                            :loading="consultSaving"
+                            @click="submitConsult"
+                        >
+                            保存
+                        </el-button>
+                    </div>
+                    <el-form
+                        ref="consultFormRef"
+                        :model="consultForm"
+                        :rules="consultRules"
+                        label-position="right"
+                        class="consult-form"
+                    >
+                        <el-form-item label="是否有效" prop="consultResult">
+                            <el-radio-group v-model="consultForm.consultResult">
+                                <el-radio
+                                    v-for="item in consultResultOptions"
+                                    :key="item.value"
+                                    :value="item.value"
+                                >
+                                    {{ item.label }}
+                                </el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                        <el-form-item label="操作类型" prop="consultType">
+                            <el-radio-group v-model="consultForm.consultType">
+                                <el-radio
+                                    v-for="item in consultTypeOptions"
+                                    :key="item.value"
+                                    :value="item.value"
+                                >
+                                    {{ item.label }}
+                                </el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                        <el-row :gutter="20" v-if="consultForm.consultType === 1">
+                            <el-col :span="16">
+                                <el-form-item label="下次回访时间" prop="nextFollowTime">
+                                    <el-date-picker
+                                        v-model="consultForm.nextFollowTime"
+                                        type="datetime"
+                                        value-format="YYYY-MM-DD HH:mm:ss"
+                                        placeholder="请选择下次回访时间"
+                                        style="width: 100%"
+                                    />
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="8">
+                                <el-form-item label="是否提醒">
+                                    <el-switch v-model="consultForm.needRemind" />
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row :gutter="20">
+                            <el-col :span="12">
+                                <el-form-item v-if="consultForm.consultType === 2" label="校区">
+                                    <el-select
+                                        v-model="consultForm.campusId"
+                                        clearable
+                                        filterable
+                                        placeholder="请选择校区"
+                                        class="w-1/1"
+                                    >
+                                        <el-option
+                                            v-for="item in campusOptions"
+                                            :key="item.id"
+                                            :label="item.name"
+                                            :value="item.id"
+                                        />
+                                    </el-select>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item v-if="consultForm.consultType === 2" label="咨询项目">
+                                    <ProductTypeSelect
+                                        v-model="consultForm.projectId"
+                                        placeholder="请选择咨询项目"
+                                        @update:model-value="handleConsultProjectChange"
+                                    />
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row :gutter="20">
+                            <el-col :span="12">
+                                <el-form-item v-if="consultForm.consultType === 2" label="商品分类">
+                                    <ProductCategorySelect
+                                        v-model="consultForm.productCategoryId"
+                                        :parent-id="consultForm.projectId"
+                                        @update:model-value="handleConsultCategoryChange"
+                                    />
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item
+                                    v-if="consultForm.consultType === 2"
+                                    label="商品选择"
+                                    prop="productId"
+                                >
+                                    <el-input
+                                        :model-value="selectedConsultProductName"
+                                        readonly
+                                        placeholder="请选择商品"
+                                        @click="productPickerVisible = true"
+                                    />
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row :gutter="20" v-if="consultForm.consultType === 2">
+                            <el-col :span="12">
+                                <el-form-item label="预约时间">
+                                    <el-date-picker
+                                        v-model="consultForm.appointmentTime"
+                                        type="datetime"
+                                        value-format="YYYY-MM-DD HH:mm:ss"
+                                        placeholder="请选择预约时间"
+                                        style="width: 100%"
+                                    />
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="是否提醒">
+                                    <el-switch v-model="consultForm.needRemind" />
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-form-item v-if="consultForm.consultType === 2" label="预约价格">
+                            <el-input-number
+                                v-model="consultForm.appointmentPrice"
+                                :min="0"
+                                :step="1"
+                                controls-position="right"
+                                style="width: 100%"
+                            />
+                        </el-form-item>
+                        <el-form-item
+                            :label="consultForm.consultType === 2 ? '预约备注' : '回访备注'"
+                            prop="consultContent"
+                            class="is-full"
+                        >
+                            <el-input
+                                v-model="consultForm.consultContent"
+                                type="textarea"
+                                :rows="4"
+                                :placeholder="
+                                    consultForm.consultType === 2
+                                        ? '请输入预约备注'
+                                        : '请输入回访备注'
+                                "
+                            />
+                        </el-form-item>
+                    </el-form>
+                </section>
+
                 <section class="clue-section">
                     <div class="clue-section__title">
                         <span>企微信息</span>
@@ -308,6 +601,10 @@
                                         >
                                             {{ weworkCustomerCard.customerNickname }}
                                         </span>
+                                        <span class="wework-customer-card__detail">
+                                            微信昵称
+                                            {{ weworkCustomerCard.customerNickname || '--' }}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -320,15 +617,9 @@
                             class="wework-relation-card"
                         >
                             <div class="wework-relation-card__user">
-                                <div>
-                                    <el-avatar
-                                        :size="60"
-                                        shape="square"
-                                        :src="relation.staffAvatar"
-                                    >
-                                        {{ (relation.staffName || '员').slice(0, 1) }}
-                                    </el-avatar>
-                                </div>
+                                <el-avatar :size="60" shape="square" :src="relation.staffAvatar">
+                                    {{ (relation.staffName || '员').slice(0, 1) }}
+                                </el-avatar>
                                 <div class="wework-relation-card__user-meta">
                                     <div class="wework-relation-card__name-row">
                                         <strong>{{ relation.staffName || '--' }}</strong>
@@ -336,10 +627,7 @@
                                             @{{ relation.corpName || '--' }}
                                         </span>
                                     </div>
-                                    <div
-                                        v-if="relation.remark || relation.mobile"
-                                        class="wework-relation-card__remark"
-                                    >
+                                    <div class="wework-relation-card__remark">
                                         <span
                                             v-if="relation.mobile"
                                             class="wework-relation-card__remark-item"
@@ -359,68 +647,58 @@
                     </div>
                     <el-empty v-else description="暂无企微关联信息" :image-size="72" />
                 </section>
-
-                <section class="clue-section">
-                    <div class="clue-section__title">
-                        <span>最近跟进</span>
-                    </div>
-                    <div class="follow-cards">
-                        <div v-for="item in mockFollowUps" :key="item.id" class="follow-card">
-                            <div class="follow-card__header">
-                                <strong>{{ item.title }}</strong>
-                                <span>{{ item.time }}</span>
-                            </div>
-                            <p>{{ item.content }}</p>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="clue-section">
-                    <div class="clue-section__title">
-                        <span>团队成员</span>
-                    </div>
-                    <div class="member-list">
-                        <div v-for="item in mockMembers" :key="item.name" class="member-item">
-                            <div class="member-item__avatar">{{ item.name.slice(0, 1) }}</div>
-                            <div class="member-item__meta">
-                                <div>{{ item.name }}</div>
-                                <span>{{ item.role }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
             </div>
         </div>
+
+        <ProductSelectDialog
+            v-model="productPickerVisible"
+            :consult-project-id="consultForm.projectId"
+            @select="handleConsultProductSelect"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
 import AreaSelect from '@/components/AreaSelect.vue'
 import { UploadImg } from '@/components/UploadFile'
+import type * as AftersalesApi from '@/api/crm/aftersales'
 import * as ClueApi from '@/api/crm/clue'
-import type { CustomerWeworkContactItem } from '@/api/crm/customerDetail'
-import type { OperateLogVO } from '@/api/system/operatelog'
+import type * as CustomerDetailApi from '@/api/crm/customerDetail'
+import type * as OrderApi from '@/api/crm/order'
+import type { ProductVO } from '@/api/crm/product'
+import type * as CampusApi from '@/api/system/campus'
 import { DICT_TYPE, getDictLabel, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
+import { getAftersalesStatusLabel } from '@/views/aftersales/config'
+import ProductTypeSelect from '@/views/common/ProductTypeSelect.vue'
+import ProductSelectDialog from '@/views/common/ProductSelectDialog.vue'
+import ProductCategorySelect from '@/views/common/ProductCategorySelect.vue'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
     clueId: number
     loading: boolean
     canUpdate: boolean
-    logList: OperateLogVO[]
+    logList: any[]
     editing: boolean
     saving: boolean
-    projectOptions: { id: number; name: string; children?: any[] }[]
+    consultSaving: boolean
+    campusOptions: CampusApi.CampusVO[]
     clueSourceOptions: { label: string; value: number }[]
     tagOptions: { label: string; value: number }[]
-    weworkContacts?: CustomerWeworkContactItem[]
+    weworkContacts?: CustomerDetailApi.CustomerWeworkContactItem[]
+    customerBasicInfo?: CustomerDetailApi.CustomerBasicInfoRespVO
+    appointments?: CustomerDetailApi.CustomerAppointmentRespVO[]
+    orderRecords?: OrderApi.OrderPageRespVO[]
+    ticketRecords?: AftersalesApi.AftersalesRespVO[]
+    trackList?: CustomerDetailApi.CustomerTrackRespVO[]
 }>()
 
 const emit = defineEmits<{
     edit: []
     'cancel-edit': []
     save: [payload: { formRef: any; formData: any }]
+    'save-consult': [payload: CustomerDetailApi.CustomerConsultRecordCreateReqVO]
     sms: []
     enroll: []
     transfer: []
@@ -428,9 +706,23 @@ const emit = defineEmits<{
     close: []
 }>()
 
-const weworkCustomerCard = computed<CustomerWeworkContactItem | undefined>(
-    () => props.weworkContacts?.[0]
-)
+const avatarText = computed(() => (props.clue.name || '线').slice(0, 1))
+const editFormRef = ref()
+const consultFormRef = ref()
+const recordTab = ref('appointments')
+const productPickerVisible = ref(false)
+
+const educationOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_EDUCATION)
+const intentLevelOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_INTENT_LEVEL)
+const consultResultOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_CONSULT_RESULT)
+const consultTypeOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_CONSULT_TYPE)
+
+const regionText = computed(() => {
+    const names = [props.clue.province, props.clue.city, props.clue.district].filter(Boolean)
+    return names.length ? names.join(' / ') : props.clue.areaName || '--'
+})
+
+const weworkCustomerCard = computed(() => props.weworkContacts?.[0])
 
 const weworkStaffCards = computed(() =>
     (props.weworkContacts || []).flatMap((contact) =>
@@ -441,84 +733,7 @@ const weworkStaffCards = computed(() =>
     )
 )
 
-const formatAddWay = (value?: string) =>
-    value ? getDictLabel(DICT_TYPE.WEWORK_FOLLOW_USER_ADD_WAY, value) || value : '--'
-
-const formatDateTime = (value?: string) =>
-    value ? dateFormatter({} as any, {} as any, value) || value : '--'
-
-const mockSummary = [
-    { label: '咨询项目', value: '自考本科', desc: '最近一次咨询项目' },
-    { label: '客户来源', value: '企微客户同步', desc: '首条来源记录' },
-    { label: '报名次数', value: '2', desc: '含历史报名记录' },
-    { label: '反馈状态', value: '有效', desc: '最近一次电销反馈' }
-]
-
-const mockTimeline = [
-    {
-        id: 1,
-        title: '上传附件',
-        operator: '张三',
-        time: '2026-05-20 11:08:36',
-        lines: ['客户资料.pdf']
-    },
-    {
-        id: 2,
-        title: '咨询记录',
-        operator: '管理员',
-        time: '2026-05-18 17:19:11',
-        lines: ['是否有效：有效', '下次回访时间：2026-05-28 11:08', '回访备注：客户关注报名周期']
-    },
-    {
-        id: 3,
-        title: '分配更改',
-        operator: '销售主管',
-        time: '2026-05-11 12:00:00',
-        lines: [
-            '归属部门：销售一部 -> 运营一部',
-            '归属人：李四 -> 李组长',
-            '库类型：待回访 -> 已回访'
-        ]
-    }
-]
-
-const mockFollowUps = [
-    {
-        id: 1,
-        title: '电话回访',
-        time: '今天 10:20',
-        content: '已确认客户正在比较课程价格，约明天下午继续沟通。'
-    },
-    {
-        id: 2,
-        title: '企微沟通',
-        time: '昨天 18:40',
-        content: '发送了专业介绍和费用说明，客户已读未回。'
-    }
-]
-
-const mockMembers = [
-    { name: '李组长', role: '当前归属人' },
-    { name: '王顾问', role: '跟进协作人' },
-    { name: '赵主管', role: '部门主管' }
-]
-
-const avatarText = computed(() => (props.clue.name || '线').slice(0, 1))
-const editFormRef = ref()
-
-const treeProps = {
-    value: 'id',
-    label: 'name',
-    children: 'children'
-}
-
-const educationOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_EDUCATION)
-const intentLevelOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_INTENT_LEVEL)
-
-const regionText = computed(() => {
-    const names = [props.clue.province, props.clue.city, props.clue.district].filter(Boolean)
-    return names.length ? names.join(' / ') : props.clue.areaName || '--'
-})
+const selectedConsultProductName = computed(() => consultForm.productName || '')
 
 const editForm = reactive({
     id: undefined as number | undefined,
@@ -537,9 +752,23 @@ const editForm = reactive({
     areaId: undefined as number | undefined,
     consultProjectId: undefined as number | undefined,
     clueSourceId: undefined as number | undefined,
-    clueSourceName: '',
     tagIds: [] as number[],
     remark: ''
+})
+
+const consultForm = reactive({
+    consultType: 1,
+    consultResult: 1,
+    campusId: undefined as number | undefined,
+    projectId: props.clue.consultProjectId,
+    productCategoryId: undefined as number | undefined,
+    productId: undefined as number | undefined,
+    productName: '',
+    appointmentPrice: undefined as number | undefined,
+    appointmentTime: '',
+    nextFollowTime: props.clue.contactNextTime || '',
+    needRemind: Boolean(props.clue.followUpStatus),
+    consultContent: props.clue.contactLastContent || ''
 })
 
 const editRules = reactive({
@@ -549,6 +778,57 @@ const editRules = reactive({
     areaId: [{ required: true, message: '请选择地区', trigger: 'change' }],
     consultProjectId: [{ required: true, message: '请选择咨询项目', trigger: 'change' }]
 })
+
+const consultRules = reactive({
+    consultType: [{ required: true, message: '请选择操作类型', trigger: 'change' }],
+    consultResult: [
+        {
+            validator: (_rule: any, value: number | undefined, callback: any) => {
+                if (consultForm.consultType === 1 && !value) {
+                    callback(new Error('请选择是否有效'))
+                    return
+                }
+                callback()
+            },
+            trigger: 'change'
+        }
+    ],
+    nextFollowTime: [{ required: true, message: '请选择下次回访时间', trigger: 'change' }],
+    productId: [
+        {
+            validator: (_rule: any, value: number | undefined, callback: any) => {
+                if (consultForm.consultType === 2 && !value) {
+                    callback(new Error('请选择商品'))
+                    return
+                }
+                callback()
+            },
+            trigger: 'change'
+        }
+    ],
+    consultContent: [
+        {
+            validator: (_rule: any, value: string | undefined, callback: any) => {
+                if (!String(value || '').trim()) {
+                    callback(
+                        new Error(
+                            consultForm.consultType === 2 ? '请输入预约备注' : '请输入回访备注'
+                        )
+                    )
+                    return
+                }
+                callback()
+            },
+            trigger: 'blur'
+        }
+    ]
+})
+
+const formatAddWay = (value?: string) =>
+    value ? getDictLabel(DICT_TYPE.WEWORK_FOLLOW_USER_ADD_WAY, value) || value : '--'
+
+const formatDateTime = (value?: string) =>
+    value ? dateFormatter({} as any, {} as any, value) || value : '--'
 
 const syncEditForm = () => {
     editForm.id = props.clue.id
@@ -567,15 +847,30 @@ const syncEditForm = () => {
     editForm.areaId = props.clue.areaId
     editForm.consultProjectId = props.clue.consultProjectId
     editForm.clueSourceId = props.clue.clueSourceId
-    editForm.clueSourceName = props.clue.clueSourceName || '--'
     editForm.tagIds = (props.clue.tagIds || []).map((item) => Number(item))
     editForm.remark = props.clue.remark || ''
+}
+
+const syncConsultForm = () => {
+    consultForm.consultType = 1
+    consultForm.consultResult = 1
+    consultForm.campusId = undefined
+    consultForm.projectId = props.clue.consultProjectId
+    consultForm.productCategoryId = undefined
+    consultForm.productId = undefined
+    consultForm.productName = ''
+    consultForm.appointmentPrice = undefined
+    consultForm.appointmentTime = ''
+    consultForm.nextFollowTime = props.clue.contactNextTime || ''
+    consultForm.needRemind = Boolean(props.clue.followUpStatus)
+    consultForm.consultContent = props.clue.contactLastContent || ''
 }
 
 watch(
     () => props.clue,
     () => {
         syncEditForm()
+        syncConsultForm()
     },
     { immediate: true, deep: true }
 )
@@ -591,18 +886,26 @@ watch(
 )
 
 const tagText = computed(() => {
-    if (props.clue.tagNames?.length) {
-        return props.clue.tagNames.join('、')
-    }
-    if (!props.clue.tagIds?.length || !props.tagOptions.length) {
-        return '--'
-    }
+    if (props.clue.tagNames?.length) return props.clue.tagNames.join('、')
+    if (!props.clue.tagIds?.length || !props.tagOptions.length) return '--'
     const optionMap = new Map(props.tagOptions.map((item) => [Number(item.value), item.label]))
     const labels = props.clue.tagIds
         .map((item) => optionMap.get(Number(item)))
         .filter((item): item is string => !!item)
     return labels.length ? labels.join('、') : '--'
 })
+
+const customerTagText = computed(() => {
+    const tags = props.customerBasicInfo?.tags || []
+    return tags.length ? tags.map((item) => item.name).join('、') : tagText.value
+})
+
+const parsedTrackList = computed(() =>
+    (props.trackList || []).map((item) => ({
+        ...item,
+        lines: item.contentLines || (item.content ? [item.content] : [])
+    }))
+)
 
 const basicInfoItems = computed(() => [
     { label: '客户ID', value: props.clue.customerId || '--' },
@@ -618,504 +921,53 @@ const basicInfoItems = computed(() => [
     { label: '姓名', value: props.clue.name || '--' },
     { label: '性别', value: props.clue.genderName || '--' },
     { label: '学历', value: props.clue.educationName || '--' },
-    { label: '来源', value: props.clue.clueSourceName || mockSummary[1].value },
+    { label: '来源', value: props.clue.clueSourceName || '--' },
     { label: '地区', value: regionText.value },
-    { label: '咨询项目', value: props.clue.consultProjectName || mockSummary[0].value },
-    { label: '标签', value: tagText.value },
+    { label: '咨询项目', value: props.clue.consultProjectName || '--' },
+    { label: '标签', value: customerTagText.value },
     { label: '咨询备注', value: props.clue.remark || '--' }
 ])
+
+const submitConsult = async () => {
+    const valid = await consultFormRef.value?.validate?.()
+    if (!valid) return
+    emit('save-consult', {
+        clueId: Number(props.clue.id),
+        consultResult: consultForm.consultType === 1 ? consultForm.consultResult : undefined,
+        consultType: consultForm.consultType,
+        campusId: consultForm.consultType === 2 ? consultForm.campusId : undefined,
+        projectId: consultForm.consultType === 2 ? consultForm.projectId : consultForm.projectId,
+        productCategoryId: consultForm.productCategoryId,
+        productId: consultForm.productId,
+        appointmentPrice: consultForm.consultType === 2 ? consultForm.appointmentPrice : undefined,
+        appointmentTime:
+            consultForm.consultType === 2 ? consultForm.appointmentTime || undefined : undefined,
+        nextFollowTime: consultForm.nextFollowTime || undefined,
+        needRemind: consultForm.needRemind,
+        consultContent: consultForm.consultContent.trim()
+    })
+}
+
+const handleConsultCategoryChange = () => {
+    consultForm.productId = undefined
+    consultForm.productName = ''
+}
+
+const handleConsultProjectChange = () => {
+    consultForm.productCategoryId = undefined
+    consultForm.productId = undefined
+    consultForm.productName = ''
+}
+
+const handleConsultProductSelect = (products: ProductVO[]) => {
+    const product = products?.[0]
+    if (!product) return
+    consultForm.productId = Number(product.id)
+    consultForm.productName = product.name || ''
+    consultForm.productCategoryId = Number(product.categoryId) || consultForm.productCategoryId
+}
 </script>
 
 <style scoped lang="scss">
-.clue-card-query {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.clue-hero {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 16px 72px 16px 18px;
-    border-radius: 14px;
-    color: #fff;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.24);
-}
-
-.clue-hero__close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    z-index: 2;
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.22);
-}
-
-.clue-hero__main {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    min-width: 0;
-}
-
-.clue-avatar {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.24);
-    border: 3px solid rgba(255, 255, 255, 0.35);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: 700;
-    flex-shrink: 0;
-}
-
-.clue-avatar-image {
-    flex-shrink: 0;
-    border: 3px solid rgba(255, 255, 255, 0.35);
-}
-
-.clue-hero__meta h3 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-}
-
-.clue-hero__name-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.clue-hero__meta p,
-.clue-hero__subline {
-    margin: 6px 0 0;
-    font-size: 13px;
-    opacity: 0.95;
-}
-
-.clue-hero__subline {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.clue-hero__actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-}
-
-.clue-hero__actions :deep(.el-button--default) {
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.22);
-}
-
-.clue-hero__intent {
-    border: none;
-}
-
-.clue-columns {
-    display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.75fr);
-    gap: 14px;
-    align-items: start;
-}
-
-.clue-column {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    min-width: 0;
-}
-
-.clue-section {
-    background: #fff;
-    border: 1px solid #e8e8e8;
-    border-radius: 12px;
-    padding: 18px;
-    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
-}
-
-.clue-section__title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #edf2ff;
-    position: relative;
-    font-size: 15px;
-    font-weight: 600;
-    color: #333;
-}
-
-.clue-section__title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: -2px;
-    width: 42px;
-    height: 2px;
-    background: #764ba2;
-}
-
-.clue-section__actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.clue-section__filters {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.clue-info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 18px;
-}
-
-.clue-info-grid--edit {
-    align-items: start;
-}
-
-.clue-info-item {
-    min-width: 0;
-}
-
-.clue-info-item label {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 12px;
-    color: #909399;
-}
-
-.clue-info-item div {
-    min-height: 22px;
-    color: #303133;
-    line-height: 1.65;
-    word-break: break-all;
-}
-
-.clue-edit-form :deep(.el-form-item) {
-    margin-bottom: 0;
-}
-
-.clue-edit-form__full {
-    grid-column: 1 / -1;
-}
-
-.timeline-list {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.timeline-item {
-    display: flex;
-    gap: 12px;
-    align-items: stretch;
-}
-
-.timeline-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    margin-top: 16px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    box-shadow: 0 0 0 5px rgba(118, 75, 162, 0.08);
-    flex-shrink: 0;
-}
-
-.timeline-card {
-    flex: 1;
-    border-radius: 10px;
-    background: #fafbff;
-    border: 1px solid #eef1f8;
-    padding: 14px 16px;
-}
-
-.timeline-card__header {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 8px;
-}
-
-.timeline-card__title {
-    font-weight: 600;
-    color: #303133;
-}
-
-.timeline-card__meta {
-    font-size: 12px;
-    color: #909399;
-}
-
-.timeline-card__body p {
-    margin: 0 0 6px;
-    color: #606266;
-    line-height: 1.7;
-}
-
-.summary-cards,
-.follow-cards,
-.member-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-.wework-contact-card__corp,
-.wework-relation-card__corp {
-    color: #fa8c16;
-    font-weight: 600;
-}
-
-.wework-customer-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.wework-customer-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 8px 12px;
-    border-radius: 14px;
-    border: 1px solid #e7f0fb;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-    box-shadow: 0 8px 20px rgba(22, 119, 255, 0.06);
-}
-
-.wework-customer-card__meta {
-    min-width: 0;
-    flex: 1;
-}
-
-.wework-customer-card__name-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    width: 100%;
-}
-
-.wework-customer-card__main {
-    min-width: 0;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.wework-customer-card__name-row strong {
-    font-size: 15px;
-    color: #303133;
-    line-height: 1.4;
-    white-space: normal;
-    word-break: break-all;
-}
-
-.wework-customer-card__nickname {
-    color: #606266;
-    font-size: 13px;
-    line-height: 1.4;
-    white-space: normal;
-    word-break: break-all;
-}
-
-.wework-customer-card__corp {
-    color: #67c23a;
-    font-weight: 600;
-    line-height: 1.4;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-@media (max-width: 768px) {
-    .wework-customer-card__name-row {
-        flex-wrap: wrap;
-    }
-
-    .wework-customer-card__corp {
-        width: 100%;
-    }
-}
-
-.wework-relation-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-}
-
-.wework-relation-card {
-    border-radius: 12px;
-    border: 1px solid #ebeef5;
-    background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
-    padding: 14px;
-    box-shadow: 0 8px 22px rgba(22, 119, 255, 0.06);
-}
-
-.wework-relation-card__user {
-    display: flex;
-    gap: 14px;
-}
-
-.wework-relation-card__user-meta {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.wework-relation-card__name-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.wework-relation-card__name-row strong {
-    font-size: 15px;
-    color: #303133;
-}
-
-.wework-relation-card__remark {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    color: #606266;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.wework-relation-card__remark-item {
-    display: block;
-    word-break: break-all;
-}
-
-.summary-card {
-    border-radius: 10px;
-    padding: 14px;
-    background: linear-gradient(180deg, #fafbff 0%, #f4f6ff 100%);
-    border: 1px solid #edf1ff;
-}
-
-.summary-card__label {
-    font-size: 12px;
-    color: #909399;
-}
-
-.summary-card__value {
-    margin-top: 6px;
-    font-size: 20px;
-    font-weight: 700;
-    color: #303133;
-}
-
-.summary-card__desc {
-    margin-top: 4px;
-    font-size: 12px;
-    color: #606266;
-}
-
-.follow-card {
-    border-radius: 10px;
-    border: 1px solid #eef0f5;
-    background: #fcfcfd;
-    padding: 14px;
-}
-
-.follow-card__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 8px;
-    color: #303133;
-}
-
-.follow-card__header span,
-.member-item__meta span {
-    font-size: 12px;
-    color: #909399;
-}
-
-.follow-card p {
-    margin: 0;
-    color: #606266;
-    line-height: 1.7;
-}
-
-.member-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.member-item__avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #7a89ff 0%, #8a5fd0 100%);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    flex-shrink: 0;
-}
-
-.member-item__meta {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-@media (max-width: 960px) {
-    .clue-columns {
-        grid-template-columns: 1fr;
-    }
-
-    .clue-info-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .clue-hero {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 16px 16px 20px;
-    }
-
-    .clue-hero__close {
-        top: 12px;
-        right: 12px;
-    }
-
-    .clue-hero__actions {
-        justify-content: flex-start;
-        flex-wrap: wrap;
-    }
-
-    .timeline-card__header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-}
+@import './style.scss';
 </style>

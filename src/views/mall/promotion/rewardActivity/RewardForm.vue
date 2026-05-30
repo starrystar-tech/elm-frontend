@@ -74,7 +74,7 @@ import SpuShowcase from '@/views/mall/product/spu/components/SpuShowcase.vue'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import * as RewardActivityApi from '@/api/mall/promotion/reward/rewardActivity'
 import { PromotionConditionTypeEnum, PromotionProductScopeEnum } from '@/utils/constants'
-import ProductCategorySelect from '@/views/mall/product/category/components/ProductCategorySelect.vue'
+import ProductCategorySelect from '@/views/common/ProductCategorySelect.vue'
 import { cloneDeep } from 'lodash-es'
 import { fenToYuan, yuanToFen } from '@/utils'
 

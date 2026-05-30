@@ -18,13 +18,22 @@
                     :log-list="logList"
                     :editing="editing"
                     :saving="saving"
+                    :consult-saving="consultSaving"
                     :project-options="projectOptions"
+                    :product-category-options="productCategoryOptions"
+                    :campus-options="campusOptions"
                     :clue-source-options="clueSourceOptions"
                     :tag-options="tagOptions"
                     :wework-contacts="weworkContacts"
+                    :customer-basic-info="customerBasicInfo"
+                    :appointments="appointments"
+                    :order-records="orderRecords"
+                    :ticket-records="ticketRecords"
+                    :track-list="trackList"
                     @edit="openForm"
                     @cancel-edit="cancelEdit"
                     @save="handleSave"
+                    @save-consult="handleSaveConsult"
                     @sms="handleSms"
                     @enroll="openEnroll"
                     @transfer="handleTransfer"
@@ -69,12 +78,15 @@
 </template>
 
 <script setup lang="ts">
+import * as AftersalesApi from '@/api/crm/aftersales'
 import * as ClueApi from '@/api/crm/clue'
 import * as CustomerDetailApi from '@/api/crm/customerDetail'
+import * as OrderApi from '@/api/crm/order'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import { getOperateLogPage } from '@/api/crm/operateLog'
 import { BizTypeEnum } from '@/api/crm/permission'
 import type { OperateLogVO } from '@/api/system/operatelog'
+import * as CampusApi from '@/api/system/campus'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 import { hasPermission } from '@/directives/permission/hasPermi'
@@ -88,6 +100,7 @@ const drawerVisible = ref(false)
 const clueId = ref(0)
 const loading = ref(false)
 const saving = ref(false)
+const consultSaving = ref(false)
 const editing = ref(false)
 const clue = ref<ClueApi.ClueVO>({})
 const logList = ref<OperateLogVO[]>([])
@@ -96,22 +109,32 @@ const enrollRef = ref<InstanceType<typeof ClueEnrollDialog>>()
 const transferRef = ref<InstanceType<typeof CrmTransferForm>>()
 const message = useMessage()
 const projectOptions = ref<{ id: number; name: string; children?: any[] }[]>([])
+const productCategoryOptions = ref<any[]>([])
+const campusOptions = ref<CampusApi.CampusVO[]>([])
 const clueSourceOptions = ref<{ label: string; value: number }[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
 const weworkContacts = ref<CustomerDetailApi.CustomerWeworkContactItem[]>([])
+const customerBasicInfo = ref<CustomerDetailApi.CustomerBasicInfoRespVO>()
+const appointments = ref<CustomerDetailApi.CustomerAppointmentRespVO[]>([])
+const orderRecords = ref<OrderApi.OrderPageRespVO[]>([])
+const ticketRecords = ref<AftersalesApi.AftersalesRespVO[]>([])
+const trackList = ref<CustomerDetailApi.CustomerTrackRespVO[]>([])
 const tagDialogVisible = ref(false)
 const tagForm = reactive({ tagIds: [] as number[] })
 
 const loadOptions = async () => {
-    const [projects, tagGroups, clueSources] = await Promise.all([
+    const [projects, tagGroups, clueSources, campuses] = await Promise.all([
         ProductCategoryApi.getProductCategorySimpleList(),
         TagGroupApi.getTagGroupList(),
-        ClueSourceApi.getEnabledClueSourceList()
+        ClueSourceApi.getEnabledClueSourceList(),
+        CampusApi.getSimpleCampusList()
     ])
     projectOptions.value = (projects || []).map((item) => ({
         ...item,
         id: Number(item.id)
     }))
+    productCategoryOptions.value = projects || []
+    campusOptions.value = campuses || []
     tagOptions.value = (tagGroups || []).flatMap((group) =>
         (group.tags || []).map((tag) => ({
             label: `${group.name} / ${tag.name}`,
@@ -136,16 +159,52 @@ const getClue = async () => {
     if (!clueId.value) return
     loading.value = true
     try {
-        const [clueResp, weworkResp] = await Promise.all([
+        const [clueResp, weworkResp, basicInfoResp, appointmentsResp, tracksResp] = await Promise.all([
             ClueApi.getClue(clueId.value),
-            CustomerDetailApi.getCustomerWeworkInfo(clueId.value)
+            CustomerDetailApi.getCustomerWeworkInfo(clueId.value),
+            CustomerDetailApi.getCustomerBasicInfo(clueId.value),
+            CustomerDetailApi.getCustomerAppointments(clueId.value),
+            CustomerDetailApi.getCustomerTracks(clueId.value)
         ])
         clue.value = clueResp
         weworkContacts.value = weworkResp?.contacts || []
+        customerBasicInfo.value = basicInfoResp
+        appointments.value = appointmentsResp || []
+        trackList.value = tracksResp || []
+        orderRecords.value = await loadOrderRecords(clueResp)
+        ticketRecords.value = await loadTicketRecords()
         await getOperateLog()
     } finally {
         loading.value = false
     }
+}
+
+const loadOrderRecords = async (clueResp: ClueApi.ClueVO) => {
+    const params: OrderApi.OrderPageReqVO = {
+        pageNo: 1,
+        pageSize: 20
+    }
+    if (clueResp.mobile) {
+        params.mobile = clueResp.mobile
+    }
+    if (!params.mobile && clueResp.name) {
+        params.customer = clueResp.name
+    }
+    if (!params.mobile && !params.customer) {
+        return []
+    }
+    const pageResp = await OrderApi.getOrderPage(params)
+    return pageResp?.list || []
+}
+
+const loadTicketRecords = async () => {
+    if (!clueId.value) return []
+    const pageResp = await AftersalesApi.getAftersalesPage({
+        pageNo: 1,
+        pageSize: 20,
+        clueId: clueId.value
+    })
+    return pageResp?.list || []
 }
 
 const openForm = () => {
@@ -188,6 +247,21 @@ const handleSave = async (payload: { formRef: any; formData: any }) => {
         await getClue()
     } finally {
         saving.value = false
+    }
+}
+
+const handleSaveConsult = async (payload: CustomerDetailApi.CustomerConsultRecordCreateReqVO) => {
+    consultSaving.value = true
+    try {
+        if (payload.consultType === 2) {
+            await CustomerDetailApi.createCustomerAppointment(payload)
+        } else {
+            await CustomerDetailApi.createCustomerConsultRecord(payload)
+        }
+        message.success('保存成功')
+        await getClue()
+    } finally {
+        consultSaving.value = false
     }
 }
 
@@ -257,7 +331,7 @@ defineExpose({ open })
 }
 
 :deep(.clue-detail-drawer .el-drawer) {
-    width: min(1120px, 92vw) !important;
+    width: min(1320px, 92vw) !important;
     border-radius: 20px 0 0 20px;
     overflow: hidden;
     box-shadow: -8px 0 32px rgba(15, 23, 42, 0.16);

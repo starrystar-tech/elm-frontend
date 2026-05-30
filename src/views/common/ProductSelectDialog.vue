@@ -8,20 +8,11 @@
     >
         <div class="product-picker">
             <div class="product-picker__filters">
-                <el-select
+                <ProductTypeSelect
                     v-model="filterForm.consultProjectId"
                     placeholder="选择咨询项目"
-                    class="product-picker__field"
-                    clearable
-                    @change="handleProjectChange"
-                >
-                    <el-option
-                        v-for="item in projectOptions"
-                        :key="item.id"
-                        :label="item.name"
-                        :value="item.id"
-                    />
-                </el-select>
+                    @update:model-value="handleProjectChange"
+                />
                 <el-select
                     v-model="filterForm.productCategoryId"
                     placeholder="选择商品分类"
@@ -104,6 +95,7 @@ import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as ProductApi from '@/api/crm/product'
 import type { ProductVO } from '@/api/crm/product'
 import type { ProductCategoryVO } from '@/api/crm/product/category'
+import ProductTypeSelect from './ProductTypeSelect.vue'
 
 defineOptions({ name: 'ProductSelectDialog' })
 
@@ -130,7 +122,6 @@ const dialogVisible = computed({
 
 const loading = ref(false)
 const optionsLoaded = ref(false)
-const projectOptions = ref<ProductCategoryVO[]>([])
 const categoryOptions = ref<ProductCategoryVO[]>([])
 const productOptions = ref<ProductVO[]>([])
 const tableRef = ref()
@@ -168,7 +159,6 @@ const loadCategoryOptions = async () => {
     if (optionsLoaded.value) return
     const categories = await ProductCategoryApi.getProductCategorySimpleList()
     const categoryList = (categories || []) as ProductCategoryVO[]
-    projectOptions.value = categoryList.filter((item) => Number(item.parentId) === 0)
     categoryOptions.value = categoryList.filter((item) => Number(item.parentId) > 0)
     categoryNameMap.value = categoryList.reduce((acc: Record<number, string>, item) => {
         if (item.id) acc[item.id] = item.name

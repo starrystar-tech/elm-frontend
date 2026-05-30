@@ -52,6 +52,81 @@
             </ContentWrap>
 
             <ContentWrap>
+                <div class="order-consult-section">
+                    <div class="order-consult-section__title">咨询信息</div>
+                    <div class="order-consult-section__grid">
+                        <div class="order-consult-section__item">
+                            <span class="label">线索ID</span>
+                            <span>{{ consultBasicInfo?.clueId || detail.clueId || '-' }}</span>
+                        </div>
+                        <div class="order-consult-section__item">
+                            <span class="label">客户状态</span>
+                            <span>{{ consultBasicInfo?.statusName || '-' }}</span>
+                        </div>
+                        <div class="order-consult-section__item">
+                            <span class="label">意向度</span>
+                            <span>{{ consultBasicInfo?.intentLevelName || '-' }}</span>
+                        </div>
+                        <div class="order-consult-section__item">
+                            <span class="label">来源</span>
+                            <span>{{ consultBasicInfo?.clueSourceName || '-' }}</span>
+                        </div>
+                        <div class="order-consult-section__item">
+                            <span class="label">咨询项目</span>
+                            <span>{{ consultBasicInfo?.consultProjectName || '-' }}</span>
+                        </div>
+                        <div class="order-consult-section__item">
+                            <span class="label">名片归属</span>
+                            <span>{{ consultBasicInfo?.ownerName || detail.cardOwnerUserName || '-' }}</span>
+                        </div>
+                        <div class="order-consult-section__item">
+                            <span class="label">归属部门</span>
+                            <span>{{ consultBasicInfo?.departmentName || '-' }}</span>
+                        </div>
+                        <div class="order-consult-section__item">
+                            <span class="label">标签</span>
+                            <span>{{ consultTagText }}</span>
+                        </div>
+                    </div>
+                    <div v-if="consultAppointments.length" class="order-consult-records">
+                        <div
+                            v-for="record in consultAppointments"
+                            :key="record.id"
+                            class="order-consult-record"
+                        >
+                            <div class="order-consult-record__header">
+                                <strong>{{ record.appointmentTypeName || '咨询记录' }}</strong>
+                                <span>{{ record.createTime || '-' }}</span>
+                            </div>
+                            <div class="order-consult-record__body">
+                                <span>操作类型：{{ record.appointmentTypeName || '-' }}</span>
+                                <span>预约时间：{{ record.appointmentTime || '-' }}</span>
+                                <span>分校：{{ record.campusName || '-' }}</span>
+                                <span>
+                                    咨询项目：{{
+                                        record.projectName ||
+                                        record.productCategoryName ||
+                                        record.productName ||
+                                        '-'
+                                    }}
+                                </span>
+                                <span v-if="record.appointmentPrice !== undefined">
+                                    预约价格：{{ formatAmount(record.appointmentPrice) }}
+                                </span>
+                                <span>记录人：{{ record.creator || '-' }}</span>
+                                <span class="is-full">
+                                    备注：{{ record.consultContent || '-' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <el-empty
+                        v-else
+                        description="暂无咨询记录"
+                        :image-size="60"
+                        class="order-consult-section__empty"
+                    />
+                </div>
                 <el-tabs v-model="activeTab" class="p-16px">
                     <el-tab-pane label="学员信息" name="student">
                         <div class="order-detail-student p-10px">
@@ -219,6 +294,7 @@
 import { computed, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
+import * as CustomerDetailApi from '@/api/crm/customerDetail'
 import * as OrderApi from '@/api/crm/order'
 import { DICT_TYPE, getDictLabel } from '@/utils/dict'
 import OrderContractSignDialog from './OrderContractSignDialog.vue'
@@ -242,6 +318,8 @@ const loading = ref(false)
 const refundRef = ref<InstanceType<typeof RefundDialog>>()
 const contractSignRef = ref<InstanceType<typeof OrderContractSignDialog>>()
 const detail = ref<OrderApi.OrderDetailRespVO>({ items: [], payRecords: [], refunds: [] } as any)
+const consultBasicInfo = ref<CustomerDetailApi.CustomerBasicInfoRespVO>()
+const consultAppointments = ref<CustomerDetailApi.CustomerAppointmentRespVO[]>([])
 const activeTab = ref('student')
 
 const orderStatusLabel = (value?: number) => getOptionLabel(ORDER_STATUS_OPTIONS, value)
@@ -271,11 +349,31 @@ const orderOwnerText = computed(() => {
     const campus = detail.value.campusName ? `（${detail.value.campusName}）` : ''
     return `${owner}${campus}`
 })
+const consultTagText = computed(() => {
+    const tags = consultBasicInfo.value?.tags || []
+    return tags.length ? tags.map((item) => item.name).join('、') : '-'
+})
+
+const loadConsultInfo = async () => {
+    const clueId = detail.value.clueId
+    if (!clueId) {
+        consultBasicInfo.value = undefined
+        consultAppointments.value = []
+        return
+    }
+    const [basicInfo, appointments] = await Promise.all([
+        CustomerDetailApi.getCustomerBasicInfo(clueId),
+        CustomerDetailApi.getCustomerAppointments(clueId)
+    ])
+    consultBasicInfo.value = basicInfo
+    consultAppointments.value = appointments || []
+}
 
 const loadDetail = async (id: number) => {
     loading.value = true
     try {
         detail.value = await OrderApi.getOrder(id)
+        await loadConsultInfo()
     } finally {
         loading.value = false
     }
@@ -357,6 +455,73 @@ defineExpose({ open })
 .order-detail-student__item .label {
     margin-right: 4px;
     color: var(--el-text-color-regular);
+}
+
+.order-consult-section {
+    padding: 16px 16px 0;
+}
+
+.order-consult-section__title {
+    margin-bottom: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+}
+
+.order-consult-section__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px 24px;
+}
+
+.order-consult-section__item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--el-text-color-primary);
+}
+
+.order-consult-section__item .label {
+    color: var(--el-text-color-regular);
+}
+
+.order-consult-records {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.order-consult-record {
+    padding: 14px 16px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 12px;
+    background: var(--el-fill-color-blank);
+}
+
+.order-consult-record__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.order-consult-record__body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 20px;
+    font-size: 14px;
+    color: var(--el-text-color-regular);
+}
+
+.order-consult-record__body .is-full {
+    grid-column: 1 / -1;
+}
+
+.order-consult-section__empty {
+    padding-top: 8px;
 }
 
 .order-detail-student__grid {
