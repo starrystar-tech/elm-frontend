@@ -95,7 +95,7 @@ import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as ProductApi from '@/api/crm/product'
 import type { ProductVO } from '@/api/crm/product'
 import type { ProductCategoryVO } from '@/api/crm/product/category'
-import ProductTypeSelect from './ProductTypeSelect.vue'
+import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 
 defineOptions({ name: 'ProductSelectDialog' })
 

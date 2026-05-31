@@ -18,10 +18,11 @@
             @register="tableRegister"
         />
     </ContentWrap>
+    <ImportTaskLogDialog ref="logDialogRef" />
 </template>
 
 <script setup lang="tsx">
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -30,8 +31,11 @@ import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
+import ImportTaskLogDialog from './ImportTaskLogDialog.vue'
 
 defineOptions({ name: 'CrmClueImportTask' })
+
+const logDialogRef = ref<InstanceType<typeof ImportTaskLogDialog>>()
 
 const statusOptions = [
     { label: '处理中', value: 1 },
@@ -101,6 +105,10 @@ const setSearchParams = (params: Record<string, any>) => {
     })
 }
 
+const openAllocLogDialog = async (taskId: number) => {
+    await logDialogRef.value?.open(taskId)
+}
+
 const tableColumns = computed<TableColumn[]>(() => [
     { field: 'id', label: '任务编号', width: '100px' },
     { field: 'fileName', label: '文件名', minWidth: '220px' },
@@ -121,8 +129,28 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'failCount', label: '失败数', width: '100px' },
     { field: 'startedAt', label: '开始处理时间', minWidth: '170px', formatter: dateFormatter },
     { field: 'finishedAt', label: '处理完成时间', minWidth: '170px', formatter: dateFormatter },
-    { field: 'creator', label: '创建人', width: '120px' },
-    { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter }
+    {
+        field: 'creatorName',
+        label: '创建人',
+        width: '120px',
+        slots: {
+            default: (data) => <span>{data.row.creatorName || data.row.creator || '--'}</span>
+        }
+    },
+    { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter },
+    {
+        field: 'action',
+        label: '操作',
+        width: '120px',
+        fixed: 'right',
+        slots: {
+            default: (data) => (
+                <BaseButton link type="primary" onClick={() => openAllocLogDialog(data.row.id)}>
+                    导入日志
+                </BaseButton>
+            )
+        }
+    }
 ])
 
 onMounted(() => {

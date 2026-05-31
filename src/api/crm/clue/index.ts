@@ -173,6 +173,37 @@ export interface ClueMergeReqVO {
     keepClueId: number
     mergedClueId: number
     remark?: string
+    mergedData?: ClueMergeDataReqVO
+}
+
+export interface ClueMergeDataReqVO {
+    customerId?: string
+    name?: string
+    mobile?: string
+    mobile2?: string
+    wechat?: string
+    wechat2?: string
+    wechatRemark?: string
+    qq?: string
+    gender?: number
+    education?: number
+    areaId?: number
+    consultProjectId?: number
+    tagIds?: number[]
+}
+
+export interface ClueMergeSearchRespVO {
+    id: number
+    customerId?: string
+    name?: string
+    mobile?: string
+    mobile2?: string
+    wechat?: string
+    qq?: string
+    status?: number
+    statusName?: string
+    currentOwnerName?: string
+    createTime?: string
 }
 
 export interface ClueUpdateIntentLevelReqVO {
@@ -332,6 +363,7 @@ export interface ClueImportTaskVO {
     startedAt?: string
     finishedAt?: string
     creator?: string
+    creatorName?: string
     createTime?: string
 }
 
@@ -341,6 +373,78 @@ export interface ClueImportTaskPageReqVO extends PageParam {
     creator?: string
     beginCreateTime?: string
     endCreateTime?: string
+}
+
+export interface ClueImportTaskAllocLogPageReqVO extends PageParam {
+    taskId: number
+    result?: number
+    status?: string
+    engineName?: string
+    phone?: string
+    customerName?: string
+}
+
+export interface ClueImportTaskAllocLogVO {
+    id: number
+    importTaskId?: number
+    clueId?: number
+    engineId?: number
+    ownerId?: number
+    ownerName?: string
+    ownerDepartmentId?: number
+    ownerDepartmentName?: string
+    result?: number
+    status?: string
+    failReason?: string
+    allocationOwner?: string
+    customerName?: string
+    phone?: string
+    phone2?: string
+    wechat?: string
+    wechat2?: string
+    qq?: string
+    intention?: string
+    project?: string
+    source?: string
+    city?: string
+    district?: string
+    gender?: string
+    education?: string
+    remark?: string
+    engine?: string
+    createTime?: string
+}
+
+export interface ClueImportTaskItemPageReqVO extends PageParam {
+    taskId: number
+    result?: string
+    phone?: string
+    customerName?: string
+}
+
+export interface ClueImportTaskItemVO {
+    id: number
+    taskId?: number
+    clueId?: number
+    rawData?: string
+    result?: string
+    status?: string
+    failReason?: string
+    customerName?: string
+    phone?: string
+    phone2?: string
+    wechat?: string
+    wechat2?: string
+    qq?: string
+    intention?: string
+    project?: string
+    source?: string
+    city?: string
+    district?: string
+    gender?: string
+    education?: string
+    remark?: string
+    createTime?: string
 }
 
 export const getCluePage = async (params: CluePageReqVO) => {
@@ -399,6 +503,10 @@ export const mergeClue = async (data: ClueMergeReqVO) => {
     return await request.put({ url: '/crm/clue/merge', data })
 }
 
+export const getMergeSearchClue = async (keyword: string) => {
+    return await request.get<ClueMergeSearchRespVO>({ url: '/crm/clue/merge-search', params: { keyword } })
+}
+
 export const updateClueIntentLevel = async (data: ClueUpdateIntentLevelReqVO) => {
     return await request.put({ url: '/crm/clue/update-intent-level', data })
 }
@@ -413,6 +521,14 @@ export const importClues = async (data: FormData) => {
 
 export const getClueImportTaskPage = async (params: ClueImportTaskPageReqVO) => {
     return await request.get({ url: '/crm/clue/import-task/page', params })
+}
+
+export const getClueImportTaskAllocLogPage = async (params: ClueImportTaskAllocLogPageReqVO) => {
+    return await request.get({ url: '/crm/clue/import-task/alloc-log-page', params })
+}
+
+export const getClueImportTaskFailItemPage = async (params: ClueImportTaskItemPageReqVO) => {
+    return await request.get({ url: '/crm/clue/import-task/fail-item-page', params })
 }
 
 export const getSilentCluePage = async (params: ClueSilentPageReqVO) => {

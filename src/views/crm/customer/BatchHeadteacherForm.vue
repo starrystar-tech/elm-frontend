@@ -20,7 +20,7 @@
 
 <script lang="ts" setup>
 import * as ClueApi from '@/api/crm/clue'
-import HeadteacherSelect from '@/views/common/HeadteacherSelect.vue'
+import HeadteacherSelect from '@/components/HeadteacherSelect.vue'
 
 const emit = defineEmits(['success'])
 const message = useMessage()

@@ -89,29 +89,12 @@
         </template>
     </Dialog>
 
-    <Dialog v-model="mergeDialogVisible" title="线索合并" width="520px">
-        <el-form label-width="90px">
-            <el-form-item label="保留线索">
-                <el-radio-group v-model="mergeForm.keepClueId">
-                    <el-radio v-for="item in selectionList" :key="item.id" :label="item.id">
-                        {{ item.name || item.mobile || item.id }}
-                    </el-radio>
-                </el-radio-group>
-            </el-form-item>
-            <el-form-item label="合并备注">
-                <el-input
-                    v-model="mergeForm.remark"
-                    type="textarea"
-                    :rows="3"
-                    placeholder="请输入合并备注"
-                />
-            </el-form-item>
-        </el-form>
-        <template #footer>
-            <el-button @click="mergeDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="handleMerge">确定</el-button>
-        </template>
-    </Dialog>
+    <ClueMergeDialog
+        v-model="mergeDialogVisible"
+        :clues="selectionList"
+        :initial-keep-clue-id="mergeKeepClueId"
+        @confirm="handleMerge"
+    />
 </template>
 
 <script setup lang="tsx">
@@ -126,6 +109,7 @@ import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
 import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
+import ClueMergeDialog from './components/ClueMergeDialog.vue'
 
 defineOptions({ name: 'CrmClueAllocation' })
 
@@ -136,10 +120,10 @@ const selectionList = ref<ClueApi.ClueVO[]>([])
 const assignDialogVisible = ref(false)
 const silentDialogVisible = ref(false)
 const mergeDialogVisible = ref(false)
+const mergeKeepClueId = ref<number | undefined>()
 
 const assignForm = reactive({ ownerId: undefined as number | undefined })
 const silentForm = reactive({ silentReason: '', silentDays: 7, remark: '' })
-const mergeForm = reactive({ keepClueId: undefined as number | undefined, remark: '' })
 
 const statusOptions = [
     { label: '跟进中', value: 2 },
@@ -308,8 +292,7 @@ const setSearchParams = (params: Record<string, any>) => {
 
 const openMergeDialog = () => {
     const keepId = selectionList.value[0]?.id
-    mergeForm.keepClueId = keepId ? Number(keepId) : undefined
-    mergeForm.remark = ''
+    mergeKeepClueId.value = keepId ? Number(keepId) : undefined
     mergeDialogVisible.value = true
 }
 
@@ -355,20 +338,26 @@ const handleBatchSilent = async () => {
     await tableMethods.getList()
 }
 
-const handleMerge = async () => {
-    if (!mergeForm.keepClueId) {
+const handleMerge = async ({
+    keepClueId,
+    mergedClueId,
+    remark,
+    mergedData
+}: {
+    keepClueId: number
+    mergedClueId: number
+    remark?: string
+    mergedData: ClueApi.ClueMergeDataReqVO
+}) => {
+    if (!keepClueId || !mergedClueId) {
         message.warning('请选择保留线索')
         return
     }
-    const mergedClue = selectionList.value.find((item) => Number(item.id) !== mergeForm.keepClueId)
-    if (!mergedClue?.id) {
-        message.warning('请选择两条线索后再进行合并')
-        return
-    }
     await ClueApi.allocationMerge({
-        keepClueId: Number(mergeForm.keepClueId),
-        mergedClueId: Number(mergedClue.id),
-        remark: mergeForm.remark || undefined
+        keepClueId: Number(keepClueId),
+        mergedClueId: Number(mergedClueId),
+        remark,
+        mergedData
     })
     message.success('线索合并成功')
     mergeDialogVisible.value = false

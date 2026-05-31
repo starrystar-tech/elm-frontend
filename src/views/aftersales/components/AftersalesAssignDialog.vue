@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { BaseButton } from '@/components/Button'
 import * as AftersalesApi from '@/api/crm/aftersales'
-import HeadteacherSelect from '@/views/common/HeadteacherSelect.vue'
+import HeadteacherSelect from '@/components/HeadteacherSelect.vue'
 
 defineOptions({ name: 'AftersalesAssignDialog' })
 

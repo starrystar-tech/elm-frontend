@@ -200,7 +200,7 @@ import {
   PromotionProductScopeEnum
 } from '@/utils/constants'
 import SpuShowcase from '@/views/mall/product/spu/components/SpuShowcase.vue'
-import ProductCategorySelect from '@/views/common/ProductCategorySelect.vue'
+import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import { convertToInteger, formatToFraction } from '@/utils'
 
 defineOptions({ name: 'CouponTemplateForm' })

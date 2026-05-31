@@ -74,7 +74,7 @@ import { BaseButton } from '@/components/Button'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import * as AftersalesApi from '@/api/crm/aftersales'
 import type { UserVO } from '@/api/system/user'
-import ClueSelect from '@/views/common/ClueSelect.vue'
+import ClueSelect from '@/components/ClueSelect.vue'
 import { getAftersalesPriorityOptions, getAftersalesTypeOptions } from '../config'
 
 defineOptions({ name: 'AftersalesForm' })

@@ -38,7 +38,9 @@ watch(
 )
 
 const loadOptions = async () => {
-    const list = ((await ProductCategoryApi.getProductCategorySimpleList()) || []) as ProductCategoryApi.ProductCategoryVO[]
+    const list =
+        ((await ProductCategoryApi.getProductCategorySimpleList()) ||
+            []) as ProductCategoryApi.ProductCategoryVO[]
     options.value = list.filter((item) => Number(item.parentId) === 0)
 }
 

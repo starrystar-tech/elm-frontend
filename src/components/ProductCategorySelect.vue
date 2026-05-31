@@ -39,10 +39,13 @@ const selectCategoryId = computed({
 const categoryList = ref<ProductCategoryApi.ProductCategoryVO[]>([])
 
 const loadCategoryList = async () => {
-    const data = ((await ProductCategoryApi.getProductCategorySimpleList()) || []) as ProductCategoryApi.ProductCategoryVO[]
-    const list = props.parentId !== undefined
-        ? data.filter((item) => Number(item.parentId) === Number(props.parentId))
-        : data
+    const data =
+        ((await ProductCategoryApi.getProductCategorySimpleList()) ||
+            []) as ProductCategoryApi.ProductCategoryVO[]
+    const list =
+        props.parentId !== undefined
+            ? data.filter((item) => Number(item.parentId) === Number(props.parentId))
+            : data
     categoryList.value = listToTree(list, { id: 'id', pid: 'parentId', children: 'children' })
 }
 

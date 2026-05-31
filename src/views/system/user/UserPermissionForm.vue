@@ -37,15 +37,12 @@
                 </el-select>
             </el-form-item>
             <el-form-item label="管辖地区">
-                <el-tree-select
+                <AreaSelect
                     v-model="formData.areaIds"
                     :data="areaTreeList"
-                    :props="defaultProps"
                     multiple
-                    show-checkbox
-                    check-strictly
-                    node-key="id"
-                    value-key="id"
+                    :include-all-node="true"
+                    placeholder="请选择管辖地区"
                 />
             </el-form-item>
             <el-form-item label="管辖产品">
@@ -82,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { defaultProps } from '@/utils/tree'
+import AreaSelect from '@/components/AreaSelect.vue'
 import * as UserApi from '@/api/system/user'
 import * as CampusApi from '@/api/system/campus'
 import * as AreaApi from '@/api/system/area'
@@ -125,8 +122,8 @@ const open = async (row: UserApi.UserVO) => {
             WeappApi.getWeappConfigList()
         ])
         campusList.value = campusData || []
-        weappList.value = weappData || []
         areaTreeList.value = areaData || []
+        weappList.value = weappData || []
         rootCategoryList.value = (categoryData || []).filter(
             (item: any) => Number(item.level) === 1
         )

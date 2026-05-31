@@ -257,8 +257,8 @@ import * as ProductCategoryApi from '@/api/crm/product/category'
 import type { ProductVO } from '@/api/crm/product'
 import type { ProductCategoryVO } from '@/api/crm/product/category'
 import type { CampusVO } from '@/api/system/campus'
-import CampusSelect from '@/views/common/CampusSelect.vue'
-import ProductSelectDialog from '@/views/common/ProductSelectDialog.vue'
+import CampusSelect from '@/components/CampusSelect.vue'
+import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
 
 defineOptions({ name: 'ClueEnrollDialog' })
 

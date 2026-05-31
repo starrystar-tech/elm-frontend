@@ -132,29 +132,12 @@
         </template>
     </Dialog>
 
-    <Dialog v-model="mergeDialogVisible" title="线索合并" width="520px">
-        <el-form label-width="90px">
-            <el-form-item label="保留线索">
-                <el-radio-group v-model="mergeForm.keepClueId">
-                    <el-radio v-for="item in selectionList" :key="item.id" :label="item.id">
-                        {{ item.name || item.mobile || item.id }}
-                    </el-radio>
-                </el-radio-group>
-            </el-form-item>
-            <el-form-item label="合并备注">
-                <el-input
-                    v-model="mergeForm.remark"
-                    type="textarea"
-                    :rows="3"
-                    placeholder="请输入合并备注"
-                />
-            </el-form-item>
-        </el-form>
-        <template #footer>
-            <el-button @click="mergeDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="handleMerge">确定</el-button>
-        </template>
-    </Dialog>
+    <ClueMergeDialog
+        v-model="mergeDialogVisible"
+        :clues="selectionList"
+        :initial-keep-clue-id="mergeKeepClueId"
+        @confirm="handleMerge"
+    />
 
     <Dialog v-model="importDialogVisible" title="批量导入名片" width="480px">
         <el-upload
@@ -198,6 +181,7 @@ import * as TagGroupApi from '@/api/system/tag-group'
 import ClueForm from './ClueForm.vue'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'
+import ClueMergeDialog from './components/ClueMergeDialog.vue'
 
 interface SearchParams {
     customer?: string
@@ -245,11 +229,11 @@ const assignModeDialogVisible = ref(false)
 const silentDialogVisible = ref(false)
 const tagDialogVisible = ref(false)
 const mergeDialogVisible = ref(false)
+const mergeKeepClueId = ref<number | undefined>()
 
 const assignModeForm = reactive({ assignMode: 1 })
 const silentForm = reactive({ silentReason: '', silentDays: 7, remark: '' })
 const tagForm = reactive({ tagIds: [] as number[] })
-const mergeForm = reactive({ keepClueId: undefined as number | undefined, remark: '' })
 
 const areaOptions = ref<AreaOption[]>([])
 const userOptions = ref<{ label: string; value: number }[]>([])
@@ -664,9 +648,6 @@ const loadOptions = async () => {
 
 const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
     selectionList.value = rows || []
-    if (selectionList.value.length === 2) {
-        mergeForm.keepClueId = selectionList.value[0].id
-    }
 }
 
 const setSearchParams = (params: SearchParams) => {
@@ -741,22 +722,32 @@ const openMergeDialog = () => {
         message.warning('请选择两条线索进行合并')
         return
     }
-    mergeForm.keepClueId = selectionList.value[0].id
-    mergeForm.remark = ''
+    mergeKeepClueId.value = selectionList.value[0].id
     mergeDialogVisible.value = true
 }
 
-const handleMerge = async () => {
-    const keepId = Number(mergeForm.keepClueId)
-    const merged = selectionList.value.find((item) => Number(item.id) !== keepId)
-    if (!keepId || !merged?.id) {
+const handleMerge = async ({
+    keepClueId,
+    mergedClueId,
+    remark,
+    mergedData
+}: {
+    keepClueId: number
+    mergedClueId: number
+    remark?: string
+    mergedData: ClueApi.ClueMergeDataReqVO
+}) => {
+    const keepId = Number(keepClueId)
+    const mergedId = Number(mergedClueId)
+    if (!keepId || !mergedId) {
         message.warning('请选择保留线索')
         return
     }
     await ClueApi.mergeClue({
         keepClueId: keepId,
-        mergedClueId: Number(merged.id),
-        remark: mergeForm.remark.trim() || undefined
+        mergedClueId: mergedId,
+        remark,
+        mergedData
     })
     message.success('线索合并成功')
     mergeDialogVisible.value = false

@@ -670,9 +670,9 @@ import type * as CampusApi from '@/api/system/campus'
 import { DICT_TYPE, getDictLabel, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import { getAftersalesStatusLabel } from '@/views/aftersales/config'
-import ProductTypeSelect from '@/views/common/ProductTypeSelect.vue'
-import ProductSelectDialog from '@/views/common/ProductSelectDialog.vue'
-import ProductCategorySelect from '@/views/common/ProductCategorySelect.vue'
+import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
+import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
+import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO

@@ -64,6 +64,16 @@ div.detail-wrap {
     }
 }
 
+.search-table-dialog {
+    padding: 0 16px 16px 16px;
+    .el-dialog__body {
+        padding: 0;
+        > div {
+            padding-bottom: 16px;
+        }
+    }
+}
+
 // CRM/业务列表页：统一压缩 Tabs 与按钮区的垂直间距
 .list-tabs-compact-in-pane {
     padding: 6px 16px 0 16px;

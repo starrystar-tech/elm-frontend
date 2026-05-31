@@ -76,7 +76,7 @@ import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as DeptApi from '@/api/system/dept'
 import { handleTree } from '@/utils/tree'
 import AreaSelect from '@/components/AreaSelect.vue'
-import HeadteacherSelect from '@/views/common/HeadteacherSelect.vue'
+import HeadteacherSelect from '@/components/HeadteacherSelect.vue'
 
 defineOptions({ name: 'CrmHeadteacherAllocationForm' })
 
