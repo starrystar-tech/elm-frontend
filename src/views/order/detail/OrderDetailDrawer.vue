@@ -1,202 +1,181 @@
 <template>
     <Dialog v-model="dialogVisible" title="订单详情" width="1200px">
+        <div class="flex flex-wrap gap-8px justify-end mb-16px">
+            <el-button type="primary" plain @click="handleContractSign()">签署合同</el-button>
+            <el-button type="primary" plain @click="handlePay">支付</el-button>
+            <el-button type="primary" plain @click="handleRefund">退款</el-button>
+            <el-button type="danger" plain @click="handleVoid">作废</el-button>
+            <el-button type="primary" plain @click="handleRepurchase">订单复购</el-button>
+        </div>
         <div v-loading="loading">
             <ContentWrap class="mb-16px">
                 <div class="flex flex-wrap items-start justify-between gap-16px p-16px">
                     <div class="order-detail-summary">
-                        <div class="order-detail-summary__item">
-                            <span class="label">订单编号：</span>
-                            <span>{{ detail.orderNo || '-' }}</span>
-                        </div>
-                        <div class="order-detail-summary__item">
-                            <span class="label">报名时间：</span>
-                            <span>{{ detail.enrollTime || '-' }}</span>
-                        </div>
-                        <div class="order-detail-summary__item">
-                            <span class="label">订单状态：</span>
-                            <span>{{ orderStatusLabel(detail.orderStatus) }}</span>
-                        </div>
-                        <div class="order-detail-summary__item">
-                            <span class="label">应付金额：</span>
-                            <span>￥{{ formatAmount(detail.payableAmount) }}</span>
-                        </div>
-                        <div class="order-detail-summary__item">
-                            <span class="label">已付金额：</span>
-                            <span>￥{{ formatAmount(detail.paidAmount) }}</span>
-                        </div>
-                        <div class="order-detail-summary__item">
-                            <span class="label">已退费金额：</span>
-                            <span>￥{{ formatAmount(detail.refundAmount) }}</span>
-                        </div>
-                        <div class="order-detail-summary__item">
-                            <span class="label">订单归属：</span>
-                            <span>{{ orderOwnerText }}</span>
-                        </div>
-                        <div class="order-detail-summary__item">
-                            <span class="label">备注：</span>
-                            <span>{{ detail.remark || '-' }}</span>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap gap-8px">
-                        <el-button type="success" plain @click="handleContractSign()"
-                            >签署合同</el-button
-                        >
-                        <el-button type="primary" plain @click="handlePay">支付</el-button>
-                        <el-button type="warning" plain @click="handleRefund">退款</el-button>
-                        <el-button type="danger" plain @click="handleVoid">作废</el-button>
-                        <el-button type="success" plain @click="handleRepurchase"
-                            >订单复购</el-button
-                        >
+                        <div class="order-detail-summary__title">订单基本信息</div>
+                        <el-descriptions :column="4" border>
+                            <el-descriptions-item label="订单编号">{{
+                                detail.orderNo || '-'
+                            }}</el-descriptions-item>
+                            <el-descriptions-item label="报名时间">{{
+                                detail.enrollTime || '-'
+                            }}</el-descriptions-item>
+                            <el-descriptions-item label="订单状态">{{
+                                orderStatusLabel(detail.orderStatus)
+                            }}</el-descriptions-item>
+                            <el-descriptions-item label="订单归属">{{
+                                orderOwnerText
+                            }}</el-descriptions-item>
+                            <el-descriptions-item label="应付金额">{{
+                                `￥${formatAmount(detail.payableAmount)}`
+                            }}</el-descriptions-item>
+                            <el-descriptions-item label="已付金额">{{
+                                `￥${formatAmount(detail.paidAmount)}`
+                            }}</el-descriptions-item>
+                            <el-descriptions-item label="已退费金额">{{
+                                `￥${formatAmount(detail.refundAmount)}`
+                            }}</el-descriptions-item>
+                            <el-descriptions-item label="备注" :span="2">{{
+                                detail.remark || '-'
+                            }}</el-descriptions-item>
+                        </el-descriptions>
                     </div>
                 </div>
             </ContentWrap>
 
             <ContentWrap>
-                <div class="order-consult-section">
-                    <div class="order-consult-section__title">咨询信息</div>
-                    <div class="order-consult-section__grid">
-                        <div class="order-consult-section__item">
-                            <span class="label">线索ID</span>
-                            <span>{{ consultBasicInfo?.clueId || detail.clueId || '-' }}</span>
-                        </div>
-                        <div class="order-consult-section__item">
-                            <span class="label">客户状态</span>
-                            <span>{{ consultBasicInfo?.statusName || '-' }}</span>
-                        </div>
-                        <div class="order-consult-section__item">
-                            <span class="label">意向度</span>
-                            <span>{{ consultBasicInfo?.intentLevelName || '-' }}</span>
-                        </div>
-                        <div class="order-consult-section__item">
-                            <span class="label">来源</span>
-                            <span>{{ consultBasicInfo?.clueSourceName || '-' }}</span>
-                        </div>
-                        <div class="order-consult-section__item">
-                            <span class="label">咨询项目</span>
-                            <span>{{ consultBasicInfo?.consultProjectName || '-' }}</span>
-                        </div>
-                        <div class="order-consult-section__item">
-                            <span class="label">名片归属</span>
-                            <span>{{ consultBasicInfo?.ownerName || detail.cardOwnerUserName || '-' }}</span>
-                        </div>
-                        <div class="order-consult-section__item">
-                            <span class="label">归属部门</span>
-                            <span>{{ consultBasicInfo?.departmentName || '-' }}</span>
-                        </div>
-                        <div class="order-consult-section__item">
-                            <span class="label">标签</span>
-                            <span>{{ consultTagText }}</span>
-                        </div>
-                    </div>
-                    <div v-if="consultAppointments.length" class="order-consult-records">
-                        <div
-                            v-for="record in consultAppointments"
-                            :key="record.id"
-                            class="order-consult-record"
-                        >
-                            <div class="order-consult-record__header">
-                                <strong>{{ record.appointmentTypeName || '咨询记录' }}</strong>
-                                <span>{{ record.createTime || '-' }}</span>
-                            </div>
-                            <div class="order-consult-record__body">
-                                <span>操作类型：{{ record.appointmentTypeName || '-' }}</span>
-                                <span>预约时间：{{ record.appointmentTime || '-' }}</span>
-                                <span>分校：{{ record.campusName || '-' }}</span>
-                                <span>
-                                    咨询项目：{{
-                                        record.projectName ||
-                                        record.productCategoryName ||
-                                        record.productName ||
-                                        '-'
-                                    }}
-                                </span>
-                                <span v-if="record.appointmentPrice !== undefined">
-                                    预约价格：{{ formatAmount(record.appointmentPrice) }}
-                                </span>
-                                <span>记录人：{{ record.creator || '-' }}</span>
-                                <span class="is-full">
-                                    备注：{{ record.consultContent || '-' }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <el-empty
-                        v-else
-                        description="暂无咨询记录"
-                        :image-size="60"
-                        class="order-consult-section__empty"
-                    />
-                </div>
                 <el-tabs v-model="activeTab" class="p-16px">
                     <el-tab-pane label="学员信息" name="student">
                         <div class="order-detail-student p-10px">
-                            <div class="order-detail-student__grid">
-                                <div class="order-detail-student__item">
-                                    <span class="label">姓名</span>
-                                    <span>{{ detail.customerName || '-' }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">性别</span>
-                                    <span>{{ genderText }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">手机号</span>
-                                    <span>{{ detail.customerMobile || '-' }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">手机号2</span>
-                                    <span>{{ detail.customerMobile2 || '-' }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">地区</span>
-                                    <span>{{ areaText }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">微信</span>
-                                    <span>{{ detail.wechat || '-' }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">微信2</span>
-                                    <span>{{ detail.wechat2 || '-' }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">QQ</span>
-                                    <span>{{ detail.qq || '-' }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">出生日期</span>
-                                    <span>{{ detail.birthday || '-' }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">证件类型</span>
-                                    <span>{{ detail.certificateType || '-' }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">证件号码</span>
-                                    <span>{{ detail.idCardNo || '-' }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">最高学历</span>
-                                    <span>{{ educationText }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">职业</span>
-                                    <span>{{ detail.occupation || '-' }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">紧急联系号码</span>
-                                    <span>{{ detail.emergencyMobile || '-' }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">紧急联系人</span>
-                                    <span>{{ detail.emergencyContact || '-' }}</span>
-                                </div>
-                                <div class="order-detail-student__item">
-                                    <span class="label">客户ID</span>
-                                    <span>{{ detail.customerId || '-' }}</span>
-                                </div>
-                            </div>
+                            <el-descriptions :column="4" border>
+                                <el-descriptions-item label="姓名">{{
+                                    detail.customerName || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="性别">{{
+                                    genderText
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="手机号">{{
+                                    detail.customerMobile || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="手机号2">{{
+                                    detail.customerMobile2 || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="地区" :span="2">{{
+                                    areaText
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="微信">{{
+                                    detail.wechat || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="微信2">{{
+                                    detail.wechat2 || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="QQ">{{
+                                    detail.qq || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="出生日期">{{
+                                    detail.birthday || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="证件类型">{{
+                                    detail.certificateType || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="证件号码">{{
+                                    detail.idCardNo || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="最高学历">{{
+                                    educationText
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="职业">{{
+                                    detail.occupation || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="紧急联系号码">{{
+                                    detail.emergencyMobile || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="紧急联系人">{{
+                                    detail.emergencyContact || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="客户ID">{{
+                                    detail.customerId || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="信息ID">{{
+                                    detail.customerId || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="客户状态">{{
+                                    consultBasicInfo?.statusName || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="意向度">{{
+                                    consultBasicInfo?.intentLevelName || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="来源">{{
+                                    consultBasicInfo?.clueSourceName || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="咨询项目">{{
+                                    consultBasicInfo?.consultProjectName || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="名片归属">{{
+                                    consultBasicInfo?.ownerName || detail.cardOwnerUserName || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="归属部门">{{
+                                    consultBasicInfo?.departmentName || '-'
+                                }}</el-descriptions-item>
+                                <el-descriptions-item label="标签" :span="2">{{
+                                    consultTagText
+                                }}</el-descriptions-item>
+                            </el-descriptions>
                         </div>
+                    </el-tab-pane>
+                    <el-tab-pane label="预约记录" name="appointments">
+                        <el-table
+                            v-if="consultAppointments.length"
+                            :data="consultAppointments"
+                            border
+                        >
+                            <el-table-column
+                                prop="appointmentTypeName"
+                                label="操作类型"
+                                min-width="120"
+                            />
+                            <el-table-column label="预约时间" min-width="160">
+                                <template #default="{ row }">
+                                    {{ formatDateTimeText(row.appointmentTime) }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="campusName" label="分校" min-width="140" />
+                            <el-table-column label="咨询项目" min-width="180">
+                                <template #default="{ row }">
+                                    {{
+                                        row.projectName ||
+                                        row.productCategoryName ||
+                                        row.productName ||
+                                        '-'
+                                    }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="预约价格" min-width="120">
+                                <template #default="{ row }">
+                                    {{
+                                        row.appointmentPrice !== undefined
+                                            ? formatAmount(row.appointmentPrice)
+                                            : '-'
+                                    }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="记录人" min-width="120">
+                                <template #default="{ row }">
+                                    {{ row.creatorName || row.creator || '-' }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="创建时间" min-width="160">
+                                <template #default="{ row }">
+                                    {{ formatDateTimeText(row.createTime) }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="consultContent" label="备注" min-width="220" />
+                        </el-table>
+                        <el-empty
+                            v-else
+                            description="暂无咨询记录"
+                            :image-size="60"
+                            class="order-consult-section__empty"
+                        />
                     </el-tab-pane>
                     <el-tab-pane label="商品信息" name="goods">
                         <el-table :data="detail.items || []" border>
@@ -297,6 +276,7 @@ import { ContentWrap } from '@/components/ContentWrap'
 import * as CustomerDetailApi from '@/api/crm/customerDetail'
 import * as OrderApi from '@/api/crm/order'
 import { DICT_TYPE, getDictLabel } from '@/utils/dict'
+import { resolveTimestamp } from '@/utils/formatTime'
 import OrderContractSignDialog from './OrderContractSignDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import {
@@ -353,6 +333,12 @@ const consultTagText = computed(() => {
     const tags = consultBasicInfo.value?.tags || []
     return tags.length ? tags.map((item) => item.name).join('、') : '-'
 })
+const formatDateTimeText = (value?: string | number | null) => {
+    if (value === null || value === undefined || value === '' || Number(value) === 0) {
+        return '-'
+    }
+    return resolveTimestamp(value)?.format('YYYY-MM-DD HH:mm:ss') || String(value)
+}
 
 const loadConsultInfo = async () => {
     const clueId = detail.value.clueId
@@ -440,98 +426,16 @@ defineExpose({ open })
 
 <style scoped lang="scss">
 .order-detail-summary {
-    display: grid;
     flex: 1;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px 32px;
 }
 
-.order-detail-summary__item {
-    font-size: 15px;
-    color: var(--el-text-color-primary);
-}
-
-.order-detail-summary__item .label,
-.order-detail-student__item .label {
-    margin-right: 4px;
-    color: var(--el-text-color-regular);
-}
-
-.order-consult-section {
-    padding: 16px 16px 0;
-}
-
-.order-consult-section__title {
-    margin-bottom: 14px;
+.order-detail-summary__title {
+    margin-bottom: 12px;
     font-size: 16px;
     font-weight: 600;
     color: var(--el-text-color-primary);
 }
-
-.order-consult-section__grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px 24px;
-}
-
-.order-consult-section__item {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 14px;
-    color: var(--el-text-color-primary);
-}
-
-.order-consult-section__item .label {
-    color: var(--el-text-color-regular);
-}
-
-.order-consult-records {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 18px;
-}
-
-.order-consult-record {
-    padding: 14px 16px;
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 12px;
-    background: var(--el-fill-color-blank);
-}
-
-.order-consult-record__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
-}
-
-.order-consult-record__body {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px 20px;
-    font-size: 14px;
-    color: var(--el-text-color-regular);
-}
-
-.order-consult-record__body .is-full {
-    grid-column: 1 / -1;
-}
-
 .order-consult-section__empty {
     padding-top: 8px;
-}
-
-.order-detail-student__grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px 48px;
-}
-
-.order-detail-student__item {
-    font-size: 15px;
-    color: var(--el-text-color-primary);
 }
 </style>

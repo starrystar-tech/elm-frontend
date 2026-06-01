@@ -261,18 +261,40 @@
                                     </template>
                                 </el-table-column>
                                 <el-table-column prop="campusName" label="校区" min-width="120" />
+                                <el-table-column label="咨询项目" min-width="180">
+                                    <template #default="{ row }">
+                                        {{
+                                            row.projectName ||
+                                            row.productCategoryName ||
+                                            row.productName ||
+                                            '--'
+                                        }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="预约价格" min-width="120">
+                                    <template #default="{ row }">
+                                        {{
+                                            row.appointmentPrice !== undefined &&
+                                            row.appointmentPrice !== null
+                                                ? row.appointmentPrice
+                                                : '--'
+                                        }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="记录人" min-width="120">
+                                    <template #default="{ row }">
+                                        {{ row.creatorName || row.creator || '--' }}
+                                    </template>
+                                </el-table-column>
                                 <el-table-column
-                                    prop="projectName"
-                                    label="咨询项目"
+                                    prop="createTime"
+                                    label="创建时间"
                                     min-width="160"
-                                />
-                                <el-table-column prop="productName" label="商品" min-width="160" />
-                                <el-table-column
-                                    prop="appointmentPrice"
-                                    label="预约价格"
-                                    min-width="100"
-                                />
-                                <el-table-column prop="creator" label="记录人" min-width="100" />
+                                >
+                                    <template #default="{ row }">
+                                        {{ formatDateTime(row.createTime) }}
+                                    </template>
+                                </el-table-column>
                                 <el-table-column
                                     prop="consultContent"
                                     label="备注"
@@ -668,7 +690,7 @@ import type * as OrderApi from '@/api/crm/order'
 import type { ProductVO } from '@/api/crm/product'
 import type * as CampusApi from '@/api/system/campus'
 import { DICT_TYPE, getDictLabel, getIntDictOptions } from '@/utils/dict'
-import { dateFormatter } from '@/utils/formatTime'
+import { resolveTimestamp } from '@/utils/formatTime'
 import { getAftersalesStatusLabel } from '@/views/aftersales/config'
 import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
@@ -827,8 +849,12 @@ const consultRules = reactive({
 const formatAddWay = (value?: string) =>
     value ? getDictLabel(DICT_TYPE.WEWORK_FOLLOW_USER_ADD_WAY, value) || value : '--'
 
-const formatDateTime = (value?: string) =>
-    value ? dateFormatter({} as any, {} as any, value) || value : '--'
+const formatDateTime = (value?: string | number | null) => {
+    if (value === null || value === undefined || value === '' || Number(value) === 0) {
+        return '--'
+    }
+    return resolveTimestamp(value)?.format('YYYY-MM-DD HH:mm:ss') || String(value)
+}
 
 const syncEditForm = () => {
     editForm.id = props.clue.id

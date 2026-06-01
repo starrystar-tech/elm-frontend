@@ -56,6 +56,7 @@ export interface CustomerAppointmentRespVO {
     appointmentPrice?: number
     consultContent?: string
     creator?: string
+    creatorName?: string
     createTime?: string
 }
 
