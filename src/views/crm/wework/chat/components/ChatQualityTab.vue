@@ -128,7 +128,7 @@
                 </div>
             </div>
 
-            <div class="chat-messages">
+            <div ref="chatMessagesRef" class="chat-messages">
                 <template v-if="displayMessages.length">
                     <div v-for="message in displayMessages" :key="message.id">
                         <div v-if="message.showTime" class="time-divider"
@@ -247,7 +247,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
 import * as WeworkChatApi from '@/api/crm/wework/chat'
@@ -276,6 +276,7 @@ const messageKeyword = ref('')
 const messageTypeFilter = ref('')
 const activeSessionTab = ref<'all' | 'single' | 'group'>('all')
 const dateRange = ref<string[]>([])
+const chatMessagesRef = ref<HTMLDivElement>()
 const qualityData = ref<WeworkChatApi.WeworkChatQualityRespVO>({
     corpList: [],
     memberList: [],
@@ -349,6 +350,13 @@ const displayMessages = computed(() =>
         }))
 )
 
+const scrollChatToBottom = async () => {
+    await nextTick()
+    const container = chatMessagesRef.value
+    if (!container) return
+    container.scrollTop = container.scrollHeight
+}
+
 const loadQualityView = async () => {
     loading.value = true
     try {
@@ -372,6 +380,7 @@ const loadQualityView = async () => {
             selectedCorpId.value = resp.corpList[0].corpId
         if (!selectedSessionId.value && resp.sessionList.length)
             selectedSessionId.value = resp.sessionList[0].msgId
+        else await scrollChatToBottom()
     } finally {
         loading.value = false
     }
@@ -380,10 +389,16 @@ const loadQualityView = async () => {
 watch(selectedCorpId, () => {
     selectedSessionId.value = ''
 })
+watch(selectedSessionId, () => {
+    scrollChatToBottom()
+})
 watch(
     [selectedCorpId, selectedMemberId, selectedSessionId, activeSessionTab, dateRange],
     loadQualityView
 )
+watch(displayMessages, () => {
+    scrollChatToBottom()
+})
 onMounted(() => {
     const queryCorpId = String(route.query.corpId || '')
     const queryFromUser = String(route.query.fromUser || '')
@@ -422,7 +437,8 @@ const formatFileMeta = (media?: {
     display: grid;
     grid-template-columns: 132px 240px minmax(0, 1fr);
     gap: 0;
-    min-height: 720px;
+    height: 100%;
+    min-height: 0;
     border: 1px solid var(--el-border-color-light);
     border-radius: 10px;
     overflow: hidden;
@@ -432,9 +448,12 @@ const formatFileMeta = (media?: {
 .panel {
     background: #fff;
     min-width: 0;
+    min-height: 0;
 }
 .member-panel,
 .session-panel {
+    display: flex;
+    flex-direction: column;
     border-right: 1px solid var(--el-border-color-light);
 }
 .panel-toolbar {
@@ -446,11 +465,12 @@ const formatFileMeta = (media?: {
 .member-list,
 .session-list,
 .chat-messages {
+    min-height: 0;
     overflow: auto;
 }
 .member-list,
 .session-list {
-    height: calc(720px - 69px);
+    flex: 1;
 }
 .member-item,
 .session-item,
@@ -576,6 +596,7 @@ const formatFileMeta = (media?: {
     display: flex;
     flex-direction: column;
     background: #eef3f7;
+    min-height: 0;
 }
 .chat-toolbar {
     padding: 12px 14px;
@@ -604,6 +625,7 @@ const formatFileMeta = (media?: {
 }
 .chat-messages {
     flex: 1;
+    min-height: 0;
     padding: 18px 22px 26px;
     background:
         radial-gradient(circle at top right, rgba(167, 219, 255, 0.22), transparent 28%),

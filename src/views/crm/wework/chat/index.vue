@@ -1,11 +1,11 @@
 <template>
-    <div class="toolbar">
-        <BaseButton type="primary" :loading="syncLoading" @click="handleSyncArchive">
+    <div class="mb-8px">
+        <BaseButton :loading="syncLoading" @click="handleSyncArchive">
             同步企微会话存档
         </BaseButton>
     </div>
-    <ContentWrap style="border-top: 1px solid #e5e5e5">
-        <ChatQualityTab v-if="activeTab === 'quality'" />
+    <ContentWrap style="border-top: 1px solid #e5e5e5" body-style="padding: 0px">
+        <ChatQualityTab v-if="activeTab === 'quality'" class="chat-page-body" />
         <ChatAuditTab v-else-if="activeTab === 'audit'" />
         <ChatAnalysisTab v-else />
     </ContentWrap>
@@ -40,7 +40,12 @@ const handleSyncArchive = async () => {
 }
 </script>
 <style scoped lang="scss">
-.toolbar {
-    margin-bottom: 16px;
+:deep(.chat-page-body) {
+    height: calc(
+        100vh - var(--top-tool-height) - var(--tags-view-height) - var(--app-content-padding) - var(
+                --app-footer-height
+            )
+    );
+    min-height: 720px;
 }
 </style>
