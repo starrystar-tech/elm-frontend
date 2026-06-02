@@ -23,8 +23,8 @@
                                 <span>浏览器分机 {{ browserStatus }}</span>
                             </div>
                             <div class="status-hint"
-                                >首次使用前，请确认浏览器已允许麦克风，并能访问
-                                `wss://8.152.103.225:7443`。</div
+                                >当前默认走 `wss://sip.bgwa.cn`，由 Nginx 终止 TLS 后反代到
+                                FreeSWITCH 的 `ws://127.0.0.1:5066`。</div
                             >
                         </div>
                     </div>
@@ -51,7 +51,7 @@
                                 <el-form-item label="WSS 地址">
                                     <el-input
                                         v-model="browserForm.wsServer"
-                                        placeholder="wss://60.205.112.131:7443"
+                                        placeholder="wss://sip.bgwa.cn"
                                     />
                                 </el-form-item>
                             </el-col>
@@ -145,8 +145,8 @@
                                 挂断
                             </el-button>
                             <span class="soft-note">
-                                来电或通话没有声音时，优先检查浏览器麦克风权限、HTTPS 页面和 `7443`
-                                端口证书。
+                                来电或通话没有声音时，优先检查浏览器麦克风权限、`sip.bgwa.cn`
+                                证书是否有效，以及 Nginx 到 `5066` 的反代是否正常。
                             </span>
                         </div>
                     </el-form>
@@ -306,8 +306,8 @@ const localAudioRef = ref<HTMLAudioElement>()
 
 const profile = reactive<Partial<ProfileVO>>({})
 const browserForm = reactive({
-    wsServer: 'wss://8.152.103.225:7443',
-    domain: '8.152.103.225',
+    wsServer: 'wss://sip.bgwa.cn',
+    domain: '60.205.112.131',
     username: '',
     password: '',
     target: ''
