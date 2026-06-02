@@ -128,6 +128,9 @@ importers:
       qs:
         specifier: ^6.14.0
         version: 6.14.0
+      sip.js:
+        specifier: ^0.21.2
+        version: 0.21.2
       sortablejs:
         specifier: ^1.15.3
         version: 1.15.6
@@ -4981,6 +4984,10 @@ packages:
 
   signature_pad@5.1.0:
     resolution: {integrity: sha512-h9rIm0vZggb/wWiajLzrH0Md+YntTHIo2dUFm6mfYAIItD75yzpiIHa1HcRA9NhQqPBix2KF8TIIA9vaokomBw==}
+
+  sip.js@0.21.2:
+    resolution: {integrity: sha512-tSqTcIgrOd2IhP/rd70JablvAp+fSfLSxO4hGNY6LkWRY1SKygTO7OtJEV/BQb8oIxtMRx0LE7nUF2MaqGbFzA==}
+    engines: {node: '>=10.0'}
 
   sirv@3.0.2:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
@@ -10746,6 +10753,8 @@ snapshots:
   signature_pad@3.0.0-beta.4: {}
 
   signature_pad@5.1.0: {}
+
+  sip.js@0.21.2: {}
 
   sirv@3.0.2:
     dependencies:

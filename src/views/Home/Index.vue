@@ -1,418 +1,736 @@
 <template>
-  <div>
-    <el-card shadow="never">
-      <el-skeleton :loading="loading" animated>
-        <el-row :gutter="16" justify="space-between">
-          <el-col :xl="12" :lg="12" :md="12" :sm="24" :xs="24">
-            <div class="flex items-center">
-              <el-avatar :src="avatar" :size="70" class="mr-16px">
-                <img src="@/assets/imgs/avatar.gif" alt="" />
-              </el-avatar>
-              <div>
-                <div class="text-20px">
-                  {{ t('workplace.welcome') }} {{ username }}
-                  {{ t('workplace.happyDay') }}
-                </div>
-                <div class="mt-10px text-14px text-gray-500">
-                  {{ t('workplace.toady') }}，20℃ - 32℃！
-                </div>
-              </div>
+  <div class="internal-call-page">
+    <el-row :gutter="16">
+      <el-col :xl="16" :lg="16" :md="24" :sm="24" :xs="24">
+        <el-card shadow="never" class="hero-card">
+          <div class="hero-grid">
+            <div>
+              <div class="eyebrow">FreeSWITCH Test Console</div>
+              <h1 class="hero-title">内部号拨打测试</h1>
+              <p class="hero-subtitle">
+                既可以让浏览器直接作为分机注册到 FreeSWITCH，也可以继续使用后端发起 ESL 桥接测试。
+              </p>
             </div>
-          </el-col>
-          <el-col :xl="12" :lg="12" :md="12" :sm="24" :xs="24">
-            <div class="h-70px flex items-center justify-end lt-sm:mt-10px">
-              <div class="px-8px text-right">
-                <div class="mb-16px text-14px text-gray-400">{{ t('workplace.project') }}</div>
-                <CountTo
-                  class="text-20px"
-                  :start-val="0"
-                  :end-val="totalSate.project"
-                  :duration="2600"
-                />
+            <div class="status-stack">
+              <div class="status-chip">
+                <span class="status-dot" :class="{ active: browserRegistered || activeCall || incomingCall }"></span>
+                <span>浏览器分机 {{ browserStatus }}</span>
               </div>
-              <el-divider direction="vertical" />
-              <div class="px-8px text-right">
-                <div class="mb-16px text-14px text-gray-400">{{ t('workplace.toDo') }}</div>
-                <CountTo
-                  class="text-20px"
-                  :start-val="0"
-                  :end-val="totalSate.todo"
-                  :duration="2600"
-                />
-              </div>
-              <el-divider direction="vertical" border-style="dashed" />
-              <div class="px-8px text-right">
-                <div class="mb-16px text-14px text-gray-400">{{ t('workplace.access') }}</div>
-                <CountTo
-                  class="text-20px"
-                  :start-val="0"
-                  :end-val="totalSate.access"
-                  :duration="2600"
-                />
-              </div>
+              <div class="status-hint">首次使用前，请确认浏览器已允许麦克风，并能访问 `wss://8.152.103.225:7443`。</div>
             </div>
-          </el-col>
-        </el-row>
-      </el-skeleton>
-    </el-card>
-  </div>
-
-  <el-row class="mt-8px" :gutter="8" justify="space-between">
-    <el-col :xl="16" :lg="16" :md="24" :sm="24" :xs="24" class="mb-8px">
-      <el-card shadow="never">
-        <template #header>
-          <div class="h-3 flex justify-between">
-            <span>{{ t('workplace.project') }}</span>
-            <el-link type="primary" :underline="false" href="https://www.bgwa.cn" target="_blank">
-              {{ t('action.more') }}
-            </el-link>
           </div>
-        </template>
-        <el-skeleton :loading="loading" animated>
-          <el-row>
-            <el-col
-              v-for="(item, index) in projects"
-              :key="`card-${index}`"
-              :xl="8"
-              :lg="8"
-              :md="8"
-              :sm="24"
-              :xs="24"
-            >
-              <el-card
-                shadow="hover"
-                class="mr-5px mt-5px cursor-pointer"
-                @click="handleProjectClick(item.message)"
-              >
-                <div class="flex items-center">
-                  <Icon
-                    :icon="item.icon"
-                    :size="25"
-                    class="mr-8px"
-                    :style="{ color: item.color }"
+        </el-card>
+
+        <el-card shadow="never" class="mt-16px">
+          <template #header>
+            <div class="card-header">
+              <span>浏览器分机</span>
+              <el-button link type="primary" @click="reloadProfile" :loading="profileLoading">
+                刷新当前分机
+              </el-button>
+            </div>
+          </template>
+
+          <el-form :model="browserForm" label-width="100px" class="dial-form">
+            <el-row :gutter="16">
+              <el-col :xl="12" :lg="12" :md="24" :sm="24" :xs="24">
+                <el-form-item label="WSS 地址">
+                  <el-input v-model="browserForm.wsServer" placeholder="wss://8.152.103.225:7443" />
+                </el-form-item>
+              </el-col>
+              <el-col :xl="12" :lg="12" :md="24" :sm="24" :xs="24">
+                <el-form-item label="SIP 域名">
+                  <el-input v-model="browserForm.domain" placeholder="8.152.103.225" />
+                </el-form-item>
+              </el-col>
+              <el-col :xl="12" :lg="12" :md="24" :sm="24" :xs="24">
+                <el-form-item label="分机账号">
+                  <el-input v-model="browserForm.username" placeholder="例如 1001" clearable />
+                </el-form-item>
+              </el-col>
+              <el-col :xl="12" :lg="12" :md="24" :sm="24" :xs="24">
+                <el-form-item label="分机密码">
+                  <el-input
+                    v-model="browserForm.password"
+                    type="password"
+                    show-password
+                    placeholder="请输入该分机的 SIP 密码"
+                    clearable
+                    @keyup.enter="connectBrowserPhone"
                   />
-                  <span class="text-16px">{{ item.name }}</span>
-                </div>
-                <div class="mt-12px text-12px text-gray-400">{{ t(item.message) }}</div>
-                <div class="mt-12px flex justify-between text-12px text-gray-400">
-                  <span>{{ item.personal }}</span>
-                  <span>{{ formatTime(item.time, 'yyyy-MM-dd') }}</span>
-                </div>
-              </el-card>
-            </el-col>
-          </el-row>
-        </el-skeleton>
-      </el-card>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-      <el-card shadow="never" class="mt-8px">
-        <el-skeleton :loading="loading" animated>
-          <el-row :gutter="20" justify="space-between">
-            <el-col :xl="10" :lg="10" :md="24" :sm="24" :xs="24">
-              <el-card shadow="hover" class="mb-8px">
-                <el-skeleton :loading="loading" animated>
-                  <Echart :options="pieOptionsData" :height="280" />
-                </el-skeleton>
-              </el-card>
-            </el-col>
-            <el-col :xl="14" :lg="14" :md="24" :sm="24" :xs="24">
-              <el-card shadow="hover" class="mb-8px">
-                <el-skeleton :loading="loading" animated>
-                  <Echart :options="barOptionsData" :height="280" />
-                </el-skeleton>
-              </el-card>
-            </el-col>
-          </el-row>
-        </el-skeleton>
-      </el-card>
-    </el-col>
-    <el-col :xl="8" :lg="8" :md="24" :sm="24" :xs="24" class="mb-8px">
-      <el-card shadow="never">
-        <template #header>
-          <div class="h-3 flex justify-between">
-            <span>{{ t('workplace.shortcutOperation') }}</span>
-          </div>
-        </template>
-        <el-skeleton :loading="loading" animated>
-          <el-row>
-            <el-col v-for="item in shortcut" :key="`team-${item.name}`" :span="8" class="mb-8px">
-              <div class="flex items-center">
-                <Icon :icon="item.icon" class="mr-8px" :style="{ color: item.color }" />
-                <el-link type="default" :underline="false" @click="handleShortcutClick(item.url)">
-                  {{ item.name }}
-                </el-link>
-              </div>
-            </el-col>
-          </el-row>
-        </el-skeleton>
-      </el-card>
-      <el-card shadow="never" class="mt-8px">
-        <template #header>
-          <div class="h-3 flex justify-between">
-            <span>{{ t('workplace.notice') }}</span>
-            <el-link type="primary" :underline="false">{{ t('action.more') }}</el-link>
-          </div>
-        </template>
-        <el-skeleton :loading="loading" animated>
-          <div v-for="(item, index) in notice" :key="`dynamics-${index}`">
-            <div class="flex items-center">
-              <el-avatar :src="avatar" :size="35" class="mr-16px">
-                <img src="@/assets/imgs/avatar.gif" alt="" />
-              </el-avatar>
-              <div>
-                <div class="text-14px">
-                  <Highlight :keys="item.keys.map((v) => t(v))">
-                    {{ item.type }} : {{ item.title }}
-                  </Highlight>
-                </div>
-                <div class="mt-16px text-12px text-gray-400">
-                  {{ formatTime(item.date, 'yyyy-MM-dd') }}
-                </div>
-              </div>
+            <div class="action-row">
+              <el-button
+                type="primary"
+                :loading="browserLoading"
+                :disabled="browserRegistered"
+                @click="connectBrowserPhone"
+              >
+                连接并注册
+              </el-button>
+              <el-button :disabled="!browserClient" @click="disconnectBrowserPhone">断开分机</el-button>
             </div>
-            <el-divider />
-          </div>
-        </el-skeleton>
-      </el-card>
-    </el-col>
-  </el-row>
-</template>
-<script lang="ts" setup>
-import { set } from 'lodash-es'
-import { EChartsOption } from 'echarts'
-import { formatTime } from '@/utils'
+          </el-form>
 
+          <el-divider content-position="left">网页拨号</el-divider>
+
+          <el-form :model="browserForm" label-width="100px" class="dial-form">
+            <el-row :gutter="16">
+              <el-col :xl="12" :lg="12" :md="24" :sm="24" :xs="24">
+                <el-form-item label="当前分机">
+                  <el-input v-model="browserForm.username" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :xl="12" :lg="12" :md="24" :sm="24" :xs="24">
+                <el-form-item label="目标分机">
+                  <el-input
+                    v-model="browserForm.target"
+                    placeholder="请输入目标内部号，例如 1002"
+                    clearable
+                    @keyup.enter="makeBrowserCall"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <div class="action-row wrap">
+              <el-button type="success" :disabled="!browserRegistered || activeCall" @click="makeBrowserCall">
+                拨打
+              </el-button>
+              <el-button type="warning" :disabled="!incomingCall" @click="answerBrowserCall">
+                接听
+              </el-button>
+              <el-button type="danger" :disabled="!activeCall && !incomingCall" @click="hangupBrowserCall">
+                挂断
+              </el-button>
+              <span class="soft-note">
+                来电或通话没有声音时，优先检查浏览器麦克风权限、HTTPS 页面和 `7443` 端口证书。
+              </span>
+            </div>
+          </el-form>
+
+          <audio ref="remoteAudioRef" autoplay playsinline class="hidden-audio"></audio>
+          <audio ref="localAudioRef" autoplay playsinline muted class="hidden-audio"></audio>
+        </el-card>
+
+        <el-card shadow="never" class="mt-16px">
+          <template #header>
+            <div class="card-header">
+              <span>服务器桥接测试</span>
+            </div>
+          </template>
+
+          <el-form
+            ref="formRef"
+            :model="formData"
+            :rules="rules"
+            label-width="100px"
+            class="dial-form"
+          >
+            <el-row :gutter="16">
+              <el-col :xl="12" :lg="12" :md="24" :sm="24" :xs="24">
+                <el-form-item label="主叫分机" prop="caller">
+                  <el-input
+                    v-model="formData.caller"
+                    placeholder="留空则读取当前登录用户 callExt / callNo"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xl="12" :lg="12" :md="24" :sm="24" :xs="24">
+                <el-form-item label="被叫分机" prop="callee">
+                  <el-input
+                    v-model="formData.callee"
+                    placeholder="请输入目标内部号，例如 1002"
+                    clearable
+                    @keyup.enter="handleDial"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <div class="action-row">
+              <el-button type="primary" :loading="submitting" @click="handleDial">发起拨打</el-button>
+              <el-button @click="handleReset">重置</el-button>
+            </div>
+          </el-form>
+        </el-card>
+      </el-col>
+
+      <el-col :xl="8" :lg="8" :md="24" :sm="24" :xs="24">
+        <el-card shadow="never" class="profile-card">
+          <template #header>
+            <div class="card-header">
+              <span>当前坐席</span>
+            </div>
+          </template>
+          <div class="profile-block">
+            <div class="profile-name">{{ profile.nickname || userStore.getUser.nickname || '未命名用户' }}</div>
+            <div class="profile-line">登录账号：{{ profile.username || '-' }}</div>
+            <div class="profile-line">优先分机：{{ profile.callExt || '-' }}</div>
+            <div class="profile-line">备用工号：{{ profile.callNo || '-' }}</div>
+            <div class="profile-line">最近登录 IP：{{ profile.loginIp || '-' }}</div>
+          </div>
+        </el-card>
+
+        <el-card shadow="never" class="mt-16px">
+          <template #header>
+            <div class="card-header">
+              <span>最近结果</span>
+              <el-button link type="danger" @click="clearLogs" :disabled="logs.length === 0">
+                清空
+              </el-button>
+            </div>
+          </template>
+
+          <el-empty v-if="logs.length === 0" description="还没有拨打记录" :image-size="88" />
+
+          <div v-else class="log-list">
+            <div v-for="item in logs" :key="item.id" class="log-item">
+              <div class="log-top">
+                <span class="log-route">{{ item.caller }} -> {{ item.callee }}</span>
+                <el-tag :type="item.type" effect="light">{{ item.label }}</el-tag>
+              </div>
+              <div class="log-meta">{{ item.time }}</div>
+              <div class="log-message">{{ item.message }}</div>
+              <div v-if="item.jobUuid" class="log-job">Job UUID: {{ item.jobUuid }}</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import type { FormInstance, FormRules } from 'element-plus'
+import { getUserProfile, type ProfileVO } from '@/api/system/user/profile'
+import {
+  testDialInternalCall,
+  type CallTestDialReqVO,
+  type CallTestDialRespVO
+} from '@/api/system/call'
 import { useUserStore } from '@/store/modules/user'
-// import { useWatermark } from '@/hooks/web/useWatermark'
-import type { WorkplaceTotal, Project, Notice, Shortcut } from './types'
-import { pieOptions, barOptions } from './echarts-data'
-import { useRouter } from 'vue-router'
 
 defineOptions({ name: 'Index' })
 
-const { t } = useI18n()
-const router = useRouter()
+type LogItem = {
+  id: number
+  caller: string
+  callee: string
+  time: string
+  message: string
+  jobUuid?: string
+  label: string
+  type: 'success' | 'danger'
+}
+
 const userStore = useUserStore()
-// const { setWatermark } = useWatermark()
-const loading = ref(true)
-const avatar = userStore.getUser.avatar
-const username = userStore.getUser.nickname
-const pieOptionsData = reactive<EChartsOption>(pieOptions) as EChartsOption
-// 获取统计数
-let totalSate = reactive<WorkplaceTotal>({
-  project: 0,
-  access: 0,
-  todo: 0
+const message = useMessage()
+const formRef = ref<FormInstance>()
+const submitting = ref(false)
+const profileLoading = ref(false)
+const browserLoading = ref(false)
+const browserRegistered = ref(false)
+const incomingCall = ref(false)
+const activeCall = ref(false)
+const browserStatus = ref('未连接')
+const browserClient = shallowRef<any>()
+const remoteAudioRef = ref<HTMLAudioElement>()
+const localAudioRef = ref<HTMLAudioElement>()
+
+const profile = reactive<Partial<ProfileVO>>({})
+const browserForm = reactive({
+  wsServer: 'wss://8.152.103.225:7443',
+  domain: '8.152.103.225',
+  username: '',
+  password: '',
+  target: ''
+})
+const formData = reactive<CallTestDialReqVO>({
+  caller: '',
+  callee: ''
+})
+const logs = ref<LogItem[]>([])
+
+const rules = reactive<FormRules>({
+  caller: [{ pattern: /^\d*$/, message: '主叫分机只能输入数字', trigger: 'blur' }],
+  callee: [
+    { required: true, message: '请输入被叫分机', trigger: 'blur' },
+    { pattern: /^\d+$/, message: '被叫分机只能输入数字', trigger: 'blur' }
+  ]
 })
 
-const getCount = async () => {
-  const data = {
-    project: 40,
-    access: 2340,
-    todo: 10
-  }
-  totalSate = Object.assign(totalSate, data)
-}
-
-// 获取项目数
-let projects = reactive<Project[]>([])
-const getProject = async () => {
-  const data = [
-    {
-      name: 'elm-backend',
-      icon: 'simple-icons:springboot',
-      message: 'github.com/starrystar-tech/elm-backend',
-      personal: 'Spring Boot 单体架构',
-      time: new Date('2025-09-09'),
-      color: '#6DB33F'
-    },
-    {
-      name: 'elm-frontend',
-      icon: 'ep:element-plus',
-      message: 'github.com/starrystar-tech/elm-frontend',
-      personal: 'Vue3 + element-plus 管理后台',
-      time: new Date('2025-09-09'),
-      color: '#409EFF'
-    },
-    {
-      name: 'www.bgwa.cn',
-      icon: 'icon-park-outline:mall-bag',
-      message: 'www.bgwa.cn',
-      personal: '官网',
-      time: new Date('2025-09-09'),
-      color: '#ff4d4f'
-    },
-    {
-      name: 'elm-frontend',
-      icon: 'material-symbols:cloud-outline',
-      message: 'gitee.com/starrystar-tech/elm-frontend',
-      personal: 'gitee',
-      time: new Date('2025-04-05'),
-      color: '#1890ff'
-    },
-    {
-      name: 'elm-backend',
-      icon: 'devicon:antdesign',
-      message: 'gitee.com/starrystar-tech/elm-backend',
-      personal: 'gitee',
-      time: new Date('2025-05-06'),
-      color: '#e18525'
-    },
-    {
-      name: '文档',
-      icon: 'ant-design:mobile',
-      message: 'docs.bgwa.cn',
-      personal: '文档',
-      time: new Date('2025-06-01'),
-      color: '#2979ff'
-    }
-  ]
-  projects = Object.assign(projects, data)
-}
-
-// 获取通知公告
-let notice = reactive<Notice[]>([])
-const getNotice = async () => {
-  const data = [
-    {
-      title: '系统支持 JDK 8/17/21，Vue 2/3',
-      type: '技术兼容性',
-      keys: ['JDK', 'Vue'],
-      date: new Date()
-    },
-    {
-      title: '后端提供 Spring Boot 2.7/3.2 + Cloud 双架构',
-      type: '架构灵活性',
-      keys: ['Boot', 'Cloud'],
-      date: new Date()
-    },
-    {
-      title: '全部开源，个人与企业可 100% 直接使用，无需授权',
-      type: '开源免授权',
-      keys: ['无需授权'],
-      date: new Date()
-    },
-    {
-      title: '国内使用最广泛的快速开发平台，远超 10w+ 企业使用',
-      type: '广泛企业认可',
-      keys: ['最广泛', '10w+'],
-      date: new Date()
-    }
-  ]
-  notice = Object.assign(notice, data)
-}
-
-// 获取快捷入口
-let shortcut = reactive<Shortcut[]>([])
-
-const getShortcut = async () => {
-  const data = [
-    {
-      name: '首页',
-      icon: 'ion:home-outline',
-      url: '/',
-      color: '#1fdaca'
-    },
-    {
-      name: '商城中心',
-      icon: 'ep:shop',
-      url: '/mall/home',
-      color: '#ff6b6b'
-    },
-    {
-      name: 'AI 大模型',
-      icon: 'tabler:ai',
-      url: '/ai/chat',
-      color: '#7c3aed'
-    },
-    {
-      name: 'ERP 系统',
-      icon: 'simple-icons:erpnext',
-      url: '/erp/home',
-      color: '#3fb27f'
-    },
-    {
-      name: 'CRM 系统',
-      icon: 'simple-icons:civicrm',
-      url: '/crm/backlog',
-      color: '#4daf1bc9'
-    },
-    {
-      name: 'IoT 物联网',
-      icon: 'fa-solid:hdd',
-      url: '/iot/home',
-      color: '#1a73e8'
-    }
-  ]
-  shortcut = Object.assign(shortcut, data)
-}
-
-// 用户来源
-const getUserAccessSource = async () => {
-  const data = [
-    { value: 335, name: 'analysis.directAccess' },
-    { value: 310, name: 'analysis.mailMarketing' },
-    { value: 234, name: 'analysis.allianceAdvertising' },
-    { value: 135, name: 'analysis.videoAdvertising' },
-    { value: 1548, name: 'analysis.searchEngines' }
-  ]
-  set(
-    pieOptionsData,
-    'legend.data',
-    data.map((v) => t(v.name))
-  )
-  pieOptionsData!.series![0].data = data.map((v) => {
-    return {
-      name: t(v.name),
-      value: v.value
-    }
+const addLog = (
+  payload: Pick<LogItem, 'caller' | 'callee' | 'message' | 'jobUuid' | 'label' | 'type'>
+) => {
+  logs.value.unshift({
+    id: Date.now() + logs.value.length,
+    time: new Date().toLocaleString('zh-CN', { hour12: false }),
+    ...payload
   })
 }
-const barOptionsData = reactive<EChartsOption>(barOptions) as EChartsOption
 
-// 周活跃量
-const getWeeklyUserActivity = async () => {
-  const data = [
-    { value: 13253, name: 'analysis.monday' },
-    { value: 34235, name: 'analysis.tuesday' },
-    { value: 26321, name: 'analysis.wednesday' },
-    { value: 12340, name: 'analysis.thursday' },
-    { value: 24643, name: 'analysis.friday' },
-    { value: 1322, name: 'analysis.saturday' },
-    { value: 1324, name: 'analysis.sunday' }
-  ]
-  set(
-    barOptionsData,
-    'xAxis.data',
-    data.map((v) => t(v.name))
-  )
-  set(barOptionsData, 'series', [
-    {
-      name: t('analysis.activeQuantity'),
-      data: data.map((v) => v.value),
-      type: 'bar'
+const syncCallerFromProfile = () => {
+  if (!formData.caller) {
+    formData.caller = profile.callExt || profile.callNo || ''
+  }
+  if (!browserForm.username) {
+    browserForm.username = profile.callExt || profile.callNo || ''
+  }
+}
+
+const reloadProfile = async () => {
+  profileLoading.value = true
+  try {
+    const data = await getUserProfile()
+    Object.assign(profile, data)
+    syncCallerFromProfile()
+  } finally {
+    profileLoading.value = false
+  }
+}
+
+const updateBrowserStatus = (status: string) => {
+  browserStatus.value = status
+}
+
+const addBrowserLog = (messageText: string, label: string = '浏览器', type: 'success' | 'danger' = 'success') => {
+  addLog({
+    caller: browserForm.username || '-',
+    callee: browserForm.target || '-',
+    message: messageText,
+    label,
+    type
+  })
+}
+
+const ensureBrowserPrerequisites = async () => {
+  if (!browserForm.username.trim()) {
+    throw new Error('请输入浏览器分机账号')
+  }
+  if (!browserForm.password.trim()) {
+    throw new Error('请输入浏览器分机密码')
+  }
+  if (!remoteAudioRef.value || !localAudioRef.value) {
+    throw new Error('音频节点尚未准备好，请刷新页面后重试')
+  }
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+  stream.getTracks().forEach((track) => track.stop())
+}
+
+const createBrowserClient = async () => {
+  const { SimpleUser } = await import('sip.js/lib/platform/web')
+  const client = new SimpleUser(browserForm.wsServer, {
+    aor: `sip:${browserForm.username.trim()}@${browserForm.domain.trim()}`,
+    media: {
+      constraints: { audio: true, video: false },
+      local: { audio: localAudioRef.value },
+      remote: { audio: remoteAudioRef.value }
+    },
+    userAgentOptions: {
+      authorizationUsername: browserForm.username.trim(),
+      authorizationPassword: browserForm.password.trim(),
+      displayName: browserForm.username.trim()
+    },
+    delegate: {
+      onCallReceived: () => {
+        incomingCall.value = true
+        activeCall.value = true
+        updateBrowserStatus('来电响铃')
+        addBrowserLog('收到来电，请点击接听', '来电')
+      },
+      onCallAnswered: () => {
+        incomingCall.value = false
+        activeCall.value = true
+        updateBrowserStatus('通话中')
+        addBrowserLog('通话已接通', '通话中')
+      },
+      onCallHangup: () => {
+        incomingCall.value = false
+        activeCall.value = false
+        updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
+        addBrowserLog('通话已结束', '已挂断')
+      },
+      onRegistered: () => {
+        browserRegistered.value = true
+        updateBrowserStatus('已注册')
+        addBrowserLog('浏览器分机注册成功')
+      },
+      onUnregistered: () => {
+        browserRegistered.value = false
+        incomingCall.value = false
+        activeCall.value = false
+        updateBrowserStatus('未注册')
+        addBrowserLog('浏览器分机已注销')
+      },
+      onServerConnect: () => {
+        updateBrowserStatus('信令已连接')
+      },
+      onServerDisconnect: (error?: Error) => {
+        browserRegistered.value = false
+        incomingCall.value = false
+        activeCall.value = false
+        updateBrowserStatus('连接断开')
+        if (error?.message) {
+          addBrowserLog(`WSS 连接断开：${error.message}`, '失败', 'danger')
+        }
+      }
     }
-  ])
+  } as any)
+  return client
 }
 
-const getAllApi = async () => {
-  await Promise.all([
-    getCount(),
-    getProject(),
-    getNotice(),
-    getShortcut(),
-    getUserAccessSource(),
-    getWeeklyUserActivity()
-  ])
-  loading.value = false
+const connectBrowserPhone = async () => {
+  browserLoading.value = true
+  try {
+    await ensureBrowserPrerequisites()
+    if (browserClient.value) {
+      await disconnectBrowserPhone(true)
+    }
+    const client = await createBrowserClient()
+    browserClient.value = client
+    updateBrowserStatus('连接中')
+    await client.connect()
+    await client.register()
+    message.success('浏览器分机已连接')
+  } catch (error: any) {
+    const errorMessage = error?.message || '浏览器分机连接失败'
+    updateBrowserStatus('连接失败')
+    addBrowserLog(errorMessage, '失败', 'danger')
+    message.error(errorMessage)
+    if (browserClient.value) {
+      await disconnectBrowserPhone(true)
+    }
+  } finally {
+    browserLoading.value = false
+  }
 }
 
-const handleProjectClick = (message: string) => {
-  window.open(`https://${message}`, '_blank')
+const disconnectBrowserPhone = async (silent = false) => {
+  const client = browserClient.value
+  browserClient.value = undefined
+  if (client) {
+    try {
+      await client.hangup?.().catch(() => undefined)
+    } catch {
+      // ignore
+    }
+    try {
+      await client.unregister?.().catch(() => undefined)
+    } catch {
+      // ignore
+    }
+    try {
+      await client.disconnect?.().catch(() => undefined)
+    } catch {
+      // ignore
+    }
+  }
+  browserRegistered.value = false
+  incomingCall.value = false
+  activeCall.value = false
+  updateBrowserStatus('未连接')
+  if (!silent) {
+    addBrowserLog('浏览器分机已断开')
+  }
 }
 
-const handleShortcutClick = (url: string) => {
-  router.push(url)
+const makeBrowserCall = async () => {
+  if (!browserRegistered.value || !browserClient.value) {
+    message.error('请先注册浏览器分机')
+    return
+  }
+  const target = browserForm.target.trim()
+  if (!/^\d+$/.test(target)) {
+    message.error('请输入合法的目标分机')
+    return
+  }
+  try {
+    activeCall.value = true
+    updateBrowserStatus('呼叫中')
+    await browserClient.value.call(`sip:${target}@${browserForm.domain.trim()}`)
+    addBrowserLog(`已向 ${target} 发起网页呼叫`)
+  } catch (error: any) {
+    activeCall.value = false
+    updateBrowserStatus('已注册')
+    const errorMessage = error?.message || '网页呼叫失败'
+    addBrowserLog(errorMessage, '失败', 'danger')
+    message.error(errorMessage)
+  }
 }
 
-getAllApi()
+const answerBrowserCall = async () => {
+  if (!browserClient.value || !incomingCall.value) {
+    return
+  }
+  try {
+    await browserClient.value.answer()
+    incomingCall.value = false
+    activeCall.value = true
+    updateBrowserStatus('通话中')
+  } catch (error: any) {
+    const errorMessage = error?.message || '接听失败'
+    addBrowserLog(errorMessage, '失败', 'danger')
+    message.error(errorMessage)
+  }
+}
+
+const hangupBrowserCall = async () => {
+  if (!browserClient.value) {
+    return
+  }
+  try {
+    await browserClient.value.hangup()
+    incomingCall.value = false
+    activeCall.value = false
+    updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
+  } catch (error: any) {
+    const errorMessage = error?.message || '挂断失败'
+    addBrowserLog(errorMessage, '失败', 'danger')
+    message.error(errorMessage)
+  }
+}
+
+const handleDial = async () => {
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid) {
+    return
+  }
+
+  submitting.value = true
+  try {
+    const response = await testDialInternalCall({
+      caller: formData.caller?.trim(),
+      callee: formData.callee.trim()
+    })
+    const data = response as unknown as CallTestDialRespVO
+    addLog({
+      caller: data.caller,
+      callee: data.callee,
+      jobUuid: data.jobUuid,
+      message: data.message || '拨号请求已下发',
+      label: '已提交',
+      type: 'success'
+    })
+    message.success('拨打请求已提交到 FreeSWITCH')
+  } catch (error: any) {
+    const errorMessage = error?.message || '拨打失败'
+    addLog({
+      caller: formData.caller || profile.callExt || profile.callNo || '-',
+      callee: formData.callee,
+      message: errorMessage,
+      label: '失败',
+      type: 'danger'
+    })
+    message.error(errorMessage)
+  } finally {
+    submitting.value = false
+  }
+}
+
+const handleReset = () => {
+  formRef.value?.resetFields()
+  formData.caller = profile.callExt || profile.callNo || ''
+}
+
+const clearLogs = () => {
+  logs.value = []
+}
+
+onMounted(() => {
+  reloadProfile()
+})
+
+onBeforeUnmount(() => {
+  disconnectBrowserPhone(true)
+})
 </script>
+
+<style scoped>
+.internal-call-page {
+  padding: 4px 0 24px;
+}
+
+.hero-card {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.22), transparent 36%),
+    linear-gradient(135deg, #072c31, #114b52 60%, #d2efe8 160%);
+  border: none;
+}
+
+.hero-grid {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  justify-content: space-between;
+  color: #effcf7;
+}
+
+.status-stack {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.hero-title {
+  margin: 12px 0 8px;
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.hero-subtitle {
+  margin: 0;
+  max-width: 640px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: rgba(239, 252, 247, 0.82);
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #f97316;
+  box-shadow: 0 0 0 6px rgba(74, 222, 128, 0.15);
+}
+
+.status-dot.active {
+  background: #4ade80;
+}
+
+.status-hint {
+  max-width: 320px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(239, 252, 247, 0.78);
+  text-align: right;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dial-form {
+  max-width: 100%;
+}
+
+.action-row {
+  display: flex;
+  gap: 12px;
+  padding-left: 100px;
+  align-items: center;
+}
+
+.action-row.wrap {
+  flex-wrap: wrap;
+}
+
+.soft-note {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #64748b;
+}
+
+.profile-card,
+.log-list {
+  height: 100%;
+}
+
+.profile-block {
+  display: grid;
+  gap: 10px;
+}
+
+.profile-name {
+  font-size: 22px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.profile-line {
+  font-size: 14px;
+  color: #475569;
+}
+
+.log-list {
+  display: grid;
+  gap: 12px;
+}
+
+.log-item {
+  padding: 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.log-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.log-route {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.log-meta,
+.log-job {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.log-message {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #334155;
+  word-break: break-all;
+}
+
+.hidden-audio {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .hero-grid {
+    flex-direction: column;
+  }
+
+  .hero-title {
+    font-size: 26px;
+  }
+
+  .action-row {
+    padding-left: 0;
+  }
+}
+</style>

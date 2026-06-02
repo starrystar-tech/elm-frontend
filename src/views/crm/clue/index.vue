@@ -84,22 +84,22 @@
             <el-form-item label="静默原因" required>
                 <el-input v-model="silentForm.silentReason" placeholder="请输入静默原因" />
             </el-form-item>
-            <el-form-item label="静默天数" required>
+            <!-- <el-form-item label="静默天数" required>
                 <el-input-number
                     v-model="silentForm.silentDays"
                     :min="1"
                     controls-position="right"
                     style="width: 100%"
                 />
-            </el-form-item>
-            <el-form-item label="备注">
+            </el-form-item> -->
+            <!-- <el-form-item label="备注">
                 <el-input
                     v-model="silentForm.remark"
                     type="textarea"
                     :rows="3"
                     placeholder="请输入备注"
                 />
-            </el-form-item>
+            </el-form-item> -->
         </el-form>
         <template #footer>
             <el-button @click="silentDialogVisible = false">取消</el-button>

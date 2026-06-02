@@ -20,6 +20,8 @@ export interface ProfileVO {
   mobile: string
   sex: number
   avatar: string
+  callNo?: string
+  callExt?: string
   status: number
   remark: string
   loginIp: string
