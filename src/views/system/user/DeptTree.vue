@@ -129,6 +129,7 @@ onMounted(async () => {
 .system-user-dept-tree__body {
     flex: 1;
     overflow: auto;
+    padding: 0 10px;
 }
 
 .system-user-dept-tree__node {

@@ -56,6 +56,17 @@ const rules = reactive<FormRules>({
 })
 const schema = reactive<FormSchema[]>([
   {
+    field: 'avatar',
+    label: t('profile.user.userAvatar'),
+    component: 'UploadImg',
+    componentProps: {
+      width: '120px',
+      height: '120px',
+      borderradius: '50%',
+      showBtnText: false
+    }
+  },
+  {
     field: 'nickname',
     label: t('profile.user.nickname'),
     component: 'Input'
@@ -87,7 +98,8 @@ const submit = () => {
       await updateUserProfile(data)
       message.success(t('common.updateSuccess'))
       const profile = await init()
-      userStore.setUserNicknameAction(profile.nickname)
+      await userStore.setUserNicknameAction(profile.nickname)
+      await userStore.setUserAvatarAction(profile.avatar || '')
       // 发送成功事件
       emit('success')
     }

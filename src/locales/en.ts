@@ -412,6 +412,7 @@ export default {
       title: 'Personal Information',
       username: 'User Name',
       nickname: 'Nick Name',
+      userAvatar: 'User Avatar',
       mobile: 'Phone Number',
       email: 'User Mail',
       dept: 'Department',

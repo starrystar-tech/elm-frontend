@@ -45,6 +45,19 @@
                         />
                     </el-form-item>
                 </el-col>
+                <el-col :span="12">
+                    <el-form-item label="头像" prop="avatar">
+                        <UploadImg
+                            v-model="formData.avatar"
+                            :limit="1"
+                            :is-show-tip="false"
+                            width="60px"
+                            height="60px"
+                            class="min-w-60px"
+                        />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12" />
             </el-row>
             <el-row>
                 <!-- <el-form-item label="邮箱" prop="email">
@@ -118,9 +131,6 @@
                     </el-form-item>
                 </el-col>
             </el-row>
-
-            <el-divider content-position="left">基础信息</el-divider>
-
             <el-row>
                 <el-col :span="12">
                     <el-form-item label="归属部门" prop="deptId">
@@ -365,6 +375,7 @@ const formData = ref({
     mobile: '',
     email: '',
     id: undefined as number | undefined,
+    avatar: '',
     username: '',
     password: '',
     sex: undefined as number | undefined,
@@ -538,6 +549,7 @@ const resetForm = () => {
         mobile: '',
         email: '',
         id: undefined,
+        avatar: '',
         username: '',
         password: '',
         sex: undefined,

@@ -167,7 +167,7 @@
                         <div class="action-row wrap">
                             <el-button
                                 type="success"
-                                :disabled="!browserRegistered || activeCall"
+                                :disabled="activeCall || browserLoading"
                                 @click="makeBrowserCall"
                             >
                                 拨打
@@ -339,6 +339,7 @@ const submitting = ref(false)
 const profileLoading = ref(false)
 const browserLoading = ref(false)
 const browserRegistered = ref(false)
+const browserConnecting = ref(false)
 const incomingCall = ref(false)
 const activeCall = ref(false)
 const browserStatus = ref('未连接')
@@ -503,8 +504,8 @@ const createBrowserClient = async () => {
                 incomingCall.value = false
                 activeCall.value = false
                 stopCallTimer()
-                updateBrowserStatus('未注册')
-                if (!browserDisconnecting.value) {
+                updateBrowserStatus(browserConnecting.value ? '注册失败' : '未注册')
+                if (!browserDisconnecting.value && !browserConnecting.value) {
                     addBrowserLog('浏览器分机已注销')
                 }
             },
@@ -528,6 +529,7 @@ const createBrowserClient = async () => {
 
 const connectBrowserPhone = async () => {
     browserLoading.value = true
+    browserConnecting.value = true
     try {
         browserDisconnecting.value = false
         await ensureBrowserPrerequisites()
@@ -549,6 +551,7 @@ const connectBrowserPhone = async () => {
             await disconnectBrowserPhone(true)
         }
     } finally {
+        browserConnecting.value = false
         browserLoading.value = false
     }
 }

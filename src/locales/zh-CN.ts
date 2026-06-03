@@ -406,6 +406,7 @@ export default {
       title: '个人信息',
       username: '用户名称',
       nickname: '用户昵称',
+      userAvatar: '用户头像',
       mobile: '手机号码',
       email: '用户邮箱',
       dept: '所属部门',
