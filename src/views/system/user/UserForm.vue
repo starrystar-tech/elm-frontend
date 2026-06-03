@@ -13,11 +13,43 @@
                         <el-input v-model="formData.nickname" placeholder="请输入姓名" />
                     </el-form-item>
                 </el-col>
-                <el-col :span="12">
+
+                <!-- <el-col :span="12">
                     <el-form-item label="成员ID" prop="memberId">
                         <el-input v-model="formData.memberId" placeholder="请输入成员ID" />
                     </el-form-item>
+                </el-col> -->
+                <el-col :span="12">
+                    <el-form-item label="登录名称" prop="username">
+                        <el-input v-model="formData.username" placeholder="请输入用户名称" />
+                    </el-form-item>
                 </el-col>
+                <el-col :span="12" v-if="formData.id === undefined">
+                    <el-form-item label="登录密码" prop="password">
+                        <el-input
+                            v-model="formData.password"
+                            placeholder="请输入用户密码"
+                            show-password
+                            type="password"
+                        />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="到期时间" prop="expireTime">
+                        <el-date-picker
+                            v-model="formData.expireTime"
+                            type="datetime"
+                            value-format="YYYY-MM-DD HH:mm:ss"
+                            placeholder="请选择到期时间"
+                            style="width: 100%"
+                        />
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-row>
+                <!-- <el-form-item label="邮箱" prop="email">
+                    <el-input v-model="formData.email" maxlength="50" placeholder="请输入邮箱" />
+                </el-form-item> -->
             </el-row>
 
             <!-- <el-row>
@@ -33,16 +65,7 @@
             </el-row> -->
 
             <el-row>
-                <el-col :span="12">
-                    <el-form-item label="登录邮箱" prop="email">
-                        <el-input
-                            v-model="formData.email"
-                            maxlength="50"
-                            placeholder="请输入邮箱"
-                        />
-                    </el-form-item>
-                </el-col>
-                <el-col :span="12">
+                <!-- <el-col :span="12">
                     <el-form-item label="到期时间" prop="expireTime">
                         <el-date-picker
                             v-model="formData.expireTime"
@@ -52,7 +75,7 @@
                             style="width: 100%"
                         />
                     </el-form-item>
-                </el-col>
+                </el-col> -->
             </el-row>
 
             <el-row>
@@ -145,24 +168,6 @@
                                 :value="dict.value"
                             />
                         </el-select>
-                    </el-form-item>
-                </el-col>
-            </el-row>
-
-            <el-row>
-                <el-col :span="12">
-                    <el-form-item v-if="formData.id === undefined" label="用户名称" prop="username">
-                        <el-input v-model="formData.username" placeholder="请输入用户名称" />
-                    </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                    <el-form-item v-if="formData.id === undefined" label="用户密码" prop="password">
-                        <el-input
-                            v-model="formData.password"
-                            placeholder="请输入用户密码"
-                            show-password
-                            type="password"
-                        />
                     </el-form-item>
                 </el-col>
             </el-row>

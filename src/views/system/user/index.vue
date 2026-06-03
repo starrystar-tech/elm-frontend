@@ -499,13 +499,7 @@ const areaGroupRows = computed(() =>
 
 const tableColumns = reactive<TableColumn[]>([
     { field: 'nickname', label: '姓名', minWidth: 100, fixed: 'left' },
-    {
-        field: 'memberId',
-        label: '成员ID',
-        minWidth: 120,
-        formatter: (_, __, value, row) => textCell(value || row.username)
-    },
-    { field: 'id', label: 'ID', width: 80 },
+    { field: 'username', label: '登录账号', minWidth: 100, fixed: 'left' },
     {
         field: 'userLevel',
         label: '角色/等级',

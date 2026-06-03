@@ -13,14 +13,23 @@
                             </p>
                         </div>
                         <div class="status-stack">
-                            <div class="status-chip">
+                            <div
+                                class="status-chip"
+                                :class="{
+                                    live: isInCall,
+                                    ringing: isRingingState && !isInCall
+                                }"
+                            >
                                 <span
                                     class="status-dot"
                                     :class="{
-                                        active: browserRegistered || activeCall || incomingCall
+                                        active: browserRegistered || activeCall || incomingCall,
+                                        live: isInCall,
+                                        ringing: isRingingState && !isInCall
                                     }"
                                 ></span>
                                 <span>浏览器分机 {{ browserStatus }}</span>
+                                <strong v-if="isInCall" class="status-timer">{{ formattedCallDuration }}</strong>
                             </div>
                             <div class="status-hint"
                                 >当前默认走 `wss://sip.bgwa.cn`，由 Nginx 终止 TLS 后反代到
@@ -30,7 +39,14 @@
                     </div>
                 </el-card>
 
-                <el-card shadow="never" class="mt-16px">
+                <el-card
+                    shadow="never"
+                    class="mt-16px"
+                    :class="{
+                        'phone-card-live': isInCall,
+                        'phone-card-ringing': isRingingState && !isInCall
+                    }"
+                >
                     <template #header>
                         <div class="card-header">
                             <span>浏览器分机</span>
@@ -44,6 +60,32 @@
                             </el-button>
                         </div>
                     </template>
+
+                    <div
+                        v-if="activeCall || incomingCall"
+                        class="call-banner"
+                        :class="{
+                            live: isInCall,
+                            ringing: isRingingState && !isInCall
+                        }"
+                    >
+                        <div class="call-banner-copy">
+                            <div class="call-banner-label">{{ browserStatus }}</div>
+                            <div class="call-banner-meta">
+                                <span v-if="isInCall">通话时长 {{ formattedCallDuration }}</span>
+                                <span v-else-if="browserStatus === '呼叫中'">正在等待对方接听</span>
+                                <span v-else-if="browserStatus === '来电响铃'">有新的来电等待接听</span>
+                            </div>
+                        </div>
+                        <el-button
+                            v-if="activeCall || incomingCall"
+                            type="danger"
+                            class="call-banner-action"
+                            @click="hangupBrowserCall"
+                        >
+                            {{ incomingCall && !isInCall ? '拒接/挂断' : '立即挂断' }}
+                        </el-button>
+                    </div>
 
                     <el-form :model="browserForm" label-width="100px" class="dial-form">
                         <el-row :gutter="16">
@@ -300,9 +342,12 @@ const browserRegistered = ref(false)
 const incomingCall = ref(false)
 const activeCall = ref(false)
 const browserStatus = ref('未连接')
+const browserDisconnecting = ref(false)
 const browserClient = shallowRef<any>()
 const remoteAudioRef = ref<HTMLAudioElement>()
 const localAudioRef = ref<HTMLAudioElement>()
+const callDurationSeconds = ref(0)
+let callDurationTimer: ReturnType<typeof setInterval> | undefined
 
 const profile = reactive<Partial<ProfileVO>>({})
 const browserForm = reactive({
@@ -360,6 +405,31 @@ const updateBrowserStatus = (status: string) => {
     browserStatus.value = status
 }
 
+const isInCall = computed(() => browserStatus.value === '通话中')
+const isRingingState = computed(
+    () => browserStatus.value === '呼叫中' || browserStatus.value === '来电响铃'
+)
+const formattedCallDuration = computed(() => {
+    const minutes = Math.floor(callDurationSeconds.value / 60)
+    const seconds = callDurationSeconds.value % 60
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+})
+
+const stopCallTimer = () => {
+    if (callDurationTimer) {
+        clearInterval(callDurationTimer)
+        callDurationTimer = undefined
+    }
+    callDurationSeconds.value = 0
+}
+
+const startCallTimer = () => {
+    stopCallTimer()
+    callDurationTimer = setInterval(() => {
+        callDurationSeconds.value += 1
+    }, 1000)
+}
+
 const addBrowserLog = (
     messageText: string,
     label: string = '浏览器',
@@ -413,11 +483,13 @@ const createBrowserClient = async () => {
                 incomingCall.value = false
                 activeCall.value = true
                 updateBrowserStatus('通话中')
+                startCallTimer()
                 addBrowserLog('通话已接通', '通话中')
             },
             onCallHangup: () => {
                 incomingCall.value = false
                 activeCall.value = false
+                stopCallTimer()
                 updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
                 addBrowserLog('通话已结束', '已挂断')
             },
@@ -430,8 +502,11 @@ const createBrowserClient = async () => {
                 browserRegistered.value = false
                 incomingCall.value = false
                 activeCall.value = false
+                stopCallTimer()
                 updateBrowserStatus('未注册')
-                addBrowserLog('浏览器分机已注销')
+                if (!browserDisconnecting.value) {
+                    addBrowserLog('浏览器分机已注销')
+                }
             },
             onServerConnect: () => {
                 updateBrowserStatus('信令已连接')
@@ -440,8 +515,9 @@ const createBrowserClient = async () => {
                 browserRegistered.value = false
                 incomingCall.value = false
                 activeCall.value = false
-                updateBrowserStatus('连接断开')
-                if (error?.message) {
+                stopCallTimer()
+                updateBrowserStatus(browserDisconnecting.value ? '未连接' : '连接断开')
+                if (!browserDisconnecting.value && error?.message) {
                     addBrowserLog(`WSS 连接断开：${error.message}`, '失败', 'danger')
                 }
             }
@@ -453,6 +529,7 @@ const createBrowserClient = async () => {
 const connectBrowserPhone = async () => {
     browserLoading.value = true
     try {
+        browserDisconnecting.value = false
         await ensureBrowserPrerequisites()
         if (browserClient.value) {
             await disconnectBrowserPhone(true)
@@ -479,6 +556,7 @@ const connectBrowserPhone = async () => {
 const disconnectBrowserPhone = async (silent = false) => {
     const client = browserClient.value
     browserClient.value = undefined
+    browserDisconnecting.value = true
     if (client) {
         try {
             await client.hangup?.().catch(() => undefined)
@@ -499,6 +577,7 @@ const disconnectBrowserPhone = async (silent = false) => {
     browserRegistered.value = false
     incomingCall.value = false
     activeCall.value = false
+    stopCallTimer()
     updateBrowserStatus('未连接')
     if (!silent) {
         addBrowserLog('浏览器分机已断开')
@@ -612,6 +691,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+    stopCallTimer()
     disconnectBrowserPhone(true)
 })
 </script>
@@ -675,6 +755,16 @@ onBeforeUnmount(() => {
     white-space: nowrap;
 }
 
+.status-chip.live {
+    background: rgba(248, 113, 113, 0.18);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+}
+
+.status-chip.ringing {
+    background: rgba(250, 204, 21, 0.18);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+}
+
 .status-dot {
     width: 8px;
     height: 8px;
@@ -685,6 +775,20 @@ onBeforeUnmount(() => {
 
 .status-dot.active {
     background: #4ade80;
+}
+
+.status-dot.live {
+    background: #fb7185;
+    box-shadow: 0 0 0 6px rgba(251, 113, 133, 0.18);
+}
+
+.status-dot.ringing {
+    background: #facc15;
+    box-shadow: 0 0 0 6px rgba(250, 204, 21, 0.18);
+}
+
+.status-timer {
+    font-variant-numeric: tabular-nums;
 }
 
 .status-hint {
@@ -703,6 +807,58 @@ onBeforeUnmount(() => {
 
 .dial-form {
     max-width: 100%;
+}
+
+.phone-card-live {
+    border: 1px solid rgba(251, 113, 133, 0.28);
+    box-shadow: 0 18px 40px rgba(190, 24, 93, 0.1);
+}
+
+.phone-card-ringing {
+    border: 1px solid rgba(250, 204, 21, 0.32);
+    box-shadow: 0 18px 40px rgba(202, 138, 4, 0.08);
+}
+
+.call-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    border: 1px solid #dbeafe;
+    background: linear-gradient(135deg, #eff6ff, #f8fafc);
+}
+
+.call-banner.live {
+    border-color: rgba(251, 113, 133, 0.28);
+    background: linear-gradient(135deg, #fff1f2, #fff7ed);
+}
+
+.call-banner.ringing {
+    border-color: rgba(250, 204, 21, 0.3);
+    background: linear-gradient(135deg, #fefce8, #fff7ed);
+}
+
+.call-banner-copy {
+    display: grid;
+    gap: 4px;
+}
+
+.call-banner-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.call-banner-meta {
+    font-size: 13px;
+    color: #475569;
+}
+
+.call-banner-action {
+    flex-shrink: 0;
 }
 
 .action-row {
@@ -797,6 +953,11 @@ onBeforeUnmount(() => {
 
     .action-row {
         padding-left: 0;
+    }
+
+    .call-banner {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }
 </style>
