@@ -406,6 +406,15 @@ const updateBrowserStatus = (status: string) => {
     browserStatus.value = status
 }
 
+const markBrowserRegistered = () => {
+    const firstRegister = !browserRegistered.value
+    browserRegistered.value = true
+    updateBrowserStatus('已注册')
+    if (firstRegister) {
+        addBrowserLog('浏览器分机注册成功')
+    }
+}
+
 const isInCall = computed(() => browserStatus.value === '通话中')
 const isRingingState = computed(
     () => browserStatus.value === '呼叫中' || browserStatus.value === '来电响铃'
@@ -495,9 +504,7 @@ const createBrowserClient = async () => {
                 addBrowserLog('通话已结束', '已挂断')
             },
             onRegistered: () => {
-                browserRegistered.value = true
-                updateBrowserStatus('已注册')
-                addBrowserLog('浏览器分机注册成功')
+                markBrowserRegistered()
             },
             onUnregistered: () => {
                 browserRegistered.value = false
@@ -541,6 +548,7 @@ const connectBrowserPhone = async () => {
         updateBrowserStatus('连接中')
         await client.connect()
         await client.register()
+        markBrowserRegistered()
         message.success('浏览器分机已连接')
     } catch (error: any) {
         const errorMessage = error?.message || '浏览器分机连接失败'
