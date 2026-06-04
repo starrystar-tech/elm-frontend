@@ -406,6 +406,48 @@ const updateBrowserStatus = (status: string) => {
     browserStatus.value = status
 }
 
+const buildBrowserTraceContext = () => ({
+    wsServer: browserForm.wsServer.trim(),
+    domain: browserForm.domain.trim(),
+    username: browserForm.username.trim(),
+    target: browserForm.target.trim(),
+    status: browserStatus.value,
+    registered: browserRegistered.value,
+    connecting: browserConnecting.value,
+    disconnecting: browserDisconnecting.value,
+    incomingCall: incomingCall.value,
+    activeCall: activeCall.value,
+    hasClient: !!browserClient.value
+})
+
+const stringifyTraceContext = () => JSON.stringify(buildBrowserTraceContext())
+
+const traceBrowserStep = (
+    step: string,
+    details?: string,
+    type: 'success' | 'danger' = 'success'
+) => {
+    const messageText = details
+        ? `[${step}] ${details} | ${stringifyTraceContext()}`
+        : `[${step}] ${stringifyTraceContext()}`
+    addBrowserLog(messageText, '调试', type)
+    const logger = type === 'danger' ? console.warn : console.info
+    logger(`[BrowserPhone] ${step}`, buildBrowserTraceContext(), details || '')
+}
+
+const formatBrowserError = (error: any) => {
+    if (!error) {
+        return '未知错误'
+    }
+    if (typeof error === 'string') {
+        return error
+    }
+    const parts = [error.message, error.cause?.message, error.reason, error.stack]
+        .filter((item) => typeof item === 'string' && item.trim().length > 0)
+        .map((item) => item.trim())
+    return parts[0] || '未知错误'
+}
+
 const markBrowserRegistered = () => {
     const firstRegister = !browserRegistered.value
     browserRegistered.value = true
@@ -413,6 +455,7 @@ const markBrowserRegistered = () => {
     if (firstRegister) {
         addBrowserLog('浏览器分机注册成功')
     }
+    traceBrowserStep('REGISTERED')
 }
 
 const isInCall = computed(() => browserStatus.value === '通话中')
@@ -455,6 +498,7 @@ const addBrowserLog = (
 }
 
 const ensureBrowserPrerequisites = async () => {
+    traceBrowserStep('PREREQ_START')
     if (!browserForm.username.trim()) {
         throw new Error('请输入浏览器分机账号')
     }
@@ -466,10 +510,12 @@ const ensureBrowserPrerequisites = async () => {
     }
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
     stream.getTracks().forEach((track) => track.stop())
+    traceBrowserStep('PREREQ_OK')
 }
 
 const createBrowserClient = async () => {
     const { SimpleUser } = await import('sip.js/lib/platform/web')
+    traceBrowserStep('CLIENT_CREATE')
     const client = new SimpleUser(browserForm.wsServer, {
         aor: `sip:${browserForm.username.trim()}@${browserForm.domain.trim()}`,
         media: {
@@ -487,6 +533,7 @@ const createBrowserClient = async () => {
                 incomingCall.value = true
                 activeCall.value = true
                 updateBrowserStatus('来电响铃')
+                traceBrowserStep('CALL_RECEIVED')
                 addBrowserLog('收到来电，请点击接听', '来电')
             },
             onCallAnswered: () => {
@@ -494,6 +541,7 @@ const createBrowserClient = async () => {
                 activeCall.value = true
                 updateBrowserStatus('通话中')
                 startCallTimer()
+                traceBrowserStep('CALL_ANSWERED')
                 addBrowserLog('通话已接通', '通话中')
             },
             onCallHangup: () => {
@@ -501,6 +549,7 @@ const createBrowserClient = async () => {
                 activeCall.value = false
                 stopCallTimer()
                 updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
+                traceBrowserStep('CALL_HANGUP')
                 addBrowserLog('通话已结束', '已挂断')
             },
             onRegistered: () => {
@@ -512,12 +561,17 @@ const createBrowserClient = async () => {
                 activeCall.value = false
                 stopCallTimer()
                 updateBrowserStatus(browserConnecting.value ? '注册失败' : '未注册')
+                traceBrowserStep(
+                    'UNREGISTERED',
+                    `connecting=${browserConnecting.value}, disconnecting=${browserDisconnecting.value}`
+                )
                 if (!browserDisconnecting.value && !browserConnecting.value) {
                     addBrowserLog('浏览器分机已注销')
                 }
             },
             onServerConnect: () => {
                 updateBrowserStatus('信令已连接')
+                traceBrowserStep('WS_CONNECTED')
             },
             onServerDisconnect: (error?: Error) => {
                 browserRegistered.value = false
@@ -525,6 +579,7 @@ const createBrowserClient = async () => {
                 activeCall.value = false
                 stopCallTimer()
                 updateBrowserStatus(browserDisconnecting.value ? '未连接' : '连接断开')
+                traceBrowserStep('WS_DISCONNECTED', error?.message, error?.message ? 'danger' : 'success')
                 if (!browserDisconnecting.value && error?.message) {
                     addBrowserLog(`WSS 连接断开：${error.message}`, '失败', 'danger')
                 }
@@ -539,20 +594,25 @@ const connectBrowserPhone = async () => {
     browserConnecting.value = true
     try {
         browserDisconnecting.value = false
+        traceBrowserStep('CONNECT_START')
         await ensureBrowserPrerequisites()
         if (browserClient.value) {
+            traceBrowserStep('CONNECT_CLEANUP_PREVIOUS')
             await disconnectBrowserPhone(true)
         }
         const client = await createBrowserClient()
         browserClient.value = client
         updateBrowserStatus('连接中')
+        traceBrowserStep('WS_CONNECTING')
         await client.connect()
+        traceBrowserStep('REGISTER_SENDING')
         await client.register()
         markBrowserRegistered()
         message.success('浏览器分机已连接')
     } catch (error: any) {
-        const errorMessage = error?.message || '浏览器分机连接失败'
+        const errorMessage = formatBrowserError(error) || '浏览器分机连接失败'
         updateBrowserStatus('连接失败')
+        traceBrowserStep('CONNECT_FAILED', errorMessage, 'danger')
         addBrowserLog(errorMessage, '失败', 'danger')
         message.error(errorMessage)
         if (browserClient.value) {
@@ -566,18 +626,22 @@ const connectBrowserPhone = async () => {
 
 const disconnectBrowserPhone = async (silent = false) => {
     const client = browserClient.value
+    const wasRegistered = browserRegistered.value
     browserClient.value = undefined
     browserDisconnecting.value = true
+    traceBrowserStep('DISCONNECT_START', `silent=${silent}, wasRegistered=${wasRegistered}`)
     if (client) {
         try {
             await client.hangup?.().catch(() => undefined)
         } catch {
             // ignore
         }
-        try {
-            await client.unregister?.().catch(() => undefined)
-        } catch {
-            // ignore
+        if (wasRegistered) {
+            try {
+                await client.unregister?.().catch(() => undefined)
+            } catch {
+                // ignore
+            }
         }
         try {
             await client.disconnect?.().catch(() => undefined)
@@ -593,27 +657,33 @@ const disconnectBrowserPhone = async (silent = false) => {
     if (!silent) {
         addBrowserLog('浏览器分机已断开')
     }
+    traceBrowserStep('DISCONNECT_DONE', `silent=${silent}`)
 }
 
 const makeBrowserCall = async () => {
     if (!browserRegistered.value || !browserClient.value) {
+        traceBrowserStep('CALL_BLOCKED', '浏览器分机未注册或客户端未初始化', 'danger')
         message.error('请先注册浏览器分机')
         return
     }
     const target = browserForm.target.trim()
     if (!/^\d+$/.test(target)) {
+        traceBrowserStep('CALL_BLOCKED', '目标分机格式不合法', 'danger')
         message.error('请输入合法的目标分机')
         return
     }
     try {
         activeCall.value = true
         updateBrowserStatus('呼叫中')
+        traceBrowserStep('CALL_START', `target=${target}`)
         await browserClient.value.call(`sip:${target}@${browserForm.domain.trim()}`)
+        traceBrowserStep('CALL_SENT', `target=${target}`)
         addBrowserLog(`已向 ${target} 发起网页呼叫`)
     } catch (error: any) {
         activeCall.value = false
         updateBrowserStatus('已注册')
-        const errorMessage = error?.message || '网页呼叫失败'
+        const errorMessage = formatBrowserError(error) || '网页呼叫失败'
+        traceBrowserStep('CALL_FAILED', errorMessage, 'danger')
         addBrowserLog(errorMessage, '失败', 'danger')
         message.error(errorMessage)
     }
@@ -621,15 +691,18 @@ const makeBrowserCall = async () => {
 
 const answerBrowserCall = async () => {
     if (!browserClient.value || !incomingCall.value) {
+        traceBrowserStep('ANSWER_BLOCKED', '当前没有可接听的来电', 'danger')
         return
     }
     try {
+        traceBrowserStep('ANSWER_START')
         await browserClient.value.answer()
         incomingCall.value = false
         activeCall.value = true
         updateBrowserStatus('通话中')
     } catch (error: any) {
-        const errorMessage = error?.message || '接听失败'
+        const errorMessage = formatBrowserError(error) || '接听失败'
+        traceBrowserStep('ANSWER_FAILED', errorMessage, 'danger')
         addBrowserLog(errorMessage, '失败', 'danger')
         message.error(errorMessage)
     }
@@ -637,15 +710,18 @@ const answerBrowserCall = async () => {
 
 const hangupBrowserCall = async () => {
     if (!browserClient.value) {
+        traceBrowserStep('HANGUP_BLOCKED', '浏览器分机客户端不存在', 'danger')
         return
     }
     try {
+        traceBrowserStep('HANGUP_START')
         await browserClient.value.hangup()
         incomingCall.value = false
         activeCall.value = false
         updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
     } catch (error: any) {
-        const errorMessage = error?.message || '挂断失败'
+        const errorMessage = formatBrowserError(error) || '挂断失败'
+        traceBrowserStep('HANGUP_FAILED', errorMessage, 'danger')
         addBrowserLog(errorMessage, '失败', 'danger')
         message.error(errorMessage)
     }

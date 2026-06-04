@@ -926,6 +926,10 @@ const customerTagText = computed(() => {
     return tags.length ? tags.map((item) => item.name).join('、') : tagText.value
 })
 
+const complaintTagText = computed(() => {
+    return props.clue.complaintTagNames?.length ? props.clue.complaintTagNames.join('、') : '--'
+})
+
 const parsedTrackList = computed(() =>
     (props.trackList || []).map((item) => ({
         ...item,
@@ -951,6 +955,7 @@ const basicInfoItems = computed(() => [
     { label: '地区', value: regionText.value },
     { label: '咨询项目', value: props.clue.consultProjectName || '--' },
     { label: '标签', value: customerTagText.value },
+    { label: '投诉标签', value: complaintTagText.value },
     { label: '咨询备注', value: props.clue.remark || '--' }
 ])
 

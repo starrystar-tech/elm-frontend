@@ -31,6 +31,7 @@ import type { FormSchema } from '@/types/form'
 import { dateFormatter } from '@/utils/formatTime'
 import * as AftersalesApi from '@/api/crm/aftersales'
 import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
+import * as ComplaintTagApi from '@/api/system/complaintTag'
 import {
   buildBaseSearchSchema,
   buildPageParams,
@@ -45,12 +46,13 @@ import AftersalesDetailDialog from '../components/AftersalesDetailDialog.vue'
 defineOptions({ name: 'AftersalesMy' })
 
 const handlerOptions = ref<{ label: string; value: number }[]>([])
+const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 const formRef = ref()
 const processRef = ref()
 const detailRef = ref()
 
 const searchSchema = computed<FormSchema[]>(() => {
-  const schema = buildBaseSearchSchema(handlerOptions.value)
+  const schema = buildBaseSearchSchema(handlerOptions.value, complaintTagOptions.value)
   return schema.filter((item) => item.field !== 'handlerUserId')
 })
 
@@ -118,8 +120,12 @@ const tableColumns = computed<TableColumn[]>(() => [
 ])
 
 onMounted(async () => {
-  const list = await HeadteacherApi.getHeadteacherSimpleList()
+  const [list, complaintTags] = await Promise.all([
+    HeadteacherApi.getHeadteacherSimpleList(),
+    ComplaintTagApi.getComplaintTagSimpleList()
+  ])
   handlerOptions.value = (list || []).map((item) => ({ label: item.nickname || item.username, value: item.id }))
+  complaintTagOptions.value = (complaintTags || []).map((item) => ({ label: item.name, value: item.id }))
   await tableMethods.getList()
 })
 </script>

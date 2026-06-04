@@ -23,12 +23,14 @@ import type { FormSchema } from '@/types/form'
 import * as AftersalesApi from '@/api/crm/aftersales'
 import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
+import * as ComplaintTagApi from '@/api/system/complaintTag'
 import { getAftersalesPriorityOptions, getAftersalesTypeOptions } from '../config'
 
 defineOptions({ name: 'AftersalesStats' })
 
 const userOptions = ref<{ label: string; value: number }[]>([])
 const deptOptions = ref<{ label: string; value: number }[]>([])
+const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
@@ -42,6 +44,17 @@ const searchSchema = computed<FormSchema[]>(() => [
         label: '用户',
         component: 'Select',
         componentProps: { options: userOptions.value, clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'complaintTagId',
+        label: '投诉标签',
+        component: 'Select',
+        componentProps: {
+            options: complaintTagOptions.value,
+            clearable: true,
+            filterable: true,
+            style: { width: '220px' }
+        }
     },
     {
         field: 'receiveTimeRange',
@@ -115,15 +128,20 @@ const tableColumns = computed<TableColumn[]>(() => [
 ])
 
 onMounted(async () => {
-    const [users, depts] = await Promise.all([
+    const [users, depts, complaintTags] = await Promise.all([
         UserApi.getSimpleUserList(),
-        DeptApi.getSimpleDeptList()
+        DeptApi.getSimpleDeptList(),
+        ComplaintTagApi.getComplaintTagSimpleList()
     ])
     userOptions.value = (users || []).map((item) => ({
         label: item.nickname || item.username,
         value: item.id
     }))
     deptOptions.value = (depts || []).map((item) => ({ label: item.name, value: item.id }))
+    complaintTagOptions.value = (complaintTags || []).map((item) => ({
+        label: item.name,
+        value: item.id
+    }))
     await tableMethods.getList()
 })
 </script>

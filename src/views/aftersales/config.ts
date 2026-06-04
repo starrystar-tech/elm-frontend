@@ -22,7 +22,8 @@ export const getAftersalesStatusLabel = (value?: number) =>
     value === undefined ? '--' : getDictLabel(DICT_TYPE.CRM_AFTERSALES_STATUS, value) || '--'
 
 export const buildBaseSearchSchema = (
-    handlerOptions: { label: string; value: number }[] = []
+    handlerOptions: { label: string; value: number }[] = [],
+    complaintTagOptions: { label: string; value: number }[] = []
 ): FormSchema[] => [
     {
         field: 'mobile',
@@ -53,6 +54,17 @@ export const buildBaseSearchSchema = (
         label: '订单ID',
         component: 'Input',
         componentProps: { clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'complaintTagId',
+        label: '投诉标签',
+        component: 'Select',
+        componentProps: {
+            options: complaintTagOptions,
+            clearable: true,
+            filterable: true,
+            style: { width: '220px' }
+        }
     },
     {
         field: 'createTimeRange',

@@ -37,12 +37,23 @@
                     @click="tagDialogVisible = true"
                     >标签</BaseButton
                 >
+                <BaseButton
+                    v-if="canComplaintTagUpdate"
+                    type="primary"
+                    plain
+                    :disabled="selectionList.length === 0"
+                    @click="openComplaintTagDialog"
+                    >投诉标签</BaseButton
+                >
             </div>
             <div class="flex gap-4px flex-wrap mr-12px">
                 <BaseButton v-if="canCreate" type="primary" @click="openForm('create')"
                     >新增</BaseButton
                 >
                 <BaseButton plain @click="importDialogVisible = true">批量导入</BaseButton>
+                <BaseButton v-if="canComplaintTagImport" plain @click="openComplaintImportDialog"
+                    >投诉标签导入</BaseButton
+                >
             </div>
         </div>
 
@@ -132,6 +143,34 @@
         </template>
     </Dialog>
 
+    <Dialog v-model="complaintTagDialogVisible" title="批量打投诉标签" width="520px">
+        <el-form label-width="100px">
+            <el-form-item label="投诉标签" required>
+                <el-select
+                    v-model="complaintTagForm.complaintTagIds"
+                    multiple
+                    filterable
+                    placeholder="请选择投诉标签"
+                    style="width: 100%"
+                >
+                    <el-option
+                        v-for="item in complaintTagOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                    />
+                </el-select>
+            </el-form-item>
+            <div class="mt-4px text-12px text-[var(--el-text-color-secondary)]">
+                增量打标，不会覆盖已有投诉标签关系
+            </div>
+        </el-form>
+        <template #footer>
+            <el-button @click="complaintTagDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleBatchComplaintTag">确定</el-button>
+        </template>
+    </Dialog>
+
     <ClueMergeDialog
         v-model="mergeDialogVisible"
         :clues="selectionList"
@@ -140,8 +179,13 @@
     />
 
     <Dialog v-model="importDialogVisible" title="批量导入名片" width="480px">
+        <div class="mb-12px flex items-center justify-between text-13px">
+            <span class="text-[var(--el-text-color-secondary)]">支持 `.xlsx`、`.xls`、`.csv`</span>
+            <el-link :href="CLUE_IMPORT_TEMPLATE_URL" target="_blank" type="primary">
+                下载模板
+            </el-link>
+        </div>
         <el-upload
-            ref="uploadRef"
             v-model:file-list="importFileList"
             :auto-upload="false"
             :limit="1"
@@ -159,6 +203,8 @@
             >
         </template>
     </Dialog>
+
+    <ComplaintTagImportDialog ref="complaintImportDialogRef" @success="tableMethods.getList" />
 </template>
 
 <script setup lang="tsx">
@@ -178,7 +224,9 @@ import * as AreaApi from '@/api/system/area'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
+import * as ComplaintTagApi from '@/api/system/complaintTag'
 import ClueForm from './ClueForm.vue'
+import ComplaintTagImportDialog from './ComplaintTagImportDialog.vue'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'
 import ClueMergeDialog from './components/ClueMergeDialog.vue'
@@ -189,6 +237,7 @@ interface SearchParams {
     areaId?: number
     status?: number
     tagId?: number
+    complaintTagId?: number
     consultProjectId?: number
     clueSourceId?: number
     intentLevel?: number
@@ -212,15 +261,18 @@ interface AreaOption {
 
 defineOptions({ name: 'CrmClue' })
 
+const CLUE_IMPORT_TEMPLATE_URL =
+    'https://file.bgwa.cn/bgwa/20260604/%E9%A6%96%E5%92%A8%E5%90%8D%E7%89%87%E4%B8%8A%E4%BC%A0%E6%A8%A1%E6%9D%BF_1780538759251.csv'
+
 const message = useMessage()
 const canCreate = hasPermission(['crm:clue:create'])
-const canUpdate =
-    hasPermission(['crm:clue:basic-info:update']) || hasPermission(['crm:clue:update'])
+const canComplaintTagUpdate = hasPermission(['crm:clue:complaint-tag:update'])
+const canComplaintTagImport = hasPermission(['crm:clue:complaint-tag:import'])
 
 const formRef = ref<InstanceType<typeof ClueForm>>()
+const complaintImportDialogRef = ref<InstanceType<typeof ComplaintTagImportDialog>>()
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
 const enrollRef = ref<InstanceType<typeof ClueEnrollDialog>>()
-const uploadRef = ref()
 const importFileList = ref<UploadUserFile[]>([])
 const importLoading = ref(false)
 const importDialogVisible = ref(false)
@@ -228,18 +280,21 @@ const selectionList = ref<ClueApi.ClueVO[]>([])
 const assignModeDialogVisible = ref(false)
 const silentDialogVisible = ref(false)
 const tagDialogVisible = ref(false)
+const complaintTagDialogVisible = ref(false)
 const mergeDialogVisible = ref(false)
 const mergeKeepClueId = ref<number | undefined>()
 
 const assignModeForm = reactive({ assignMode: 1 })
 const silentForm = reactive({ silentReason: '', silentDays: 7, remark: '' })
 const tagForm = reactive({ tagIds: [] as number[] })
+const complaintTagForm = reactive({ complaintTagIds: [] as number[] })
 
 const areaOptions = ref<AreaOption[]>([])
 const userOptions = ref<{ label: string; value: number }[]>([])
 const projectOptions = ref<{ label: string; value: number }[]>([])
 const clueSourceOptions = ref<{ label: string; value: number }[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
+const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 
 const statusOptions = [
     { label: '待分配', value: 1 },
@@ -325,6 +380,18 @@ const searchSchema = reactive<FormSchema[]>([
         component: 'Select',
         componentProps: {
             placeholder: '请选择标签',
+            clearable: true,
+            filterable: true,
+            options: [],
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'complaintTagId',
+        label: '投诉标签',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择投诉标签',
             clearable: true,
             filterable: true,
             options: [],
@@ -482,6 +549,7 @@ const buildPageParams = (params: SearchParams = {}): ClueApi.CluePageReqVO => ({
     areaId: params.areaId,
     status: params.status,
     tagId: params.tagId,
+    complaintTagId: params.complaintTagId,
     consultProjectId: params.consultProjectId,
     clueSourceId: params.clueSourceId,
     intentLevel: params.intentLevel,
@@ -610,13 +678,22 @@ const updateSchemaOptions = (field: string, options: { label: string; value: num
     }
 }
 
+const loadComplaintTagOptions = async () => {
+    const complaintTags = await ComplaintTagApi.getComplaintTagSimpleList()
+    complaintTagOptions.value = (complaintTags || []).map((item) => ({
+        label: item.name,
+        value: Number(item.id)
+    }))
+}
+
 const loadOptions = async () => {
-    const [areas, users, projects, sources, tagGroups] = await Promise.all([
+    const [areas, users, projects, sources, tagGroups, complaintTags] = await Promise.all([
         AreaApi.getAreaTree(),
         UserApi.getSimpleUserList(),
         ProductCategoryApi.getProductCategorySimpleList(),
         ClueSourceApi.getEnabledClueSourceList(),
-        TagGroupApi.getTagGroupList()
+        TagGroupApi.getTagGroupList(),
+        ComplaintTagApi.getComplaintTagSimpleList()
     ])
 
     areaOptions.value = flattenAreas(areas || [])
@@ -638,12 +715,17 @@ const loadOptions = async () => {
             value: Number(tag.id)
         }))
     )
+    complaintTagOptions.value = (complaintTags || []).map((item) => ({
+        label: item.name,
+        value: Number(item.id)
+    }))
 
     updateSchemaOptions('areaId', areaOptions.value)
     updateSchemaOptions('currentOwnerId', userOptions.value)
     updateSchemaOptions('consultProjectId', projectOptions.value)
     updateSchemaOptions('clueSourceId', clueSourceOptions.value)
     updateSchemaOptions('tagId', tagOptions.value)
+    updateSchemaOptions('complaintTagId', complaintTagOptions.value)
 }
 
 const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
@@ -717,6 +799,29 @@ const handleBatchTag = async () => {
     await tableMethods.getList()
 }
 
+const openComplaintTagDialog = () => {
+    complaintTagForm.complaintTagIds = []
+    loadComplaintTagOptions()
+    complaintTagDialogVisible.value = true
+}
+
+const handleBatchComplaintTag = async () => {
+    if (!complaintTagForm.complaintTagIds.length) {
+        message.warning('请选择投诉标签')
+        return
+    }
+    await ClueApi.batchAppendComplaintTags({
+        clueIds: selectionList.value.map((item) => Number(item.id)),
+        complaintTagIds: complaintTagForm.complaintTagIds
+    })
+    message.success('批量打投诉标签成功')
+    complaintTagDialogVisible.value = false
+    complaintTagForm.complaintTagIds = []
+    selectionList.value = []
+    await tableMethods.clearSelection()
+    await tableMethods.getList()
+}
+
 const openMergeDialog = () => {
     if (selectionList.value.length !== 2) {
         message.warning('请选择两条线索进行合并')
@@ -772,6 +877,10 @@ const handleImport = async () => {
     } finally {
         importLoading.value = false
     }
+}
+
+const openComplaintImportDialog = () => {
+    complaintImportDialogRef.value?.open()
 }
 
 onMounted(async () => {

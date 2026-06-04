@@ -36,6 +36,8 @@ export interface ClueVO {
     source?: number
     tagIds?: number[]
     tagNames?: string[]
+    complaintTagIds?: number[]
+    complaintTagNames?: string[]
     assignMode?: number
     assignModeName?: string
     autoAssignFailReason?: string
@@ -77,6 +79,7 @@ export interface CluePageReqVO extends PageParam {
     areaId?: number
     status?: number
     tagId?: number
+    complaintTagId?: number
     consultProjectId?: number
     clueSourceId?: number
     intentLevel?: number
@@ -155,6 +158,11 @@ export interface ClueUpdateBasicInfoReqVO {
 export interface ClueBatchAppendTagsReqVO {
     clueIds: number[]
     tagIds: number[]
+}
+
+export interface ClueBatchAppendComplaintTagsReqVO {
+    clueIds: number[]
+    complaintTagIds: number[]
 }
 
 export interface ClueBatchUpdateAssignModeReqVO {
@@ -279,6 +287,7 @@ export interface MyCluePageReqVO extends PageParam {
     qq?: string
     areaId?: number
     tagId?: number
+    complaintTagId?: number
     consultProjectId?: number
     clueSourceId?: number
     intentLevel?: number
@@ -447,6 +456,11 @@ export interface ClueImportTaskItemVO {
     createTime?: string
 }
 
+export interface ClueComplaintTagImportRespVO {
+    successCustomerIds?: string[]
+    failureCustomerIds?: Record<string, string>
+}
+
 export const getCluePage = async (params: CluePageReqVO) => {
     return await request.get({ url: '/crm/clue/page', params })
 }
@@ -491,6 +505,10 @@ export const batchAppendClueTags = async (data: ClueBatchAppendTagsReqVO) => {
     return await request.put({ url: '/crm/clue/batch-append-tags', data })
 }
 
+export const batchAppendComplaintTags = async (data: ClueBatchAppendComplaintTagsReqVO) => {
+    return await request.put({ url: '/crm/clue/batch-append-complaint-tags', data })
+}
+
 export const batchUpdateClueAssignMode = async (data: ClueBatchUpdateAssignModeReqVO) => {
     return await request.put({ url: '/crm/clue/batch-update-assign-mode', data })
 }
@@ -517,6 +535,13 @@ export const copyClueMobile = async (id: number) => {
 
 export const importClues = async (data: FormData) => {
     return await request.upload({ url: '/crm/clue/import', data })
+}
+
+export const importComplaintTags = async (data: FormData) => {
+    return await request.upload<ClueComplaintTagImportRespVO>({
+        url: '/crm/clue/import-complaint-tags',
+        data
+    })
 }
 
 export const getClueImportTaskPage = async (params: ClueImportTaskPageReqVO) => {

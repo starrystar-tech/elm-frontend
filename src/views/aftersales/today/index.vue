@@ -25,6 +25,7 @@ import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { dateFormatter } from '@/utils/formatTime'
 import * as AftersalesApi from '@/api/crm/aftersales'
+import * as ComplaintTagApi from '@/api/system/complaintTag'
 import {
   buildBaseSearchSchema,
   buildPageParams,
@@ -38,8 +39,11 @@ defineOptions({ name: 'AftersalesToday' })
 
 const message = useMessage()
 const detailRef = ref()
+const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 const searchSchema = computed<FormSchema[]>(() =>
-  buildBaseSearchSchema().filter((item) => !['handlerUserId', 'receiveTimeRange', 'processTimeRange'].includes(item.field))
+  buildBaseSearchSchema([], complaintTagOptions.value).filter(
+    (item) => !['handlerUserId', 'receiveTimeRange', 'processTimeRange'].includes(item.field)
+  )
 )
 
 const { tableObject, tableMethods, register: tableRegister } = useTable<AftersalesApi.AftersalesRespVO>({
@@ -101,7 +105,9 @@ const tableColumns = computed<TableColumn[]>(() => [
   }
 ])
 
-onMounted(() => {
-  tableMethods.getList()
+onMounted(async () => {
+  const complaintTags = await ComplaintTagApi.getComplaintTagSimpleList()
+  complaintTagOptions.value = (complaintTags || []).map((item) => ({ label: item.name, value: item.id }))
+  await tableMethods.getList()
 })
 </script>
