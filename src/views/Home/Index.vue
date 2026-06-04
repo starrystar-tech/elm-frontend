@@ -349,6 +349,12 @@ const remoteAudioRef = ref<HTMLAudioElement>()
 const localAudioRef = ref<HTMLAudioElement>()
 const callDurationSeconds = ref(0)
 let callDurationTimer: ReturnType<typeof setInterval> | undefined
+let browserRegisterWaiter:
+    | {
+          resolve: () => void
+          reject: (error: Error) => void
+      }
+    | undefined
 
 const profile = reactive<Partial<ProfileVO>>({})
 const browserForm = reactive({
@@ -452,11 +458,42 @@ const markBrowserRegistered = () => {
     const firstRegister = !browserRegistered.value
     browserRegistered.value = true
     updateBrowserStatus('已注册')
+    browserRegisterWaiter?.resolve()
+    browserRegisterWaiter = undefined
     if (firstRegister) {
         addBrowserLog('浏览器分机注册成功')
     }
     traceBrowserStep('REGISTERED')
 }
+
+const failPendingBrowserRegistration = (reason: string) => {
+    if (!browserRegisterWaiter) {
+        return
+    }
+    browserRegisterWaiter.reject(new Error(reason))
+    browserRegisterWaiter = undefined
+}
+
+const waitForBrowserRegistration = (timeoutMs = 10000) =>
+    new Promise<void>((resolve, reject) => {
+        const timer = window.setTimeout(() => {
+            if (browserRegisterWaiter?.reject === reject) {
+                browserRegisterWaiter = undefined
+            }
+            reject(new Error(`SIP 注册超时（${timeoutMs}ms）`))
+        }, timeoutMs)
+
+        browserRegisterWaiter = {
+            resolve: () => {
+                window.clearTimeout(timer)
+                resolve()
+            },
+            reject: (error: Error) => {
+                window.clearTimeout(timer)
+                reject(error)
+            }
+        }
+    })
 
 const isInCall = computed(() => browserStatus.value === '通话中')
 const isRingingState = computed(
@@ -561,6 +598,7 @@ const createBrowserClient = async () => {
                 activeCall.value = false
                 stopCallTimer()
                 updateBrowserStatus(browserConnecting.value ? '注册失败' : '未注册')
+                failPendingBrowserRegistration('SIP 注册后立即被服务器注销')
                 traceBrowserStep(
                     'UNREGISTERED',
                     `connecting=${browserConnecting.value}, disconnecting=${browserDisconnecting.value}`
@@ -579,6 +617,7 @@ const createBrowserClient = async () => {
                 activeCall.value = false
                 stopCallTimer()
                 updateBrowserStatus(browserDisconnecting.value ? '未连接' : '连接断开')
+                failPendingBrowserRegistration(error?.message || 'WSS 连接已断开')
                 traceBrowserStep('WS_DISCONNECTED', error?.message, error?.message ? 'danger' : 'success')
                 if (!browserDisconnecting.value && error?.message) {
                     addBrowserLog(`WSS 连接断开：${error.message}`, '失败', 'danger')
@@ -607,7 +646,7 @@ const connectBrowserPhone = async () => {
         await client.connect()
         traceBrowserStep('REGISTER_SENDING')
         await client.register()
-        markBrowserRegistered()
+        await waitForBrowserRegistration()
         message.success('浏览器分机已连接')
     } catch (error: any) {
         const errorMessage = formatBrowserError(error) || '浏览器分机连接失败'
@@ -629,6 +668,7 @@ const disconnectBrowserPhone = async (silent = false) => {
     const wasRegistered = browserRegistered.value
     browserClient.value = undefined
     browserDisconnecting.value = true
+    failPendingBrowserRegistration('浏览器分机连接已取消')
     traceBrowserStep('DISCONNECT_START', `silent=${silent}, wasRegistered=${wasRegistered}`)
     if (client) {
         try {
