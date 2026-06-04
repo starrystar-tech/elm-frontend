@@ -38,6 +38,14 @@
                     >标签</BaseButton
                 >
                 <BaseButton
+                    v-if="canSmsSend"
+                    type="primary"
+                    plain
+                    :disabled="selectionList.length === 0"
+                    @click="openSmsDialog"
+                    >发短信</BaseButton
+                >
+                <BaseButton
                     v-if="canComplaintTagUpdate"
                     type="primary"
                     plain
@@ -73,6 +81,7 @@
     </ContentWrap>
 
     <ClueForm ref="formRef" @success="tableMethods.getList" />
+    <ClueSmsDialog ref="smsDialogRef" @success="handleSmsSuccess" />
     <ClueDetailDrawer ref="detailRef" />
     <ClueEnrollDialog ref="enrollRef" @success="tableMethods.getList" />
 
@@ -226,6 +235,7 @@ import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 import * as ComplaintTagApi from '@/api/system/complaintTag'
 import ClueForm from './ClueForm.vue'
+import ClueSmsDialog from './ClueSmsDialog.vue'
 import ComplaintTagImportDialog from './ComplaintTagImportDialog.vue'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'
@@ -266,10 +276,12 @@ const CLUE_IMPORT_TEMPLATE_URL =
 
 const message = useMessage()
 const canCreate = hasPermission(['crm:clue:create'])
+const canSmsSend = hasPermission(['crm:clue:sms:send'])
 const canComplaintTagUpdate = hasPermission(['crm:clue:complaint-tag:update'])
 const canComplaintTagImport = hasPermission(['crm:clue:complaint-tag:import'])
 
 const formRef = ref<InstanceType<typeof ClueForm>>()
+const smsDialogRef = ref<InstanceType<typeof ClueSmsDialog>>()
 const complaintImportDialogRef = ref<InstanceType<typeof ComplaintTagImportDialog>>()
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
 const enrollRef = ref<InstanceType<typeof ClueEnrollDialog>>()
@@ -794,6 +806,16 @@ const handleBatchTag = async () => {
     message.success('批量打标签成功')
     tagDialogVisible.value = false
     tagForm.tagIds = []
+    selectionList.value = []
+    await tableMethods.clearSelection()
+    await tableMethods.getList()
+}
+
+const openSmsDialog = () => {
+    smsDialogRef.value?.open(selectionList.value.map((item) => Number(item.id)))
+}
+
+const handleSmsSuccess = async () => {
     selectionList.value = []
     await tableMethods.clearSelection()
     await tableMethods.getList()

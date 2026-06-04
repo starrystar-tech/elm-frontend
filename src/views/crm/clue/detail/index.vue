@@ -6,9 +6,11 @@
         :can-update="canUpdate"
         :log-list="logList"
         @edit="openForm"
+        @sms="handleSms"
     />
 
     <ClueForm ref="formRef" @success="getClue" />
+    <ClueSmsDialog ref="smsDialogRef" />
 </template>
 
 <script setup lang="ts">
@@ -18,6 +20,7 @@ import { BizTypeEnum } from '@/api/crm/permission'
 import type { OperateLogVO } from '@/api/system/operatelog'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import ClueForm from '@/views/crm/clue/ClueForm.vue'
+import ClueSmsDialog from '@/views/crm/clue/ClueSmsDialog.vue'
 import ClueDetailContent from './ClueDetailContent.vue'
 
 defineOptions({ name: 'CrmClueDetail' })
@@ -28,6 +31,7 @@ const message = useMessage()
 const canUpdate = hasPermission(['crm:clue:basic-info:update'])
 
 const formRef = ref<InstanceType<typeof ClueForm>>()
+const smsDialogRef = ref<InstanceType<typeof ClueSmsDialog>>()
 const clue = ref<ClueApi.ClueVO>({})
 const logList = ref<OperateLogVO[]>([])
 
@@ -51,6 +55,10 @@ const getClue = async () => {
 
 const openForm = () => {
     formRef.value?.open('update', clueId.value)
+}
+
+const handleSms = () => {
+    smsDialogRef.value?.open([clueId.value])
 }
 
 const { params } = useRoute()

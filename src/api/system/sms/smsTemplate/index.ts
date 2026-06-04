@@ -15,6 +15,14 @@ export interface SmsTemplateVO {
   createTime?: Date
 }
 
+export interface NonSystemNotifySmsTemplateVO {
+  id: number
+  code: string
+  name: string
+  content: string
+  params?: string[]
+}
+
 export interface SendSmsReqVO {
   mobile: string
   templateCode: string
@@ -57,6 +65,10 @@ export const exportSmsTemplate = (params) => {
     url: '/system/sms-template/export-excel',
     params
   })
+}
+
+export const getNonSystemNotifySmsTemplateList = () => {
+  return request.get<NonSystemNotifySmsTemplateVO[]>({ url: '/system/sms-template/non-system-notify-list' })
 }
 
 // 发送短信

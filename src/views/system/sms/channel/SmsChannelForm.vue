@@ -7,9 +7,6 @@
       :rules="formRules"
       label-width="130px"
     >
-      <el-form-item label="短信签名" prop="signature">
-        <el-input v-model="formData.signature" placeholder="请输入短信签名" />
-      </el-form-item>
       <el-form-item label="渠道编码" prop="code">
         <el-select v-model="formData.code" clearable placeholder="请选择渠道编码">
           <el-option
@@ -40,9 +37,6 @@
       <el-form-item label="短信 API 的密钥" prop="apiSecret">
         <el-input v-model="formData.apiSecret" placeholder="请输入短信 API 的密钥" />
       </el-form-item>
-      <el-form-item label="短信发送回调 URL" prop="callbackUrl">
-        <el-input v-model="formData.callbackUrl" placeholder="请输入短信发送回调 URL" />
-      </el-form-item>
     </el-form>
     <template #footer>
       <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
@@ -66,16 +60,13 @@ const formLoading = ref(false) // 表单的加载中：1）修改时的数据加
 const formType = ref('') // 表单的类型：create - 新增；update - 修改
 const formData = ref({
   id: undefined,
-  signature: '',
   code: '',
   status: CommonStatusEnum.ENABLE,
   remark: '',
   apiKey: '',
-  apiSecret: '',
-  callbackUrl: ''
+  apiSecret: ''
 })
 const formRules = reactive({
-  signature: [{ required: true, message: '短信签名不能为空', trigger: 'blur' }],
   code: [{ required: true, message: '渠道编码不能为空', trigger: 'blur' }],
   status: [{ required: true, message: '启用状态不能为空', trigger: 'blur' }],
   apiKey: [{ required: true, message: '短信 API 的账号不能为空', trigger: 'blur' }]
@@ -131,13 +122,11 @@ const submitForm = async () => {
 const resetForm = () => {
   formData.value = {
     id: undefined,
-    signature: '',
     code: '',
     status: CommonStatusEnum.ENABLE,
     remark: '',
     apiKey: '',
-    apiSecret: '',
-    callbackUrl: ''
+    apiSecret: ''
   }
   formRef.value?.resetFields()
 }

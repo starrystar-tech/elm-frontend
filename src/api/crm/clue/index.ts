@@ -361,6 +361,11 @@ export interface ClueBatchUpdateHeadteacherReqVO {
     headteacherUserId: number
 }
 
+export interface ClueBatchSendSmsReqVO {
+    clueIds: number[]
+    templateId: number
+}
+
 export interface ClueImportTaskVO {
     id: number
     fileName?: string
@@ -515,6 +520,10 @@ export const batchUpdateClueAssignMode = async (data: ClueBatchUpdateAssignModeR
 
 export const batchSilentClue = async (data: ClueBatchSilentReqVO) => {
     return await request.put({ url: '/crm/clue/batch-silent', data })
+}
+
+export const batchSendSms = async (data: ClueBatchSendSmsReqVO) => {
+    return await request.post({ url: '/crm/clue/batch-send-sms', data })
 }
 
 export const mergeClue = async (data: ClueMergeReqVO) => {

@@ -45,6 +45,7 @@
     </el-drawer>
 
     <ClueEnrollDialog ref="enrollRef" @success="handleEnrollSuccess" />
+    <ClueSmsDialog ref="smsDialogRef" />
     <CrmTransferForm
         ref="transferRef"
         :biz-type="BizTypeEnum.CRM_CLUE"
@@ -91,6 +92,7 @@ import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import CrmTransferForm from '@/views/crm/permission/components/TransferForm.vue'
+import ClueSmsDialog from '../ClueSmsDialog.vue'
 import ClueEnrollDialog from './ClueEnrollDialog.vue'
 import ClueDetailContent from './ClueDetailContent.vue'
 
@@ -106,6 +108,7 @@ const clue = ref<ClueApi.ClueVO>({})
 const logList = ref<OperateLogVO[]>([])
 const canUpdate = hasPermission(['crm:clue:basic-info:update'])
 const enrollRef = ref<InstanceType<typeof ClueEnrollDialog>>()
+const smsDialogRef = ref<InstanceType<typeof ClueSmsDialog>>()
 const transferRef = ref<InstanceType<typeof CrmTransferForm>>()
 const message = useMessage()
 const projectOptions = ref<{ id: number; name: string; children?: any[] }[]>([])
@@ -274,7 +277,8 @@ const handleEnrollSuccess = async () => {
 }
 
 const handleSms = () => {
-    message.info('短信功能待接入')
+    if (!clue.value.id) return
+    smsDialogRef.value?.open([Number(clue.value.id)])
 }
 
 const handleTransfer = () => {

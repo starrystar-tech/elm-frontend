@@ -7,15 +7,6 @@
       @search="setSearchParams"
     />
     <div class="mb-10px">
-      <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
-      <BaseButton
-        v-if="canDelete"
-        type="danger"
-        :disabled="checkedIds.length === 0"
-        @click="handleDeleteBatch"
-      >
-        批量删除
-      </BaseButton>
       <BaseButton v-if="canExport" type="primary" plain :loading="exportLoading" @click="handleExport">
         导出
       </BaseButton>
@@ -27,14 +18,10 @@
       :data="tableObject.tableList"
       :loading="tableObject.loading"
       :pagination="{ total: tableObject.total }"
-      selection
       @register="tableRegister"
-      @selection-change="handleRowCheckboxChange"
     />
   </ContentWrap>
 
-  <SmsTemplateForm ref="formRef" @success="tableMethods.getList" />
-  <SmsTemplateSendForm ref="sendFormRef" />
 </template>
 
 <script setup lang="tsx">
@@ -51,20 +38,12 @@ import { DictTag } from '@/components/DictTag'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
-import SmsTemplateForm from './SmsTemplateForm.vue'
-import SmsTemplateSendForm from './SmsTemplateSendForm.vue'
 
 defineOptions({ name: 'SystemSmsTemplate' })
 
-const canCreate = hasPermission(['system:sms-template:create'])
-const canUpdate = hasPermission(['system:sms-template:update'])
-const canDelete = hasPermission(['system:sms-template:delete'])
 const canExport = hasPermission(['system:sms-template:export'])
-const canSend = hasPermission(['system:sms-template:send-sms'])
 
 const channelList = ref<SmsChannelApi.SmsChannelVO[]>([])
-const checkedIds = ref<number[]>([])
-const message = useMessage()
 
 const searchSchema = reactive<FormSchema[]>([
   {
@@ -134,20 +113,8 @@ const searchSchema = reactive<FormSchema[]>([
   }
 ])
 
-const formRef = ref<InstanceType<typeof SmsTemplateForm>>()
-const sendFormRef = ref<InstanceType<typeof SmsTemplateSendForm>>()
-
-const openForm = (type: string, id?: number) => {
-  formRef.value?.open(type, id)
-}
-
-const openSendForm = (id: number) => {
-  sendFormRef.value?.open(id)
-}
-
 const { tableObject, tableMethods, register: tableRegister } = useTable<SmsTemplateApi.SmsTemplateVO>({
   getListApi: async (params) => await SmsTemplateApi.getSmsTemplatePage(params),
-  delListApi: async (id) => await SmsTemplateApi.deleteSmsTemplate(id as number),
   exportListApi: async (params) => await SmsTemplateApi.exportSmsTemplate(params)
 })
 
@@ -157,24 +124,6 @@ const setSearchParams = (params: Recordable) => {
   tableMethods.setSearchParams(params)
 }
 
-const handleRowCheckboxChange = (rows: SmsTemplateApi.SmsTemplateVO[]) => {
-  checkedIds.value = rows.map((row) => row.id!).filter(Boolean) as number[]
-}
-
-const handleDelete = async (id: number) => {
-  await tableMethods.delList(id, false)
-}
-
-const handleDeleteBatch = async () => {
-  try {
-    await message.delConfirm()
-    await SmsTemplateApi.deleteSmsTemplateList(checkedIds.value)
-    checkedIds.value = []
-    message.success('删除成功')
-    await tableMethods.getList()
-  } catch {}
-}
-
 const handleExport = async () => {
   await tableMethods.exportList('短信模板.xls')
 }
@@ -182,7 +131,7 @@ const handleExport = async () => {
 const getChannelName = (channelId?: number) => {
   const channel = channelList.value.find((item) => item.id === channelId)
   if (!channel) return ''
-  return `${channel.signature}【 ${getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, channel.code)}】`
+  return getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, channel.code) || channel.code || ''
 }
 
 const tableColumns = reactive<TableColumn[]>([
@@ -218,35 +167,6 @@ const tableColumns = reactive<TableColumn[]>([
     label: '创建时间',
     formatter: dateFormatter,
     width: '180px'
-  },
-  {
-    field: 'action',
-    label: '操作',
-    width: '210px',
-    slots: {
-      default: (data) => {
-        const row = data.row as SmsTemplateApi.SmsTemplateVO
-        return (
-          <>
-            {canUpdate ? (
-              <BaseButton link type="primary" onClick={() => openForm('update', row.id)}>
-                修改
-              </BaseButton>
-            ) : null}
-            {canSend ? (
-              <BaseButton link type="primary" onClick={() => openSendForm(row.id!)}>
-                测试
-              </BaseButton>
-            ) : null}
-            {canDelete ? (
-              <BaseButton link type="danger" onClick={() => handleDelete(row.id!)}>
-                删除
-              </BaseButton>
-            ) : null}
-          </>
-        )
-      }
-    }
   }
 ])
 
@@ -255,7 +175,7 @@ onMounted(async () => {
   searchSchema[4].componentProps = {
     ...(searchSchema[4].componentProps || {}),
     options: channelList.value.map((channel) => ({
-      label: `${channel.signature}【 ${getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, channel.code)}】`,
+      label: getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, channel.code) || channel.code || '',
       value: channel.id
     }))
   }

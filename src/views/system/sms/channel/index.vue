@@ -30,7 +30,7 @@
 
 <script setup lang="tsx">
 import { reactive, ref } from 'vue'
-import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
+import { DICT_TYPE, getIntDictOptions, getStrDictOptions } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import * as SmsChannelApi from '@/api/system/sms/smsChannel'
 import { Search } from '@/components/Search'
@@ -53,12 +53,13 @@ const message = useMessage()
 
 const searchSchema = reactive<FormSchema[]>([
   {
-    field: 'signature',
-    label: '短信签名',
-    component: 'Input',
+    field: 'code',
+    label: '渠道编码',
+    component: 'Select',
     componentProps: {
-      placeholder: '请输入短信签名',
+      placeholder: '请选择渠道编码',
       clearable: true,
+      options: getStrDictOptions(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE),
       style: { width: '240px' }
     }
   },
@@ -122,7 +123,6 @@ const handleDeleteBatch = async () => {
 
 const tableColumns = reactive<TableColumn[]>([
   { field: 'id', label: '编号' },
-  { field: 'signature', label: '短信签名' },
   {
     field: 'code',
     label: '渠道编码',
@@ -140,7 +140,6 @@ const tableColumns = reactive<TableColumn[]>([
   { field: 'remark', label: '备注', showOverflowTooltip: true },
   { field: 'apiKey', label: '短信 API 的账号', showOverflowTooltip: true, width: '180px' },
   { field: 'apiSecret', label: '短信 API 的密钥', showOverflowTooltip: true, width: '180px' },
-  { field: 'callbackUrl', label: '回调地址', showOverflowTooltip: true, width: '180px' },
   {
     field: 'createTime',
     label: '创建时间',
