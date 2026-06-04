@@ -476,10 +476,12 @@ const failPendingBrowserRegistration = (reason: string) => {
 
 const waitForBrowserRegistration = (timeoutMs = 10000) =>
     new Promise<void>((resolve, reject) => {
+        traceBrowserStep('REGISTER_WAIT_START', `timeoutMs=${timeoutMs}`)
         const timer = window.setTimeout(() => {
             if (browserRegisterWaiter?.reject === reject) {
                 browserRegisterWaiter = undefined
             }
+            traceBrowserStep('REGISTER_WAIT_TIMEOUT', `timeoutMs=${timeoutMs}`, 'danger')
             reject(new Error(`SIP 注册超时（${timeoutMs}ms）`))
         }, timeoutMs)
 
@@ -553,6 +555,10 @@ const ensureBrowserPrerequisites = async () => {
 const createBrowserClient = async () => {
     const { SimpleUser } = await import('sip.js/lib/platform/web')
     traceBrowserStep('CLIENT_CREATE')
+    traceBrowserStep(
+        'REGISTER_CONTEXT',
+        `aor=sip:${browserForm.username.trim()}@${browserForm.domain.trim()}, authUser=${browserForm.username.trim()}, ws=${browserForm.wsServer.trim()}`
+    )
     const client = new SimpleUser(browserForm.wsServer, {
         aor: `sip:${browserForm.username.trim()}@${browserForm.domain.trim()}`,
         media: {
@@ -598,10 +604,15 @@ const createBrowserClient = async () => {
                 activeCall.value = false
                 stopCallTimer()
                 updateBrowserStatus(browserConnecting.value ? '注册失败' : '未注册')
-                failPendingBrowserRegistration('SIP 注册后立即被服务器注销')
+                const reason = browserDisconnecting.value
+                    ? '客户端主动断开后收到注销事件'
+                    : browserConnecting.value
+                      ? 'SIP 注册后立即被服务器注销'
+                      : 'SIP 已注销'
+                failPendingBrowserRegistration(reason)
                 traceBrowserStep(
                     'UNREGISTERED',
-                    `connecting=${browserConnecting.value}, disconnecting=${browserDisconnecting.value}`
+                    `connecting=${browserConnecting.value}, disconnecting=${browserDisconnecting.value}, reason=${reason}`
                 )
                 if (!browserDisconnecting.value && !browserConnecting.value) {
                     addBrowserLog('浏览器分机已注销')
@@ -617,7 +628,8 @@ const createBrowserClient = async () => {
                 activeCall.value = false
                 stopCallTimer()
                 updateBrowserStatus(browserDisconnecting.value ? '未连接' : '连接断开')
-                failPendingBrowserRegistration(error?.message || 'WSS 连接已断开')
+                const reason = error?.message || 'WSS 连接已断开'
+                failPendingBrowserRegistration(reason)
                 traceBrowserStep('WS_DISCONNECTED', error?.message, error?.message ? 'danger' : 'success')
                 if (!browserDisconnecting.value && error?.message) {
                     addBrowserLog(`WSS 连接断开：${error.message}`, '失败', 'danger')
@@ -645,8 +657,10 @@ const connectBrowserPhone = async () => {
         traceBrowserStep('WS_CONNECTING')
         await client.connect()
         traceBrowserStep('REGISTER_SENDING')
+        const registrationPromise = waitForBrowserRegistration()
         await client.register()
-        await waitForBrowserRegistration()
+        traceBrowserStep('REGISTER_REQUEST_SENT')
+        await registrationPromise
         message.success('浏览器分机已连接')
     } catch (error: any) {
         const errorMessage = formatBrowserError(error) || '浏览器分机连接失败'
