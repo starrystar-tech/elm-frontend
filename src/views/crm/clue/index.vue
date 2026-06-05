@@ -240,6 +240,7 @@ import ComplaintTagImportDialog from './ComplaintTagImportDialog.vue'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'
 import ClueMergeDialog from './components/ClueMergeDialog.vue'
+import { renderCopyMobileCell } from './mobileCopy'
 
 interface SearchParams {
     customer?: string
@@ -589,7 +590,21 @@ const buildTagText = (row: ClueApi.ClueVO) => (row.tagNames?.length ? row.tagNam
 
 const tableColumns = computed<TableColumn[]>(() => [
     { field: 'customerId', label: '客户ID', width: '140px' },
-    { field: 'mobile', label: '联系电话', width: '140px' },
+    {
+        field: 'mobile',
+        label: '联系电话',
+        minWidth: '170px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: data.row,
+                    mobile: data.row.mobile,
+                    clueId: data.row.id,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     { field: 'intentLevelName', label: '意向度', width: '100px' },
     {
         field: 'feedbackStatus',

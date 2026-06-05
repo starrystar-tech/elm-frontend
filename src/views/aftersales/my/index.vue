@@ -42,9 +42,11 @@ import {
 import AftersalesForm from '../components/AftersalesForm.vue'
 import AftersalesProcessDialog from '../components/AftersalesProcessDialog.vue'
 import AftersalesDetailDialog from '../components/AftersalesDetailDialog.vue'
+import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'AftersalesMy' })
 
+const message = useMessage()
 const handlerOptions = ref<{ label: string; value: number }[]>([])
 const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 const formRef = ref()
@@ -85,7 +87,20 @@ const tableColumns = computed<TableColumn[]>(() => [
   { field: 'clueId', label: '线索ID', minWidth: '90px' },
   { field: 'orderNo', label: '订单编号', minWidth: '160px' },
   { field: 'customerName', label: '客户', minWidth: '100px' },
-  { field: 'customerMobile', label: '手机号', minWidth: '130px' },
+  {
+    field: 'customerMobile',
+    label: '手机号',
+    minWidth: '170px',
+    slots: {
+      default: (data) =>
+        renderCopyMobileCell({
+          row: data.row,
+          mobile: data.row.customerMobile,
+          success: message.success,
+          warning: message.warning
+        })
+    }
+  },
   { field: 'ticketType', label: '工单类型', minWidth: '100px', formatter: (_r, _c, v) => getAftersalesTypeLabel(v) },
   { field: 'priority', label: '优先级', minWidth: '90px', formatter: (_r, _c, v) => getAftersalesPriorityLabel(v) },
   { field: 'status', label: '状态', minWidth: '100px', formatter: (_r, _c, v) => getAftersalesStatusLabel(v) },

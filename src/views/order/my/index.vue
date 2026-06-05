@@ -43,6 +43,7 @@ import {
 import OrderDetailDrawer from '../detail/OrderDetailDrawer.vue'
 import OrderContractSignDialog from '../detail/OrderContractSignDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
+import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'OrderMy' })
 
@@ -240,6 +241,11 @@ const handleContractSign = (row: OrderApi.OrderPageRespVO) => {
     contractSignRef.value?.open(row)
 }
 
+const getOrderClueDetail = async (id: number) => {
+    const detail = await OrderApi.getOrder(id)
+    return { clueId: detail.clueId }
+}
+
 const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'orderNo',
@@ -257,7 +263,21 @@ const tableColumns = computed<TableColumn[]>(() => [
     // { field: 'enrollTime', label: '报名时间', minWidth: '170px', formatter: dateFormatter },
     { field: 'customerName', label: '姓名', minWidth: '100px' },
     { field: 'customerId', label: '客户ID', minWidth: '100px' },
-    { field: 'customerMobile', label: '手机号', minWidth: '130px' },
+    {
+        field: 'customerMobile',
+        label: '手机号',
+        minWidth: '170px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: data.row,
+                    mobile: data.row.customerMobile,
+                    getDetail: getOrderClueDetail,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     {
         field: 'orderStatus',
         label: '订单状态',

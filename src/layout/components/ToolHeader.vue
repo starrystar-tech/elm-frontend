@@ -1,5 +1,6 @@
 <script lang="tsx">
-import { defineComponent, computed } from 'vue'
+import { defineComponent, computed, reactive, ref } from 'vue'
+import { ElButton, ElInput, ElMessage, ElTooltip } from 'element-plus'
 import { Message } from '@/layout/components//Message'
 import { Collapse } from '@/layout/components/Collapse'
 import { UserInfo } from '@/layout/components/UserInfo'
@@ -12,6 +13,7 @@ import TenantVisit from '@/layout/components/TenantVisit/index.vue'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
 import { checkPermi } from '@/utils/permission'
+import { dialOutboundCall } from '@/api/system/call'
 
 const { getPrefixCls, variables } = useDesign()
 
@@ -51,6 +53,32 @@ const hasTenantVisitPermission = computed(
 export default defineComponent({
     name: 'ToolHeader',
     setup() {
+        const outboundForm = reactive({
+            mobile: ''
+        })
+        const dialing = ref(false)
+
+        const handleOutboundDial = async () => {
+            const mobile = outboundForm.mobile.trim()
+            if (!/^1\d{10}$/.test(mobile)) {
+                ElMessage.warning('请输入正确的 11 位手机号')
+                return
+            }
+            if (dialing.value) {
+                return
+            }
+            dialing.value = true
+            try {
+                await dialOutboundCall({ mobile })
+                ElMessage.success(`外呼请求已提交：${mobile}`)
+                outboundForm.mobile = ''
+            } catch (error: any) {
+                ElMessage.error(error?.message || '外呼失败')
+            } finally {
+                dialing.value = false
+            }
+        }
+
         return () => (
             <div
                 id={`${variables.namespace}-tool-header`}
@@ -74,6 +102,33 @@ export default defineComponent({
                     </div>
                 ) : undefined}
                 <div class="h-full flex items-center">
+                    <div class="outbound-toolbar lt-lg:hidden">
+                        <ElInput
+                            v-model={outboundForm.mobile}
+                            class="outbound-toolbar__input"
+                            placeholder="输入手机号"
+                            clearable
+                            maxlength={11}
+                            onKeydown={(event: KeyboardEvent) => {
+                                if (event.key === 'Enter') {
+                                    handleOutboundDial()
+                                }
+                            }}
+                        />
+                        <ElTooltip
+                            content="固定外显 07362784169，经 jiuyun 网关外呼"
+                            placement="bottom"
+                        >
+                            <ElButton
+                                type="primary"
+                                class="outbound-toolbar__button"
+                                loading={dialing.value}
+                                onClick={handleOutboundDial}
+                            >
+                                呼叫
+                            </ElButton>
+                        </ElTooltip>
+                    </div>
                     {hasTenantVisitPermission.value ? <TenantVisit /> : undefined}
                     {screenfull.value ? (
                         <Screenfull
@@ -115,5 +170,37 @@ $prefix-cls: #{$namespace}-tool-header;
 
 .#{$prefix-cls} {
     transition: left var(--transition-time-02);
+}
+
+.outbound-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: 12px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(10px);
+
+    &__label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--top-header-text-color);
+        white-space: nowrap;
+    }
+
+    &__input {
+        width: 180px;
+    }
+
+    &__button {
+        border-radius: 999px;
+    }
+}
+
+:global(.dark) {
+    .outbound-toolbar {
+        background: rgba(30, 41, 59, 0.78);
+    }
 }
 </style>
