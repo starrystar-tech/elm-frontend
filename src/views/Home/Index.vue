@@ -483,6 +483,26 @@ const describeBrowserError = (error: any) => {
     return parts.join(', ') || 'error=<object without known fields>'
 }
 
+const describeSipResponse = (response: any) => {
+    const statusCode = response?.message?.statusCode
+    const reasonPhrase = response?.message?.reasonPhrase
+    const cseq = response?.message?.cseq
+    return [statusCode ? `statusCode=${statusCode}` : '', reasonPhrase ? `reason=${reasonPhrase}` : '', cseq ? `cseq=${cseq.method ?? cseq}` : '']
+        .filter((item) => item.length > 0)
+        .join(', ')
+}
+
+const attachRegistererDiagnostics = (client: any) => {
+    const registerer = client?.sessionManager?.registerer
+    if (!registerer || registerer.__browserDiagnosticsAttached) {
+        return
+    }
+    registerer.__browserDiagnosticsAttached = true
+    registerer.stateChange.addListener((state: string) => {
+        traceBrowserStep('REGISTERER_STATE', `state=${state}`)
+    })
+}
+
 const markBrowserRegistered = () => {
     const firstRegister = !browserRegistered.value
     browserRegistered.value = true
@@ -598,7 +618,32 @@ const createBrowserClient = async () => {
         userAgentOptions: {
             authorizationUsername: browserForm.username.trim(),
             authorizationPassword: browserForm.password.trim(),
-            displayName: browserForm.username.trim()
+            displayName: browserForm.username.trim(),
+            logBuiltinEnabled: true,
+            logConfiguration: true,
+            logLevel: 'debug',
+            logConnector: (level: string, category: string, label: string | undefined, content: string) => {
+                const prefix = [level, category, label].filter(Boolean).join('/')
+                const details = `${prefix}: ${content}`
+                if (
+                    category.includes('Transport') ||
+                    category.includes('Registerer') ||
+                    content.includes('REGISTER') ||
+                    content.includes('WebSocket') ||
+                    content.includes('status code')
+                ) {
+                    traceBrowserStep('SIPJS_LOG', details, level === 'error' || level === 'warn' ? 'danger' : 'success')
+                }
+                const logger = level === 'error' || level === 'warn' ? console.warn : console.info
+                logger('[SIP.js]', details)
+            },
+            transportOptions: {
+                server: browserForm.wsServer.trim(),
+                traceSip: true
+            }
+        },
+        registererOptions: {
+            logConfiguration: true
         },
         delegate: {
             onCallReceived: () => {
@@ -687,7 +732,24 @@ const connectBrowserPhone = async () => {
         await client.connect()
         traceBrowserStep('REGISTER_SENDING')
         const registrationPromise = waitForBrowserRegistration()
-        await client.register()
+        const registerRequest = client.register({
+            requestDelegate: {
+                onTrying: (response: any) => {
+                    traceBrowserStep('REGISTER_TRYING', describeSipResponse(response))
+                },
+                onProgress: (response: any) => {
+                    traceBrowserStep('REGISTER_PROGRESS', describeSipResponse(response))
+                },
+                onAccept: (response: any) => {
+                    traceBrowserStep('REGISTER_ACCEPT', describeSipResponse(response))
+                },
+                onReject: (response: any) => {
+                    traceBrowserStep('REGISTER_REJECT', describeSipResponse(response), 'danger')
+                }
+            }
+        })
+        attachRegistererDiagnostics(client)
+        await registerRequest
         traceBrowserStep('REGISTER_REQUEST_SENT')
         await registrationPromise
         message.success('浏览器分机已连接')
