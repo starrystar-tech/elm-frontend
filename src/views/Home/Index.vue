@@ -29,7 +29,9 @@
                                     }"
                                 ></span>
                                 <span>浏览器分机 {{ browserStatus }}</span>
-                                <strong v-if="isInCall" class="status-timer">{{ formattedCallDuration }}</strong>
+                                <strong v-if="isInCall" class="status-timer">{{
+                                    formattedCallDuration
+                                }}</strong>
                             </div>
                             <div class="status-hint"
                                 >当前默认走 `wss://sip.bgwa.cn`，由 Nginx 终止 TLS 后反代到
@@ -74,7 +76,9 @@
                             <div class="call-banner-meta">
                                 <span v-if="isInCall">通话时长 {{ formattedCallDuration }}</span>
                                 <span v-else-if="browserStatus === '呼叫中'">正在等待对方接听</span>
-                                <span v-else-if="browserStatus === '来电响铃'">有新的来电等待接听</span>
+                                <span v-else-if="browserStatus === '来电响铃'"
+                                    >有新的来电等待接听</span
+                                >
                             </div>
                         </div>
                         <el-button
@@ -358,10 +362,10 @@ let browserRegisterWaiter:
 
 const profile = reactive<Partial<ProfileVO>>({})
 const browserForm = reactive({
-    wsServer: 'wss://sip.bgwa.cn',
+    wsServer: 'wss://sip.bgwa.cn:7443',
     domain: '60.205.112.131',
-    username: '',
-    password: '',
+    username: '1001',
+    password: '123456',
     target: ''
 })
 const formData = reactive<CallTestDialReqVO>({
@@ -487,7 +491,11 @@ const describeSipResponse = (response: any) => {
     const statusCode = response?.message?.statusCode
     const reasonPhrase = response?.message?.reasonPhrase
     const cseq = response?.message?.cseq
-    return [statusCode ? `statusCode=${statusCode}` : '', reasonPhrase ? `reason=${reasonPhrase}` : '', cseq ? `cseq=${cseq.method ?? cseq}` : '']
+    return [
+        statusCode ? `statusCode=${statusCode}` : '',
+        reasonPhrase ? `reason=${reasonPhrase}` : '',
+        cseq ? `cseq=${cseq.method ?? cseq}` : ''
+    ]
         .filter((item) => item.length > 0)
         .join(', ')
 }
@@ -622,7 +630,12 @@ const createBrowserClient = async () => {
             logBuiltinEnabled: true,
             logConfiguration: true,
             logLevel: 'debug',
-            logConnector: (level: string, category: string, label: string | undefined, content: string) => {
+            logConnector: (
+                level: string,
+                category: string,
+                label: string | undefined,
+                content: string
+            ) => {
                 const prefix = [level, category, label].filter(Boolean).join('/')
                 const details = `${prefix}: ${content}`
                 if (
@@ -632,7 +645,11 @@ const createBrowserClient = async () => {
                     content.includes('WebSocket') ||
                     content.includes('status code')
                 ) {
-                    traceBrowserStep('SIPJS_LOG', details, level === 'error' || level === 'warn' ? 'danger' : 'success')
+                    traceBrowserStep(
+                        'SIPJS_LOG',
+                        details,
+                        level === 'error' || level === 'warn' ? 'danger' : 'success'
+                    )
                 }
                 const logger = level === 'error' || level === 'warn' ? console.warn : console.info
                 logger('[SIP.js]', details)
@@ -704,7 +721,11 @@ const createBrowserClient = async () => {
                 updateBrowserStatus(browserDisconnecting.value ? '未连接' : '连接断开')
                 const reason = error?.message || 'WSS 连接已断开'
                 failPendingBrowserRegistration(reason)
-                traceBrowserStep('WS_DISCONNECTED', error?.message, error?.message ? 'danger' : 'success')
+                traceBrowserStep(
+                    'WS_DISCONNECTED',
+                    error?.message,
+                    error?.message ? 'danger' : 'success'
+                )
                 if (!browserDisconnecting.value && error?.message) {
                     addBrowserLog(`WSS 连接断开：${error.message}`, '失败', 'danger')
                 }
