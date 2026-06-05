@@ -416,6 +416,8 @@ const buildBrowserTraceContext = () => ({
     wsServer: browserForm.wsServer.trim(),
     domain: browserForm.domain.trim(),
     username: browserForm.username.trim(),
+    hasPassword: !!browserForm.password.trim(),
+    passwordLength: browserForm.password.trim().length,
     target: browserForm.target.trim(),
     status: browserStatus.value,
     registered: browserRegistered.value,
@@ -448,10 +450,37 @@ const formatBrowserError = (error: any) => {
     if (typeof error === 'string') {
         return error
     }
-    const parts = [error.message, error.cause?.message, error.reason, error.stack]
+    const parts = [
+        error.message,
+        error.cause?.message,
+        error.reason,
+        error.statusCode ? `statusCode=${error.statusCode}` : '',
+        error.code ? `code=${error.code}` : '',
+        error.name ? `name=${error.name}` : '',
+        error.stack
+    ]
         .filter((item) => typeof item === 'string' && item.trim().length > 0)
         .map((item) => item.trim())
     return parts[0] || '未知错误'
+}
+
+const describeBrowserError = (error: any) => {
+    if (!error) {
+        return 'error=<empty>'
+    }
+    if (typeof error === 'string') {
+        return `error=${error}`
+    }
+    const parts = [
+        error.name ? `name=${error.name}` : '',
+        error.message ? `message=${error.message}` : '',
+        error.reason ? `reason=${error.reason}` : '',
+        error.statusCode ? `statusCode=${error.statusCode}` : '',
+        error.code ? `code=${error.code}` : '',
+        error.cause?.name ? `causeName=${error.cause.name}` : '',
+        error.cause?.message ? `causeMessage=${error.cause.message}` : ''
+    ].filter((item) => item.length > 0)
+    return parts.join(', ') || 'error=<object without known fields>'
 }
 
 const markBrowserRegistered = () => {
@@ -557,7 +586,7 @@ const createBrowserClient = async () => {
     traceBrowserStep('CLIENT_CREATE')
     traceBrowserStep(
         'REGISTER_CONTEXT',
-        `aor=sip:${browserForm.username.trim()}@${browserForm.domain.trim()}, authUser=${browserForm.username.trim()}, ws=${browserForm.wsServer.trim()}`
+        `aor=sip:${browserForm.username.trim()}@${browserForm.domain.trim()}, authUser=${browserForm.username.trim()}, ws=${browserForm.wsServer.trim()}, hasPassword=${!!browserForm.password.trim()}, passwordLength=${browserForm.password.trim().length}`
     )
     const client = new SimpleUser(browserForm.wsServer, {
         aor: `sip:${browserForm.username.trim()}@${browserForm.domain.trim()}`,
@@ -665,7 +694,11 @@ const connectBrowserPhone = async () => {
     } catch (error: any) {
         const errorMessage = formatBrowserError(error) || '浏览器分机连接失败'
         updateBrowserStatus('连接失败')
-        traceBrowserStep('CONNECT_FAILED', errorMessage, 'danger')
+        traceBrowserStep(
+            'CONNECT_FAILED',
+            `${errorMessage}; ${describeBrowserError(error)}`,
+            'danger'
+        )
         addBrowserLog(errorMessage, '失败', 'danger')
         message.error(errorMessage)
         if (browserClient.value) {
@@ -737,7 +770,7 @@ const makeBrowserCall = async () => {
         activeCall.value = false
         updateBrowserStatus('已注册')
         const errorMessage = formatBrowserError(error) || '网页呼叫失败'
-        traceBrowserStep('CALL_FAILED', errorMessage, 'danger')
+        traceBrowserStep('CALL_FAILED', `${errorMessage}; ${describeBrowserError(error)}`, 'danger')
         addBrowserLog(errorMessage, '失败', 'danger')
         message.error(errorMessage)
     }
@@ -756,7 +789,11 @@ const answerBrowserCall = async () => {
         updateBrowserStatus('通话中')
     } catch (error: any) {
         const errorMessage = formatBrowserError(error) || '接听失败'
-        traceBrowserStep('ANSWER_FAILED', errorMessage, 'danger')
+        traceBrowserStep(
+            'ANSWER_FAILED',
+            `${errorMessage}; ${describeBrowserError(error)}`,
+            'danger'
+        )
         addBrowserLog(errorMessage, '失败', 'danger')
         message.error(errorMessage)
     }
