@@ -41,7 +41,7 @@
         </div>
     </ContentWrap>
 
-    <ClueDetailDrawer ref="detailRef" />
+    <ClueDetailDrawer ref="detailRef" @refresh="handleDetailRefresh" />
 
     <Dialog v-model="releaseDialogVisible" title="释放我的客户" width="520px">
         <el-form label-width="90px">
@@ -297,6 +297,20 @@ const tableColumns = computed<TableColumn[]>(() => [
         slots: { default: (data) => <span>{(data.row.tagNames as string[])?.length ? (data.row.tagNames as string[]).join('、') : '-'}</span> }
     },
     {
+        field: 'complaintTagNames',
+        label: '投诉标签',
+        minWidth: '150px',
+        slots: {
+            default: (data) => (
+                <span>
+                    {(data.row.complaintTagNames as string[])?.length
+                        ? (data.row.complaintTagNames as string[]).join('、')
+                        : '-'}
+                </span>
+            )
+        }
+    },
+    {
         field: 'lastFeedbackTime',
         label: '最近反馈时间',
         minWidth: '170px',
@@ -379,6 +393,10 @@ const handleTabChange = async () => {
 
 const openDetail = (id: number) => {
     detailRef.value?.open(id)
+}
+
+const handleDetailRefresh = async () => {
+    await Promise.all([tableMethods.getList(), loadCounts()])
 }
 
 const handleRelease = async (ids?: number[]) => {

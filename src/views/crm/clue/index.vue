@@ -82,7 +82,7 @@
 
     <ClueForm ref="formRef" @success="tableMethods.getList" />
     <ClueSmsDialog ref="smsDialogRef" @success="handleSmsSuccess" />
-    <ClueDetailDrawer ref="detailRef" />
+    <ClueDetailDrawer ref="detailRef" @refresh="tableMethods.getList" />
     <ClueEnrollDialog ref="enrollRef" @success="tableMethods.getList" />
 
     <Dialog v-model="assignModeDialogVisible" title="修改分配方式" width="420px">
@@ -587,6 +587,8 @@ const buildRegionText = (row: ClueApi.ClueVO) => {
 }
 
 const buildTagText = (row: ClueApi.ClueVO) => (row.tagNames?.length ? row.tagNames.join('、') : '-')
+const buildComplaintTagText = (row: ClueApi.ClueVO) =>
+    row.complaintTagNames?.length ? row.complaintTagNames.join('、') : '-'
 
 const tableColumns = computed<TableColumn[]>(() => [
     { field: 'customerId', label: '客户ID', width: '140px' },
@@ -659,6 +661,12 @@ const tableColumns = computed<TableColumn[]>(() => [
         label: '标签',
         minWidth: '150px',
         slots: { default: (data) => <span>{buildTagText(data.row)}</span> }
+    },
+    {
+        field: 'complaintTagNames',
+        label: '投诉标签',
+        minWidth: '150px',
+        slots: { default: (data) => <span>{buildComplaintTagText(data.row)}</span> }
     },
     { field: 'consultProjectName', label: '咨询项目', minWidth: '140px' },
     { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter },

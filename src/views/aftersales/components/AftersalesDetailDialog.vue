@@ -4,7 +4,9 @@
             <el-descriptions-item label="工单号">{{
                 detail?.ticketNo || '--'
             }}</el-descriptions-item>
-            <el-descriptions-item label="线索ID">{{ detail?.clueId || '--' }}</el-descriptions-item>
+            <el-descriptions-item label="线索ID">{{
+                detail?.customerId || '--'
+            }}</el-descriptions-item>
             <el-descriptions-item label="订单编号">{{
                 detail?.orderNo || '--'
             }}</el-descriptions-item>
@@ -21,13 +23,13 @@
                 detail?.handlerUserName || '--'
             }}</el-descriptions-item>
             <el-descriptions-item label="创建时间">{{
-                detail?.createTime || '--'
+                formatDate(detail?.createTime as any) || '--'
             }}</el-descriptions-item>
             <el-descriptions-item label="领取时间">{{
-                detail?.receiveTime || '--'
+                formatDate(detail?.receiveTime as any) || '--'
             }}</el-descriptions-item>
             <el-descriptions-item label="处理时间">{{
-                detail?.processTime || '--'
+                formatDate(detail?.processTime as any) || '--'
             }}</el-descriptions-item>
             <el-descriptions-item label="退款金额">{{
                 detail?.refundAmount ?? '--'
@@ -47,6 +49,7 @@
 
 <script setup lang="ts">
 import * as AftersalesApi from '@/api/crm/aftersales'
+import { formatDate } from '@/utils/formatTime'
 import {
     getAftersalesPriorityLabel,
     getAftersalesStatusLabel,

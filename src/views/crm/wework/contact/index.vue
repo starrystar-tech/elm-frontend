@@ -29,7 +29,7 @@
         </div>
     </ContentWrap>
 
-    <ClueDetailDrawer ref="detailRef" />
+    <ClueDetailDrawer ref="detailRef" @refresh="tableMethods.getList" />
 </template>
 
 <script setup lang="tsx">

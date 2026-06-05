@@ -13,6 +13,7 @@ export interface CallTestDialRespVO {
   caller: string
   callee: string
   jobUuid?: string
+  recordId?: number
   message?: string
 }
 
@@ -21,5 +22,5 @@ export const testDialInternalCall = (data: CallTestDialReqVO) => {
 }
 
 export const dialOutboundCall = (data: CallOutboundDialReqVO) => {
-  return request.post<CallTestDialRespVO>({ url: '/system/call/outbound-dial', data })
+  return request.post<CallTestDialRespVO>({ url: '/crm/call/outbound-dial', data })
 }

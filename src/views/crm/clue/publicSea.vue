@@ -54,7 +54,7 @@
         </div>
     </ContentWrap>
 
-    <ClueDetailDrawer ref="detailRef" />
+    <ClueDetailDrawer ref="detailRef" @refresh="handleDetailRefresh" />
 
     <Dialog v-model="assignDialogVisible" title="批量分配公海客户" width="420px">
         <el-form label-width="90px">
@@ -326,6 +326,20 @@ const tableColumns = computed<TableColumn[]>(() => [
         slots: { default: (data) => <span>{(data.row.tagNames as string[])?.length ? (data.row.tagNames as string[]).join('、') : '-'}</span> }
     },
     {
+        field: 'complaintTagNames',
+        label: '投诉标签',
+        minWidth: '150px',
+        slots: {
+            default: (data) => (
+                <span>
+                    {(data.row.complaintTagNames as string[])?.length
+                        ? (data.row.complaintTagNames as string[]).join('、')
+                        : '-'}
+                </span>
+            )
+        }
+    },
+    {
         field: 'enterPublicSeaTime',
         label: '进入公海时间',
         minWidth: '170px',
@@ -411,6 +425,10 @@ const handleTabChange = async () => {
 
 const openDetail = (id: number) => {
     detailRef.value?.open(id)
+}
+
+const handleDetailRefresh = async () => {
+    await Promise.all([tableMethods.getList(), loadCounts(), loadClaimSummary()])
 }
 
 const handleBatchClaim = async (ids?: number[]) => {

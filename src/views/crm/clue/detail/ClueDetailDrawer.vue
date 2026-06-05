@@ -98,6 +98,10 @@ import ClueDetailContent from './ClueDetailContent.vue'
 
 defineOptions({ name: 'ClueDetailDrawer' })
 
+const emit = defineEmits<{
+    refresh: []
+}>()
+
 const drawerVisible = ref(false)
 const clueId = ref(0)
 const loading = ref(false)
@@ -248,6 +252,7 @@ const handleSave = async (payload: { formRef: any; formData: any }) => {
         message.success('保存成功')
         editing.value = false
         await getClue()
+        emit('refresh')
     } finally {
         saving.value = false
     }
@@ -263,6 +268,7 @@ const handleSaveConsult = async (payload: CustomerDetailApi.CustomerConsultRecor
         }
         message.success('保存成功')
         await getClue()
+        emit('refresh')
     } finally {
         consultSaving.value = false
     }
@@ -274,6 +280,7 @@ const openEnroll = () => {
 
 const handleEnrollSuccess = async () => {
     await getClue()
+    emit('refresh')
 }
 
 const handleSms = () => {
@@ -294,6 +301,7 @@ const handleTag = () => {
 const handleTransferSuccess = async () => {
     message.success('转移成功')
     await getClue()
+    emit('refresh')
 }
 
 const submitTag = async () => {
@@ -308,6 +316,7 @@ const submitTag = async () => {
     message.success('加标签成功')
     tagDialogVisible.value = false
     await getClue()
+    emit('refresh')
 }
 
 const open = async (id: number) => {

@@ -221,6 +221,8 @@
                                 <UploadImg
                                     v-model="editForm.avatar"
                                     :limit="1"
+                                    height="80px"
+                                    width="80px"
                                     :is-show-tip="false"
                                 />
                             </el-form-item>
@@ -286,11 +288,7 @@
                                         {{ row.creatorName || row.creator || '--' }}
                                     </template>
                                 </el-table-column>
-                                <el-table-column
-                                    prop="createTime"
-                                    label="创建时间"
-                                    min-width="160"
-                                >
+                                <el-table-column prop="createTime" label="创建时间" min-width="160">
                                     <template #default="{ row }">
                                         {{ formatDateTime(row.createTime) }}
                                     </template>
@@ -314,11 +312,7 @@
                                 v-if="orderRecords.length > 0"
                             >
                                 <el-table-column prop="orderNo" label="订单编号" min-width="160" />
-                                <el-table-column
-                                    prop="createTime"
-                                    label="创建时间"
-                                    min-width="160"
-                                >
+                                <el-table-column prop="createTime" label="创建时间" min-width="160">
                                     <template #default="{ row }">
                                         {{ formatDateTime(row.createTime) }}
                                     </template>
@@ -831,11 +825,9 @@ const consultRules = reactive({
     consultContent: [
         {
             validator: (_rule: any, value: string | undefined, callback: any) => {
-                if (!String(value || '').trim()) {
+                if (consultForm.consultType === 2 && !String(value || '').trim()) {
                     callback(
-                        new Error(
-                            consultForm.consultType === 2 ? '请输入预约备注' : '请输入回访备注'
-                        )
+                        new Error('请输入预约备注')
                     )
                     return
                 }
