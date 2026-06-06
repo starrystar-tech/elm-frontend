@@ -19,6 +19,7 @@ import {
     markExportTaskCenterViewed
 } from '@/api/system/exportTask'
 import ToolHeaderDialer from './ToolHeaderDialer.vue'
+import ToolHeaderBrowserPhone from './ToolHeaderBrowserPhone.vue'
 
 const { getPrefixCls, variables } = useDesign()
 
@@ -203,6 +204,7 @@ export default defineComponent({
                             color="var(--top-header-text-color)"
                         ></Message>
                     ) : undefined}
+                    <ToolHeaderBrowserPhone />
                     {hasExportTaskPermission.value ? (
                         <ElBadge isDot={hasNewExportTask.value} class="header-icon-badge">
                             <div

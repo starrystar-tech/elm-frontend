@@ -25,6 +25,16 @@ import * as OutboundCallRecordApi from '@/api/system/call/record'
 
 defineOptions({ name: 'CrmCallRecord' })
 
+const formatDuration = (durationSeconds?: number) => {
+    if (!durationSeconds || durationSeconds < 0) {
+        return '00:00'
+    }
+    const totalSeconds = Math.floor(durationSeconds)
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
 const searchSchema = reactive<FormSchema[]>([
     {
         field: 'calleeMobile',
@@ -97,40 +107,46 @@ const setSearchParams = (params: Recordable) => {
 }
 
 const tableColumns = reactive<TableColumn[]>([
-    { field: 'recordNo', label: '记录编号', width: '190px' },
-    { field: 'callerDisplayNumber', label: '主叫号码', width: '130px' },
-    { field: 'calleeMobile', label: '被叫号码', width: '130px' },
-    { field: 'callTypeDesc', label: '通话类型', width: '110px' },
-    { field: 'statusDesc', label: '状态', width: '110px' },
-    { field: 'userNickname', label: '发起人', width: '120px' },
-    { field: 'gatewayName', label: '主网关', width: '170px' },
-    { field: 'backupGatewayName', label: '备网关', width: '170px' },
-    { field: 'durationSeconds', label: '通话时长(秒)', width: '120px' },
+    { field: 'recordNo', label: '记录编号', width: '150px' },
+    { field: 'callerDisplayNumber', label: '主叫号码', width: '120px' },
+    { field: 'calleeMobile', label: '被叫号码', width: '120px' },
+    { field: 'createTime', label: '发起时间', formatter: dateFormatter, width: '170px' },
+    { field: 'answerTime', label: '接通时间', formatter: dateFormatter, width: '170px' },
+    { field: 'endTime', label: '结束时间', formatter: dateFormatter, width: '170px' },
     {
         field: 'recordingFileUrl',
         label: '通话录音',
-        minWidth: '220px',
+        minWidth: '250px',
+        showOverflowTooltip: false,
         slots: {
             default: (data) => {
                 if (!data.row.recordingFileUrl) {
                     return <>-</>
                 }
                 return (
-                    <audio controls preload="none" style="width: 200px">
-                        <source src={data.row.recordingFileUrl} />
-                    </audio>
+                    <div style="display: flex; align-items: center; gap: 8px">
+                        <audio controls preload="none" style="width: 220px">
+                            <source src={data.row.recordingFileUrl} />
+                        </audio>
+                        <span style="color: var(--el-text-color-secondary); font-size: 12px">
+                            {formatDuration(data.row.durationSeconds)}
+                        </span>
+                    </div>
                 )
             }
         }
     },
-    { field: 'failReason', label: '失败原因', minWidth: '220px' },
-    { field: 'hangupCause', label: '挂断原因', width: '160px' },
+    { field: 'callTypeDesc', label: '通话类型', width: '110px' },
+    { field: 'submitMessage', label: '提交日志', minWidth: '160px' },
     { field: 'originateDisposition', label: '外呼结果', width: '160px' },
     { field: 'jobUuid', label: '任务号', width: '240px' },
-    { field: 'submitMessage', label: '提交日志', minWidth: '220px' },
-    { field: 'createTime', label: '发起时间', formatter: dateFormatter, width: '180px' },
-    { field: 'answerTime', label: '接通时间', formatter: dateFormatter, width: '180px' },
-    { field: 'endTime', label: '结束时间', formatter: dateFormatter, width: '180px' }
+    { field: 'statusDesc', label: '状态', width: '110px' },
+    { field: 'userNickname', label: '发起人', width: '120px' },
+    { field: 'gatewayName', label: '主网关', width: '170px' },
+    { field: 'backupGatewayName', label: '备网关', width: '170px' },
+    { field: 'durationSeconds', label: '通话时长(秒)', width: '120px' },
+    { field: 'failReason', label: '失败原因', minWidth: '220px' },
+    { field: 'hangupCause', label: '挂断原因', width: '160px' }
 ])
 
 onMounted(() => {
