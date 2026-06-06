@@ -11,6 +11,8 @@ export interface OutboundCallRecordVO {
   backupGatewayName?: string
   jobUuid?: string
   channelUuid?: string
+  callType: number
+  callTypeDesc: string
   status: number
   statusDesc: string
   submitMessage?: string
@@ -20,6 +22,8 @@ export interface OutboundCallRecordVO {
   answerTime?: string
   endTime?: string
   durationSeconds?: number
+  recordingFileName?: string
+  recordingFileUrl?: string
   createTime: string
 }
 

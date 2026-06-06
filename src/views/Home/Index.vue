@@ -317,7 +317,9 @@
 import type { FormInstance, FormRules } from 'element-plus'
 import { getUserProfile, type ProfileVO } from '@/api/system/user/profile'
 import {
+    syncBrowserCallRecord,
     testDialInternalCall,
+    type BrowserCallRecordSyncReqVO,
     type CallTestDialReqVO,
     type CallTestDialRespVO
 } from '@/api/system/call'
@@ -349,6 +351,9 @@ const activeCall = ref(false)
 const browserStatus = ref('未连接')
 const browserDisconnecting = ref(false)
 const browserClient = shallowRef<any>()
+const browserRecordId = ref<number>()
+const currentBrowserCaller = ref('')
+const currentBrowserCallee = ref('')
 const remoteAudioRef = ref<HTMLAudioElement>()
 const localAudioRef = ref<HTMLAudioElement>()
 const callDurationSeconds = ref(0)
@@ -585,12 +590,41 @@ const addBrowserLog = (
     type: 'success' | 'danger' = 'success'
 ) => {
     addLog({
-        caller: browserForm.username || '-',
-        callee: browserForm.target || '-',
+        caller: currentBrowserCaller.value || browserForm.username || '-',
+        callee: currentBrowserCallee.value || browserForm.target || '-',
         message: messageText,
         label,
         type
     })
+}
+
+const parseSipIdentityUser = (identity: any) => {
+    const raw = identity?.uri?.user || identity?.displayName || ''
+    if (typeof raw !== 'string') {
+        return ''
+    }
+    return raw.replace(/^sip:/i, '').split('@')[0]?.trim() || ''
+}
+
+const setBrowserCallParties = (caller?: string, callee?: string) => {
+    currentBrowserCaller.value = caller || browserForm.username.trim()
+    currentBrowserCallee.value = callee || browserForm.target.trim()
+}
+
+const resetBrowserCallParties = () => {
+    currentBrowserCaller.value = ''
+    currentBrowserCallee.value = ''
+}
+
+const syncBrowserRecord = async (payload: BrowserCallRecordSyncReqVO) => {
+    try {
+        const result = await syncBrowserCallRecord(payload)
+        if (result?.recordId) {
+            browserRecordId.value = result.recordId
+        }
+    } catch (error) {
+        console.warn('[BrowserPhone] sync browser record failed', error)
+    }
 }
 
 const ensureBrowserPrerequisites = async () => {
@@ -663,29 +697,6 @@ const createBrowserClient = async () => {
             logConfiguration: true
         },
         delegate: {
-            onCallReceived: () => {
-                incomingCall.value = true
-                activeCall.value = true
-                updateBrowserStatus('来电响铃')
-                traceBrowserStep('CALL_RECEIVED')
-                addBrowserLog('收到来电，请点击接听', '来电')
-            },
-            onCallAnswered: () => {
-                incomingCall.value = false
-                activeCall.value = true
-                updateBrowserStatus('通话中')
-                startCallTimer()
-                traceBrowserStep('CALL_ANSWERED')
-                addBrowserLog('通话已接通', '通话中')
-            },
-            onCallHangup: () => {
-                incomingCall.value = false
-                activeCall.value = false
-                stopCallTimer()
-                updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
-                traceBrowserStep('CALL_HANGUP')
-                addBrowserLog('通话已结束', '已挂断')
-            },
             onRegistered: () => {
                 markBrowserRegistered()
             },
@@ -732,6 +743,68 @@ const createBrowserClient = async () => {
             }
         }
     } as any)
+    const sessionManager = (client as any).sessionManager
+    if (sessionManager) {
+        sessionManager.delegate = {
+            ...sessionManager.delegate,
+            onCallReceived: (session: any) => {
+                const caller = parseSipIdentityUser(session?.remoteIdentity)
+                const callee = parseSipIdentityUser(session?.localIdentity) || browserForm.username.trim()
+                setBrowserCallParties(caller, callee)
+                browserForm.target = caller || browserForm.target
+                incomingCall.value = true
+                activeCall.value = true
+                updateBrowserStatus('来电响铃')
+                traceBrowserStep('CALL_RECEIVED', `caller=${caller}, callee=${callee}`)
+                addBrowserLog('收到来电，请点击接听', '来电')
+                void syncBrowserRecord({
+                    event: 'start',
+                    caller,
+                    callee
+                })
+            },
+            onCallAnswered: (session: any) => {
+                const remoteUser = parseSipIdentityUser(session?.remoteIdentity)
+                const localUser = parseSipIdentityUser(session?.localIdentity) || browserForm.username.trim()
+                const caller = incomingCall.value ? remoteUser : localUser
+                const callee = incomingCall.value ? localUser : remoteUser
+                setBrowserCallParties(caller, callee)
+                incomingCall.value = false
+                activeCall.value = true
+                updateBrowserStatus('通话中')
+                startCallTimer()
+                void syncBrowserRecord({
+                    recordId: browserRecordId.value,
+                    event: 'answered',
+                    caller,
+                    callee
+                })
+                traceBrowserStep('CALL_ANSWERED', `caller=${caller}, callee=${callee}`)
+                addBrowserLog('通话已接通', '通话中')
+            },
+            onCallHangup: (session: any) => {
+                const remoteUser = parseSipIdentityUser(session?.remoteIdentity)
+                const localUser = parseSipIdentityUser(session?.localIdentity) || browserForm.username.trim()
+                const caller = currentBrowserCaller.value || localUser
+                const callee = currentBrowserCallee.value || remoteUser
+                incomingCall.value = false
+                activeCall.value = false
+                void syncBrowserRecord({
+                    recordId: browserRecordId.value,
+                    event: 'hangup',
+                    caller,
+                    callee,
+                    durationSeconds: callDurationSeconds.value
+                })
+                stopCallTimer()
+                updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
+                traceBrowserStep('CALL_HANGUP', `caller=${caller}, callee=${callee}`)
+                addBrowserLog('通话已结束', '已挂断')
+                browserRecordId.value = undefined
+                resetBrowserCallParties()
+            }
+        }
+    }
     return client
 }
 
@@ -822,7 +895,9 @@ const disconnectBrowserPhone = async (silent = false) => {
     browserRegistered.value = false
     incomingCall.value = false
     activeCall.value = false
+    browserRecordId.value = undefined
     stopCallTimer()
+    resetBrowserCallParties()
     updateBrowserStatus('未连接')
     if (!silent) {
         addBrowserLog('浏览器分机已断开')
@@ -843,9 +918,15 @@ const makeBrowserCall = async () => {
         return
     }
     try {
+        setBrowserCallParties(browserForm.username.trim(), target)
         activeCall.value = true
         updateBrowserStatus('呼叫中')
         traceBrowserStep('CALL_START', `target=${target}`)
+        await syncBrowserRecord({
+            event: 'start',
+            caller: browserForm.username.trim(),
+            callee: target
+        })
         await browserClient.value.call(`sip:${target}@${browserForm.domain.trim()}`)
         traceBrowserStep('CALL_SENT', `target=${target}`)
         addBrowserLog(`已向 ${target} 发起网页呼叫`)
@@ -853,6 +934,15 @@ const makeBrowserCall = async () => {
         activeCall.value = false
         updateBrowserStatus('已注册')
         const errorMessage = formatBrowserError(error) || '网页呼叫失败'
+        await syncBrowserRecord({
+            recordId: browserRecordId.value,
+            event: 'failed',
+            caller: currentBrowserCaller.value || browserForm.username.trim(),
+            callee: currentBrowserCallee.value || target,
+            failReason: errorMessage
+        })
+        browserRecordId.value = undefined
+        resetBrowserCallParties()
         traceBrowserStep('CALL_FAILED', `${errorMessage}; ${describeBrowserError(error)}`, 'danger')
         addBrowserLog(errorMessage, '失败', 'danger')
         message.error(errorMessage)
@@ -954,6 +1044,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
     stopCallTimer()
     disconnectBrowserPhone(true)
+    resetBrowserCallParties()
 })
 </script>
 

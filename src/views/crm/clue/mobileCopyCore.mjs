@@ -22,6 +22,6 @@ export const copyMobileByClueId = async ({
     }
     const result = await copyApi(clueId)
     await writeClipboard(result.mobile)
-    onSuccess?.('复制成功')
+    // onSuccess?.('复制成功')
     return result
 }

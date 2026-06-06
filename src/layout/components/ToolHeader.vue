@@ -1,6 +1,6 @@
 <script lang="tsx">
-import { defineComponent, computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { ElBadge, ElButton, ElInput, ElMessage, ElTooltip } from 'element-plus'
+import { defineComponent, computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { ElBadge, ElButton, ElInput } from 'element-plus'
 import { Message } from '@/layout/components//Message'
 import { Collapse } from '@/layout/components/Collapse'
 import { UserInfo } from '@/layout/components/UserInfo'
@@ -13,12 +13,12 @@ import TenantVisit from '@/layout/components/TenantVisit/index.vue'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
 import { checkPermi } from '@/utils/permission'
-import { dialOutboundCall } from '@/api/system/call'
 import {
     getExportTaskCenterViewedAt,
     getExportTaskPage,
     markExportTaskCenterViewed
 } from '@/api/system/exportTask'
+import ToolHeaderDialer from './ToolHeaderDialer.vue'
 
 const { getPrefixCls, variables } = useDesign()
 
@@ -60,31 +60,20 @@ export default defineComponent({
     name: 'ToolHeader',
     setup() {
         const { push } = useRouter()
-        const outboundForm = reactive({
-            mobile: ''
-        })
-        const dialing = ref(false)
+        const dialerMobile = ref('')
+        const dialerRef = ref<InstanceType<typeof ToolHeaderDialer>>()
+        const dialerInputRef = ref()
         const hasNewExportTask = ref(false)
         let exportTaskTimer: number | undefined
 
-        const handleOutboundDial = async () => {
-            const mobile = outboundForm.mobile.trim()
-            if (!/^1\d{10}$/.test(mobile)) {
-                ElMessage.warning('请输入正确的 11 位手机号')
-                return
-            }
-            if (dialing.value) {
-                return
-            }
-            dialing.value = true
-            try {
-                await dialOutboundCall({ mobile })
-                ElMessage.success(`外呼请求已提交：${mobile}`)
-                outboundForm.mobile = ''
-            } catch (error: any) {
-                ElMessage.error(error?.message || '外呼失败')
-            } finally {
-                dialing.value = false
+        const syncDialerCursor = async () => {
+            await nextTick()
+            const inputInstance = dialerInputRef.value as any
+            const inputEl = inputInstance?.input as HTMLInputElement | undefined
+            inputInstance?.focus?.()
+            if (inputEl) {
+                const position = dialerMobile.value.length
+                inputEl.setSelectionRange(position, position)
             }
         }
 
@@ -158,28 +147,33 @@ export default defineComponent({
                 ) : undefined}
                 <div class="h-full flex items-center">
                     <div class="outbound-toolbar lt-lg:hidden">
-                        <ElInput
-                            v-model={outboundForm.mobile}
-                            class="outbound-toolbar__input"
-                            placeholder="输入手机号"
-                            clearable
-                            maxlength={11}
-                            onKeydown={(event: KeyboardEvent) => {
-                                if (event.key === 'Enter') {
-                                    handleOutboundDial()
-                                }
-                            }}
-                        />
-                        <ElTooltip content="固定外显 07362784169" placement="bottom">
-                            <ElButton
-                                type="primary"
-                                class="outbound-toolbar__button"
-                                loading={dialing.value}
-                                onClick={handleOutboundDial}
-                            >
-                                呼叫
-                            </ElButton>
-                        </ElTooltip>
+                        <ToolHeaderDialer
+                            ref={dialerRef}
+                            v-model={dialerMobile.value}
+                            onKeypadInput={syncDialerCursor}
+                        >
+                            <ElInput
+                                v-model={dialerMobile.value}
+                                ref={dialerInputRef}
+                                class="outbound-toolbar__input"
+                                placeholder="输入手机号"
+                                clearable
+                                maxlength={11}
+                                onKeydown={(event: KeyboardEvent) => {
+                                    if (event.key === 'Enter') {
+                                        dialerRef.value?.handleDial()
+                                    }
+                                }}
+                            />
+                        </ToolHeaderDialer>
+                        <ElButton
+                            type="primary"
+                            class="outbound-toolbar__button"
+                            loading={dialerRef.value?.dialing}
+                            onClick={() => dialerRef.value?.handleDial()}
+                        >
+                            呼叫
+                        </ElButton>
                     </div>
                     {hasTenantVisitPermission.value ? <TenantVisit /> : undefined}
                     {screenfull.value ? (
@@ -249,13 +243,6 @@ $prefix-cls: #{$namespace}-tool-header;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(10px);
-
-    &__label {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--top-header-text-color);
-        white-space: nowrap;
-    }
 
     &__input {
         width: 180px;
