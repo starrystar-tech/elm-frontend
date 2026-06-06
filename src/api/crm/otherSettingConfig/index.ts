@@ -34,10 +34,21 @@ export interface OtherSettingConfigVO {
   }
 }
 
+export interface ExportVerifyConfigVO {
+  needSendAuthCode: boolean
+  mobile: string[]
+}
+
 export const getOtherSettingConfig = async () => {
   return await request.get<OtherSettingConfigVO>({ url: '/crm/other-setting-config/get' })
 }
 
 export const saveOtherSettingConfig = async (data: OtherSettingConfigVO) => {
   return await request.put<boolean>({ url: '/crm/other-setting-config/save', data })
+}
+
+export const getExportVerifyConfig = async () => {
+  return await request.get<ExportVerifyConfigVO>({
+    url: '/crm/other-setting-config/export-verify-config'
+  })
 }

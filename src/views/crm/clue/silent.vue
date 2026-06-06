@@ -13,6 +13,7 @@
                 <BaseButton :disabled="selectionList.length === 0" plain @click="handleBackToPublicSea"
                     >一键回公海</BaseButton
                 >
+                <BaseButton v-if="canExport" plain @click="openExportDialog">导出</BaseButton>
             </div>
         </div>
 
@@ -57,6 +58,7 @@
             <el-button type="primary" @click="handleBatchAssign">确定</el-button>
         </template>
     </Dialog>
+    <ExportTaskDialog ref="exportDialogRef" @success="handleExportSuccess" />
 </template>
 
 <script setup lang="tsx">
@@ -71,14 +73,19 @@ import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
 import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
+import { hasPermission } from '@/directives/permission/hasPermi'
+import ExportTaskDialog from './components/ExportTaskDialog.vue'
 
 defineOptions({ name: 'CrmClueSilent' })
 
 const message = useMessage()
+const canExport = hasPermission(['crm:clue:silent:query'])
 const userOptions = ref<{ label: string; value: number; deptId?: number }[]>([])
 const deptOptions = ref<DeptApi.DeptVO[]>([])
 const selectionList = ref<ClueApi.ClueVO[]>([])
 const assignDialogVisible = ref(false)
+const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
+const currentSearchParams = ref<Record<string, any>>({})
 
 const assignForm = reactive({
     ownerId: undefined as number | undefined
@@ -203,12 +210,39 @@ const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
 }
 
 const setSearchParams = (params: Record<string, any>) => {
+    currentSearchParams.value = { ...params }
     const { silentTimeRange, ...rest } = params
     tableMethods.setSearchParams({
         ...rest,
         beginSilentTime: silentTimeRange?.[0],
         endSilentTime: silentTimeRange?.[1]
     })
+}
+
+const buildExportParams = () => {
+    const { silentTimeRange, ...rest } = currentSearchParams.value
+    return {
+        ...rest,
+        beginSilentTime: silentTimeRange?.[0],
+        endSilentTime: silentTimeRange?.[1]
+    }
+}
+
+const openExportDialog = () => {
+    exportDialogRef.value?.open({
+        title: '导出静默数据',
+        bizType: 'crm_clue_silent_page_export',
+        submit: async (payload) => {
+            await ClueApi.createSilentClueExportTask({
+                ...buildExportParams(),
+                ...payload
+            })
+        }
+    })
+}
+
+const handleExportSuccess = () => {
+    message.success('导出任务已创建，请到下载中心查看')
 }
 
 const handleBatchAssign = async () => {

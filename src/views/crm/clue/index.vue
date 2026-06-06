@@ -59,6 +59,7 @@
                     >新增</BaseButton
                 >
                 <BaseButton plain @click="importDialogVisible = true">批量导入</BaseButton>
+                <BaseButton v-if="canExport" plain @click="openExportDialog">导出</BaseButton>
                 <BaseButton v-if="canComplaintTagImport" plain @click="openComplaintImportDialog"
                     >投诉标签导入</BaseButton
                 >
@@ -214,6 +215,7 @@
     </Dialog>
 
     <ComplaintTagImportDialog ref="complaintImportDialogRef" @success="tableMethods.getList" />
+    <ExportTaskDialog ref="exportDialogRef" @success="handleExportSuccess" />
 </template>
 
 <script setup lang="tsx">
@@ -240,6 +242,7 @@ import ComplaintTagImportDialog from './ComplaintTagImportDialog.vue'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'
 import ClueMergeDialog from './components/ClueMergeDialog.vue'
+import ExportTaskDialog from './components/ExportTaskDialog.vue'
 import { renderCopyMobileCell } from './mobileCopy'
 
 interface SearchParams {
@@ -277,6 +280,7 @@ const CLUE_IMPORT_TEMPLATE_URL =
 
 const message = useMessage()
 const canCreate = hasPermission(['crm:clue:create'])
+const canExport = hasPermission(['crm:clue:export'])
 const canSmsSend = hasPermission(['crm:clue:sms:send'])
 const canComplaintTagUpdate = hasPermission(['crm:clue:complaint-tag:update'])
 const canComplaintTagImport = hasPermission(['crm:clue:complaint-tag:import'])
@@ -286,6 +290,7 @@ const smsDialogRef = ref<InstanceType<typeof ClueSmsDialog>>()
 const complaintImportDialogRef = ref<InstanceType<typeof ComplaintTagImportDialog>>()
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
 const enrollRef = ref<InstanceType<typeof ClueEnrollDialog>>()
+const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
 const importFileList = ref<UploadUserFile[]>([])
 const importLoading = ref(false)
 const importDialogVisible = ref(false)
@@ -308,6 +313,7 @@ const projectOptions = ref<{ label: string; value: number }[]>([])
 const clueSourceOptions = ref<{ label: string; value: number }[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
 const complaintTagOptions = ref<{ label: string; value: number }[]>([])
+const currentSearchParams = ref<SearchParams>({})
 
 const statusOptions = [
     { label: '待分配', value: 1 },
@@ -591,11 +597,11 @@ const buildComplaintTagText = (row: ClueApi.ClueVO) =>
     row.complaintTagNames?.length ? row.complaintTagNames.join('、') : '-'
 
 const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'customerId', label: '客户ID', width: '140px' },
+    { field: 'customerId', label: '客户ID', width: '130px' },
     {
         field: 'mobile',
         label: '联系电话',
-        minWidth: '170px',
+        minWidth: '150px',
         slots: {
             default: (data) =>
                 renderCopyMobileCell({
@@ -624,7 +630,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'name',
         label: '姓名',
-        width: '180px',
+        width: '130px',
         fixed: 'left',
         slots: {
             default: (data) => (
@@ -689,7 +695,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                     <BaseButton link type="primary" onClick={() => openDetail(data.row.id)}>
                         详情
                     </BaseButton>
-                    <BaseButton link type="warning" onClick={() => openEnroll(data.row.id)}>
+                    <BaseButton link type="primary" onClick={() => openEnroll(data.row.id)}>
                         报名
                     </BaseButton>
                 </>
@@ -768,7 +774,25 @@ const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
 }
 
 const setSearchParams = (params: SearchParams) => {
+    currentSearchParams.value = { ...params }
     tableMethods.setSearchParams(buildPageParams(params))
+}
+
+const openExportDialog = () => {
+    exportDialogRef.value?.open({
+        title: '导出名片查询',
+        bizType: 'crm_clue_page_export',
+        submit: async (payload) => {
+            await ClueApi.createClueExportTask({
+                ...buildPageParams(currentSearchParams.value),
+                ...payload
+            })
+        }
+    })
+}
+
+const handleExportSuccess = async () => {
+    message.success('导出任务已创建，请到下载中心查看')
 }
 
 const openDetail = (id: number) => {

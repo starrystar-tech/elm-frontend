@@ -1,6 +1,6 @@
 <script lang="tsx">
-import { defineComponent, computed, reactive, ref } from 'vue'
-import { ElButton, ElInput, ElMessage, ElTooltip } from 'element-plus'
+import { defineComponent, computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { ElBadge, ElButton, ElInput, ElMessage, ElTooltip } from 'element-plus'
 import { Message } from '@/layout/components//Message'
 import { Collapse } from '@/layout/components/Collapse'
 import { UserInfo } from '@/layout/components/UserInfo'
@@ -14,6 +14,11 @@ import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
 import { checkPermi } from '@/utils/permission'
 import { dialOutboundCall } from '@/api/system/call'
+import {
+    getExportTaskCenterViewedAt,
+    getExportTaskPage,
+    markExportTaskCenterViewed
+} from '@/api/system/exportTask'
 
 const { getPrefixCls, variables } = useDesign()
 
@@ -49,14 +54,18 @@ const message = computed(() => appStore.getMessage)
 const hasTenantVisitPermission = computed(
     () => import.meta.env.VITE_APP_TENANT_ENABLE === 'true' && checkPermi(['system:tenant:visit'])
 )
+const hasExportTaskPermission = computed(() => checkPermi(['system:export-task:query']))
 
 export default defineComponent({
     name: 'ToolHeader',
     setup() {
+        const { push } = useRouter()
         const outboundForm = reactive({
             mobile: ''
         })
         const dialing = ref(false)
+        const hasNewExportTask = ref(false)
+        let exportTaskTimer: number | undefined
 
         const handleOutboundDial = async () => {
             const mobile = outboundForm.mobile.trim()
@@ -78,6 +87,52 @@ export default defineComponent({
                 dialing.value = false
             }
         }
+
+        const checkExportTaskBadge = async () => {
+            if (!hasExportTaskPermission.value) {
+                hasNewExportTask.value = false
+                return
+            }
+            try {
+                const data = await getExportTaskPage({
+                    pageNo: 1,
+                    pageSize: 20,
+                    status: 2
+                })
+                const list = data?.list || []
+                const lastViewedAt = getExportTaskCenterViewedAt()
+                if (!lastViewedAt) {
+                    hasNewExportTask.value = list.length > 0
+                    return
+                }
+                const lastViewedTime = new Date(lastViewedAt).getTime()
+                hasNewExportTask.value = list.some((item) => {
+                    const taskTime = item.finishedAt || item.createTime
+                    return !!taskTime && new Date(taskTime).getTime() > lastViewedTime
+                })
+            } catch {
+                hasNewExportTask.value = false
+            }
+        }
+
+        const openExportTaskCenter = async () => {
+            markExportTaskCenterViewed()
+            hasNewExportTask.value = false
+            await push({ name: 'SystemExportTaskCenter' })
+        }
+
+        onMounted(() => {
+            checkExportTaskBadge()
+            exportTaskTimer = window.setInterval(() => {
+                checkExportTaskBadge()
+            }, 1000 * 60)
+        })
+
+        onBeforeUnmount(() => {
+            if (exportTaskTimer) {
+                window.clearInterval(exportTaskTimer)
+            }
+        })
 
         return () => (
             <div
@@ -115,10 +170,7 @@ export default defineComponent({
                                 }
                             }}
                         />
-                        <ElTooltip
-                            content="固定外显 07362784169，经 jiuyun 网关外呼"
-                            placement="bottom"
-                        >
+                        <ElTooltip content="固定外显 07362784169" placement="bottom">
                             <ElButton
                                 type="primary"
                                 class="outbound-toolbar__button"
@@ -156,6 +208,22 @@ export default defineComponent({
                             class="custom-hover"
                             color="var(--top-header-text-color)"
                         ></Message>
+                    ) : undefined}
+                    {hasExportTaskPermission.value ? (
+                        <ElBadge isDot={hasNewExportTask.value} class="header-icon-badge">
+                            <div
+                                class="custom-hover header-icon-button"
+                                onClick={openExportTaskCenter}
+                            >
+                                <Icon
+                                    size={18}
+                                    title="下载中心"
+                                    class="cursor-pointer"
+                                    icon="svg-icon:download"
+                                    color="var(--top-header-text-color)"
+                                />
+                            </div>
+                        </ElBadge>
                     ) : undefined}
                     <UserInfo></UserInfo>
                 </div>
@@ -196,6 +264,19 @@ $prefix-cls: #{$namespace}-tool-header;
     &__button {
         border-radius: 999px;
     }
+}
+
+.header-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
 }
 
 :global(.dark) {

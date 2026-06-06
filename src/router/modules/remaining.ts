@@ -212,6 +212,28 @@ const remainingRouter: AppRouteRecordRaw[] = [
             }
         ]
     },
+    {
+        path: '/system',
+        component: Layout,
+        name: 'SystemExportTaskRoute',
+        meta: {
+            hidden: true
+        },
+        children: [
+            {
+                path: 'export-task',
+                component: () => import('@/views/system/exportTask/index.vue'),
+                name: 'SystemExportTaskCenter',
+                meta: {
+                    noCache: true,
+                    hidden: true,
+                    canTo: true,
+                    title: '下载中心',
+                    activeMenu: '/system/export-task'
+                }
+            }
+        ]
+    },
 
     {
         path: '/codegen',

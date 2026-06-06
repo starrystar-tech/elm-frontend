@@ -32,6 +32,7 @@
                     >
                         批量释放
                     </BaseButton>
+                    <BaseButton v-if="canExport" plain @click="openExportDialog">导出</BaseButton>
                 </div>
             </div>
 
@@ -98,6 +99,7 @@
             <el-button type="primary" @click="handleRelease()">确定</el-button>
         </template>
     </Dialog>
+    <ExportTaskDialog ref="exportDialogRef" @success="handleExportSuccess" />
 </template>
 
 <script setup lang="tsx">
@@ -109,9 +111,11 @@ import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 import * as ClueApi from '@/api/crm/clue'
 import type { DeptVO } from '@/api/system/dept'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
+import ExportTaskDialog from './components/ExportTaskDialog.vue'
 import {
     ALLOCATION_TYPE_OPTIONS,
     buildAreaLabel,
@@ -144,7 +148,9 @@ interface ManagerSearchParams {
 }
 
 const message = useMessage()
+const canExport = hasPermission(['crm:clue-management:query'])
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
+const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
 const activeTab = ref('FIRST')
 const selectionList = ref<ClueApi.ClueManagementPageRespVO[]>([])
 const areaOptions = ref<AreaOption[]>([])
@@ -168,6 +174,7 @@ const assignForm = reactive({
 const releaseForm = reactive({
     reason: ''
 })
+const currentSearchParams = ref<ManagerSearchParams>({})
 
 const searchSchema = reactive<FormSchema[]>([
     {
@@ -426,6 +433,7 @@ const handleSelectionChange = (rows: ClueApi.ClueManagementPageRespVO[]) => {
 }
 
 const setSearchParams = (params: ManagerSearchParams) => {
+    currentSearchParams.value = { ...params }
     tableMethods.setSearchParams(buildSearchParams(params))
 }
 
@@ -440,6 +448,23 @@ const openDetail = (id: number) => {
 
 const handleDetailRefresh = async () => {
     await Promise.all([tableMethods.getList(), loadCounts()])
+}
+
+const openExportDialog = () => {
+    exportDialogRef.value?.open({
+        title: '导出客户管理',
+        bizType: 'crm_clue_management_page_export',
+        submit: async (payload) => {
+            await ClueApi.createClueManagementExportTask({
+                ...buildSearchParams(currentSearchParams.value),
+                ...payload
+            })
+        }
+    })
+}
+
+const handleExportSuccess = () => {
+    message.success('导出任务已创建，请到下载中心查看')
 }
 
 const handleAssign = async (ids?: number[]) => {

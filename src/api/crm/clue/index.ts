@@ -352,6 +352,21 @@ export interface ClueManagementCountRespVO extends MyClueCountRespVO {}
 
 export interface ClueManagementReleaseReqVO extends MyClueReleaseReqVO {}
 
+export interface ClueExportTaskReqVO extends CluePageReqVO {
+    authCode?: string
+    exportPlainMobile?: boolean
+}
+
+export interface ClueSilentExportTaskReqVO extends ClueSilentPageReqVO {
+    authCode?: string
+    exportPlainMobile?: boolean
+}
+
+export interface ClueManagementExportTaskReqVO extends ClueManagementPageReqVO {
+    authCode?: string
+    exportPlainMobile?: boolean
+}
+
 export interface ClueBatchBackToPublicSeaReqVO {
     clueIds: number[]
 }
@@ -645,4 +660,16 @@ export const assignClueManagement = async (data: ClueBatchAssignReqVO) => {
 
 export const releaseClueManagement = async (data: ClueManagementReleaseReqVO) => {
     return await request.put({ url: '/crm/clue-management/release', data })
+}
+
+export const createClueExportTask = async (data: ClueExportTaskReqVO) => {
+    return await request.post<number>({ url: '/crm/clue/export-task', data })
+}
+
+export const createSilentClueExportTask = async (data: ClueSilentExportTaskReqVO) => {
+    return await request.post<number>({ url: '/crm/clue/silent-export-task', data })
+}
+
+export const createClueManagementExportTask = async (data: ClueManagementExportTaskReqVO) => {
+    return await request.post<number>({ url: '/crm/clue-management/export-task', data })
 }
