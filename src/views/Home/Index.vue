@@ -371,7 +371,7 @@ const browserForm = reactive({
     domain: '60.205.112.131',
     username: '1001',
     password: '123456',
-    target: ''
+    target: '1002'
 })
 const formData = reactive<CallTestDialReqVO>({
     caller: '',
@@ -749,7 +749,8 @@ const createBrowserClient = async () => {
             ...sessionManager.delegate,
             onCallReceived: (session: any) => {
                 const caller = parseSipIdentityUser(session?.remoteIdentity)
-                const callee = parseSipIdentityUser(session?.localIdentity) || browserForm.username.trim()
+                const callee =
+                    parseSipIdentityUser(session?.localIdentity) || browserForm.username.trim()
                 setBrowserCallParties(caller, callee)
                 browserForm.target = caller || browserForm.target
                 incomingCall.value = true
@@ -765,7 +766,8 @@ const createBrowserClient = async () => {
             },
             onCallAnswered: (session: any) => {
                 const remoteUser = parseSipIdentityUser(session?.remoteIdentity)
-                const localUser = parseSipIdentityUser(session?.localIdentity) || browserForm.username.trim()
+                const localUser =
+                    parseSipIdentityUser(session?.localIdentity) || browserForm.username.trim()
                 const caller = incomingCall.value ? remoteUser : localUser
                 const callee = incomingCall.value ? localUser : remoteUser
                 setBrowserCallParties(caller, callee)
@@ -784,7 +786,8 @@ const createBrowserClient = async () => {
             },
             onCallHangup: (session: any) => {
                 const remoteUser = parseSipIdentityUser(session?.remoteIdentity)
-                const localUser = parseSipIdentityUser(session?.localIdentity) || browserForm.username.trim()
+                const localUser =
+                    parseSipIdentityUser(session?.localIdentity) || browserForm.username.trim()
                 const caller = currentBrowserCaller.value || localUser
                 const callee = currentBrowserCallee.value || remoteUser
                 incomingCall.value = false
@@ -927,7 +930,11 @@ const makeBrowserCall = async () => {
             caller: browserForm.username.trim(),
             callee: target
         })
-        await browserClient.value.call(`sip:${target}@${browserForm.domain.trim()}`)
+        await browserClient.value.call(`sip:${target}@${browserForm.domain.trim()}`, {
+            extraHeaders: browserRecordId.value
+                ? [`X-CRM-Record-Id: ${browserRecordId.value}`]
+                : undefined
+        })
         traceBrowserStep('CALL_SENT', `target=${target}`)
         addBrowserLog(`已向 ${target} 发起网页呼叫`)
     } catch (error: any) {
