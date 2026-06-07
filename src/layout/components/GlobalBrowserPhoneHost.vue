@@ -5,9 +5,23 @@
       <div class="incoming-toast__content">
         <div class="incoming-toast__eyebrow">来电提醒</div>
         <div class="incoming-toast__caller">{{ incomingToastCaller }}</div>
-        <div class="incoming-toast__hint">网页分机正在响铃，请尽快处理</div>
+        <div class="incoming-toast__hint">
+          网页分机正在响铃，请尽快处理
+          <template v-if="incomingRingEnableRequired">
+            ，当前浏览器拦截了铃声，请点击“启用铃声”
+          </template>
+        </div>
       </div>
       <div class="incoming-toast__actions">
+        <el-button
+          v-if="incomingRingEnableRequired"
+          type="warning"
+          size="small"
+          class="incoming-toast__button"
+          @click="manuallyEnableIncomingRing"
+        >
+          启用铃声
+        </el-button>
         <el-button
           type="success"
           plain
@@ -42,8 +56,10 @@ defineOptions({ name: 'GlobalBrowserPhoneHost' })
 const {
   incomingToastVisible,
   incomingToastCaller,
+  incomingRingEnableRequired,
   remoteAudioRef,
   localAudioRef,
+  manuallyEnableIncomingRing,
   answerBrowserCall,
   hangupBrowserCall,
   initBrowserPhone

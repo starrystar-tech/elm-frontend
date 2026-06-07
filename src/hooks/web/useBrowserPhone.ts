@@ -32,6 +32,8 @@ const currentBrowserCaller = ref('')
 const currentBrowserCallee = ref('')
 const incomingToastVisible = ref(false)
 const incomingToastCaller = ref('')
+const incomingRingEnableRequired = ref(false)
+const incomingRingBlockedReason = ref('')
 const remoteAudioRef = ref<HTMLAudioElement>()
 const localAudioRef = ref<HTMLAudioElement>()
 const callDurationSeconds = ref(0)
@@ -304,6 +306,22 @@ const showIncomingToast = (caller: string) => {
 const stopIncomingRing = () => {
   incomingRingAudio.pause()
   incomingRingAudio.currentTime = 0
+  incomingRingBlockedReason.value = ''
+  incomingRingEnableRequired.value = false
+}
+
+const buildIncomingRingDiagnostics = () => {
+  return [
+    `src=${incomingRingAudio.currentSrc || incomingRingAudio.src || '<empty>'}`,
+    `readyState=${incomingRingAudio.readyState}`,
+    `networkState=${incomingRingAudio.networkState}`,
+    `muted=${incomingRingAudio.muted}`,
+    `volume=${incomingRingAudio.volume}`,
+    typeof document !== 'undefined' ? `visibility=${document.visibilityState}` : '',
+    typeof document !== 'undefined' ? `focused=${document.hasFocus()}` : ''
+  ]
+    .filter(Boolean)
+    .join(', ')
 }
 
 const playIncomingRing = async () => {
@@ -313,25 +331,38 @@ const playIncomingRing = async () => {
     incomingRingAudio.muted = false
     incomingRingAudio.volume = 1
     await incomingRingAudio.play()
-    traceBrowserStep('RING_PLAYING')
+    incomingRingEnableRequired.value = false
+    incomingRingBlockedReason.value = ''
+    traceBrowserStep('RING_PLAYING', buildIncomingRingDiagnostics())
   } catch (error: any) {
-    traceBrowserStep('RING_BLOCKED', error?.message || '浏览器阻止了来电铃声自动播放', 'danger')
+    incomingRingEnableRequired.value = true
+    incomingRingBlockedReason.value = error?.message || '浏览器阻止了来电铃声自动播放'
+    traceBrowserStep(
+      'RING_BLOCKED',
+      `${incomingRingBlockedReason.value}; ${buildIncomingRingDiagnostics()}`,
+      'danger'
+    )
   }
 }
 
 const unlockIncomingRingAudio = async () => {
   if (incomingRingUnlocked.value) return
   try {
+    incomingRingAudio.load()
     incomingRingAudio.muted = true
     await incomingRingAudio.play()
     incomingRingAudio.pause()
     incomingRingAudio.currentTime = 0
     incomingRingAudio.muted = false
     incomingRingUnlocked.value = true
-    traceBrowserStep('RING_UNLOCKED')
+    traceBrowserStep('RING_UNLOCKED', buildIncomingRingDiagnostics())
   } catch (error: any) {
     incomingRingAudio.muted = false
-    traceBrowserStep('RING_UNLOCK_FAILED', error?.message || '来电铃声预热失败', 'danger')
+    traceBrowserStep(
+      'RING_UNLOCK_FAILED',
+      `${error?.message || '来电铃声预热失败'}; ${buildIncomingRingDiagnostics()}`,
+      'danger'
+    )
   }
 }
 
@@ -345,6 +376,17 @@ const bindIncomingRingUnlock = () => {
   }
   window.addEventListener('pointerdown', unlock)
   window.addEventListener('keydown', unlock)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      void unlockIncomingRingAudio()
+    }
+  })
+}
+
+const manuallyEnableIncomingRing = async () => {
+  await unlockIncomingRingAudio()
+  if (!incomingCall.value) return
+  await playIncomingRing()
 }
 
 const requestIncomingNotificationPermission = async () => {
@@ -746,6 +788,7 @@ const clearLogs = () => {
 const initBrowserPhone = async () => {
   if (initialized.value) return
   initialized.value = true
+  incomingRingAudio.load()
   bindIncomingRingUnlock()
   await reloadProfile()
 }
@@ -766,6 +809,8 @@ export const useBrowserPhone = () => {
     logs,
     incomingToastVisible,
     incomingToastCaller,
+    incomingRingEnableRequired,
+    incomingRingBlockedReason,
     remoteAudioRef,
     localAudioRef,
     callDurationSeconds,
@@ -781,6 +826,7 @@ export const useBrowserPhone = () => {
     clearLogs,
     appendLog,
     initBrowserPhone,
+    manuallyEnableIncomingRing,
     stopIncomingRing,
     hideIncomingToast,
     traceBrowserStep
