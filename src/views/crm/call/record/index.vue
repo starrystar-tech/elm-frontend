@@ -47,20 +47,20 @@ const searchSchema = reactive<FormSchema[]>([
             style: { width: '220px' }
         }
     },
-    {
-        field: 'callType',
-        label: '通话类型',
-        component: 'Select',
-        componentProps: {
-            placeholder: '请选择通话类型',
-            clearable: true,
-            options: [
-                { label: '公网外呼', value: 1 },
-                { label: '内部通话', value: 2 }
-            ],
-            style: { width: '180px' }
-        }
-    },
+    // {
+    //     field: 'callType',
+    //     label: '通话类型',
+    //     component: 'Select',
+    //     componentProps: {
+    //         placeholder: '请选择通话类型',
+    //         clearable: true,
+    //         options: [
+    //             { label: '公网外呼', value: 1 },
+    //             { label: '内部通话', value: 2 }
+    //         ],
+    //         style: { width: '180px' }
+    //     }
+    // },
     {
         field: 'status',
         label: '状态',
@@ -160,14 +160,14 @@ const tableColumns = reactive<TableColumn[]>([
             }
         }
     },
-    { field: 'callTypeDesc', label: '通话类型', width: '110px' },
+    // { field: 'callTypeDesc', label: '通话类型', width: '110px' },
     { field: 'submitMessage', label: '提交日志', minWidth: '160px' },
     { field: 'originateDisposition', label: '外呼结果', width: '160px' },
     { field: 'jobUuid', label: '任务号', width: '240px' },
     { field: 'statusDesc', label: '状态', width: '110px' },
     { field: 'userNickname', label: '发起人', width: '120px' },
-    { field: 'gatewayName', label: '主网关', width: '170px' },
-    { field: 'backupGatewayName', label: '备网关', width: '170px' },
+    { field: 'gatewayName', label: '网关', width: '170px' },
+    // { field: 'backupGatewayName', label: '备网关', width: '170px' },
     { field: 'durationSeconds', label: '通话时长(秒)', width: '120px' },
     { field: 'failReason', label: '失败原因', minWidth: '220px' },
     { field: 'hangupCause', label: '挂断原因', width: '160px' }

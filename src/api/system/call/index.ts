@@ -9,6 +9,10 @@ export interface CallOutboundDialReqVO {
   mobile: string
 }
 
+export interface CallOutboundHangupReqVO {
+  recordId: number
+}
+
 export interface CallTestDialRespVO {
   caller: string
   callee: string
@@ -36,6 +40,10 @@ export const testDialInternalCall = (data: CallTestDialReqVO) => {
 
 export const dialOutboundCall = (data: CallOutboundDialReqVO) => {
   return request.post<CallTestDialRespVO>({ url: '/crm/call/outbound-dial', data })
+}
+
+export const hangupOutboundCall = (data: CallOutboundHangupReqVO) => {
+  return request.post<boolean>({ url: '/crm/call/outbound-hangup', data })
 }
 
 export const syncBrowserCallRecord = (data: BrowserCallRecordSyncReqVO) => {

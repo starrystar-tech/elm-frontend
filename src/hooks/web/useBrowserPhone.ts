@@ -27,6 +27,7 @@ const browserStatus = ref('未连接')
 const browserDisconnecting = ref(false)
 const browserClient = shallowRef<any>()
 const browserRecordId = ref<number>()
+const currentSessionDirection = ref<'incoming' | 'outgoing' | null>(null)
 const currentBrowserCaller = ref('')
 const currentBrowserCallee = ref('')
 const incomingToastVisible = ref(false)
@@ -286,6 +287,10 @@ const resetBrowserCallParties = () => {
   currentBrowserCallee.value = ''
 }
 
+const getCurrentBrowserSession = () => {
+  return browserClient.value?.session
+}
+
 const hideIncomingToast = () => {
   incomingToastVisible.value = false
   incomingToastCaller.value = ''
@@ -332,13 +337,14 @@ const unlockIncomingRingAudio = async () => {
 
 const bindIncomingRingUnlock = () => {
   if (typeof window === 'undefined') return
-  const unlock = () => {
-    void unlockIncomingRingAudio()
+  const unlock = async () => {
+    await unlockIncomingRingAudio()
+    if (!incomingRingUnlocked.value) return
     window.removeEventListener('pointerdown', unlock)
     window.removeEventListener('keydown', unlock)
   }
-  window.addEventListener('pointerdown', unlock, { once: true })
-  window.addEventListener('keydown', unlock, { once: true })
+  window.addEventListener('pointerdown', unlock)
+  window.addEventListener('keydown', unlock)
 }
 
 const requestIncomingNotificationPermission = async () => {
@@ -474,8 +480,13 @@ const createBrowserClient = async () => {
   if (sessionManager) {
     sessionManager.delegate = {
       ...sessionManager.delegate,
-      onCallReceived: (session: any) => {
-        const caller = resolveRemoteBrowserExtension(session?.remoteIdentity, currentBrowserCaller.value || browserForm.target)
+      onCallReceived: () => {
+        const session = getCurrentBrowserSession()
+        currentSessionDirection.value = 'incoming'
+        const caller = resolveRemoteBrowserExtension(
+          session?.remoteIdentity,
+          currentBrowserCaller.value || browserForm.target
+        )
         const callee = resolveCurrentBrowserExtension()
         setBrowserCallParties(caller, callee)
         browserForm.target = caller || browserForm.target
@@ -493,11 +504,15 @@ const createBrowserClient = async () => {
         addBrowserLog('收到来电，请点击接听', '来电')
         void syncBrowserRecord({ event: 'start', caller, callee })
       },
-      onCallAnswered: (session: any) => {
-        const remoteUser = resolveRemoteBrowserExtension(session?.remoteIdentity, currentBrowserCaller.value || browserForm.target)
+      onCallAnswered: () => {
+        const session = getCurrentBrowserSession()
+        const remoteUser = resolveRemoteBrowserExtension(
+          session?.remoteIdentity,
+          currentBrowserCaller.value || browserForm.target
+        )
         const localUser = resolveCurrentBrowserExtension()
-        const caller = incomingCall.value ? remoteUser : localUser
-        const callee = incomingCall.value ? localUser : remoteUser
+        const caller = currentSessionDirection.value === 'incoming' ? remoteUser : localUser
+        const callee = currentSessionDirection.value === 'incoming' ? localUser : remoteUser
         setBrowserCallParties(caller, callee)
         incomingCall.value = false
         activeCall.value = true
@@ -509,8 +524,12 @@ const createBrowserClient = async () => {
         traceBrowserStep('CALL_ANSWERED', `caller=${caller}, callee=${callee}`)
         addBrowserLog('通话已接通', '通话中')
       },
-      onCallHangup: (session: any) => {
-        const remoteUser = resolveRemoteBrowserExtension(session?.remoteIdentity, currentBrowserCaller.value || browserForm.target)
+      onCallHangup: () => {
+        const session = getCurrentBrowserSession()
+        const remoteUser = resolveRemoteBrowserExtension(
+          session?.remoteIdentity,
+          currentBrowserCaller.value || browserForm.target
+        )
         const localUser = resolveCurrentBrowserExtension()
         const caller = currentBrowserCaller.value || localUser
         const callee = currentBrowserCallee.value || remoteUser
@@ -530,6 +549,7 @@ const createBrowserClient = async () => {
         traceBrowserStep('CALL_HANGUP', `caller=${caller}, callee=${callee}`)
         addBrowserLog('通话已结束', '已挂断')
         browserRecordId.value = undefined
+        currentSessionDirection.value = null
         resetBrowserCallParties()
       }
     }
@@ -599,6 +619,7 @@ const disconnectBrowserPhone = async (silent = false) => {
   browserRegistered.value = false
   incomingCall.value = false
   activeCall.value = false
+  currentSessionDirection.value = null
   browserRecordId.value = undefined
   hideIncomingToast()
   stopIncomingRing()
@@ -623,6 +644,7 @@ const makeBrowserCall = async () => {
   }
   try {
     setBrowserCallParties(browserForm.username.trim(), target)
+    currentSessionDirection.value = 'outgoing'
     activeCall.value = true
     updateBrowserStatus('呼叫中')
     traceBrowserStep('CALL_START', `target=${target}`)
@@ -648,6 +670,7 @@ const makeBrowserCall = async () => {
       failReason: errorMessage
     })
     browserRecordId.value = undefined
+    currentSessionDirection.value = null
     resetBrowserCallParties()
     traceBrowserStep('CALL_FAILED', `${errorMessage}; ${describeBrowserError(error)}`, 'danger')
     addBrowserLog(errorMessage, '失败', 'danger')
@@ -656,8 +679,21 @@ const makeBrowserCall = async () => {
 }
 
 const answerBrowserCall = async () => {
-  if (!browserClient.value || !incomingCall.value) {
+  const session = getCurrentBrowserSession()
+  if (!browserClient.value || !incomingCall.value || !session) {
     traceBrowserStep('ANSWER_BLOCKED', '当前没有可接听的来电', 'danger')
+    return
+  }
+  if (currentSessionDirection.value !== 'incoming') {
+    traceBrowserStep('ANSWER_BLOCKED', `当前会话不是来电，direction=${currentSessionDirection.value}`, 'danger')
+    return
+  }
+  if (session.state === 'Establishing' || session.state === 'Established') {
+    traceBrowserStep('ANSWER_SKIPPED', `session.state=${session.state}`, 'danger')
+    return
+  }
+  if (session.state !== 'Initial') {
+    traceBrowserStep('ANSWER_BLOCKED', `当前会话状态不允许接听，state=${session.state}`, 'danger')
     return
   }
   try {
@@ -677,15 +713,21 @@ const answerBrowserCall = async () => {
 }
 
 const hangupBrowserCall = async () => {
-  if (!browserClient.value) {
+  const session = getCurrentBrowserSession()
+  if (!browserClient.value || !session) {
     traceBrowserStep('HANGUP_BLOCKED', '浏览器分机客户端不存在', 'danger')
     return
   }
   try {
-    traceBrowserStep('HANGUP_START')
-    await browserClient.value.hangup()
+    traceBrowserStep('HANGUP_START', `direction=${currentSessionDirection.value}, state=${session.state}`)
+    if (currentSessionDirection.value === 'incoming' && session.state === 'Initial') {
+      await browserClient.value.decline()
+    } else {
+      await browserClient.value.hangup()
+    }
     incomingCall.value = false
     activeCall.value = false
+    currentSessionDirection.value = null
     updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
     hideIncomingToast()
     stopIncomingRing()

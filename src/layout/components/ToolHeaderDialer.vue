@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElButton } from 'element-plus'
-import { dialOutboundCall } from '@/api/system/call'
+import { dialOutboundCall, hangupOutboundCall } from '@/api/system/call'
 import { getOutboundCallRecordPage, type OutboundCallRecordVO } from '@/api/system/call/record'
 
 defineOptions({ name: 'ToolHeaderDialer' })
@@ -277,15 +277,31 @@ const handleClear = () => {
     }
 }
 
-const handleHangup = () => {
+const handleHangup = async () => {
     popoverVisible.value = true
-    dialing.value = false
-    stopRecordPolling()
-    stopDurationTimer()
-    status.value = 'hungup'
-    statusMessage.value = mobile.value
-        ? `已结束当前拨号会话：${mobile.value}`
-        : '已结束当前拨号会话'
+    if (!outboundRecordId.value) {
+        dialing.value = false
+        stopRecordPolling()
+        stopDurationTimer()
+        status.value = 'hungup'
+        statusMessage.value = mobile.value
+            ? `已结束当前拨号会话：${mobile.value}`
+            : '已结束当前拨号会话'
+        return
+    }
+    try {
+        await hangupOutboundCall({ recordId: outboundRecordId.value })
+        dialing.value = false
+        stopRecordPolling()
+        stopDurationTimer()
+        status.value = 'hungup'
+        statusMessage.value = mobile.value
+            ? `已挂断当前通话：${mobile.value}`
+            : '已挂断当前通话'
+        message.success('已发送挂断指令')
+    } catch (error: any) {
+        message.error(error?.message || '挂断失败')
+    }
 }
 
 const handleDial = async () => {
