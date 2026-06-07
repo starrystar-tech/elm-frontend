@@ -67,6 +67,7 @@
   />
 </template>
 <script setup lang="ts">
+import { nextTick } from 'vue'
 import * as BusinessApi from '@/api/crm/business'
 import * as ContactApi from '@/api/crm/contact'
 import BusinessForm from './../BusinessForm.vue'
@@ -145,6 +146,11 @@ const businessModalRef = ref()
 const openBusinessModal = () => {
   businessModalRef.value.open()
 }
+const clearBusinessSelection = async () => {
+  businessRef.value?.clearSelection?.()
+  await nextTick()
+  businessRef.value?.clearSelection?.()
+}
 const createContactBusinessList = async (businessIds: number[]) => {
   const data = {
     contactId: props.bizId,
@@ -156,7 +162,8 @@ const createContactBusinessList = async (businessIds: number[]) => {
   await ContactApi.createContactBusinessList(data)
   // 刷新列表
   message.success('关联商机成功')
-  handleQuery()
+  await handleQuery()
+  await clearBusinessSelection()
 }
 
 /** 解除联系人与商机的关联 */
@@ -172,7 +179,8 @@ const deleteContactBusinessList = async () => {
   await ContactApi.deleteContactBusinessList(data)
   // 刷新列表
   message.success('取关商机成功')
-  handleQuery()
+  await handleQuery()
+  await clearBusinessSelection()
 }
 
 /** 监听打开的 bizId + bizType，从而加载最新的列表 */

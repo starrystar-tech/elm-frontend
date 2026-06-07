@@ -14,13 +14,56 @@
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
+                    <el-form-item label="姓名" prop="name">
+                        <el-input v-model="formData.name" placeholder="请输入姓名" />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="来源" prop="clueSourceId">
+                        <el-select
+                            v-model="formData.clueSourceId"
+                            clearable
+                            filterable
+                            placeholder="请选择"
+                            class="w-1/1"
+                        >
+                            <el-option
+                                v-for="item in clueSourceOptions"
+                                :key="item.id"
+                                :label="item.name"
+                                :value="item.id"
+                            />
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="地区" prop="areaId">
+                        <AreaSelect
+                            v-model="formData.areaId"
+                            :include-all-node="false"
+                            placeholder="请选择地区"
+                        />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="咨询项目" prop="consultProjectId">
+                        <ProductCategorySelect
+                            v-model="formData.consultProjectId"
+                            placeholder="请选择咨询项目"
+                        />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
                     <el-form-item label="手机号2">
                         <el-input v-model="formData.mobile2" placeholder="请输入手机号2" />
                     </el-form-item>
                 </el-col>
-            </el-row>
+                <el-col :span="12">
+                    <el-form-item label="意向度">
+                        <ClueIntentLevel v-model="formData.intentLevel" mode="select" />
+                    </el-form-item>
+                </el-col>
 
-            <el-row :gutter="20">
                 <el-col :span="12">
                     <el-form-item label="微信号">
                         <el-input v-model="formData.wechat" placeholder="请输入微信号" />
@@ -31,22 +74,13 @@
                         <el-input v-model="formData.wechat2" placeholder="请输入微信号2" />
                     </el-form-item>
                 </el-col>
-            </el-row>
 
-            <el-row :gutter="20">
                 <el-col :span="12">
                     <el-form-item label="QQ">
                         <el-input v-model="formData.qq" placeholder="请输入QQ" />
                     </el-form-item>
                 </el-col>
-                <el-col :span="12">
-                    <el-form-item label="姓名" prop="name">
-                        <el-input v-model="formData.name" placeholder="请输入姓名" />
-                    </el-form-item>
-                </el-col>
-            </el-row>
 
-            <el-row :gutter="20">
                 <el-col :span="12">
                     <el-form-item label="性别">
                         <el-select
@@ -77,9 +111,7 @@
                         </el-select>
                     </el-form-item>
                 </el-col>
-            </el-row>
 
-            <el-row :gutter="20">
                 <el-col :span="12">
                     <el-form-item label="证件类型">
                         <el-select
@@ -97,55 +129,6 @@
                 <el-col :span="12">
                     <el-form-item label="证件号码">
                         <el-input v-model="formData.idCardNo" placeholder="请输入证件号码" />
-                    </el-form-item>
-                </el-col>
-            </el-row>
-
-            <el-row :gutter="20">
-                <el-col :span="12">
-                    <el-form-item label="来源" prop="clueSourceId">
-                        <el-select
-                            v-model="formData.clueSourceId"
-                            clearable
-                            filterable
-                            placeholder="请选择"
-                            class="w-1/1"
-                        >
-                            <el-option
-                                v-for="item in clueSourceOptions"
-                                :key="item.id"
-                                :label="item.name"
-                                :value="item.id"
-                            />
-                        </el-select>
-                    </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                    <el-form-item label="地区" prop="areaId">
-                        <AreaSelect
-                            v-model="formData.areaId"
-                            :include-all-node="false"
-                            placeholder="请选择地区"
-                        />
-                    </el-form-item>
-                </el-col>
-            </el-row>
-
-            <el-row :gutter="20">
-                <el-col :span="12">
-                    <el-form-item label="咨询项目" prop="consultProjectId">
-                        <el-tree-select
-                            v-model="formData.consultProjectId"
-                            :data="projectOptions"
-                            :props="treeProps"
-                            node-key="id"
-                            check-strictly
-                            clearable
-                            filterable
-                            default-expand-all
-                            placeholder="请选择"
-                            style="width: 100%"
-                        />
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -167,9 +150,6 @@
                         </el-select>
                     </el-form-item>
                 </el-col>
-            </el-row>
-
-            <el-row :gutter="20">
                 <el-col :span="24">
                     <el-form-item label="咨询备注" prop="remark">
                         <el-input
@@ -192,8 +172,9 @@
 
 <script setup lang="ts">
 import AreaSelect from '@/components/AreaSelect.vue'
+import ClueIntentLevel from '@/components/ClueIntentLevel'
+import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import * as ClueApi from '@/api/crm/clue'
-import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
@@ -209,6 +190,7 @@ interface FormData {
     idCardNo?: string
     gender?: number
     education?: number
+    intentLevel?: number
     areaId?: number
     consultProjectId?: number
     clueSourceId?: number
@@ -227,15 +209,8 @@ const formLoading = ref(false)
 const formType = ref<'create' | 'update'>('create')
 const formRef = ref()
 
-const projectOptions = ref<ProductCategoryApi.ProductCategoryVO[]>([])
 const clueSourceOptions = ref<ClueSourceApi.ClueSourceVO[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
-
-const treeProps = {
-    value: 'id',
-    label: 'name',
-    children: 'children'
-}
 
 const educationOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_EDUCATION)
 
@@ -250,6 +225,7 @@ const createDefaultFormData = (): FormData => ({
     idCardNo: '',
     gender: undefined,
     education: undefined,
+    intentLevel: undefined,
     areaId: undefined,
     consultProjectId: undefined,
     clueSourceId: undefined,
@@ -262,19 +238,17 @@ const formData = ref<FormData>(createDefaultFormData())
 
 const formRules = reactive({
     mobile: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
+    name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
     clueSourceId: [{ required: true, message: '请选择来源', trigger: 'change' }],
     areaId: [{ required: true, message: '请选择地区', trigger: 'change' }],
-    consultProjectId: [{ required: true, message: '请选择咨询项目', trigger: 'change' }],
-    remark: [{ required: true, message: '请输入咨询备注', trigger: 'blur' }]
+    consultProjectId: [{ required: true, message: '请选择咨询项目', trigger: 'change' }]
 })
 
 const loadOptions = async () => {
-    const [projects, sources, tagGroups] = await Promise.all([
-        ProductCategoryApi.getProductCategorySimpleList(),
+    const [sources, tagGroups] = await Promise.all([
         ClueSourceApi.getEnabledClueSourceList(),
         TagGroupApi.getTagGroupList()
     ])
-    projectOptions.value = projects || []
     clueSourceOptions.value = sources || []
     tagOptions.value = (tagGroups || []).flatMap((group) =>
         (group.tags || []).map((tag) => ({
@@ -296,6 +270,7 @@ const mapClueToForm = (detail: ClueApi.ClueVO): FormData => ({
     idCardNo: detail.idCardNo || '',
     gender: detail.gender,
     education: detail.education,
+    intentLevel: detail.intentLevel,
     areaId: detail.areaId,
     consultProjectId: detail.consultProjectId,
     clueSourceId: detail.clueSourceId,
@@ -340,6 +315,7 @@ const submitForm = async () => {
                 idCardNo: formData.value.idCardNo?.trim() || undefined,
                 gender: formData.value.gender,
                 education: formData.value.education,
+                intentLevel: formData.value.intentLevel,
                 areaId: Number(formData.value.areaId),
                 consultProjectId: formData.value.consultProjectId
                     ? Number(formData.value.consultProjectId)
@@ -365,6 +341,7 @@ const submitForm = async () => {
                 idCardNo: formData.value.idCardNo?.trim() || undefined,
                 gender: formData.value.gender,
                 education: formData.value.education,
+                intentLevel: formData.value.intentLevel,
                 areaId: Number(formData.value.areaId),
                 consultProjectId: Number(formData.value.consultProjectId),
                 clueSourceId: formData.value.clueSourceId

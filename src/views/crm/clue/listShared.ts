@@ -4,7 +4,6 @@ import type { DeptVO } from '@/api/system/dept'
 import * as AreaApi from '@/api/system/area'
 import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
-import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 
@@ -87,7 +86,6 @@ interface LoadClueListOptionsArgs {
   schema: FormSchema[]
   areaOptions: Ref<AreaOption[]>
   userOptions: Ref<UserOption[]>
-  projectOptions: Ref<LabelValueOption[]>
   clueSourceOptions: Ref<LabelValueOption[]>
   tagOptions?: Ref<LabelValueOption[]>
   deptOptions?: Ref<DeptVO[]>
@@ -104,11 +102,10 @@ export const loadClueListOptions = async ({
   deptOptions,
   ownerFields = ['currentOwnerId', 'ownerId']
 }: LoadClueListOptionsArgs) => {
-  const [areas, users, depts, projects, sources, tagGroups] = await Promise.all([
+  const [areas, users, depts, sources, tagGroups] = await Promise.all([
     AreaApi.getAreaTree(),
     UserApi.getSimpleUserList(),
     deptOptions ? DeptApi.getSimpleDeptList() : Promise.resolve([]),
-    ProductCategoryApi.getProductCategorySimpleList(),
     ClueSourceApi.getEnabledClueSourceList(),
     tagOptions ? TagGroupApi.getTagGroupList() : Promise.resolve([])
   ])
@@ -118,10 +115,6 @@ export const loadClueListOptions = async ({
     label: item.nickname || item.username,
     value: item.id,
     deptId: item.deptId
-  }))
-  projectOptions.value = (projects || []).map((item) => ({
-    label: item.name,
-    value: Number(item.id)
   }))
   clueSourceOptions.value = (sources || []).map((item) => ({
     label: item.name,
@@ -142,7 +135,6 @@ export const loadClueListOptions = async ({
   }
 
   updateSchemaOptions(schema, 'areaId', areaOptions.value)
-  updateSchemaOptions(schema, 'consultProjectId', projectOptions.value)
   updateSchemaOptions(schema, 'clueSourceId', clueSourceOptions.value)
   updateSchemaOptions(schema, 'tagId', tagOptions?.value || [])
   ownerFields.forEach((field) => updateSchemaOptions(schema, field, userOptions.value))

@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
 import type { FormSchema } from '@/types/form'
 import { Search } from '@/components/Search'
@@ -147,6 +147,13 @@ const handleDeptNodeClick = (row: any) => {
 
 const handleSelectionChange = (rows: AllocationLimitApi.AllocationUserLimitVO[]) => {
     checkedRows.value = rows || []
+}
+
+const resetTableSelection = async () => {
+    checkedRows.value = []
+    await tableMethods.clearSelection()
+    await nextTick()
+    await tableMethods.clearSelection()
 }
 
 const formatLimit = (current?: number, unlimited?: boolean, limit?: number) => {
@@ -267,8 +274,9 @@ const submitBatch = async () => {
         })
         message.success('批量修改成功')
         batchVisible.value = false
-        checkedRows.value = []
+        await resetTableSelection()
         await tableMethods.getList()
+        await resetTableSelection()
     } finally {
         batchLoading.value = false
     }
@@ -279,8 +287,9 @@ const handleBatchStatus = async (enabled: boolean) => {
     if (userIds.length === 0) return
     await AllocationLimitApi.updateAllocationUserLimitStatus({ userIds, enabled })
     message.success(enabled ? '批量启用成功' : '批量停用成功')
-    checkedRows.value = []
+    await resetTableSelection()
     await tableMethods.getList()
+    await resetTableSelection()
 }
 
 const handleSingleStatus = async (row: AllocationLimitApi.AllocationUserLimitVO) => {

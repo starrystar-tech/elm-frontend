@@ -15,9 +15,11 @@
                 <div class="clue-hero__meta">
                     <div class="clue-hero__name-row">
                         <h3>{{ clue.name || '--' }}</h3>
-                        <el-tag effect="dark" round class="clue-hero__intent">
-                            {{ clue.intentLevelName || '--' }}
-                        </el-tag>
+                        <ClueIntentLevel
+                            :model-value="clue.intentLevel"
+                            mode="tag"
+                            class="clue-hero__intent"
+                        />
                     </div>
                     <p>
                         {{ clue.mobile || '--' }}
@@ -89,23 +91,47 @@
                             <el-form-item label="手机号" prop="mobile">
                                 <el-input v-model="editForm.mobile" placeholder="请输入手机号" />
                             </el-form-item>
-                            <el-form-item label="手机号2">
-                                <el-input v-model="editForm.mobile2" placeholder="请输入手机号2" />
+                            <el-form-item label="姓名" prop="name">
+                                <el-input v-model="editForm.name" placeholder="请输入姓名" />
                             </el-form-item>
-                            <el-form-item label="意向度">
+                            <el-form-item label="来源" prop="clueSourceId">
                                 <el-select
-                                    v-model="editForm.intentLevel"
+                                    v-model="editForm.clueSourceId"
                                     clearable
+                                    filterable
                                     placeholder="请选择"
                                     class="w-1/1"
                                 >
                                     <el-option
-                                        v-for="item in intentLevelOptions"
+                                        v-for="item in clueSourceOptions"
                                         :key="item.value"
                                         :label="item.label"
                                         :value="item.value"
                                     />
                                 </el-select>
+                            </el-form-item>
+                            <el-form-item label="地区" prop="areaId">
+                                <AreaSelect
+                                    v-model="editForm.areaId"
+                                    :include-all-node="false"
+                                    placeholder="请选择地区"
+                                />
+                            </el-form-item>
+                            <el-form-item label="咨询项目" prop="consultProjectId">
+                                <ProductCategorySelect
+                                    v-model="editForm.consultProjectId"
+                                    placeholder="请选择"
+                                />
+                            </el-form-item>
+                            <el-form-item label="手机号2">
+                                <el-input v-model="editForm.mobile2" placeholder="请输入手机号2" />
+                            </el-form-item>
+                            <el-form-item label="意向度">
+                                <ClueIntentLevel
+                                    v-model="editForm.intentLevel"
+                                    mode="select"
+                                    class="w-1/1"
+                                />
                             </el-form-item>
                             <el-form-item label="微信号">
                                 <el-input v-model="editForm.wechat" placeholder="请输入微信号" />
@@ -134,9 +160,6 @@
                                     placeholder="请输入证件号码"
                                 />
                             </el-form-item>
-                            <el-form-item label="姓名">
-                                <el-input v-model="editForm.name" placeholder="请输入姓名" />
-                            </el-form-item>
                             <el-form-item label="性别">
                                 <el-select
                                     v-model="editForm.gender"
@@ -162,35 +185,6 @@
                                         :value="item.value"
                                     />
                                 </el-select>
-                            </el-form-item>
-                            <el-form-item label="来源" prop="clueSourceId">
-                                <el-select
-                                    v-model="editForm.clueSourceId"
-                                    clearable
-                                    filterable
-                                    placeholder="请选择"
-                                    class="w-1/1"
-                                >
-                                    <el-option
-                                        v-for="item in clueSourceOptions"
-                                        :key="item.value"
-                                        :label="item.label"
-                                        :value="item.value"
-                                    />
-                                </el-select>
-                            </el-form-item>
-                            <el-form-item label="地区" prop="areaId">
-                                <AreaSelect
-                                    v-model="editForm.areaId"
-                                    :include-all-node="false"
-                                    placeholder="请选择地区"
-                                />
-                            </el-form-item>
-                            <el-form-item label="咨询项目" prop="consultProjectId">
-                                <ProductTypeSelect
-                                    v-model="editForm.consultProjectId"
-                                    placeholder="请选择"
-                                />
                             </el-form-item>
                             <el-form-item label="标签">
                                 <el-select
@@ -505,7 +499,7 @@
                             </el-col>
                             <el-col :span="12">
                                 <el-form-item v-if="consultForm.consultType === 2" label="咨询项目">
-                                    <ProductTypeSelect
+                                    <ProductCategorySelect
                                         v-model="consultForm.projectId"
                                         placeholder="请选择咨询项目"
                                         @update:model-value="handleConsultProjectChange"
@@ -686,9 +680,9 @@ import type * as CampusApi from '@/api/system/campus'
 import { DICT_TYPE, getDictLabel, getIntDictOptions } from '@/utils/dict'
 import { resolveTimestamp } from '@/utils/formatTime'
 import { getAftersalesStatusLabel } from '@/views/aftersales/config'
-import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
 import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
+import ClueIntentLevel from '@/components/ClueIntentLevel'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
@@ -729,7 +723,6 @@ const recordTab = ref('appointments')
 const productPickerVisible = ref(false)
 
 const educationOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_EDUCATION)
-const intentLevelOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_INTENT_LEVEL)
 const consultResultOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_CONSULT_RESULT)
 const consultTypeOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_CONSULT_TYPE)
 
@@ -826,9 +819,7 @@ const consultRules = reactive({
         {
             validator: (_rule: any, value: string | undefined, callback: any) => {
                 if (consultForm.consultType === 2 && !String(value || '').trim()) {
-                    callback(
-                        new Error('请输入预约备注')
-                    )
+                    callback(new Error('请输入预约备注'))
                     return
                 }
                 callback()
@@ -932,20 +923,21 @@ const parsedTrackList = computed(() =>
 const basicInfoItems = computed(() => [
     { label: '客户ID', value: props.clue.customerId || '--' },
     { label: '手机号', value: props.clue.mobile || '--' },
+    { label: '姓名', value: props.clue.name || '--' },
+    { label: '来源', value: props.clue.clueSourceName || '--' },
+    { label: '地区', value: regionText.value },
+    { label: '咨询项目', value: props.clue.consultProjectName || '--' },
     { label: '手机号2', value: props.clue.mobile2 || '--' },
-    { label: '报名次数', value: props.clue.orderCount ?? '--' },
     { label: '意向度', value: props.clue.intentLevelName || '--' },
+    { label: '报名次数', value: props.clue.orderCount ?? '--' },
     { label: '微信号', value: props.clue.wechat || '--' },
     { label: '微信号2', value: props.clue.wechat2 || '--' },
     { label: 'QQ', value: props.clue.qq || '--' },
     { label: '证件类型', value: props.clue.certificateType || '--' },
     { label: '证件号码', value: props.clue.idCardNo || '--' },
-    { label: '姓名', value: props.clue.name || '--' },
     { label: '性别', value: props.clue.genderName || '--' },
     { label: '学历', value: props.clue.educationName || '--' },
-    { label: '来源', value: props.clue.clueSourceName || '--' },
-    { label: '地区', value: regionText.value },
-    { label: '咨询项目', value: props.clue.consultProjectName || '--' },
+
     { label: '标签', value: customerTagText.value },
     { label: '投诉标签', value: complaintTagText.value },
     { label: '咨询备注', value: props.clue.remark || '--' }

@@ -10,7 +10,9 @@
                     @click="assignDialogVisible = true"
                     >批量分配</BaseButton
                 >
-                <BaseButton :disabled="selectionList.length === 0" @click="silentDialogVisible = true"
+                <BaseButton
+                    :disabled="selectionList.length === 0"
+                    @click="silentDialogVisible = true"
                     >批量静默</BaseButton
                 >
                 <BaseButton :disabled="selectionList.length !== 2" plain @click="openMergeDialog"
@@ -98,7 +100,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -230,10 +232,13 @@ const {
     tableMethods,
     register: tableRegister
 } = useTable<ClueApi.ClueVO>({
-    getListApi: async (params) => await ClueApi.getAllocationCluePage(params as ClueApi.ClueAllocationPageReqVO)
+    getListApi: async (params) =>
+        await ClueApi.getAllocationCluePage(params as ClueApi.ClueAllocationPageReqVO)
 })
 
-const selectedUser = computed(() => userOptions.value.find((item) => item.value === assignForm.ownerId))
+const selectedUser = computed(() =>
+    userOptions.value.find((item) => item.value === assignForm.ownerId)
+)
 const selectedDeptName = computed(() => {
     const dept = deptOptions.value.find((item) => item.id === selectedUser.value?.deptId)
     return dept?.name || '--'
@@ -253,7 +258,15 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'tagNames',
         label: '标签',
         minWidth: '150px',
-        slots: { default: (data) => <span>{(data.row.tagNames as string[])?.length ? (data.row.tagNames as string[]).join('、') : '-'}</span> }
+        slots: {
+            default: (data) => (
+                <span>
+                    {(data.row.tagNames as string[])?.length
+                        ? (data.row.tagNames as string[]).join('、')
+                        : '-'}
+                </span>
+            )
+        }
     },
     { field: 'intentLevelName', label: '意向度', width: '90px' },
     { field: 'todayCallCount', label: '当日外呼', width: '100px' },
@@ -264,7 +277,10 @@ const tableColumns = computed<TableColumn[]>(() => [
 ])
 
 const loadOptions = async () => {
-    const [users, depts] = await Promise.all([UserApi.getSimpleUserList(), DeptApi.getSimpleDeptList()])
+    const [users, depts] = await Promise.all([
+        UserApi.getSimpleUserList(),
+        DeptApi.getSimpleDeptList()
+    ])
     userOptions.value = (users || []).map((item) => ({
         label: item.nickname || item.username,
         value: item.id,
@@ -279,6 +295,13 @@ const loadOptions = async () => {
 
 const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
     selectionList.value = rows || []
+}
+
+const resetTableSelection = async () => {
+    selectionList.value = []
+    await tableMethods.clearSelection()
+    await nextTick()
+    await tableMethods.clearSelection()
 }
 
 const setSearchParams = (params: Record<string, any>) => {
@@ -314,9 +337,9 @@ const handleBatchAssign = async () => {
     message.success('批量分配成功')
     assignDialogVisible.value = false
     assignForm.ownerId = undefined
-    selectionList.value = []
-    await tableMethods.clearSelection()
+    await resetTableSelection()
     await tableMethods.getList()
+    await resetTableSelection()
 }
 
 const handleBatchSilent = async () => {
@@ -333,9 +356,9 @@ const handleBatchSilent = async () => {
     message.success('批量静默成功')
     silentDialogVisible.value = false
     Object.assign(silentForm, { silentReason: '', silentDays: 7, remark: '' })
-    selectionList.value = []
-    await tableMethods.clearSelection()
+    await resetTableSelection()
     await tableMethods.getList()
+    await resetTableSelection()
 }
 
 const handleMerge = async ({
@@ -361,9 +384,9 @@ const handleMerge = async ({
     })
     message.success('线索合并成功')
     mergeDialogVisible.value = false
-    selectionList.value = []
-    await tableMethods.clearSelection()
+    await resetTableSelection()
     await tableMethods.getList()
+    await resetTableSelection()
 }
 
 onMounted(async () => {

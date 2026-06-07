@@ -166,13 +166,14 @@ const getClue = async () => {
     if (!clueId.value) return
     loading.value = true
     try {
-        const [clueResp, weworkResp, basicInfoResp, appointmentsResp, tracksResp] = await Promise.all([
-            ClueApi.getClue(clueId.value),
-            CustomerDetailApi.getCustomerWeworkInfo(clueId.value),
-            CustomerDetailApi.getCustomerBasicInfo(clueId.value),
-            CustomerDetailApi.getCustomerAppointments(clueId.value),
-            CustomerDetailApi.getCustomerTracks(clueId.value)
-        ])
+        const [clueResp, weworkResp, basicInfoResp, appointmentsResp, tracksResp] =
+            await Promise.all([
+                ClueApi.getClue(clueId.value),
+                CustomerDetailApi.getCustomerWeworkInfo(clueId.value),
+                CustomerDetailApi.getCustomerBasicInfo(clueId.value),
+                CustomerDetailApi.getCustomerAppointments(clueId.value),
+                CustomerDetailApi.getCustomerTracks(clueId.value)
+            ])
         clue.value = clueResp
         weworkContacts.value = weworkResp?.contacts || []
         customerBasicInfo.value = basicInfoResp

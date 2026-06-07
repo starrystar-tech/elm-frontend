@@ -185,54 +185,87 @@ export default defineComponent({
                 ) : undefined}
                 <div class="h-full flex items-center">
                     <div class="outbound-toolbar lt-lg:hidden">
-                        <button
-                            type="button"
-                            class={[
-                                'outbound-toolbar__status',
-                                outboundSignedIn.value ? 'is-signed-in' : 'is-signed-out'
-                            ]}
-                            onClick={toggleOutboundStatus}
-                            disabled={outboundStatusLoading.value}
-                        >
-                            <span class="outbound-toolbar__status-dot"></span>
-                            <span class="outbound-toolbar__status-text">
-                                {outboundStatusLabel.value}
-                            </span>
-                            <span class="outbound-toolbar__status-action">
-                                {outboundStatusLoading.value
-                                    ? '...'
-                                    : outboundStatusActionLabel.value}
-                            </span>
-                        </button>
                         <ToolHeaderDialer
                             ref={dialerRef}
                             v-model={dialerMobile.value}
                             outboundEnabled={outboundSignedIn.value}
                             onKeypadInput={syncDialerCursor}
                         >
-                            <ElInput
-                                v-model={dialerMobile.value}
-                                ref={dialerInputRef}
-                                class="outbound-toolbar__input"
-                                placeholder="输入手机号"
-                                clearable
-                                maxlength={11}
-                                onKeydown={(event: KeyboardEvent) => {
-                                    if (event.key === 'Enter') {
-                                        dialerRef.value?.handleDial()
-                                    }
+                            <div
+                                class="outbound-toolbar__reference"
+                                onMousedown={(event: MouseEvent) => {
+                                    event.stopPropagation()
+                                    dialerRef.value?.holdOpen?.()
                                 }}
-                            />
+                            >
+                                <button
+                                    type="button"
+                                    class={[
+                                        'outbound-toolbar__status',
+                                        outboundSignedIn.value ? 'is-signed-in' : 'is-signed-out'
+                                    ]}
+                                    onMousedown={(event: MouseEvent) => {
+                                        event.stopPropagation()
+                                        dialerRef.value?.holdOpen?.()
+                                    }}
+                                    onClick={(event: MouseEvent) => {
+                                        event.stopPropagation()
+                                        dialerRef.value?.openDialer?.()
+                                        toggleOutboundStatus()
+                                    }}
+                                    disabled={outboundStatusLoading.value}
+                                >
+                                    <span class="outbound-toolbar__status-dot"></span>
+                                    <span class="outbound-toolbar__status-text">
+                                        {outboundStatusLabel.value}
+                                    </span>
+                                    <span class="outbound-toolbar__status-action">
+                                        {outboundStatusLoading.value
+                                            ? '...'
+                                            : outboundStatusActionLabel.value}
+                                    </span>
+                                </button>
+                                <ElInput
+                                    v-model={dialerMobile.value}
+                                    ref={dialerInputRef}
+                                    class="outbound-toolbar__input"
+                                    placeholder="输入手机号"
+                                    clearable
+                                    maxlength={11}
+                                    onMousedown={(event: MouseEvent) => {
+                                        event.stopPropagation()
+                                        dialerRef.value?.holdOpen?.()
+                                    }}
+                                    onFocus={() => {
+                                        dialerRef.value?.holdOpen?.(800)
+                                        dialerRef.value?.openDialer?.()
+                                    }}
+                                    onKeydown={(event: KeyboardEvent) => {
+                                        if (event.key === 'Enter') {
+                                            dialerRef.value?.handleDial()
+                                        }
+                                    }}
+                                />
+                                <ElButton
+                                    type="primary"
+                                    class="outbound-toolbar__button"
+                                    disabled={!outboundSignedIn.value}
+                                    loading={dialerRef.value?.dialing}
+                                    onMousedown={(event: MouseEvent) => {
+                                        event.stopPropagation()
+                                        dialerRef.value?.holdOpen?.(1200)
+                                    }}
+                                    onClick={(event: MouseEvent) => {
+                                        event.stopPropagation()
+                                        dialerRef.value?.holdOpen?.(1200)
+                                        dialerRef.value?.openDialer?.()
+                                        dialerRef.value?.handleDial()
+                                    }}
+                                >
+                                    呼叫
+                                </ElButton>
+                            </div>
                         </ToolHeaderDialer>
-                        <ElButton
-                            type="primary"
-                            class="outbound-toolbar__button"
-                            disabled={!outboundSignedIn.value}
-                            loading={dialerRef.value?.dialing}
-                            onClick={() => dialerRef.value?.handleDial()}
-                        >
-                            呼叫
-                        </ElButton>
                     </div>
                     {/* {hasTenantVisitPermission.value ? <TenantVisit /> : undefined} */}
                     {screenfull.value ? (
@@ -296,7 +329,7 @@ $prefix-cls: #{$namespace}-tool-header;
 .outbound-toolbar {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0;
     margin-right: 12px;
     padding: 6px;
     border-radius: 999px;
@@ -306,6 +339,12 @@ $prefix-cls: #{$namespace}-tool-header;
         0 10px 24px rgba(15, 23, 42, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(14px);
+
+    &__reference {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
 
     &__status {
         display: inline-flex;

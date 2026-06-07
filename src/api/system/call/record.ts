@@ -24,6 +24,10 @@ export interface OutboundCallRecordVO {
   durationSeconds?: number
   recordingFileName?: string
   recordingFileUrl?: string
+  recordingSyncStatus?: string
+  recordingSyncStatusDesc?: string
+  recordingSyncMessage?: string
+  recordingSyncTime?: string
   createTime: string
 }
 

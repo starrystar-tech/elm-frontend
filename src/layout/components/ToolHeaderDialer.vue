@@ -1,58 +1,49 @@
 <template>
-    <ElPopover
-        :width="360"
-        placement="bottom"
-        trigger="focus"
-        popper-class="tool-header-dialer-popper"
-    >
-        <template #reference>
-            <div class="tool-header-dialer__reference">
-                <slot></slot>
-            </div>
-        </template>
-
-        <div class="dialer-panel">
-            <div class="dialer-status">
-                <span class="dialer-status__dot" :class="`is-${statusType}`"></span>
-                <span class="dialer-status__text">{{ statusText }}</span>
-                <strong v-if="showDuration" class="dialer-status__timer">
-                    {{ formattedCallDuration }}
-                </strong>
-            </div>
-            <div class="dialer-keypad">
-                <button
-                    v-for="key in keypadKeys"
-                    :key="key"
-                    type="button"
-                    class="dialer-key"
-                    @click="appendKey(key)"
-                >
-                    {{ key }}
-                </button>
-            </div>
-
-            <div class="dialer-actions">
-                <!-- <ElButton plain type="text" @click="handleDelete">删除</ElButton> -->
-                <!-- <ElButton plain type="text" @click="handleClear">清空</ElButton> -->
-                <ElButton type="danger" plain @click="handleHangup">挂断</ElButton>
-                <ElButton
-                    type="primary"
-                    :loading="dialing"
-                    :disabled="!outboundEnabled"
-                    @click="handleDial"
-                >
-                    呼叫
-                </ElButton>
-            </div>
-
-            <div v-if="statusMessage" class="dialer-message">{{ statusMessage }}</div>
+    <div ref="rootRef" class="tool-header-dialer">
+        <div ref="referenceRef" class="tool-header-dialer__reference" @click="openDialer">
+            <slot></slot>
         </div>
-    </ElPopover>
+
+        <Teleport to="body">
+            <div
+                v-show="popoverVisible"
+                ref="panelRef"
+                class="dialer-panel"
+                :style="panelStyle"
+            >
+                <div class="dialer-status">
+                    <span class="dialer-status__dot" :class="`is-${statusType}`"></span>
+                    <span class="dialer-status__text">{{ statusText }}</span>
+                    <strong v-if="showDuration" class="dialer-status__timer">
+                        {{ formattedCallDuration }}
+                    </strong>
+                </div>
+                <div class="dialer-keypad">
+                    <button
+                        v-for="key in keypadKeys"
+                        :key="key"
+                        type="button"
+                        class="dialer-key"
+                        @click="appendKey(key)"
+                    >
+                        {{ key }}
+                    </button>
+                </div>
+
+                <div class="dialer-actions">
+                    <ElButton plain @click="handleClear">清空</ElButton>
+                    <ElButton type="danger" plain @click="handleHangup">挂断</ElButton>
+                </div>
+
+                <div v-if="statusMessage" class="dialer-message">{{ statusMessage }}</div>
+            </div>
+        </Teleport>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
-import { ElButton, ElPopover } from 'element-plus'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { ElButton } from 'element-plus'
 import { dialOutboundCall } from '@/api/system/call'
 import { getOutboundCallRecordPage, type OutboundCallRecordVO } from '@/api/system/call/record'
 
@@ -80,6 +71,13 @@ const message = useMessage()
 const dialing = ref(false)
 const status = ref<DialerStatus>('idle')
 const statusMessage = ref('')
+const popoverVisible = ref(false)
+const rootRef = ref<HTMLElement>()
+const referenceRef = ref<HTMLElement>()
+const panelRef = ref<HTMLElement>()
+const panelTop = ref(0)
+const panelLeft = ref(0)
+const keepOpenUntil = ref(0)
 const outboundRecordId = ref<number>()
 const currentDurationSeconds = ref(0)
 const callAnsweredAt = ref<number>()
@@ -109,6 +107,48 @@ const mobile = computed({
     get: () => props.modelValue || '',
     set: (value: string) => emit('update:modelValue', value)
 })
+const panelStyle = computed(() => ({
+    top: `${panelTop.value}px`,
+    left: `${panelLeft.value}px`
+}))
+
+const updatePanelPosition = async () => {
+    await nextTick()
+    if (!referenceRef.value) {
+        return
+    }
+    const rect = referenceRef.value.getBoundingClientRect()
+    const panelWidth = panelRef.value?.offsetWidth || 360
+    const viewportWidth = window.innerWidth
+    const maxLeft = Math.max(12, viewportWidth - panelWidth - 12)
+    panelTop.value = rect.bottom + 10
+    panelLeft.value = Math.min(Math.max(12, rect.right - panelWidth), maxLeft)
+}
+
+const openDialer = async () => {
+    keepOpenUntil.value = Date.now() + 300
+    popoverVisible.value = true
+    await updatePanelPosition()
+}
+
+const holdOpen = (duration = 500) => {
+    keepOpenUntil.value = Date.now() + duration
+    popoverVisible.value = true
+}
+
+const handleDocumentPointerDown = (event: MouseEvent) => {
+    const target = event.target as Node | null
+    if (!target || !popoverVisible.value) {
+        return
+    }
+    if (Date.now() < keepOpenUntil.value) {
+        return
+    }
+    if (rootRef.value?.contains(target) || panelRef.value?.contains(target)) {
+        return
+    }
+    popoverVisible.value = false
+}
 
 const stopDurationTimer = () => {
     if (durationTimer) {
@@ -197,7 +237,9 @@ const fetchLatestOutboundRecord = async () => {
     } as any)
     const records = page?.list || []
     const matchedRecord = records.find((item: OutboundCallRecordVO) =>
-        outboundRecordId.value ? item.id === outboundRecordId.value : item.calleeMobile === mobile.value.trim()
+        outboundRecordId.value
+            ? item.id === outboundRecordId.value
+            : item.calleeMobile === mobile.value.trim()
     )
     syncDialerStatusFromRecord(matchedRecord)
 }
@@ -217,16 +259,15 @@ const appendKey = (key: string) => {
     if (mobile.value.length >= 11 && /^\d$/.test(key)) {
         return
     }
+    popoverVisible.value = true
+    updatePanelPosition()
     mobile.value += key
     emit('keypadInput')
 }
 
-const handleDelete = () => {
-    mobile.value = mobile.value.slice(0, -1)
-    emit('keypadInput')
-}
-
 const handleClear = () => {
+    popoverVisible.value = true
+    updatePanelPosition()
     mobile.value = ''
     emit('keypadInput')
     if (status.value === 'failed' || status.value === 'hungup' || status.value === 'inCall') {
@@ -237,6 +278,7 @@ const handleClear = () => {
 }
 
 const handleHangup = () => {
+    popoverVisible.value = true
     dialing.value = false
     stopRecordPolling()
     stopDurationTimer()
@@ -247,6 +289,7 @@ const handleHangup = () => {
 }
 
 const handleDial = async () => {
+    popoverVisible.value = true
     if (!props.outboundEnabled) {
         status.value = 'idle'
         statusMessage.value = '当前已签出，请先签入后再发起外呼'
@@ -282,6 +325,8 @@ const handleDial = async () => {
 }
 
 defineExpose({
+    openDialer,
+    holdOpen,
     handleDial,
     handleHangup,
     dialing,
@@ -289,21 +334,45 @@ defineExpose({
     statusMessage
 })
 
+onMounted(() => {
+    document.addEventListener('mousedown', handleDocumentPointerDown)
+    window.addEventListener('resize', updatePanelPosition)
+    window.addEventListener('scroll', updatePanelPosition, true)
+})
+
 onBeforeUnmount(() => {
+    document.removeEventListener('mousedown', handleDocumentPointerDown)
+    window.removeEventListener('resize', updatePanelPosition)
+    window.removeEventListener('scroll', updatePanelPosition, true)
     stopRecordPolling()
     stopDurationTimer()
 })
 </script>
 
 <style lang="scss" scoped>
+.tool-header-dialer {
+    position: relative;
+}
+
 .tool-header-dialer__reference {
     width: 100%;
 }
 
 .dialer-panel {
+    position: fixed;
+    z-index: 4000;
+    width: 360px;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding: 14px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow:
+        0 18px 48px rgba(15, 23, 42, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(18px);
 }
 
 .dialer-status {
@@ -331,6 +400,11 @@ onBeforeUnmount(() => {
             box-shadow: 0 0 0 4px rgba(103, 194, 58, 0.14);
         }
 
+        &.is-inCall {
+            background: #409eff;
+            box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.14);
+        }
+
         &.is-failed {
             background: #f56c6c;
             box-shadow: 0 0 0 4px rgba(245, 108, 108, 0.14);
@@ -353,10 +427,6 @@ onBeforeUnmount(() => {
         color: var(--el-color-primary);
         font-variant-numeric: tabular-nums;
     }
-}
-
-.dialer-display {
-    width: 100%;
 }
 
 .dialer-keypad {

@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -128,6 +128,7 @@ const searchSchema = reactive<FormSchema[]>([
         field: 'minSilentCount',
         label: '静默次数起',
         component: 'InputNumber',
+        value: null,
         componentProps: {
             min: 0,
             controlsPosition: 'right',
@@ -138,6 +139,7 @@ const searchSchema = reactive<FormSchema[]>([
         field: 'maxSilentCount',
         label: '静默次数止',
         component: 'InputNumber',
+        value: null,
         componentProps: {
             min: 0,
             controlsPosition: 'right',
@@ -171,6 +173,13 @@ const selectedDeptName = computed(() => {
     const dept = deptOptions.value.find((item) => item.id === selectedUser.value?.deptId)
     return dept?.name || '--'
 })
+
+const resetTableSelection = async () => {
+    selectionList.value = []
+    await tableMethods.clearSelection()
+    await nextTick()
+    await tableMethods.clearSelection()
+}
 
 const tableColumns = computed<TableColumn[]>(() => [
     { field: 'mobile', label: '联系电话', width: '140px' },
@@ -263,9 +272,9 @@ const handleBatchAssign = async () => {
     message.success('批量分配成功')
     assignDialogVisible.value = false
     assignForm.ownerId = undefined
-    selectionList.value = []
-    await tableMethods.clearSelection()
+    await resetTableSelection()
     await tableMethods.getList()
+    await resetTableSelection()
 }
 
 const handleBackToPublicSea = async () => {
@@ -274,9 +283,9 @@ const handleBackToPublicSea = async () => {
         clueIds: selectionList.value.map((item) => Number(item.id))
     })
     message.success('回公海成功')
-    selectionList.value = []
-    await tableMethods.clearSelection()
+    await resetTableSelection()
     await tableMethods.getList()
+    await resetTableSelection()
 }
 
 onMounted(async () => {

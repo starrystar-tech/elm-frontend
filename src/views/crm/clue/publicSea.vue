@@ -14,7 +14,14 @@
                 expand-field="enterPublicSeaTimeRange"
                 @reset="setSearchParams"
                 @search="setSearchParams"
-            />
+            >
+                <template #consultProjectId="formModel">
+                    <ProductCategorySelect
+                        v-model="formModel.consultProjectId"
+                        placeholder="请选择咨询项目"
+                    />
+                </template>
+            </Search>
 
             <div class="flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
                 <div class="flex gap-8px flex-wrap">
@@ -85,12 +92,13 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
@@ -134,7 +142,6 @@ const selectionList = ref<ClueApi.PublicSeaPageRespVO[]>([])
 const areaOptions = ref<AreaOption[]>([])
 const userOptions = ref<UserOption[]>([])
 const deptOptions = ref<DeptVO[]>([])
-const projectOptions = ref<LabelValueOption[]>([])
 const clueSourceOptions = ref<LabelValueOption[]>([])
 const tagOptions = ref<LabelValueOption[]>([])
 const publicSeaCounts = reactive({
@@ -200,8 +207,6 @@ const searchSchema = reactive<FormSchema[]>([
         component: 'Select',
         componentProps: {
             clearable: true,
-            filterable: true,
-            options: [],
             style: { width: '220px' }
         }
     },
@@ -251,6 +256,7 @@ const searchSchema = reactive<FormSchema[]>([
         field: 'minEnterPublicSeaCount',
         label: '回流次数起',
         component: 'InputNumber',
+        value: null,
         componentProps: {
             min: 0,
             controlsPosition: 'right',
@@ -261,6 +267,7 @@ const searchSchema = reactive<FormSchema[]>([
         field: 'maxEnterPublicSeaCount',
         label: '回流次数止',
         component: 'InputNumber',
+        value: null,
         componentProps: {
             min: 0,
             controlsPosition: 'right',
@@ -392,7 +399,6 @@ const loadPageOptions = async () => {
         areaOptions,
         userOptions,
         deptOptions,
-        projectOptions,
         clueSourceOptions,
         tagOptions
     })
@@ -431,6 +437,13 @@ const handleDetailRefresh = async () => {
     await Promise.all([tableMethods.getList(), loadCounts(), loadClaimSummary()])
 }
 
+const resetTableSelection = async () => {
+    selectionList.value = []
+    await tableMethods.clearSelection()
+    await nextTick()
+    await tableMethods.clearSelection()
+}
+
 const handleBatchClaim = async (ids?: number[]) => {
     const clueIds = ids || selectionList.value.map((item) => Number(item.id))
     if (!clueIds.length) {
@@ -443,10 +456,12 @@ const handleBatchClaim = async (ids?: number[]) => {
     })
     message.success('领取成功')
     if (!ids) {
-        selectionList.value = []
-        await tableMethods.clearSelection()
+        await resetTableSelection()
     }
     await Promise.all([tableMethods.getList(), loadCounts(), loadClaimSummary()])
+    if (!ids) {
+        await resetTableSelection()
+    }
 }
 
 const handleBatchAssign = async () => {
@@ -468,9 +483,9 @@ const handleBatchAssign = async () => {
     message.success('批量分配成功')
     assignDialogVisible.value = false
     assignForm.ownerId = undefined
-    selectionList.value = []
-    await tableMethods.clearSelection()
+    await resetTableSelection()
     await Promise.all([tableMethods.getList(), loadCounts(), loadClaimSummary()])
+    await resetTableSelection()
 }
 
 onMounted(async () => {

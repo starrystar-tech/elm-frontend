@@ -25,7 +25,6 @@
             :pagination="{ total: tableObject.total }"
             row-key="id"
             selection
-            reserve-selection
             @register="registerTable"
             @selection-change="handleSelectionChange"
         />
@@ -35,7 +34,7 @@
 </template>
 
 <script lang="tsx" setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import { ElLink } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import * as ClueApi from '@/api/crm/clue'
@@ -233,6 +232,8 @@ const handleBatchHeadteacherSuccess = async () => {
     selectionList.value = []
     tableRef.value?.clearSelection?.()
     await tableMethods.getList()
+    await nextTick()
+    tableRef.value?.clearSelection?.()
 }
 
 const tableColumns = computed<TableColumn[]>(() => [

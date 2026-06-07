@@ -15,6 +15,7 @@
 
 <script setup lang="tsx">
 import { onMounted, reactive } from 'vue'
+import { ElTooltip } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -136,6 +137,25 @@ const tableColumns = reactive<TableColumn[]>([
                             {formatDuration(data.row.durationSeconds)}
                         </span>
                     </div>
+                )
+            }
+        }
+    },
+    {
+        field: 'recordingSyncStatusDesc',
+        label: '语音同步',
+        minWidth: '180px',
+        slots: {
+            default: (data) => {
+                const statusText = data.row.recordingSyncStatusDesc || '-'
+                const message = data.row.recordingSyncMessage
+                if (!message) {
+                    return <span>{statusText}</span>
+                }
+                return (
+                    <ElTooltip content={message} placement="top">
+                        <span>{statusText}</span>
+                    </ElTooltip>
                 )
             }
         }

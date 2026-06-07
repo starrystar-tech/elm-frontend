@@ -37,7 +37,7 @@ import App from './App.vue'
 
 import './permission'
 
-import '@/plugins/tongji' // 百度统计
+// import '@/plugins/tongji' // 百度统计
 import Logger from '@/utils/Logger'
 
 import VueDOMPurifyHTML from 'vue-dompurify-html' // 解决v-html 的安全隐患
@@ -54,29 +54,29 @@ setCssVar('--top-header-hover-color', 'rgba(255, 255, 255, 0.1)')
 
 // 创建实例
 const setupAll = async () => {
-  const app = createApp(App)
+    const app = createApp(App)
 
-  await setupI18n(app)
+    await setupI18n(app)
 
-  setupStore(app)
+    setupStore(app)
 
-  setupGlobCom(app)
+    setupGlobCom(app)
 
-  setupElementPlus(app)
+    setupElementPlus(app)
 
-  setupFormCreate(app)
+    setupFormCreate(app)
 
-  setupRouter(app)
+    setupRouter(app)
 
-  // directives 指令
-  setupAuth(app)
-  setupMountedFocus(app)
+    // directives 指令
+    setupAuth(app)
+    setupMountedFocus(app)
 
-  await router.isReady()
+    await router.isReady()
 
-  app.use(VueDOMPurifyHTML)
+    app.use(VueDOMPurifyHTML)
 
-  app.mount('#app')
+    app.mount('#app')
 }
 
 setupAll()

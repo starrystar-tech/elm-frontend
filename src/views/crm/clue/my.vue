@@ -14,7 +14,14 @@
                 expand-field="createTimeRange"
                 @reset="setSearchParams"
                 @search="setSearchParams"
-            />
+            >
+                <template #consultProjectId="formModel">
+                    <ProductCategorySelect
+                        v-model="formModel.consultProjectId"
+                        placeholder="请选择咨询项目"
+                    />
+                </template>
+            </Search>
             <div class="action-btn-wrap">
                 <BaseButton
                     type="primary"
@@ -64,12 +71,13 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
@@ -112,7 +120,6 @@ const activeTab = ref('FIRST')
 const selectionList = ref<ClueApi.MyCluePageRespVO[]>([])
 const areaOptions = ref<AreaOption[]>([])
 const userOptions = ref<UserOption[]>([])
-const projectOptions = ref<LabelValueOption[]>([])
 const clueSourceOptions = ref<LabelValueOption[]>([])
 const tagOptions = ref<LabelValueOption[]>([])
 const counts = reactive({
@@ -175,8 +182,6 @@ const searchSchema = reactive<FormSchema[]>([
         component: 'Select',
         componentProps: {
             clearable: true,
-            filterable: true,
-            options: [],
             style: { width: '220px' }
         }
     },
@@ -226,6 +231,7 @@ const searchSchema = reactive<FormSchema[]>([
         field: 'minCallCount',
         label: '外呼次数起',
         component: 'InputNumber',
+        value: null,
         componentProps: {
             min: 0,
             controlsPosition: 'right',
@@ -236,6 +242,7 @@ const searchSchema = reactive<FormSchema[]>([
         field: 'maxCallCount',
         label: '外呼次数止',
         component: 'InputNumber',
+        value: null,
         componentProps: {
             min: 0,
             controlsPosition: 'right',
@@ -399,6 +406,13 @@ const handleDetailRefresh = async () => {
     await Promise.all([tableMethods.getList(), loadCounts()])
 }
 
+const resetTableSelection = async () => {
+    selectionList.value = []
+    await tableMethods.clearSelection()
+    await nextTick()
+    await tableMethods.clearSelection()
+}
+
 const handleRelease = async (ids?: number[]) => {
     const clueIds = ids || selectionList.value.map((item) => Number(item.id))
     if (!clueIds.length) {
@@ -413,10 +427,12 @@ const handleRelease = async (ids?: number[]) => {
     releaseDialogVisible.value = false
     releaseForm.reason = ''
     if (!ids) {
-        selectionList.value = []
-        await tableMethods.clearSelection()
+        await resetTableSelection()
     }
     await Promise.all([tableMethods.getList(), loadCounts()])
+    if (!ids) {
+        await resetTableSelection()
+    }
 }
 
 onMounted(async () => {
@@ -425,7 +441,6 @@ onMounted(async () => {
             schema: searchSchema,
             areaOptions,
             userOptions,
-            projectOptions,
             clueSourceOptions,
             tagOptions
         }),

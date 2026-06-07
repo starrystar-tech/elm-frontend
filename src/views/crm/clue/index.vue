@@ -5,7 +5,14 @@
             expand-field="wechat"
             @reset="setSearchParams"
             @search="setSearchParams"
-        />
+        >
+            <template #consultProjectId="formModel">
+                <ProductCategorySelect
+                    v-model="formModel.consultProjectId"
+                    placeholder="请选择咨询项目"
+                />
+            </template>
+        </Search>
 
         <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
             <div class="flex gap-4px flex-wrap">
@@ -219,7 +226,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import type { UploadUserFile } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import { useTable } from '@/hooks/web/useTable'
@@ -227,12 +234,13 @@ import { Table, type TableColumn } from '@/components/Table'
 import { Search } from '@/components/Search'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import { getClueIntentLevelOptions } from '@/components/ClueIntentLevel'
+import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
 import * as UserApi from '@/api/system/user'
 import * as AreaApi from '@/api/system/area'
-import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 import * as ComplaintTagApi from '@/api/system/complaintTag'
@@ -309,7 +317,6 @@ const complaintTagForm = reactive({ complaintTagIds: [] as number[] })
 
 const areaOptions = ref<AreaOption[]>([])
 const userOptions = ref<{ label: string; value: number }[]>([])
-const projectOptions = ref<{ label: string; value: number }[]>([])
 const clueSourceOptions = ref<{ label: string; value: number }[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
 const complaintTagOptions = ref<{ label: string; value: number }[]>([])
@@ -323,12 +330,7 @@ const statusOptions = [
     { label: '复购公海', value: 5 },
     { label: '静默', value: 6 }
 ]
-const intentLevelOptions = [
-    { label: '未知', value: 0 },
-    { label: '低', value: 1 },
-    { label: '中', value: 2 },
-    { label: '高', value: 3 }
-]
+const intentLevelOptions = getClueIntentLevelOptions()
 const assignModeOptions = [
     { label: '自动', value: 1 },
     { label: '手动', value: 2 }
@@ -422,10 +424,7 @@ const searchSchema = reactive<FormSchema[]>([
         label: '咨询项目',
         component: 'Select',
         componentProps: {
-            placeholder: '请选择咨询项目',
             clearable: true,
-            filterable: true,
-            options: [],
             style: { width: '220px' }
         }
     },
@@ -524,12 +523,14 @@ const searchSchema = reactive<FormSchema[]>([
     {
         field: 'minOrderCount',
         label: '报名次数起',
+        value: null,
         component: 'InputNumber',
         componentProps: { min: 0, controlsPosition: 'right', style: { width: '220px' } }
     },
     {
         field: 'maxOrderCount',
         label: '报名次数止',
+        value: null,
         component: 'InputNumber',
         componentProps: { min: 0, controlsPosition: 'right', style: { width: '220px' } }
     },
@@ -728,10 +729,9 @@ const loadComplaintTagOptions = async () => {
 }
 
 const loadOptions = async () => {
-    const [areas, users, projects, sources, tagGroups, complaintTags] = await Promise.all([
+    const [areas, users, sources, tagGroups, complaintTags] = await Promise.all([
         AreaApi.getAreaTree(),
         UserApi.getSimpleUserList(),
-        ProductCategoryApi.getProductCategorySimpleList(),
         ClueSourceApi.getEnabledClueSourceList(),
         TagGroupApi.getTagGroupList(),
         ComplaintTagApi.getComplaintTagSimpleList()
@@ -741,10 +741,6 @@ const loadOptions = async () => {
     userOptions.value = (users || []).map((item) => ({
         label: item.nickname || item.username,
         value: item.id
-    }))
-    projectOptions.value = (projects || []).map((item) => ({
-        label: item.name,
-        value: Number(item.id)
     }))
     clueSourceOptions.value = (sources || []).map((item) => ({
         label: item.name,
@@ -763,7 +759,6 @@ const loadOptions = async () => {
 
     updateSchemaOptions('areaId', areaOptions.value)
     updateSchemaOptions('currentOwnerId', userOptions.value)
-    updateSchemaOptions('consultProjectId', projectOptions.value)
     updateSchemaOptions('clueSourceId', clueSourceOptions.value)
     updateSchemaOptions('tagId', tagOptions.value)
     updateSchemaOptions('complaintTagId', complaintTagOptions.value)
@@ -808,6 +803,13 @@ const openForm = (type: 'create' | 'update', id?: number) => {
     formRef.value?.open(type, id)
 }
 
+const resetTableSelection = async () => {
+    selectionList.value = []
+    await tableMethods.clearSelection()
+    await nextTick()
+    await tableMethods.clearSelection()
+}
+
 const handleBatchUpdateAssignMode = async () => {
     await ClueApi.batchUpdateClueAssignMode({
         clueIds: selectionList.value.map((item) => Number(item.id)),
@@ -815,9 +817,9 @@ const handleBatchUpdateAssignMode = async () => {
     })
     message.success('修改分配方式成功')
     assignModeDialogVisible.value = false
-    selectionList.value = []
-    await tableMethods.clearSelection()
+    await resetTableSelection()
     await tableMethods.getList()
+    await resetTableSelection()
 }
 
 const handleBatchSilent = async () => {
@@ -836,9 +838,9 @@ const handleBatchSilent = async () => {
     silentForm.silentReason = ''
     silentForm.silentDays = 7
     silentForm.remark = ''
-    selectionList.value = []
-    await tableMethods.clearSelection()
+    await resetTableSelection()
     await tableMethods.getList()
+    await resetTableSelection()
 }
 
 const handleBatchTag = async () => {
@@ -853,9 +855,9 @@ const handleBatchTag = async () => {
     message.success('批量打标签成功')
     tagDialogVisible.value = false
     tagForm.tagIds = []
-    selectionList.value = []
-    await tableMethods.clearSelection()
+    await resetTableSelection()
     await tableMethods.getList()
+    await resetTableSelection()
 }
 
 const openSmsDialog = () => {
@@ -863,9 +865,9 @@ const openSmsDialog = () => {
 }
 
 const handleSmsSuccess = async () => {
-    selectionList.value = []
-    await tableMethods.clearSelection()
+    await resetTableSelection()
     await tableMethods.getList()
+    await resetTableSelection()
 }
 
 const openComplaintTagDialog = () => {
@@ -886,9 +888,9 @@ const handleBatchComplaintTag = async () => {
     message.success('批量打投诉标签成功')
     complaintTagDialogVisible.value = false
     complaintTagForm.complaintTagIds = []
-    selectionList.value = []
-    await tableMethods.clearSelection()
+    await resetTableSelection()
     await tableMethods.getList()
+    await resetTableSelection()
 }
 
 const openMergeDialog = () => {
@@ -925,9 +927,9 @@ const handleMerge = async ({
     })
     message.success('线索合并成功')
     mergeDialogVisible.value = false
-    selectionList.value = []
-    await tableMethods.clearSelection()
+    await resetTableSelection()
     await tableMethods.getList()
+    await resetTableSelection()
 }
 
 const handleImport = async () => {

@@ -14,14 +14,21 @@
                 expand-field="allocationTimeRange"
                 @reset="setSearchParams"
                 @search="setSearchParams"
-            />
+            >
+                <template #consultProjectId="formModel">
+                    <ProductCategorySelect
+                        v-model="formModel.consultProjectId"
+                        placeholder="请选择咨询项目"
+                    />
+                </template>
+            </Search>
 
             <div class="action-btn-wrap">
                 <div class="flex gap-8px flex-wrap">
                     <BaseButton
                         type="primary"
                         :disabled="selectionList.length === 0"
-                        @click="assignDialogVisible = true"
+                        @click="openAssignDialog()"
                     >
                         批量分配
                     </BaseButton>
@@ -76,8 +83,8 @@
             </el-form-item>
         </el-form>
         <template #footer>
-            <el-button @click="assignDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="handleAssign">确定</el-button>
+            <el-button @click="closeAssignDialog">取消</el-button>
+            <el-button type="primary" @click="handleAssign()">确定</el-button>
         </template>
     </Dialog>
 
@@ -103,7 +110,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -114,6 +121,7 @@ import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import * as ClueApi from '@/api/crm/clue'
 import type { DeptVO } from '@/api/system/dept'
+import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ExportTaskDialog from './components/ExportTaskDialog.vue'
 import {
@@ -156,7 +164,6 @@ const selectionList = ref<ClueApi.ClueManagementPageRespVO[]>([])
 const areaOptions = ref<AreaOption[]>([])
 const userOptions = ref<UserOption[]>([])
 const deptOptions = ref<DeptVO[]>([])
-const projectOptions = ref<LabelValueOption[]>([])
 const clueSourceOptions = ref<LabelValueOption[]>([])
 const tagOptions = ref<LabelValueOption[]>([])
 const counts = reactive({
@@ -168,6 +175,8 @@ const counts = reactive({
 })
 const assignDialogVisible = ref(false)
 const releaseDialogVisible = ref(false)
+const pendingAssignIds = ref<number[] | null>(null)
+const pendingAssignMode = ref<'single' | 'batch' | null>(null)
 const assignForm = reactive({
     ownerId: undefined as number | undefined
 })
@@ -225,8 +234,6 @@ const searchSchema = reactive<FormSchema[]>([
         component: 'Select',
         componentProps: {
             clearable: true,
-            filterable: true,
-            options: [],
             style: { width: '220px' }
         }
     },
@@ -344,7 +351,15 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'tagNames',
         label: '标签',
         minWidth: '150px',
-        slots: { default: (data) => <span>{(data.row.tagNames as string[])?.length ? (data.row.tagNames as string[]).join('、') : '-'}</span> }
+        slots: {
+            default: (data) => (
+                <span>
+                    {(data.row.tagNames as string[])?.length
+                        ? (data.row.tagNames as string[]).join('、')
+                        : '-'}
+                </span>
+            )
+        }
     },
     {
         field: 'complaintTagNames',
@@ -388,7 +403,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                     <BaseButton
                         link
                         type="primary"
-                        onClick={() => handleAssign([Number(data.row.id)])}
+                        onClick={() => openAssignDialog([Number(data.row.id)])}
                     >
                         分配
                     </BaseButton>
@@ -446,6 +461,41 @@ const openDetail = (id: number) => {
     detailRef.value?.open(id)
 }
 
+const openAssignDialog = async (ids?: number[]) => {
+    const tableSelectedIds = (
+        (await tableMethods.getSelections()) as ClueApi.ClueManagementPageRespVO[]
+    ).map((item) => Number(item.id))
+    const selectedIds =
+        ids ||
+        (tableSelectedIds.length
+            ? tableSelectedIds
+            : selectionList.value.map((item) => Number(item.id)))
+    if (!selectedIds.length) {
+        message.warning('请选择要分配的客户')
+        return
+    }
+    pendingAssignIds.value = selectedIds
+    pendingAssignMode.value = ids?.length ? 'single' : 'batch'
+    assignForm.ownerId = undefined
+    assignDialogVisible.value = true
+}
+
+const closeAssignDialog = () => {
+    assignDialogVisible.value = false
+    pendingAssignIds.value = null
+    pendingAssignMode.value = null
+    assignForm.ownerId = undefined
+}
+
+const resetTableSelection = async () => {
+    selectionList.value = []
+    pendingAssignIds.value = null
+    pendingAssignMode.value = null
+    await tableMethods.clearSelection()
+    await nextTick()
+    await tableMethods.clearSelection()
+}
+
 const handleDetailRefresh = async () => {
     await Promise.all([tableMethods.getList(), loadCounts()])
 }
@@ -468,7 +518,9 @@ const handleExportSuccess = () => {
 }
 
 const handleAssign = async (ids?: number[]) => {
-    const clueIds = ids || selectionList.value.map((item) => Number(item.id))
+    const dialogAssignIds = pendingAssignIds.value
+    const clueIds = ids || dialogAssignIds || selectionList.value.map((item) => Number(item.id))
+    const isBatchAssign = pendingAssignMode.value === 'batch'
     if (!clueIds.length) {
         message.warning('请选择要分配的客户')
         return
@@ -488,13 +540,14 @@ const handleAssign = async (ids?: number[]) => {
         departmentId: Number(user.deptId)
     })
     message.success('分配成功')
-    assignDialogVisible.value = false
-    assignForm.ownerId = undefined
-    if (!ids) {
-        selectionList.value = []
-        await tableMethods.clearSelection()
+    closeAssignDialog()
+    if (isBatchAssign) {
+        await resetTableSelection()
     }
     await Promise.all([tableMethods.getList(), loadCounts()])
+    if (isBatchAssign) {
+        await resetTableSelection()
+    }
 }
 
 const handleRelease = async (ids?: number[]) => {
@@ -511,10 +564,12 @@ const handleRelease = async (ids?: number[]) => {
     releaseDialogVisible.value = false
     releaseForm.reason = ''
     if (!ids) {
-        selectionList.value = []
-        await tableMethods.clearSelection()
+        await resetTableSelection()
     }
     await Promise.all([tableMethods.getList(), loadCounts()])
+    if (!ids) {
+        await resetTableSelection()
+    }
 }
 
 onMounted(async () => {
@@ -524,7 +579,6 @@ onMounted(async () => {
             areaOptions,
             userOptions,
             deptOptions,
-            projectOptions,
             clueSourceOptions,
             tagOptions
         }),
