@@ -35,7 +35,14 @@
                 <!-- <ElButton plain type="text" @click="handleDelete">删除</ElButton> -->
                 <!-- <ElButton plain type="text" @click="handleClear">清空</ElButton> -->
                 <ElButton type="danger" plain @click="handleHangup">挂断</ElButton>
-                <ElButton type="primary" :loading="dialing" @click="handleDial">呼叫</ElButton>
+                <ElButton
+                    type="primary"
+                    :loading="dialing"
+                    :disabled="!outboundEnabled"
+                    @click="handleDial"
+                >
+                    呼叫
+                </ElButton>
             </div>
 
             <div v-if="statusMessage" class="dialer-message">{{ statusMessage }}</div>
@@ -54,9 +61,11 @@ defineOptions({ name: 'ToolHeaderDialer' })
 const props = withDefaults(
     defineProps<{
         modelValue?: string
+        outboundEnabled?: boolean
     }>(),
     {
-        modelValue: ''
+        modelValue: '',
+        outboundEnabled: false
     }
 )
 
@@ -238,6 +247,12 @@ const handleHangup = () => {
 }
 
 const handleDial = async () => {
+    if (!props.outboundEnabled) {
+        status.value = 'idle'
+        statusMessage.value = '当前已签出，请先签入后再发起外呼'
+        message.warning('当前已签出，请先签入后再发起外呼')
+        return
+    }
     const targetMobile = mobile.value.trim()
     if (!/^1\d{10}$/.test(targetMobile)) {
         message.warning('请输入正确的 11 位手机号')

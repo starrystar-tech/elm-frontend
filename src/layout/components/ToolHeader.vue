@@ -18,8 +18,8 @@ import {
     getExportTaskPage,
     markExportTaskCenterViewed
 } from '@/api/system/exportTask'
+import { getUserProfile, updateUserOutboundStatus } from '@/api/system/user/profile'
 import ToolHeaderDialer from './ToolHeaderDialer.vue'
-import ToolHeaderBrowserPhone from './ToolHeaderBrowserPhone.vue'
 
 const { getPrefixCls, variables } = useDesign()
 
@@ -65,7 +65,16 @@ export default defineComponent({
         const dialerRef = ref<InstanceType<typeof ToolHeaderDialer>>()
         const dialerInputRef = ref()
         const hasNewExportTask = ref(false)
+        const outboundStatus = ref(0)
+        const outboundStatusLoading = ref(false)
         let exportTaskTimer: number | undefined
+        const message = useMessage()
+
+        const outboundSignedIn = computed(() => outboundStatus.value === 1)
+        const outboundStatusLabel = computed(() =>
+            outboundSignedIn.value ? '外呼已签入' : '外呼已签出'
+        )
+        const outboundStatusActionLabel = computed(() => (outboundSignedIn.value ? '签出' : '签入'))
 
         const syncDialerCursor = async () => {
             await nextTick()
@@ -111,7 +120,35 @@ export default defineComponent({
             await push({ name: 'SystemExportTaskCenter' })
         }
 
+        const loadOutboundProfile = async () => {
+            try {
+                const profile = await getUserProfile()
+                outboundStatus.value = profile?.outboundStatus === 1 ? 1 : 0
+            } catch (error) {
+                console.warn('[ToolHeader] load outbound profile failed', error)
+                outboundStatus.value = 0
+            }
+        }
+
+        const toggleOutboundStatus = async () => {
+            if (outboundStatusLoading.value) {
+                return
+            }
+            const nextStatus = outboundSignedIn.value ? 0 : 1
+            outboundStatusLoading.value = true
+            try {
+                await updateUserOutboundStatus({ outboundStatus: nextStatus })
+                outboundStatus.value = nextStatus
+                message.success(nextStatus === 1 ? '已签入外呼' : '已签出外呼')
+            } catch (error: any) {
+                message.error(error?.message || '更新外呼状态失败')
+            } finally {
+                outboundStatusLoading.value = false
+            }
+        }
+
         onMounted(() => {
+            loadOutboundProfile()
             checkExportTaskBadge()
             exportTaskTimer = window.setInterval(() => {
                 checkExportTaskBadge()
@@ -148,9 +185,29 @@ export default defineComponent({
                 ) : undefined}
                 <div class="h-full flex items-center">
                     <div class="outbound-toolbar lt-lg:hidden">
+                        <button
+                            type="button"
+                            class={[
+                                'outbound-toolbar__status',
+                                outboundSignedIn.value ? 'is-signed-in' : 'is-signed-out'
+                            ]}
+                            onClick={toggleOutboundStatus}
+                            disabled={outboundStatusLoading.value}
+                        >
+                            <span class="outbound-toolbar__status-dot"></span>
+                            <span class="outbound-toolbar__status-text">
+                                {outboundStatusLabel.value}
+                            </span>
+                            <span class="outbound-toolbar__status-action">
+                                {outboundStatusLoading.value
+                                    ? '...'
+                                    : outboundStatusActionLabel.value}
+                            </span>
+                        </button>
                         <ToolHeaderDialer
                             ref={dialerRef}
                             v-model={dialerMobile.value}
+                            outboundEnabled={outboundSignedIn.value}
                             onKeypadInput={syncDialerCursor}
                         >
                             <ElInput
@@ -170,13 +227,14 @@ export default defineComponent({
                         <ElButton
                             type="primary"
                             class="outbound-toolbar__button"
+                            disabled={!outboundSignedIn.value}
                             loading={dialerRef.value?.dialing}
                             onClick={() => dialerRef.value?.handleDial()}
                         >
                             呼叫
                         </ElButton>
                     </div>
-                    {hasTenantVisitPermission.value ? <TenantVisit /> : undefined}
+                    {/* {hasTenantVisitPermission.value ? <TenantVisit /> : undefined} */}
                     {screenfull.value ? (
                         <Screenfull
                             class="custom-hover"
@@ -204,7 +262,6 @@ export default defineComponent({
                             color="var(--top-header-text-color)"
                         ></Message>
                     ) : undefined}
-                    <ToolHeaderBrowserPhone />
                     {hasExportTaskPermission.value ? (
                         <ElBadge isDot={hasNewExportTask.value} class="header-icon-badge">
                             <div
@@ -239,19 +296,109 @@ $prefix-cls: #{$namespace}-tool-header;
 .outbound-toolbar {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     margin-right: 12px;
-    padding: 6px 10px;
+    padding: 6px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(10px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(245, 247, 250, 0.9));
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow:
+        0 10px 24px rgba(15, 23, 42, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(14px);
+
+    &__status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 152px;
+        height: 36px;
+        padding: 0 12px;
+        border: none;
+        border-radius: 999px;
+        font-size: 12px;
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease,
+            background 0.2s ease;
+        cursor: pointer;
+
+        &:disabled {
+            cursor: wait;
+            opacity: 0.88;
+        }
+
+        &:not(:disabled):hover {
+            transform: translateY(-1px);
+        }
+
+        &.is-signed-in {
+            color: #0f5132;
+            background: linear-gradient(
+                135deg,
+                rgba(220, 252, 231, 0.98),
+                rgba(187, 247, 208, 0.9)
+            );
+            box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.18);
+        }
+
+        &.is-signed-out {
+            color: #7c2d12;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 237, 213, 0.98),
+                rgba(254, 215, 170, 0.9)
+            );
+            box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.18);
+        }
+    }
+
+    &__status-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        flex: none;
+        background: currentColor;
+        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.35);
+    }
+
+    &__status-text {
+        font-weight: 600;
+        letter-spacing: 0.01em;
+    }
+
+    &__status-action {
+        margin-left: auto;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: rgba(15, 23, 42, 0.72);
+        font-size: 11px;
+        font-weight: 600;
+    }
 
     &__input {
         width: 180px;
+
+        :deep(.el-input__wrapper) {
+            border-radius: 999px;
+            box-shadow: none;
+            background: rgba(255, 255, 255, 0.92);
+        }
     }
 
     &__button {
+        min-width: 74px;
+        border: none;
         border-radius: 999px;
+        background: linear-gradient(135deg, #1d4ed8, #0284c7);
+        box-shadow: 0 10px 18px rgba(2, 132, 199, 0.24);
+
+        &.is-disabled,
+        &[disabled] {
+            background: linear-gradient(135deg, #94a3b8, #cbd5e1);
+            box-shadow: none;
+        }
     }
 }
 

@@ -22,6 +22,7 @@ export interface ProfileVO {
   avatar: string
   callNo?: string
   callExt?: string
+  outboundStatus?: number
   status: number
   remark: string
   loginIp: string
@@ -37,6 +38,10 @@ export interface UserProfileUpdateReqVO {
   avatar?: string
 }
 
+export interface UserProfileUpdateOutboundStatusReqVO {
+  outboundStatus: number
+}
+
 // 查询用户个人信息
 export const getUserProfile = () => {
   return request.get({ url: '/system/user/profile/get' })
@@ -45,6 +50,10 @@ export const getUserProfile = () => {
 // 修改用户个人信息
 export const updateUserProfile = (data: UserProfileUpdateReqVO) => {
   return request.put({ url: '/system/user/profile/update', data })
+}
+
+export const updateUserOutboundStatus = (data: UserProfileUpdateOutboundStatusReqVO) => {
+  return request.put({ url: '/system/user/profile/update-outbound-status', data })
 }
 
 // 用户密码重置
