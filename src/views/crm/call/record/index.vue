@@ -120,7 +120,11 @@ const tableColumns = reactive<TableColumn[]>([
         showOverflowTooltip: false,
         slots: {
             default: (data) => {
-                if (!data.row.recordingFileUrl) {
+                if (
+                    !data.row.recordingFileUrl ||
+                    !data.row.durationSeconds ||
+                    data.row.durationSeconds <= 0
+                ) {
                     return <>-</>
                 }
                 return (

@@ -377,6 +377,7 @@ const remoteAudioRef = ref<HTMLAudioElement>()
 const localAudioRef = ref<HTMLAudioElement>()
 const callDurationSeconds = ref(0)
 const incomingRingAudio = new Audio(bellAudioUrl)
+const incomingRingUnlocked = ref(false)
 let callDurationTimer: ReturnType<typeof setInterval> | undefined
 let browserRegisterWaiter:
     | {
@@ -471,8 +472,8 @@ const traceBrowserStep = (
         ? `[${step}] ${details} | ${stringifyTraceContext()}`
         : `[${step}] ${stringifyTraceContext()}`
     addBrowserLog(messageText, '调试', type)
-    const logger = type === 'danger' ? console.warn : console.info
-    logger(`[BrowserPhone] ${step}`, buildBrowserTraceContext(), details || '')
+    // const logger = type === 'danger' ? console.warn : console.info
+    // logger(`[BrowserPhone] ${step}`, buildBrowserTraceContext(), details || '')
 }
 
 const formatBrowserError = (error: any) => {
@@ -674,9 +675,41 @@ const stopIncomingRing = () => {
 const playIncomingRing = async () => {
     try {
         await incomingRingAudio.play()
-    } catch {
-        // Browsers may still block autoplay until the page receives a gesture.
+        traceBrowserStep('RING_PLAYING')
+    } catch (error: any) {
+        traceBrowserStep('RING_BLOCKED', error?.message || '浏览器阻止了来电铃声自动播放', 'danger')
     }
+}
+
+const unlockIncomingRingAudio = async () => {
+    if (incomingRingUnlocked.value) {
+        return
+    }
+    try {
+        incomingRingAudio.muted = true
+        await incomingRingAudio.play()
+        incomingRingAudio.pause()
+        incomingRingAudio.currentTime = 0
+        incomingRingAudio.muted = false
+        incomingRingUnlocked.value = true
+        traceBrowserStep('RING_UNLOCKED')
+    } catch (error: any) {
+        incomingRingAudio.muted = false
+        traceBrowserStep('RING_UNLOCK_FAILED', error?.message || '来电铃声预热失败', 'danger')
+    }
+}
+
+const bindIncomingRingUnlock = () => {
+    if (typeof window === 'undefined') {
+        return
+    }
+    const unlock = () => {
+        void unlockIncomingRingAudio()
+        window.removeEventListener('pointerdown', unlock)
+        window.removeEventListener('keydown', unlock)
+    }
+    window.addEventListener('pointerdown', unlock, { once: true })
+    window.addEventListener('keydown', unlock, { once: true })
 }
 
 const requestIncomingNotificationPermission = async () => {
@@ -725,11 +758,7 @@ const showIncomingNotification = (caller: string) => {
             notification.close()
         }
     } catch (error: any) {
-        traceBrowserStep(
-            'NOTIFICATION_FAILED',
-            error?.message || '系统通知创建失败',
-            'danger'
-        )
+        traceBrowserStep('NOTIFICATION_FAILED', error?.message || '系统通知创建失败', 'danger')
     }
 }
 
@@ -778,40 +807,15 @@ const createBrowserClient = async () => {
             authorizationUsername: browserForm.username.trim(),
             authorizationPassword: browserForm.password.trim(),
             displayName: browserForm.username.trim(),
-            logBuiltinEnabled: true,
-            logConfiguration: true,
-            logLevel: 'debug',
-            logConnector: (
-                level: string,
-                category: string,
-                label: string | undefined,
-                content: string
-            ) => {
-                const prefix = [level, category, label].filter(Boolean).join('/')
-                const details = `${prefix}: ${content}`
-                if (
-                    category.includes('Transport') ||
-                    category.includes('Registerer') ||
-                    content.includes('REGISTER') ||
-                    content.includes('WebSocket') ||
-                    content.includes('status code')
-                ) {
-                    traceBrowserStep(
-                        'SIPJS_LOG',
-                        details,
-                        level === 'error' || level === 'warn' ? 'danger' : 'success'
-                    )
-                }
-                const logger = level === 'error' || level === 'warn' ? console.warn : console.info
-                logger('[SIP.js]', details)
-            },
+            logBuiltinEnabled: false,
+            logConfiguration: false,
             transportOptions: {
                 server: browserForm.wsServer.trim(),
-                traceSip: true
+                traceSip: false
             }
         },
         registererOptions: {
-            logConfiguration: true
+            logConfiguration: false
         },
         delegate: {
             onRegistered: () => {
@@ -950,6 +954,7 @@ const connectBrowserPhone = async () => {
     browserConnecting.value = true
     try {
         browserDisconnecting.value = false
+        void unlockIncomingRingAudio()
         traceBrowserStep('CONNECT_START')
         await ensureBrowserPrerequisites()
         if (browserClient.value) {
@@ -1185,6 +1190,7 @@ const clearLogs = () => {
 }
 
 onMounted(() => {
+    bindIncomingRingUnlock()
     reloadProfile()
 })
 
