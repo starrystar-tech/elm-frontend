@@ -1,5 +1,24 @@
 <template>
     <div class="internal-call-page">
+        <transition name="incoming-toast">
+            <div v-if="incomingToastVisible" class="incoming-toast" role="alert">
+                <div class="incoming-toast__pulse"></div>
+                <div class="incoming-toast__content">
+                    <div class="incoming-toast__eyebrow">来电提醒</div>
+                    <div class="incoming-toast__caller">{{ incomingToastCaller }}</div>
+                    <div class="incoming-toast__hint">网页分机正在响铃，请尽快处理</div>
+                </div>
+                <div class="incoming-toast__actions">
+                    <el-button type="success" size="small" @click="answerBrowserCall">
+                        接听
+                    </el-button>
+                    <el-button type="danger" plain size="small" @click="hangupBrowserCall">
+                        拒绝
+                    </el-button>
+                </div>
+            </div>
+        </transition>
+
         <el-row :gutter="16">
             <el-col :xl="16" :lg="16" :md="24" :sm="24" :xs="24">
                 <el-card shadow="never" class="hero-card">
@@ -323,7 +342,7 @@ import {
 import { useUserStore } from '@/store/modules/user'
 import bellAudioUrl from '@/assets/mp3/bell.mp3'
 
-defineOptions({ name: 'Index' })
+defineOptions({ name: 'CrmCallTest' })
 
 type LogItem = {
     id: number
@@ -352,6 +371,8 @@ const browserClient = shallowRef<any>()
 const browserRecordId = ref<number>()
 const currentBrowserCaller = ref('')
 const currentBrowserCallee = ref('')
+const incomingToastVisible = ref(false)
+const incomingToastCaller = ref('')
 const remoteAudioRef = ref<HTMLAudioElement>()
 const localAudioRef = ref<HTMLAudioElement>()
 const callDurationSeconds = ref(0)
@@ -608,14 +629,41 @@ const parseSipIdentityUser = (identity: any) => {
     return raw.replace(/^sip:/i, '').split('@')[0]?.trim() || ''
 }
 
+const normalizeExtension = (value?: string) => {
+    const normalized = (value || '').trim()
+    return /^\d+$/.test(normalized) ? normalized : ''
+}
+
+const resolveCurrentBrowserExtension = () => {
+    return (
+        normalizeExtension(browserForm.username) ||
+        normalizeExtension(profile.callExt) ||
+        normalizeExtension(profile.callNo)
+    )
+}
+
+const resolveRemoteBrowserExtension = (identity: any, fallback?: string) => {
+    return normalizeExtension(parseSipIdentityUser(identity)) || normalizeExtension(fallback)
+}
+
 const setBrowserCallParties = (caller?: string, callee?: string) => {
-    currentBrowserCaller.value = caller || browserForm.username.trim()
-    currentBrowserCallee.value = callee || browserForm.target.trim()
+    currentBrowserCaller.value = caller || resolveCurrentBrowserExtension()
+    currentBrowserCallee.value = callee || normalizeExtension(browserForm.target)
 }
 
 const resetBrowserCallParties = () => {
     currentBrowserCaller.value = ''
     currentBrowserCallee.value = ''
+}
+
+const hideIncomingToast = () => {
+    incomingToastVisible.value = false
+    incomingToastCaller.value = ''
+}
+
+const showIncomingToast = (caller: string) => {
+    incomingToastCaller.value = caller || '未知号码'
+    incomingToastVisible.value = true
 }
 
 const stopIncomingRing = () => {
@@ -633,29 +681,55 @@ const playIncomingRing = async () => {
 
 const requestIncomingNotificationPermission = async () => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
+        traceBrowserStep('NOTIFICATION_UNSUPPORTED', '当前环境不支持 Notification API', 'danger')
         return 'denied'
     }
     if (Notification.permission === 'default') {
-        return Notification.requestPermission().catch(() => 'denied' as NotificationPermission)
+        traceBrowserStep('NOTIFICATION_REQUEST', '请求系统通知权限')
+        return Notification.requestPermission()
+            .then((permission) => {
+                traceBrowserStep('NOTIFICATION_PERMISSION', `permission=${permission}`)
+                return permission
+            })
+            .catch(() => {
+                traceBrowserStep('NOTIFICATION_PERMISSION', 'permission=denied', 'danger')
+                return 'denied' as NotificationPermission
+            })
     }
+    traceBrowserStep('NOTIFICATION_PERMISSION', `permission=${Notification.permission}`)
     return Notification.permission
 }
 
 const showIncomingNotification = (caller: string) => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
+        traceBrowserStep('NOTIFICATION_SKIP', '当前环境没有 Notification 对象', 'danger')
         return
     }
     if (Notification.permission !== 'granted') {
+        traceBrowserStep(
+            'NOTIFICATION_SKIP',
+            `通知权限不是 granted，而是 ${Notification.permission}`,
+            'danger'
+        )
         return
     }
-    const notification = new Notification('来电提醒', {
-        body: `${caller || '未知号码'} 正在呼叫你`,
-        tag: 'home-browser-phone-incoming-call',
-        requireInteraction: true
-    })
-    notification.onclick = () => {
-        window.focus()
-        notification.close()
+    try {
+        const notification = new Notification('来电提醒', {
+            body: `${caller || '未知号码'} 正在呼叫你`,
+            tag: 'home-browser-phone-incoming-call',
+            requireInteraction: true
+        })
+        traceBrowserStep('NOTIFICATION_SHOWN', `caller=${caller || '未知号码'}`)
+        notification.onclick = () => {
+            window.focus()
+            notification.close()
+        }
+    } catch (error: any) {
+        traceBrowserStep(
+            'NOTIFICATION_FAILED',
+            error?.message || '系统通知创建失败',
+            'danger'
+        )
     }
 }
 
@@ -791,14 +865,17 @@ const createBrowserClient = async () => {
         sessionManager.delegate = {
             ...sessionManager.delegate,
             onCallReceived: (session: any) => {
-                const caller = parseSipIdentityUser(session?.remoteIdentity)
-                const callee =
-                    parseSipIdentityUser(session?.localIdentity) || browserForm.username.trim()
+                const caller = resolveRemoteBrowserExtension(
+                    session?.remoteIdentity,
+                    currentBrowserCaller.value || browserForm.target
+                )
+                const callee = resolveCurrentBrowserExtension()
                 setBrowserCallParties(caller, callee)
                 browserForm.target = caller || browserForm.target
                 incomingCall.value = true
                 activeCall.value = true
                 updateBrowserStatus('来电响铃')
+                showIncomingToast(caller)
                 void playIncomingRing()
                 void requestIncomingNotificationPermission().then((permission) => {
                     if (permission === 'granted') {
@@ -814,15 +891,18 @@ const createBrowserClient = async () => {
                 })
             },
             onCallAnswered: (session: any) => {
-                const remoteUser = parseSipIdentityUser(session?.remoteIdentity)
-                const localUser =
-                    parseSipIdentityUser(session?.localIdentity) || browserForm.username.trim()
+                const remoteUser = resolveRemoteBrowserExtension(
+                    session?.remoteIdentity,
+                    currentBrowserCaller.value || browserForm.target
+                )
+                const localUser = resolveCurrentBrowserExtension()
                 const caller = incomingCall.value ? remoteUser : localUser
                 const callee = incomingCall.value ? localUser : remoteUser
                 setBrowserCallParties(caller, callee)
                 incomingCall.value = false
                 activeCall.value = true
                 updateBrowserStatus('通话中')
+                hideIncomingToast()
                 stopIncomingRing()
                 startCallTimer()
                 void syncBrowserRecord({
@@ -835,13 +915,16 @@ const createBrowserClient = async () => {
                 addBrowserLog('通话已接通', '通话中')
             },
             onCallHangup: (session: any) => {
-                const remoteUser = parseSipIdentityUser(session?.remoteIdentity)
-                const localUser =
-                    parseSipIdentityUser(session?.localIdentity) || browserForm.username.trim()
+                const remoteUser = resolveRemoteBrowserExtension(
+                    session?.remoteIdentity,
+                    currentBrowserCaller.value || browserForm.target
+                )
+                const localUser = resolveCurrentBrowserExtension()
                 const caller = currentBrowserCaller.value || localUser
                 const callee = currentBrowserCallee.value || remoteUser
                 incomingCall.value = false
                 activeCall.value = false
+                hideIncomingToast()
                 stopIncomingRing()
                 void syncBrowserRecord({
                     recordId: browserRecordId.value,
@@ -950,6 +1033,7 @@ const disconnectBrowserPhone = async (silent = false) => {
     incomingCall.value = false
     activeCall.value = false
     browserRecordId.value = undefined
+    hideIncomingToast()
     stopIncomingRing()
     stopCallTimer()
     resetBrowserCallParties()
@@ -1019,6 +1103,7 @@ const answerBrowserCall = async () => {
         incomingCall.value = false
         activeCall.value = true
         updateBrowserStatus('通话中')
+        hideIncomingToast()
         stopIncomingRing()
     } catch (error: any) {
         const errorMessage = formatBrowserError(error) || '接听失败'
@@ -1043,6 +1128,7 @@ const hangupBrowserCall = async () => {
         incomingCall.value = false
         activeCall.value = false
         updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
+        hideIncomingToast()
         stopIncomingRing()
     } catch (error: any) {
         const errorMessage = formatBrowserError(error) || '挂断失败'
@@ -1105,6 +1191,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
     stopCallTimer()
     stopIncomingRing()
+    hideIncomingToast()
     disconnectBrowserPhone(true)
     resetBrowserCallParties()
 })
@@ -1113,6 +1200,104 @@ onBeforeUnmount(() => {
 <style scoped>
 .internal-call-page {
     padding: 4px 0 24px;
+}
+
+.incoming-toast-enter-active,
+.incoming-toast-leave-active {
+    transition:
+        opacity 0.22s ease,
+        transform 0.22s ease;
+}
+
+.incoming-toast-enter-from,
+.incoming-toast-leave-to {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0) scale(0.98);
+}
+
+.incoming-toast {
+    position: fixed;
+    top: 76px;
+    right: 24px;
+    z-index: 2200;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: min(420px, calc(100vw - 32px));
+    padding: 18px 18px 18px 16px;
+    border: 1px solid rgba(250, 204, 21, 0.28);
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at top left, rgba(250, 204, 21, 0.22), transparent 34%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.94));
+    box-shadow:
+        0 24px 50px rgba(15, 23, 42, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+}
+
+.incoming-toast__pulse {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    flex: none;
+    border-radius: 999px;
+    background: #facc15;
+    box-shadow: 0 0 0 10px rgba(250, 204, 21, 0.14);
+}
+
+.incoming-toast__pulse::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    border-radius: 999px;
+    animation: incoming-toast-pulse 1.6s ease-out infinite;
+}
+
+.incoming-toast__content {
+    min-width: 0;
+    flex: 1;
+}
+
+.incoming-toast__eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(250, 204, 21, 0.9);
+}
+
+.incoming-toast__caller {
+    margin-top: 6px;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #f8fafc;
+    word-break: break-all;
+}
+
+.incoming-toast__hint {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(226, 232, 240, 0.82);
+}
+
+.incoming-toast__actions {
+    display: grid;
+    gap: 8px;
+}
+
+@keyframes incoming-toast-pulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.85;
+    }
+    100% {
+        transform: scale(1.45);
+        opacity: 0;
+    }
 }
 
 .hero-card {
@@ -1357,6 +1542,20 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+    .incoming-toast {
+        top: 68px;
+        right: 16px;
+        left: 16px;
+        width: auto;
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .incoming-toast__actions {
+        width: 100%;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .hero-grid {
         flex-direction: column;
     }
