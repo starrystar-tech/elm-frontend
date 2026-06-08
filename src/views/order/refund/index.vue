@@ -27,9 +27,11 @@ import { dateFormatter } from '@/utils/formatTime'
 import * as OrderApi from '@/api/crm/order'
 import { REFUND_STATUS_OPTIONS, REFUND_TYPE_OPTIONS, formatAmount, getOptionLabel } from '../utils'
 import RefundAuditDialog from './RefundAuditDialog.vue'
+import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'OrderRefund' })
 
+const message = useMessage()
 const auditRef = ref<InstanceType<typeof RefundAuditDialog>>()
 
 const searchSchema = computed<FormSchema[]>(() => [
@@ -137,6 +139,11 @@ const openAudit = (row: OrderApi.OrderRefundRespVO, readonly = row.refundStatus 
     auditRef.value?.open(row, readonly)
 }
 
+const getOrderClueDetail = async (id: number) => {
+    const detail = await OrderApi.getOrder(id)
+    return { clueId: detail.clueId }
+}
+
 const tableColumns = computed<TableColumn[]>(() => [
     { field: 'refundNo', label: '退款单号', minWidth: '160px' },
     { field: 'refundMethod', label: '退款方式', minWidth: '110px' },
@@ -163,8 +170,26 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
     { field: 'customerName', label: '姓名', minWidth: '100px' },
     { field: 'customerId', label: '客户ID', minWidth: '100px' },
-    { field: 'customerMobile', label: '手机号', minWidth: '130px' },
-    { field: 'creator', label: '创建人', minWidth: '110px' },
+    {
+        field: 'customerMobile',
+        label: '手机号',
+        minWidth: '170px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: { id: data.row.orderId },
+                    mobile: data.row.customerMobile,
+                    getDetail: getOrderClueDetail,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
+    {
+        field: 'creatorName',
+        label: '创建人',
+        minWidth: '110px'
+    },
     { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter },
     { field: 'auditUserName', label: '审批人', minWidth: '100px' },
     { field: 'refundTime', label: '退款时间', minWidth: '170px', formatter: dateFormatter },

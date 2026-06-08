@@ -285,7 +285,11 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'campusName', label: '报名分校', minWidth: '120px' },
     { field: 'cardOwnerUserName', label: '名片归属', minWidth: '110px' },
     { field: 'remark', label: '备注', minWidth: '140px', showOverflowTooltip: true },
-    { field: 'creator', label: '订单创建人', minWidth: '110px' },
+    {
+        field: 'creatorName',
+        label: '订单创建人',
+        minWidth: '110px'
+    },
     { field: 'createTime', label: '订单创建时间', minWidth: '170px', formatter: dateFormatter },
     {
         field: 'action',

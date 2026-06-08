@@ -38,6 +38,7 @@ export interface OrderPageRespVO {
   cardOwnerUserName: string
   remark: string
   creator: string
+  creatorName?: string
   createTime: string
   expireTime?: string
   projectName?: string
@@ -106,6 +107,7 @@ export interface OrderRefundRespVO {
   auditRemark?: string
   refundTime?: string
   creator: string
+  creatorName?: string
   createTime: string
 }
 

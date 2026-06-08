@@ -85,7 +85,11 @@
                 <el-table :data="localForm.rules" border class="mt-15px">
                     <el-table-column label="来源" prop="sourceCode" />
                     <el-table-column label="项目" prop="projectCode" />
-                    <el-table-column label="地区" prop="regionId" />
+                    <el-table-column label="地区" prop="regionId">
+                        <template #default="{ row }">
+                            {{ formatRegionName(row.regionId) }}
+                        </template>
+                    </el-table-column>
                     <el-table-column label="操作" width="140">
                         <template #default="{ $index, row }">
                             <el-button link type="primary" @click="openRuleDialog(row, $index)"
@@ -128,6 +132,7 @@ import { computed, ref, watch } from 'vue'
 import CallGroupSelect from '@/components/CallGroupSelect.vue'
 import UserLevelSelect from '@/components/UserLevelSelect.vue'
 import EngineRuleDialog from './EngineRuleDialog.vue'
+import { findPath } from '@/utils/tree'
 
 const props = defineProps<{
     modelValue: boolean
@@ -155,6 +160,20 @@ const ruleDialogVisible = ref(false)
 const ruleDialogTitle = ref('新增规则')
 const editingRule = ref<Recordable | undefined>(undefined)
 const editingRuleIndex = ref<number>(-1)
+
+const formatRegionName = (regionId?: number) => {
+    if (!regionId) return '--'
+    const path = findPath(props.areaTree || [], (node: any) => Number(node?.id) === Number(regionId)) as
+        | any[]
+        | null
+    const names = Array.isArray(path)
+        ? path
+              .filter((item) => Number(item?.id) !== -1)
+              .map((item) => item?.name)
+              .filter(Boolean)
+        : []
+    return names.length ? names.join(' / ') : String(regionId)
+}
 
 const resetLocalForm = () => {
     localForm.value = JSON.parse(JSON.stringify(props.formData || {}))

@@ -179,10 +179,14 @@ const normalizeRegionId = (value: unknown): number | undefined => {
     return Number.isFinite(numberValue) ? numberValue : undefined
 }
 
-const setEngineSearchParams = () => {
-    const regionId = normalizeRegionId(engineSearchForm.regionId)
-    engineTableMethods.setSearchParams({
+const setEngineSearchParams = (params: Recordable = {}) => {
+    const mergedParams = {
         ...engineSearchForm,
+        ...params
+    }
+    const regionId = normalizeRegionId(mergedParams.regionId)
+    engineTableMethods.setSearchParams({
+        ...mergedParams,
         regionId
     })
 }
