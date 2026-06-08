@@ -1,9 +1,14 @@
 <template>
     <ContentWrap>
-        <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams">
-            <template #levelCode="form">
+        <Search
+            :schema="searchSchema"
+            :model="searchForm"
+            @search="setSearchParams"
+            @reset="setSearchParams"
+        >
+            <template #levelCode>
                 <UserLevelSelect
-                    v-model="form['levelCode']"
+                    v-model="searchForm.levelCode"
                     placeholder="请选择用户等级"
                     style="width: 220px"
                 />
@@ -88,6 +93,9 @@ const message = useMessage()
 const canCreate = hasPermission(['crm:allocation-weight-config:create'])
 const canUpdate = hasPermission(['crm:allocation-weight-config:update'])
 const canDelete = hasPermission(['crm:allocation-weight-config:delete'])
+const searchForm = reactive({
+    levelCode: undefined as string | undefined
+})
 
 const searchSchema = reactive<FormSchema[]>([
     {
@@ -111,7 +119,8 @@ const {
 })
 
 const setSearchParams = (params: Recordable) => {
-    tableMethods.setSearchParams(params)
+    Object.assign(searchForm, params || {})
+    tableMethods.setSearchParams({ ...searchForm })
 }
 
 const dialogVisible = ref(false)

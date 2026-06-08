@@ -11,7 +11,7 @@
                     :schema="searchSchema"
                     :model="searchForm"
                     @search="setSearchParams"
-                    @reset="setSearchParams"
+                    @reset="resetSearchParams"
                 >
                     <template #userLevel>
                         <UserLevelSelect
@@ -164,8 +164,26 @@ const {
         await AllocationLimitApi.getAllocationUserLimitPage({ ...params, deptId: deptId.value })
 })
 
+const syncSearchForm = (
+    params: Partial<{
+        enabled: boolean | undefined
+        userLevel: string | undefined
+        keyword: string
+    }> = {}
+) => {
+    searchForm.enabled = undefined
+    searchForm.userLevel = undefined
+    searchForm.keyword = ''
+    Object.assign(searchForm, params)
+}
+
 const setSearchParams = (params: Recordable) => {
     Object.assign(searchForm, params || {})
+    tableMethods.setSearchParams({ ...searchForm, deptId: deptId.value })
+}
+
+const resetSearchParams = () => {
+    syncSearchForm()
     tableMethods.setSearchParams({ ...searchForm, deptId: deptId.value })
 }
 
@@ -332,7 +350,6 @@ const handleSingleStatus = async (row: AllocationLimitApi.AllocationUserLimitVO)
 
 const tableColumns = computed<TableColumn[]>(() => [
     { field: 'userName', label: '姓名', minWidth: '110px', fixed: 'left' },
-    { field: 'account', label: '账号', minWidth: '120px' },
     {
         field: 'enabled',
         label: '状态',

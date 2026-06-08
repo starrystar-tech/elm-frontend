@@ -155,7 +155,8 @@ const buildAreaLabel = (row: ClueApi.ClueVO) => {
     return row.areaName || '--'
 }
 
-const buildEnrollStatus = (row: ClueApi.ClueVO) => (row.customerId ? '已报名' : '未报名')
+const buildEnrollStatus = (row: ClueApi.ClueVO) =>
+    Number(row.orderCount || 0) > 0 ? '已报名' : '未报名'
 
 const buildListParams = (params: StudentSearchParams = {}) => {
     const nextParams: Record<string, any> = {
