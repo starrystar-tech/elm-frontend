@@ -1,9 +1,10 @@
 <template>
   <ContentWrap>
     <Search :schema="searchSchema" @reset="resetSearch" @search="setSearchParams" />
-    <div class="mb-10px">
+    <div class="mb-10px flex flex-wrap gap-10px">
       <BaseButton @click="handleUpdateList">标记已读</BaseButton>
-      <BaseButton @click="handleUpdateAll">全部已读</BaseButton>
+      <BaseButton @click="handleUpdateAll()">全部已读</BaseButton>
+      <BaseButton v-if="currentCategory" @click="handleUpdateAll(currentCategory)">当前分类全部已读</BaseButton>
     </div>
     <Table
       ref="tableRef"
@@ -24,7 +25,7 @@
 
 <script setup lang="tsx">
 import { reactive, ref } from 'vue'
-import { DICT_TYPE, getBoolDictOptions } from '@/utils/dict'
+import { ElTag } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import * as NotifyMessageApi from '@/api/system/notify/message'
 import MyNotifyMessageDetail from './MyNotifyMessageDetail.vue'
@@ -32,7 +33,6 @@ import { Search } from '@/components/Search'
 import { Table, type TableColumn, type TableExpose } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
-import { DictTag } from '@/components/DictTag'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 
@@ -40,82 +40,99 @@ defineOptions({ name: 'SystemMyNotify' })
 
 const message = useMessage()
 const tableRef = ref<TableExpose>()
+const detailRef = ref<InstanceType<typeof MyNotifyMessageDetail>>()
 const selectedIds = ref<number[]>([])
+const currentCategory = ref('')
+
+const categoryOptions = [
+  { label: '预约提醒', value: 'appointment' },
+  { label: '工单提醒', value: 'work_order' },
+  { label: '支付确认提醒', value: 'payment' }
+]
+
+const readStatusOptions = [
+  { label: '未读', value: 0 },
+  { label: '已读', value: 1 }
+]
 
 const searchSchema = reactive<FormSchema[]>([
   {
-    field: 'readStatus',
-    label: '是否已读',
+    field: 'category',
+    label: '提醒分类',
     component: 'Select',
     componentProps: {
-      placeholder: '请选择状态',
+      placeholder: '请选择提醒分类',
       clearable: true,
-      options: getBoolDictOptions(DICT_TYPE.INFRA_BOOLEAN_STRING),
+      options: categoryOptions,
       style: { width: '240px' }
     }
   },
   {
-    field: 'createTime',
-    label: '发送时间',
-    component: 'DatePicker',
+    field: 'readStatus',
+    label: '读取状态',
+    component: 'Select',
     componentProps: {
-      type: 'daterange',
-      valueFormat: 'YYYY-MM-DD HH:mm:ss',
-      startPlaceholder: '开始日期',
-      endPlaceholder: '结束日期',
-      defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
+      placeholder: '请选择读取状态',
+      clearable: true,
+      options: readStatusOptions,
       style: { width: '240px' }
     }
   }
 ])
 
-const detailRef = ref<InstanceType<typeof MyNotifyMessageDetail>>()
-
-const { tableObject, tableMethods, register: tableRegister } =
-  useTable<NotifyMessageApi.NotifyMessageVO>({
-    getListApi: async (params) => await NotifyMessageApi.getMyNotifyMessagePage(params)
-  })
+const { tableObject, tableMethods, register: tableRegister } = useTable<NotifyMessageApi.NotifyMessageVO>({
+  getListApi: async (params) => await NotifyMessageApi.getMyNotifyMessagePage(params)
+})
 
 const setSearchParams = (params: Recordable) => {
+  currentCategory.value = params?.category || ''
   tableMethods.setSearchParams(params)
 }
 
 const resetSearch = async (params: Recordable) => {
   selectedIds.value = []
+  currentCategory.value = ''
   tableRef.value?.clearSelection()
   tableMethods.setSearchParams(params)
 }
 
+const isRead = (row: NotifyMessageApi.NotifyMessageVO) => Number(row.readStatus) === 1
+
 const handleReadOne = async (id: number) => {
   await NotifyMessageApi.updateNotifyMessageRead(id)
-  await tableMethods.getList()
 }
 
 const openDetail = async (data: NotifyMessageApi.NotifyMessageVO) => {
-  if (!data.readStatus) {
+  const detailData = { ...data }
+  if (!isRead(data)) {
     await handleReadOne(data.id)
+    detailData.readStatus = 1
+    detailData.readTime = new Date()
+    await tableMethods.getList()
   }
-  detailRef.value?.open(data)
+  detailRef.value?.open(detailData)
 }
 
-const handleUpdateAll = async () => {
-  await NotifyMessageApi.updateAllNotifyMessageRead()
-  message.success('全部已读成功！')
+const handleUpdateAll = async (category?: string) => {
+  await NotifyMessageApi.updateAllNotifyMessageRead(category)
+  message.success('操作成功')
   tableRef.value?.clearSelection()
   selectedIds.value = []
   await tableMethods.getList()
 }
 
 const handleUpdateList = async () => {
-  if (selectedIds.value.length === 0) return
+  if (selectedIds.value.length === 0) {
+    return
+  }
   await NotifyMessageApi.updateNotifyMessageRead(selectedIds.value)
-  message.success('批量已读成功！')
+  message.success('标记已读成功')
   tableRef.value?.clearSelection()
   selectedIds.value = []
   await tableMethods.getList()
 }
 
-const selectable = (row: NotifyMessageApi.NotifyMessageVO) => !row.readStatus
+const selectable = (row: NotifyMessageApi.NotifyMessageVO) => !isRead(row)
 
 const handleSelectionChange = (rows: NotifyMessageApi.NotifyMessageVO[]) => {
   selectedIds.value = rows?.map((row) => row.id) || []
@@ -129,40 +146,38 @@ const tableColumns = reactive<TableColumn[]>([
     reserveSelection: true,
     width: '55'
   },
-  { field: 'templateNickname', label: '发送人', width: '180px' },
-  { field: 'createTime', label: '发送时间', width: '200px', formatter: dateFormatter },
+  { field: 'categoryName', label: '提醒分类', width: '120px' },
+  { field: 'customerName', label: '客户姓名', width: '120px' },
+  { field: 'customerMobile', label: '手机号', width: '140px' },
+  { field: 'displayContent', label: '提醒内容', minWidth: '360px', showOverflowTooltip: true },
+  { field: 'triggerTime', label: '触发时间', width: '180px', formatter: dateFormatter },
   {
-    field: 'templateType',
-    label: '类型',
-    width: '180px',
+    field: 'readStatus',
+    label: '读取状态',
+    width: '100px',
     slots: {
       default: (data) => (
-        <DictTag type={DICT_TYPE.SYSTEM_NOTIFY_TEMPLATE_TYPE} value={data.row.templateType} />
+        <ElTag type={Number(data.row.readStatus) === 1 ? 'success' : 'danger'}>
+          {Number(data.row.readStatus) === 1 ? '已读' : '未读'}
+        </ElTag>
       )
     }
   },
-  { field: 'templateContent', label: '消息内容', showOverflowTooltip: true },
-  {
-    field: 'readStatus',
-    label: '是否已读',
-    width: '160px',
-    slots: {
-      default: (data) => <DictTag type={DICT_TYPE.INFRA_BOOLEAN_STRING} value={data.row.readStatus} />
-    }
-  },
-  { field: 'readTime', label: '阅读时间', width: '200px', formatter: dateFormatter },
+  { field: 'readTime', label: '读取时间', width: '180px', formatter: dateFormatter },
+  { field: 'createTime', label: '创建时间', width: '180px', formatter: dateFormatter },
   {
     field: 'action',
     label: '操作',
-    width: '160px',
+    width: '120px',
+    fixed: 'right',
     slots: {
       default: (data) => (
         <BaseButton
           link
-          type={data.row.readStatus ? 'primary' : 'warning'}
+          type={Number(data.row.readStatus) === 1 ? 'primary' : 'warning'}
           onClick={() => openDetail(data.row as NotifyMessageApi.NotifyMessageVO)}
         >
-          {data.row.readStatus ? '详情' : '已读'}
+          {Number(data.row.readStatus) === 1 ? '详情' : '已读'}
         </BaseButton>
       )
     }

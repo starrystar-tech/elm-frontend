@@ -88,7 +88,7 @@ const tableColumns = computed<TableColumn[]>(() => [
             )
         }
     },
-    { field: 'clueId', label: '线索ID', minWidth: '90px' },
+    { field: 'customerId', label: '客户ID', minWidth: '120px' },
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
     { field: 'customerName', label: '客户', minWidth: '100px' },
     {

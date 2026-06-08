@@ -101,6 +101,11 @@ export const claimAftersales = async (id: number) => {
   return await request.put<boolean>({ url: '/crm/aftersales/claim', params: { id } })
 }
 
+export const batchClaimAftersales = async (ids: number[]) => {
+  await Promise.all(ids.map((id) => claimAftersales(id)))
+  return true
+}
+
 export const assignAftersales = async (data: AftersalesAssignReqVO) => {
   return await request.put<boolean>({ url: '/crm/aftersales/assign', data })
 }

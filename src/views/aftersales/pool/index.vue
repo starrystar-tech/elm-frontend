@@ -2,7 +2,7 @@
     <ContentWrap>
         <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
         <div class="action-btn-wrap">
-            <BaseButton type="primary" @click="openAssign">分配处理人</BaseButton>
+            <BaseButton type="primary" @click="batchClaim">批量领取</BaseButton>
         </div>
         <Table
             selection
@@ -14,8 +14,6 @@
             :pagination="{ total: tableObject.total }"
             @register="tableRegister"
         />
-        <AftersalesAssignDialog ref="assignRef" @success="tableMethods.getList()" />
-        <AftersalesProcessDialog ref="processRef" @success="tableMethods.getList()" />
         <AftersalesDetailDialog ref="detailRef" />
     </ContentWrap>
 </template>
@@ -31,7 +29,6 @@ import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { dateFormatter } from '@/utils/formatTime'
 import * as AftersalesApi from '@/api/crm/aftersales'
-import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
 import * as ComplaintTagApi from '@/api/system/complaintTag'
 import {
     buildBaseSearchSchema,
@@ -40,22 +37,19 @@ import {
     getAftersalesStatusLabel,
     getAftersalesTypeLabel
 } from '../config'
-import AftersalesAssignDialog from '../components/AftersalesAssignDialog.vue'
-import AftersalesProcessDialog from '../components/AftersalesProcessDialog.vue'
 import AftersalesDetailDialog from '../components/AftersalesDetailDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
-defineOptions({ name: 'AftersalesTicket' })
+defineOptions({ name: 'AftersalesPool' })
 
 const message = useMessage()
-const assignRef = ref()
-const processRef = ref()
 const detailRef = ref()
-const handlerOptions = ref<{ label: string; value: number }[]>([])
 const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 
 const searchSchema = computed<FormSchema[]>(() =>
-    buildBaseSearchSchema(handlerOptions.value, complaintTagOptions.value)
+    buildBaseSearchSchema([], complaintTagOptions.value).filter(
+        (item) => !['handlerUserId', 'receiveTimeRange', 'processTimeRange'].includes(item.field)
+    )
 )
 
 const {
@@ -63,31 +57,35 @@ const {
     tableMethods,
     register: tableRegister
 } = useTable<AftersalesApi.AftersalesRespVO>({
-    getListApi: async (params) => await AftersalesApi.getAftersalesPage(params)
+    getListApi: async (params) => await AftersalesApi.getTodayAftersalesPage(params)
 })
 
 const setSearchParams = (params: Recordable) => {
     tableMethods.setSearchParams(buildPageParams(params))
 }
 
-const openAssign = async () => {
+const claim = async (row: AftersalesApi.AftersalesRespVO) => {
+    await AftersalesApi.claimAftersales(row.id)
+    message.success('领取成功')
+    await tableMethods.getList()
+}
+
+const batchClaim = async () => {
     const selections = await tableMethods.getSelections()
     if (!selections.length) {
         message.warning('请先选择工单')
         return
     }
-    assignRef.value.open(selections.map((item) => item.id))
-}
-
-const openProcess = (row: AftersalesApi.AftersalesRespVO) => {
-    processRef.value.open(row)
+    await AftersalesApi.batchClaimAftersales(selections.map((item) => item.id))
+    message.success('批量领取成功')
+    await tableMethods.getList()
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'ticketNo',
         label: '工单号',
-        minWidth: '170px',
+        minWidth: '190px',
         fixed: 'left',
         slots: {
             default: (data) => (
@@ -120,7 +118,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     },
     {
         field: 'ticketType',
-        label: '类型',
+        label: '工单类型',
         minWidth: '100px',
         formatter: (_r, _c, v) => getAftersalesTypeLabel(v)
     },
@@ -136,15 +134,11 @@ const tableColumns = computed<TableColumn[]>(() => [
         minWidth: '100px',
         formatter: (_r, _c, v) => getAftersalesStatusLabel(v)
     },
-    { field: 'processResult', label: '处理结果', minWidth: '160px', showOverflowTooltip: true },
     { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter },
-    { field: 'handlerUserName', label: '处理人', minWidth: '100px' },
-    { field: 'receiveTime', label: '领取时间', minWidth: '170px', formatter: dateFormatter },
-    { field: 'processTime', label: '处理时间', minWidth: '170px', formatter: dateFormatter },
     {
         field: 'action',
         label: '操作',
-        width: '120px',
+        width: '140px',
         fixed: 'right',
         slots: {
             default: (data) => {
@@ -158,11 +152,9 @@ const tableColumns = computed<TableColumn[]>(() => [
                         >
                             查看
                         </BaseButton>
-                        {row.handlerUserId && row.status !== 20 && row.status !== 30 ? (
-                            <BaseButton link type="warning" onClick={() => openProcess(row)}>
-                                处理
-                            </BaseButton>
-                        ) : null}
+                        <BaseButton link type="warning" onClick={() => claim(row)}>
+                            领取
+                        </BaseButton>
                     </>
                 )
             }
@@ -171,14 +163,7 @@ const tableColumns = computed<TableColumn[]>(() => [
 ])
 
 onMounted(async () => {
-    const [list, complaintTags] = await Promise.all([
-        HeadteacherApi.getHeadteacherSimpleList(),
-        ComplaintTagApi.getComplaintTagSimpleList()
-    ])
-    handlerOptions.value = (list || []).map((item) => ({
-        label: item.nickname || item.username,
-        value: item.id
-    }))
+    const complaintTags = await ComplaintTagApi.getComplaintTagSimpleList()
     complaintTagOptions.value = (complaintTags || []).map((item) => ({
         label: item.name,
         value: item.id

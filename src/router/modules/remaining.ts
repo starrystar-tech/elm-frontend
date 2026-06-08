@@ -99,7 +99,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
                     hidden: true,
                     noTagsView: false,
                     icon: 'ep:message',
-                    title: '我的站内信'
+                    title: '消息提醒'
                 }
             }
         ]

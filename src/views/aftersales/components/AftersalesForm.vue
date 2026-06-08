@@ -8,10 +8,18 @@
             v-loading="formLoading"
         >
             <el-form-item label="客户" prop="clueId">
-                <ClueSelect v-model="formData.clueId" />
-            </el-form-item>
-            <el-form-item label="订单ID" prop="orderId">
-                <el-input-number v-model="formData.orderId" :min="1" class="!w-full" />
+                <el-input
+                    v-model="selectedOrderDisplay"
+                    readonly
+                    clearable
+                    placeholder="请选择订单"
+                    @click="openOrderSelect"
+                    @clear="clearSelectedOrder"
+                >
+                    <template #suffix>
+                        <Icon icon="ep:search" />
+                    </template>
+                </el-input>
             </el-form-item>
             <el-form-item label="工单类型" prop="ticketType">
                 <el-select v-model="formData.ticketType" class="!w-full">
@@ -67,14 +75,16 @@
         </template>
     </Dialog>
     <UserSelectForm ref="userSelectFormRef" @confirm="handleUserSelectConfirm" />
+    <OrderSelectDialog ref="orderSelectDialogRef" @confirm="handleOrderConfirm" />
 </template>
 
 <script setup lang="ts">
 import { BaseButton } from '@/components/Button'
+import OrderSelectDialog from '@/components/OrderSelectDialog.vue'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import * as AftersalesApi from '@/api/crm/aftersales'
+import * as OrderApi from '@/api/crm/order'
 import type { UserVO } from '@/api/system/user'
-import ClueSelect from '@/components/ClueSelect.vue'
 import { getAftersalesPriorityOptions, getAftersalesTypeOptions } from '../config'
 
 defineOptions({ name: 'AftersalesForm' })
@@ -84,7 +94,9 @@ const dialogVisible = ref(false)
 const formLoading = ref(false)
 const formRef = ref()
 const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
+const orderSelectDialogRef = ref<InstanceType<typeof OrderSelectDialog>>()
 const handlerUserName = ref('')
+const selectedOrderDisplay = ref('')
 const aftersalesTypeOptions = computed(() => getAftersalesTypeOptions())
 const aftersalesPriorityOptions = computed(() => getAftersalesPriorityOptions())
 const formData = ref<AftersalesApi.AftersalesCreateReqVO>({
@@ -114,6 +126,26 @@ const open = () => {
     resetForm()
 }
 defineExpose({ open })
+
+const openOrderSelect = () => {
+    orderSelectDialogRef.value?.open()
+}
+
+const handleOrderConfirm = (order: OrderApi.OrderDetailRespVO) => {
+    if (!order?.clueId) {
+        message.warning('该订单未关联客户，无法用于售后工单')
+        return
+    }
+    formData.value.orderId = order.id
+    formData.value.clueId = Number(order.clueId)
+    selectedOrderDisplay.value = `${order.orderNo} / ${order.customerName || '--'}`
+}
+
+const clearSelectedOrder = () => {
+    formData.value.orderId = undefined as unknown as number
+    formData.value.clueId = undefined as unknown as number
+    selectedOrderDisplay.value = ''
+}
 
 const openUserSelect = () => {
     const selectedList = formData.value.handlerUserId
@@ -158,6 +190,7 @@ const resetForm = () => {
         remark: '',
         handlerUserId: undefined
     }
+    selectedOrderDisplay.value = ''
     handlerUserName.value = ''
     formRef.value?.resetFields()
 }
