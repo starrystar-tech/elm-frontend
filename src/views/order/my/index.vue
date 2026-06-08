@@ -320,7 +320,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                         <BaseButton link type="primary" onClick={() => openDetail(row.id)}>
                             详情
                         </BaseButton>
-                        <BaseButton link type="success" onClick={() => handleContractSign(row)}>
+                        <BaseButton link type="primary" onClick={() => handleContractSign(row)}>
                             签署合同
                         </BaseButton>
                         {getRemainingAmount(row.payableAmount, row.paidAmount) > 0 ? (

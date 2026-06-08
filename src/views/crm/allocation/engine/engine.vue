@@ -79,11 +79,13 @@ import { useTable } from '@/hooks/web/useTable'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import * as EngineApi from '@/api/system/allocation/engine'
 import * as AreaApi from '@/api/system/area'
+import * as ProductCategoryApi from '@/api/crm/product/category'
 import EngineForm from './EngineForm.vue'
 import SourceSelect from '@/components/SourceSelect.vue'
 import CallGroupSelect from '@/components/CallGroupSelect.vue'
 import ProjectSelect from '@/components/ProjectSelect.vue'
 import AreaSelect from '@/components/AreaSelect.vue'
+import { findPath } from '@/utils/tree'
 
 const message = useMessage()
 const userLevelOptions = getStrDictOptions('crm_allocation_user_level')
@@ -191,8 +193,53 @@ const setEngineSearchParams = (params: Recordable = {}) => {
     })
 }
 
+const areaTree = ref<any[]>([])
+const projectNameMap = ref<Record<string, string>>({})
+
+const dedupeTexts = (values: Array<string | undefined | null>) =>
+    Array.from(
+        new Set(
+            values
+                .map((item) => String(item || '').trim())
+                .filter(Boolean)
+        )
+    )
+
+const formatRegionName = (regionId?: number) => {
+    if (!regionId) return ''
+    const path = findPath(areaTree.value || [], (node: any) => Number(node?.id) === Number(regionId)) as
+        | any[]
+        | null
+    const names = Array.isArray(path)
+        ? path
+              .filter((item) => Number(item?.id) !== -1)
+              .map((item) => item?.name)
+              .filter(Boolean)
+        : []
+    return names.length ? names.join(' / ') : String(regionId)
+}
+
+const formatRuleText = (
+    row: EngineApi.AllocationEngineVO,
+    field: 'sourceCode' | 'projectCode' | 'regionId'
+) => {
+    const rules = row.rules || []
+    if (!rules.length) return '--'
+    if (field === 'sourceCode') {
+        const texts = dedupeTexts(rules.map((item) => item.sourceCode))
+        return texts.length ? texts.join('、') : '--'
+    }
+    if (field === 'projectCode') {
+        const texts = dedupeTexts(
+            rules.map((item) => projectNameMap.value[item.projectCode] || item.projectCode)
+        )
+        return texts.length ? texts.join('、') : '--'
+    }
+    const texts = dedupeTexts(rules.map((item) => formatRegionName(item.regionId)))
+    return texts.length ? texts.join('、') : '--'
+}
+
 const engineColumns = computed<TableColumn[]>(() => [
-    { field: 'id', label: 'ID', width: '80px' },
     { field: 'engineName', label: '引擎名称', minWidth: '160px' },
     {
         field: 'status',
@@ -207,6 +254,24 @@ const engineColumns = computed<TableColumn[]>(() => [
         }
     },
     { field: 'callGroupNames', label: '呼叫组', minWidth: '180px' },
+    {
+        field: 'sourceCode',
+        label: '来源',
+        minWidth: '180px',
+        formatter: (_row: EngineApi.AllocationEngineVO) => formatRuleText(_row, 'sourceCode')
+    },
+    {
+        field: 'projectCode',
+        label: '项目',
+        minWidth: '180px',
+        formatter: (_row: EngineApi.AllocationEngineVO) => formatRuleText(_row, 'projectCode')
+    },
+    {
+        field: 'regionId',
+        label: '地区',
+        minWidth: '220px',
+        formatter: (_row: EngineApi.AllocationEngineVO) => formatRuleText(_row, 'regionId')
+    },
     {
         field: 'updateTime',
         label: '更新时间',
@@ -245,8 +310,6 @@ const engineColumns = computed<TableColumn[]>(() => [
     }
 ])
 
-const areaTree = ref<any[]>([])
-
 const engineDialogVisible = ref(false)
 const engineDialogTitle = ref('新增分配引擎')
 const engineSaving = ref(false)
@@ -275,6 +338,14 @@ const engineRules = reactive({
 
 const loadEngineMeta = async () => {
     if (!areaTree.value.length) areaTree.value = await AreaApi.getAreaTree()
+    if (!Object.keys(projectNameMap.value).length) {
+        const list = (await ProductCategoryApi.getProductCategorySimpleList()) || []
+        projectNameMap.value = Object.fromEntries(
+            (list as ProductCategoryApi.ProductCategoryVO[])
+                .filter((item) => Number(item.parentId) === 0)
+                .map((item) => [item.code, item.name])
+        )
+    }
 }
 
 const resetEngineForm = () => {

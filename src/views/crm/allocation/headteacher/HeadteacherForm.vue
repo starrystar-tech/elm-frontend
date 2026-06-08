@@ -8,24 +8,13 @@
             v-loading="formLoading"
         >
             <el-form-item label="项目" prop="projectId">
-                <el-tree-select
-                    v-model="formData.projectId"
-                    :data="projectOptions"
-                    :props="treeProps"
-                    node-key="id"
-                    check-strictly
-                    filterable
-                    clearable
-                    default-expand-all
-                    placeholder="请选择项目"
-                    style="width: 100%"
-                />
+                <ProductCategorySelect v-model="formData.projectId" />
             </el-form-item>
             <el-form-item label="班主任" prop="headteacherUserId">
                 <HeadteacherSelect v-model="formData.headteacherUserId" />
             </el-form-item>
             <el-form-item label="负责类型" prop="scopeType">
-                <el-radio-group v-model="formData.scopeType">
+                <el-radio-group v-model="formData.scopeType" @change="handleScopeTypeChange">
                     <el-radio :label="HEADTEACHER_SCOPE_TYPE.ALL">全公司</el-radio>
                     <el-radio :label="HEADTEACHER_SCOPE_TYPE.DEPT">指定部门</el-radio>
                     <el-radio :label="HEADTEACHER_SCOPE_TYPE.AREA">指定区域</el-radio>
@@ -36,25 +25,14 @@
                 label="负责部门"
                 prop="scopeValueIds"
             >
-                <el-tree-select
-                    v-model="formData.scopeValueIds"
-                    :data="deptOptions"
-                    :props="treeProps"
-                    node-key="id"
-                    multiple
-                    filterable
-                    check-strictly
-                    default-expand-all
-                    placeholder="请选择部门"
-                    style="width: 100%"
-                />
+                <DeptSelector v-model="formData.scopeValueIds" multiple placeholder="请选择部门" />
             </el-form-item>
             <el-form-item
                 v-if="formData.scopeType === HEADTEACHER_SCOPE_TYPE.AREA"
                 label="负责区域"
                 prop="scopeValueIds"
             >
-                <AreaSelect
+                <AreaSelector
                     v-model="formData.scopeValueIds"
                     multiple
                     :include-all-node="false"
@@ -70,13 +48,11 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
 import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
-import * as ProductCategoryApi from '@/api/crm/product/category'
-import * as DeptApi from '@/api/system/dept'
-import { handleTree } from '@/utils/tree'
-import AreaSelect from '@/components/AreaSelect.vue'
+import AreaSelector from '@/components/AreaSelector.vue'
 import HeadteacherSelect from '@/components/HeadteacherSelect.vue'
+import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
+import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
 
 defineOptions({ name: 'CrmHeadteacherAllocationForm' })
 
@@ -92,16 +68,6 @@ const dialogTitle = ref('')
 const formLoading = ref(false)
 const formType = ref<'create' | 'update'>('create')
 const formRef = ref()
-
-const projectOptions = ref<any[]>([])
-const deptOptions = ref<any[]>([])
-
-const treeProps = {
-    value: 'id',
-    label: 'name',
-    children: 'children'
-}
-
 const createDefaultFormData = (): HeadteacherApi.HeadteacherAllocationSaveReqVO => ({
     id: undefined,
     projectId: undefined,
@@ -137,22 +103,8 @@ const formRules = reactive({
     scopeValueIds: [{ validator: validateScopeValueIds, trigger: 'change' }]
 })
 
-watch(
-    () => formData.value.scopeType,
-    (value, oldValue) => {
-        if (value !== oldValue) {
-            formData.value.scopeValueIds = []
-        }
-    }
-)
-
-const loadOptions = async () => {
-    const [projectList, depts] = await Promise.all([
-        ProductCategoryApi.getProductCategorySimpleList(),
-        DeptApi.getSimpleDeptList()
-    ])
-    projectOptions.value = projectList || []
-    deptOptions.value = handleTree(depts || [])
+const handleScopeTypeChange = () => {
+    formData.value.scopeValueIds = []
 }
 
 const open = async (type: 'create' | 'update', id?: number) => {
@@ -162,16 +114,15 @@ const open = async (type: 'create' | 'update', id?: number) => {
     resetForm()
     formLoading.value = true
     try {
-        await loadOptions()
         if (type === 'update' && id) {
             const detail = await HeadteacherApi.getHeadteacherAllocation(id)
-            formData.value = {
+            Object.assign(formData.value, {
                 id: detail.id,
                 projectId: detail.projectId,
                 headteacherUserId: detail.headteacherUserId,
                 scopeType: detail.scopeType,
-                scopeValueIds: detail.scopeValueIds || []
-            }
+                scopeValueIds: (detail.scopeValueIds || []).map((item) => Number(item))
+            })
         }
     } finally {
         formLoading.value = false
@@ -207,7 +158,7 @@ const submitForm = async () => {
 }
 
 const resetForm = () => {
-    formData.value = createDefaultFormData()
+    Object.assign(formData.value, createDefaultFormData())
     formRef.value?.resetFields()
 }
 </script>

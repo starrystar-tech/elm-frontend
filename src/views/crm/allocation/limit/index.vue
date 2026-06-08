@@ -7,7 +7,20 @@
         </el-col>
         <el-col :span="19" :xs="24">
             <ContentWrap>
-                <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
+                <Search
+                    :schema="searchSchema"
+                    :model="searchForm"
+                    @search="setSearchParams"
+                    @reset="setSearchParams"
+                >
+                    <template #userLevel>
+                        <UserLevelSelect
+                            v-model="searchForm.userLevel"
+                            placeholder="请选择用户等级"
+                            style="width: 220px"
+                        />
+                    </template>
+                </Search>
                 <div class="action-btn-wrap">
                     <BaseButton
                         v-if="canUpdate"
@@ -36,13 +49,13 @@
                     >
                         批量停用
                     </BaseButton>
-                    <el-alert
+                    <!-- <el-alert
                         title="已报名的客户不占用名额上限"
                         type="warning"
                         effect="light"
                         :closable="false"
                         class="limit-tip-alert"
-                    />
+                    /> -->
                 </div>
                 <Table
                     v-model:currentPage="tableObject.currentPage"
@@ -89,6 +102,7 @@ import { BaseButton } from '@/components/Button'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import { useTable } from '@/hooks/web/useTable'
 import * as AllocationLimitApi from '@/api/crm/allocation/limit'
+import UserLevelSelect from '@/components/UserLevelSelect.vue'
 import DeptTree from '@/views/system/user/DeptTree.vue'
 import LimitConfigForm from './LimitConfigForm.vue'
 
@@ -99,6 +113,11 @@ const canUpdate = hasPermission(['system:allocation-user-limit:update'])
 
 const deptId = ref<number | undefined>()
 const checkedRows = ref<AllocationLimitApi.AllocationUserLimitVO[]>([])
+const searchForm = reactive({
+    enabled: undefined as boolean | undefined,
+    userLevel: undefined as string | undefined,
+    keyword: ''
+})
 
 const searchSchema = reactive<FormSchema[]>([
     {
@@ -112,6 +131,15 @@ const searchSchema = reactive<FormSchema[]>([
                 { label: '启用', value: true },
                 { label: '停用', value: false }
             ],
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'userLevel',
+        label: '用户等级',
+        component: 'Input',
+        componentProps: {
+            clearable: true,
             style: { width: '220px' }
         }
     },
@@ -137,7 +165,8 @@ const {
 })
 
 const setSearchParams = (params: Recordable) => {
-    tableMethods.setSearchParams({ ...params, deptId: deptId.value })
+    Object.assign(searchForm, params || {})
+    tableMethods.setSearchParams({ ...searchForm, deptId: deptId.value })
 }
 
 const handleDeptNodeClick = (row: any) => {
@@ -302,7 +331,8 @@ const handleSingleStatus = async (row: AllocationLimitApi.AllocationUserLimitVO)
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'id', label: 'ID', width: '80px' },
+    { field: 'userName', label: '姓名', minWidth: '110px', fixed: 'left' },
+    { field: 'account', label: '账号', minWidth: '120px' },
     {
         field: 'enabled',
         label: '状态',
@@ -315,8 +345,6 @@ const tableColumns = computed<TableColumn[]>(() => [
             )
         }
     },
-    { field: 'userName', label: '姓名', minWidth: '110px' },
-    { field: 'account', label: '账号', minWidth: '120px' },
     {
         field: 'userLevel',
         label: '用户等级',

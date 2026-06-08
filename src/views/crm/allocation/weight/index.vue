@@ -3,7 +3,7 @@
         <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams">
             <template #levelCode="form">
                 <UserLevelSelect
-                    v-model="form.levelCode"
+                    v-model="form['levelCode']"
                     placeholder="请选择用户等级"
                     style="width: 220px"
                 />
@@ -98,16 +98,6 @@ const searchSchema = reactive<FormSchema[]>([
             clearable: true,
             style: { width: '220px' }
         }
-    },
-    {
-        field: 'levelName',
-        label: '等级名称',
-        component: 'Input',
-        componentProps: {
-            clearable: true,
-            placeholder: '请输入等级名称',
-            style: { width: '240px' }
-        }
     }
 ])
 
@@ -199,7 +189,6 @@ const handleDelete = async (id?: number) => {
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'id', label: 'ID', width: '80px' },
     { field: 'levelName', label: '用户等级', width: '140px' },
     { field: 'weight', label: '权重', width: '120px' },
     {

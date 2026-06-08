@@ -72,7 +72,7 @@ export interface CustomerConsultRecordCreateReqVO {
     appointmentTime?: string
     nextFollowTime?: string
     needRemind?: boolean
-    consultContent: string
+    consultContent?: string
 }
 
 export interface CustomerWeworkRelationItem {

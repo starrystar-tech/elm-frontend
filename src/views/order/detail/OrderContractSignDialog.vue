@@ -1,82 +1,96 @@
 <template>
     <Dialog v-model="dialogVisible" title="签署合同" width="980px">
         <div v-loading="loading" class="order-contract-sign">
-            <div class="order-contract-sign__section">
-                <div class="order-contract-sign__title">订单信息</div>
-                <div class="order-contract-sign__grid">
-                    <div class="order-contract-sign__item">
-                        <span class="label">订单编号：</span>
-                        <span>{{ orderDetail.orderNo || '-' }}</span>
-                    </div>
-                    <div class="order-contract-sign__item">
-                        <span class="label">客户姓名：</span>
-                        <span>{{ orderDetail.customerName || '-' }}</span>
-                    </div>
-                    <div class="order-contract-sign__item">
-                        <span class="label">手机号：</span>
-                        <span>{{ orderDetail.customerMobile || '-' }}</span>
-                    </div>
-                    <div class="order-contract-sign__item">
-                        <span class="label">报名分校：</span>
-                        <span>{{ orderDetail.campusName || '-' }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="order-contract-sign__section">
+            <div v-if="shouldShowProductSelector" class="order-contract-sign__section">
                 <div class="order-contract-sign__title">商品信息</div>
                 <el-radio-group
                     v-model="selectedOrderItemId"
                     class="order-contract-sign__product-list"
                     @change="handleOrderItemChange"
                 >
-                    <el-radio-button
+                    <el-radio
                         v-for="item in orderDetail.items || []"
                         :key="item.id"
                         :label="item.id"
                     >
                         {{ item.productName || item.productCode || `商品${item.id}` }}
-                    </el-radio-button>
+                    </el-radio>
                 </el-radio-group>
             </div>
 
             <div class="order-contract-sign__section">
-                <div class="order-contract-sign__header">
-                    <div class="order-contract-sign__title">合同记录</div>
-                    <el-button
-                        v-if="activeContract"
-                        plain
-                        type="primary"
-                        @click="handleOpenSignUrl(activeContract.id)"
-                    >
-                        继续签署
-                    </el-button>
-                </div>
-                <el-table :data="contractList" border>
-                    <el-table-column prop="contractNo" label="合同编号" min-width="160" />
-                    <el-table-column prop="contractTypeName" label="合同类型" min-width="120" />
-                    <el-table-column prop="statusName" label="合同状态" min-width="120" />
-                    <el-table-column prop="signTime" label="签署时间" min-width="180" />
-                    <el-table-column prop="revokeReason" label="撤销原因" min-width="160" />
-                    <el-table-column label="操作" min-width="220" fixed="right">
-                        <template #default="{ row }">
-                            <el-button link type="primary" @click="handleOpenSignUrl(row.id)">
-                                签署链接
-                            </el-button>
-                            <el-button link type="primary" @click="handlePreview(row.id)">
-                                预览
-                            </el-button>
-                            <el-button
-                                v-if="canCancelContract(row.status)"
-                                link
-                                type="danger"
-                                @click="handleCancelSign(row.id)"
+                <el-tabs v-model="activeTab" class="order-contract-sign__tabs">
+                    <el-tab-pane label="订单信息" name="order">
+                        <div class="order-contract-sign__grid">
+                            <div class="order-contract-sign__item">
+                                <span class="label">订单编号：</span>
+                                <span>{{ orderDetail.orderNo || '-' }}</span>
+                            </div>
+                            <div class="order-contract-sign__item">
+                                <span class="label">客户姓名：</span>
+                                <span>{{ orderDetail.customerName || '-' }}</span>
+                            </div>
+                            <div class="order-contract-sign__item">
+                                <span class="label">手机号：</span>
+                                <span>{{ orderDetail.customerMobile || '-' }}</span>
+                            </div>
+                            <div class="order-contract-sign__item">
+                                <span class="label">报名分校：</span>
+                                <span>{{ orderDetail.campusName || '-' }}</span>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                    <el-tab-pane label="合同记录" name="contract">
+                        <div class="order-contract-sign__header">
+                            <div
+                                class="order-contract-sign__title order-contract-sign__title--compact"
                             >
-                                撤销签署
+                                合同记录
+                            </div>
+                            <el-button
+                                v-if="activeContract"
+                                plain
+                                type="primary"
+                                @click="handleOpenSignUrl(activeContract.id)"
+                            >
+                                继续签署
                             </el-button>
-                        </template>
-                    </el-table-column>
-                </el-table>
+                        </div>
+                        <el-table :data="contractList" border>
+                            <el-table-column prop="contractNo" label="合同编号" min-width="160" />
+                            <el-table-column
+                                prop="contractTypeName"
+                                label="合同类型"
+                                min-width="120"
+                            />
+                            <el-table-column prop="statusName" label="合同状态" min-width="120" />
+                            <el-table-column prop="signTime" label="签署时间" min-width="180" />
+                            <el-table-column prop="revokeReason" label="撤销原因" min-width="160" />
+                            <el-table-column label="操作" min-width="220" fixed="right">
+                                <template #default="{ row }">
+                                    <el-button
+                                        link
+                                        type="primary"
+                                        @click="handleOpenSignUrl(row.id)"
+                                    >
+                                        签署链接
+                                    </el-button>
+                                    <el-button link type="primary" @click="handlePreview(row.id)">
+                                        预览
+                                    </el-button>
+                                    <el-button
+                                        v-if="canCancelContract(row.status)"
+                                        link
+                                        type="danger"
+                                        @click="handleCancelSign(row.id)"
+                                    >
+                                        撤销签署
+                                    </el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-tab-pane>
+                </el-tabs>
             </div>
 
             <div class="order-contract-sign__section">
@@ -99,29 +113,17 @@
                             />
                         </el-select>
                     </el-form-item>
-                    <el-form-item v-if="variableFields.length" label="模板变量">
-                        <div class="order-contract-sign__variables">
-                            <div
-                                v-for="field in variableFields"
-                                :key="field.id || field.variableName"
-                                class="order-contract-sign__variable"
-                            >
-                                <span class="order-contract-sign__variable-label">
-                                    {{ field.variableName }}
-                                </span>
-                                <el-input
-                                    v-model="variableForm[field.variableName]"
-                                    :placeholder="`请输入${field.variableName}`"
-                                    clearable
-                                />
-                            </div>
-                        </div>
+                    <el-form-item
+                        v-for="field in variableFields"
+                        :key="field.id || field.variableName"
+                        :label="field.variableName"
+                    >
+                        <el-input
+                            v-model="variableForm[field.variableName]"
+                            :placeholder="`请输入${field.variableName}`"
+                            clearable
+                        />
                     </el-form-item>
-                    <el-empty
-                        v-else-if="selectedTemplateId"
-                        description="当前模板未配置变量"
-                        :image-size="60"
-                    />
                 </el-form>
             </div>
         </div>
@@ -154,7 +156,12 @@ const message = useMessage()
 const dialogVisible = ref(false)
 const loading = ref(false)
 const submitting = ref(false)
-const orderDetail = ref<OrderApi.OrderDetailRespVO>({ items: [], payRecords: [], refunds: [] } as any)
+const activeTab = ref('order')
+const orderDetail = ref<OrderApi.OrderDetailRespVO>({
+    items: [],
+    payRecords: [],
+    refunds: []
+} as any)
 const selectedOrderItemId = ref<number>()
 const selectedTemplateId = ref<number>()
 const contractList = ref<ContractApi.ContractOrderProductRespVO[]>([])
@@ -165,8 +172,11 @@ const variableForm = reactive<Record<string, string>>({})
 const selectedOrderItem = computed(() =>
     (orderDetail.value.items || []).find((item) => item.id === selectedOrderItemId.value)
 )
+const shouldShowProductSelector = computed(() => (orderDetail.value.items || []).length > 1)
 
-const activeContract = computed(() => contractList.value.find((item) => canContinueContract(item.status)))
+const activeContract = computed(() =>
+    contractList.value.find((item) => canContinueContract(item.status))
+)
 
 const canContinueContract = (status?: number) => status === 1
 const canCancelContract = (status?: number) => status === 1
@@ -309,7 +319,9 @@ const open = async (
         }
         orderDetail.value = detail
         const items = detail.items || []
-        selectedOrderItemId.value = items.find((item) => item.productId === productId)?.id || items[0]?.id
+        activeTab.value = 'order'
+        selectedOrderItemId.value =
+            items.find((item) => item.productId === productId)?.id || items[0]?.id
         await Promise.all([loadTemplateList(), loadContractList()])
     } finally {
         loading.value = false
@@ -328,11 +340,19 @@ defineExpose({ open })
     margin-top: 18px;
 }
 
+.order-contract-sign__tabs {
+    margin-top: -4px;
+}
+
 .order-contract-sign__title {
     margin-bottom: 12px;
     font-size: 15px;
     font-weight: 600;
     color: var(--el-text-color-primary);
+}
+
+.order-contract-sign__title--compact {
+    margin-bottom: 0;
 }
 
 .order-contract-sign__header {
@@ -362,23 +382,5 @@ defineExpose({ open })
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-}
-
-.order-contract-sign__variables {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 16px;
-}
-
-.order-contract-sign__variable {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.order-contract-sign__variable-label {
-    font-size: 13px;
-    color: var(--el-text-color-regular);
 }
 </style>
