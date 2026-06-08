@@ -10,10 +10,13 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 16px 72px 16px 18px;
-    border-radius: 14px;
+    padding: 16px 18px 16px 18px;
     color: #fff;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(
+        135deg,
+        var(--el-color-primary-light-3) 0%,
+        var(--el-color-primary-light-7) 100%
+    );
     box-shadow: 0 8px 24px rgba(102, 126, 234, 0.24);
 }
 
@@ -83,12 +86,6 @@
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
-}
-
-.clue-hero__actions :deep(.el-button--default) {
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.22);
 }
 
 .clue-hero__intent {

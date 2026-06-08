@@ -4,3 +4,26 @@
 // .dark .dark\:text-color {
 //   color: rgba(255, 255, 255, var(--dark-text-color));
 // }
+
+.el-drawer {
+    border-radius: 20px 0 0 20px;
+    overflow: hidden;
+    box-shadow: -8px 0 32px rgba(15, 23, 42, 0.16);
+    .el-drawer__header {
+        margin-bottom: 20px;
+        font-weight: 600;
+        .el-drawer__title {
+            font-size: 18px;
+        }
+    }
+    .el-drawer__body {
+        padding: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .el-drawer {
+        width: 100vw !important;
+        border-radius: 0;
+    }
+}

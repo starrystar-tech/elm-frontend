@@ -1,46 +1,51 @@
 <template>
     <div v-loading="loading">
+        <DetailHeroCard
+            :avatar-text="orderAvatarText"
+            :title="detail.customerName || detail.orderNo || '--'"
+            class="mb-16px"
+        >
+            <template #contact>
+                <div class="flex flex-wrap items-center gap-8px text-14px">
+                    <MobileCopyInline
+                        :clue-id="detail.clueId"
+                        :mobile="detail.customerMobile"
+                    />
+                    <template v-if="detail.customerMobile2">
+                        <span>/</span>
+                        <MobileCopyInline :mobile="detail.customerMobile2" direct-copy />
+                    </template>
+                </div>
+            </template>
+            <template #subline>
+                <span>订单编号：{{ detail.orderNo || '-' }}</span>
+                <span>客户ID：{{ detail.customerId || '-' }}</span>
+                <span>订单状态：{{ orderStatusLabel(detail.orderStatus) }}</span>
+                <span>订单归属：{{ orderOwnerText }}</span>
+            </template>
+            <template #actions>
+                <el-button @click="goBack">返回</el-button>
+                <el-button type="success" plain @click="handleContractSign()">签署合同</el-button>
+                <el-button type="primary" plain @click="handlePay">支付</el-button>
+                <el-button type="warning" plain @click="handleRefund">退款</el-button>
+                <el-button type="danger" plain @click="handleVoid">作废</el-button>
+                <el-button type="success" plain @click="handleRepurchase">订单复购</el-button>
+            </template>
+        </DetailHeroCard>
+
         <ContentWrap class="mb-16px">
-            <div class="flex flex-wrap items-start justify-between gap-16px">
-                <div class="order-detail-summary">
-                    <div class="order-detail-summary__title">订单基本信息</div>
-                    <el-descriptions :column="4" border>
-                        <el-descriptions-item label="订单编号">{{
-                            detail.orderNo || '-'
-                        }}</el-descriptions-item>
-                        <el-descriptions-item label="报名时间">{{
-                            detail.enrollTime || '-'
-                        }}</el-descriptions-item>
-                        <el-descriptions-item label="订单状态">{{
-                            orderStatusLabel(detail.orderStatus)
-                        }}</el-descriptions-item>
-                        <el-descriptions-item label="订单归属">{{
-                            orderOwnerText
-                        }}</el-descriptions-item>
-                        <el-descriptions-item label="应付金额">{{
-                            `￥${formatAmount(detail.payableAmount)}`
-                        }}</el-descriptions-item>
-                        <el-descriptions-item label="已付金额">{{
-                            `￥${formatAmount(detail.paidAmount)}`
-                        }}</el-descriptions-item>
-                        <el-descriptions-item label="已退费金额">{{
-                            `￥${formatAmount(detail.refundAmount)}`
-                        }}</el-descriptions-item>
-                        <el-descriptions-item label="备注" :span="2">{{
-                            detail.remark || '-'
-                        }}</el-descriptions-item>
-                    </el-descriptions>
-                </div>
-                <div class="flex flex-wrap gap-8px">
-                    <el-button @click="goBack">返回</el-button>
-                    <el-button type="success" plain @click="handleContractSign()"
-                        >签署合同</el-button
-                    >
-                    <el-button type="primary" plain @click="handlePay">支付</el-button>
-                    <el-button type="warning" plain @click="handleRefund">退款</el-button>
-                    <el-button type="danger" plain @click="handleVoid">作废</el-button>
-                    <el-button type="success" plain @click="handleRepurchase">订单复购</el-button>
-                </div>
+            <div class="order-detail-summary">
+                <div class="order-detail-summary__title">订单基本信息</div>
+                <el-descriptions :column="4" border>
+                    <el-descriptions-item label="订单编号">{{ detail.orderNo || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="报名时间">{{ detail.enrollTime || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="订单状态">{{ orderStatusLabel(detail.orderStatus) }}</el-descriptions-item>
+                    <el-descriptions-item label="订单归属">{{ orderOwnerText }}</el-descriptions-item>
+                    <el-descriptions-item label="应付金额">{{ `￥${formatAmount(detail.payableAmount)}` }}</el-descriptions-item>
+                    <el-descriptions-item label="已付金额">{{ `￥${formatAmount(detail.paidAmount)}` }}</el-descriptions-item>
+                    <el-descriptions-item label="已退费金额">{{ `￥${formatAmount(detail.refundAmount)}` }}</el-descriptions-item>
+                    <el-descriptions-item label="备注" :span="2">{{ detail.remark || '-' }}</el-descriptions-item>
+                </el-descriptions>
             </div>
         </ContentWrap>
 
@@ -274,6 +279,7 @@ import * as OrderApi from '@/api/crm/order'
 import { DICT_TYPE, getDictLabel } from '@/utils/dict'
 import { resolveTimestamp } from '@/utils/formatTime'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
+import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
 import OrderContractSignDialog from './OrderContractSignDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import {
@@ -299,6 +305,7 @@ const detail = ref<OrderApi.OrderDetailRespVO>({ items: [], payRecords: [], refu
 const consultBasicInfo = ref<CustomerDetailApi.CustomerBasicInfoRespVO>()
 const consultAppointments = ref<CustomerDetailApi.CustomerAppointmentRespVO[]>([])
 const activeTab = ref((route.query.tab as string) || 'student')
+const orderAvatarText = computed(() => (detail.value.customerName || '订').slice(0, 1))
 
 const orderId = computed(() => Number(route.params.id))
 

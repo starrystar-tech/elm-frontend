@@ -1,5 +1,11 @@
 <template>
-    <Dialog v-model="dialogVisible" title="工单详情" width="760px" append-to-body>
+    <el-drawer
+        v-model="dialogVisible"
+        title="工单详情"
+        size="720px"
+        append-to-body
+        :close-on-click-modal="false"
+    >
         <el-descriptions :column="2" border v-loading="loading">
             <el-descriptions-item label="工单号">{{
                 detail?.ticketNo || '--'
@@ -13,9 +19,9 @@
             <el-descriptions-item label="客户">{{
                 detail?.customerName || '--'
             }}</el-descriptions-item>
-            <el-descriptions-item label="联系电话">{{
-                detail?.customerMobile || '--'
-            }}</el-descriptions-item>
+            <el-descriptions-item label="联系电话">
+                <MobileCopyInline :clue-id="detail?.clueId" :mobile="detail?.customerMobile" />
+            </el-descriptions-item>
             <el-descriptions-item label="工单类型">{{ typeLabel }}</el-descriptions-item>
             <el-descriptions-item label="优先级">{{ priorityLabel }}</el-descriptions-item>
             <el-descriptions-item label="状态">{{ statusLabel }}</el-descriptions-item>
@@ -44,12 +50,13 @@
                 detail?.processResult || '--'
             }}</el-descriptions-item>
         </el-descriptions>
-    </Dialog>
+    </el-drawer>
 </template>
 
 <script setup lang="ts">
 import * as AftersalesApi from '@/api/crm/aftersales'
 import { formatDate } from '@/utils/formatTime'
+import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import {
     getAftersalesPriorityLabel,
     getAftersalesStatusLabel,

@@ -16,29 +16,22 @@
 
         <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
             <div class="flex gap-4px flex-wrap">
-                <BaseButton
-                    type="primary"
-                    plain
-                    :disabled="selectionList.length !== 2"
-                    @click="openMergeDialog"
+                <BaseButton plain :disabled="selectionList.length !== 2" @click="openMergeDialog"
                     >合并</BaseButton
                 >
                 <BaseButton
-                    type="primary"
                     plain
                     :disabled="selectionList.length === 0"
                     @click="assignModeDialogVisible = true"
                     >修改分配方式</BaseButton
                 >
                 <BaseButton
-                    type="primary"
                     plain
                     :disabled="selectionList.length === 0"
                     @click="silentDialogVisible = true"
                     >静默</BaseButton
                 >
                 <BaseButton
-                    type="primary"
                     plain
                     :disabled="selectionList.length === 0"
                     @click="tagDialogVisible = true"
@@ -46,7 +39,6 @@
                 >
                 <BaseButton
                     v-if="canSmsSend"
-                    type="primary"
                     plain
                     :disabled="selectionList.length === 0"
                     @click="openSmsDialog"
@@ -54,7 +46,6 @@
                 >
                 <BaseButton
                     v-if="canComplaintTagUpdate"
-                    type="primary"
                     plain
                     :disabled="selectionList.length === 0"
                     @click="openComplaintTagDialog"
@@ -66,10 +57,10 @@
                     >新增</BaseButton
                 >
                 <BaseButton plain @click="importDialogVisible = true">批量导入</BaseButton>
-                <BaseButton v-if="canExport" plain @click="openExportDialog">导出</BaseButton>
                 <BaseButton v-if="canComplaintTagImport" plain @click="openComplaintImportDialog"
                     >投诉标签导入</BaseButton
                 >
+                <BaseButton v-if="canExport" plain @click="openExportDialog">导出</BaseButton>
             </div>
         </div>
 

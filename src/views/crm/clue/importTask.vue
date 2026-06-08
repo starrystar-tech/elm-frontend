@@ -2,12 +2,6 @@
     <ContentWrap>
         <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
 
-        <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
-            <div class="flex gap-8px flex-wrap">
-                <BaseButton plain @click="tableMethods.getList">刷新</BaseButton>
-            </div>
-        </div>
-
         <Table
             v-model:currentPage="tableObject.currentPage"
             v-model:pageSize="tableObject.pageSize"
@@ -97,7 +91,8 @@ const {
     tableMethods,
     register: tableRegister
 } = useTable<ClueApi.ClueImportTaskVO>({
-    getListApi: async (params) => await ClueApi.getClueImportTaskPage(params as ClueApi.ClueImportTaskPageReqVO)
+    getListApi: async (params) =>
+        await ClueApi.getClueImportTaskPage(params as ClueApi.ClueImportTaskPageReqVO)
 })
 
 const setSearchParams = (params: Record<string, any>) => {
@@ -118,7 +113,7 @@ const openFailDialog = async (taskId: number) => {
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'id', label: '任务编号', width: '100px' },
+    // { field: 'id', label: '任务编号', width: '100px' },
     { field: 'fileName', label: '文件名', minWidth: '220px' },
     {
         field: 'status',
@@ -141,7 +136,11 @@ const tableColumns = computed<TableColumn[]>(() => [
         slots: {
             default: (data) =>
                 Number(data.row.failCount || 0) > 0 ? (
-                    <ElLink underline={false} type="danger" onClick={() => openFailDialog(data.row.id)}>
+                    <ElLink
+                        underline={false}
+                        type="danger"
+                        onClick={() => openFailDialog(data.row.id)}
+                    >
                         {data.row.failCount}
                     </ElLink>
                 ) : (

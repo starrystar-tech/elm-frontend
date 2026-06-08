@@ -1,9 +1,9 @@
 <template>
     <el-drawer
         v-model="drawerVisible"
-        :with-header="false"
         direction="rtl"
         size="1120px"
+        title="学员详情"
         append-to-body
         :close-on-click-modal="false"
         class="customer-detail-drawer"
@@ -12,16 +12,10 @@
             <div class="customer-detail-drawer__body">
                 <div class="detail-wrap">
                     <CustomerDetailsHeader :clue="clue" :loading="loading">
-                        <el-button
-                            v-hasPermi="['crm:clue:basic-info:update']"
-                            type="primary"
-                            @click="openForm"
-                        >
+                        <el-button v-hasPermi="['crm:clue:basic-info:update']" @click="openForm">
                             编辑
                         </el-button>
-                        <el-button type="default" @click="drawerVisible = false">关闭</el-button>
                     </CustomerDetailsHeader>
-
                     <el-col>
                         <el-tabs v-model="activeTabName">
                             <el-tab-pane label="基本信息" name="basicInfo">
@@ -114,37 +108,3 @@ const open = async (id: number) => {
 
 defineExpose({ open })
 </script>
-
-<style scoped lang="scss">
-.customer-detail-drawer__shell {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.customer-detail-drawer__body {
-    flex: 1;
-    padding: 0;
-    overflow: auto;
-}
-</style>
-
-<style lang="scss">
-.customer-detail-drawer {
-    width: min(1320px, 92vw) !important;
-    border-radius: 20px 0 0 20px;
-    overflow: hidden;
-    box-shadow: -8px 0 32px rgba(15, 23, 42, 0.16);
-
-    .el-drawer__body {
-        padding: 0;
-    }
-}
-
-@media (max-width: 768px) {
-    .customer-detail-drawer {
-        width: 100vw !important;
-        border-radius: 0;
-    }
-}
-</style>

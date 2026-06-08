@@ -1,26 +1,47 @@
 <template>
     <el-drawer
         v-model="drawerVisible"
-        :with-header="false"
         direction="rtl"
         size="1200px"
         append-to-body
+        title="订单详情"
         :close-on-click-modal="false"
         class="order-detail-drawer"
     >
         <div class="order-detail-drawer__shell">
             <div class="order-detail-drawer__body">
-                <div class="flex flex-wrap gap-8px justify-end mb-16px">
-                    <el-button type="primary" plain @click="handleContractSign()"
-                        >签署合同</el-button
-                    >
-                    <el-button type="primary" plain @click="handlePay">支付</el-button>
-                    <el-button type="primary" plain @click="handleRefund">退款</el-button>
-                    <el-button type="danger" plain @click="handleVoid">作废</el-button>
-                    <el-button type="primary" plain @click="handleRepurchase">订单复购</el-button>
-                    <el-button @click="drawerVisible = false">关闭</el-button>
-                </div>
                 <div v-loading="loading">
+                    <DetailHeroCard
+                        :avatar-text="orderAvatarText"
+                        :title="detail.customerName || detail.orderNo || '--'"
+                        class="mb-16px"
+                    >
+                        <template #contact>
+                            <div class="flex flex-wrap items-center gap-8px text-14px">
+                                <template v-if="detail.customerMobile2">
+                                    <span>/</span>
+                                    <MobileCopyInline
+                                        :mobile="detail.customerMobile2"
+                                        direct-copy
+                                    />
+                                </template>
+                            </div>
+                        </template>
+                        <template #subline>
+                            <span>订单编号：{{ detail.orderNo || '-' }}</span>
+                            <span>客户ID：{{ detail.customerId || '-' }}</span>
+                            <span>订单状态：{{ orderStatusLabel(detail.orderStatus) }}</span>
+                            <span>订单归属：{{ orderOwnerText }}</span>
+                        </template>
+                        <template #actions>
+                            <el-button plain @click="handleContractSign()">签署合同</el-button>
+                            <el-button plain @click="handlePay">支付</el-button>
+                            <el-button plain @click="handleRefund">退款</el-button>
+                            <el-button plain @click="handleVoid">作废</el-button>
+                            <el-button plain @click="handleRepurchase">订单复购</el-button>
+                            <el-button @click="drawerVisible = false">关闭</el-button>
+                        </template>
+                    </DetailHeroCard>
                     <ContentWrap class="mb-16px">
                         <div class="flex flex-wrap items-start justify-between gap-16px p-16px">
                             <div class="order-detail-summary">
@@ -381,6 +402,7 @@ import * as OrderApi from '@/api/crm/order'
 import { DICT_TYPE, getDictLabel } from '@/utils/dict'
 import { resolveTimestamp } from '@/utils/formatTime'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
+import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
 import OrderContractSignDialog from './OrderContractSignDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import {
@@ -405,6 +427,7 @@ const detail = ref<OrderApi.OrderDetailRespVO>({ items: [], payRecords: [], refu
 const consultBasicInfo = ref<CustomerDetailApi.CustomerBasicInfoRespVO>()
 const consultAppointments = ref<CustomerDetailApi.CustomerAppointmentRespVO[]>([])
 const activeTab = ref('student')
+const orderAvatarText = computed(() => (detail.value.customerName || '订').slice(0, 1))
 
 const orderStatusLabel = (value?: number) => getOptionLabel(ORDER_STATUS_OPTIONS, value)
 const payStatusLabel = (value?: number) => getOptionLabel(PAY_STATUS_OPTIONS, value)
@@ -547,31 +570,5 @@ defineExpose({ open })
     height: 100%;
     display: flex;
     flex-direction: column;
-}
-
-.order-detail-drawer__body {
-    flex: 1;
-    padding: 16px;
-    overflow: auto;
-}
-</style>
-
-<style lang="scss">
-.order-detail-drawer {
-    width: min(1320px, 92vw) !important;
-    border-radius: 20px 0 0 20px;
-    overflow: hidden;
-    box-shadow: -8px 0 32px rgba(15, 23, 42, 0.16);
-
-    .el-drawer__body {
-        padding: 0;
-    }
-}
-
-@media (max-width: 768px) {
-    .order-detail-drawer {
-        width: 100vw !important;
-        border-radius: 0;
-    }
 }
 </style>

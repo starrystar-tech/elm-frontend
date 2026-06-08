@@ -1,22 +1,19 @@
 <template>
     <div v-loading="loading">
-        <div class="flex items-start justify-between gap-16px">
-            <div>
-                <div class="text-20px font-bold text-[#303133]">{{ clue.name || '--' }}</div>
-                <div class="mt-8px text-13px text-[#606266]">
-                    学员ID：{{ clue.customerId || '--' }}
-                </div>
-            </div>
-            <div>
+        <DetailHeroCard :avatar="clue.avatar" :avatar-text="avatarText" :title="clue.name || '--'">
+            <template #subline>
+                <span>学员ID：{{ clue.customerId || '--' }}</span>
+                <span>班主任：{{ clue.currentOwnerName || '--' }}</span>
+                <span>地域：{{ regionText }}</span>
+                <span>报名状态：{{ clue.customerId ? '已报名' : '未报名' }}</span>
+            </template>
+            <template #actions>
                 <slot></slot>
-            </div>
-        </div>
+            </template>
+        </DetailHeroCard>
     </div>
     <ContentWrap class="mt-10px">
         <el-descriptions :column="5" direction="vertical" class="p-10px pb-0px">
-            <el-descriptions-item label="手机号">
-                <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile" />
-            </el-descriptions-item>
             <el-descriptions-item label="班主任">{{
                 clue.currentOwnerName || '--'
             }}</el-descriptions-item>
@@ -35,11 +32,14 @@
 import * as ClueApi from '@/api/crm/clue'
 import { formatDate } from '@/utils/formatTime'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
+import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
     loading: boolean
 }>()
+
+const avatarText = computed(() => (props.clue.name || '学').slice(0, 1))
 
 const regionText = computed(() => {
     const names = [props.clue.province, props.clue.city, props.clue.district].filter(Boolean)

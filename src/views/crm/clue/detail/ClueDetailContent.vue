@@ -1,57 +1,40 @@
 <template>
     <div class="clue-card-query">
-        <div class="clue-hero">
-            <el-button circle plain class="clue-hero__close" @click="emit('close')">
-                <Icon icon="ep:close" />
-            </el-button>
-            <div class="clue-hero__main">
-                <el-avatar
-                    v-if="clue.avatar"
-                    :size="52"
-                    :src="clue.avatar"
-                    class="clue-avatar-image"
+        <DetailHeroCard :avatar="clue.avatar" :avatar-text="avatarText" :title="clue.name || '--'">
+            <template #titleExtra>
+                <ClueIntentLevel
+                    :model-value="clue.intentLevel"
+                    mode="tag"
+                    class="clue-hero__intent"
                 />
-                <div v-else class="clue-avatar">{{ avatarText }}</div>
-                <div class="clue-hero__meta">
-                    <div class="clue-hero__name-row">
-                        <h3>{{ clue.name || '--' }}</h3>
-                        <ClueIntentLevel
-                            :model-value="clue.intentLevel"
-                            mode="tag"
-                            class="clue-hero__intent"
-                        />
-                    </div>
-                    <div class="flex flex-wrap items-center gap-8px text-14px">
-                        <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile" />
-                        <template v-if="clue.mobile2">
-                            <span>/</span>
-                            <MobileCopyInline :mobile="clue.mobile2" direct-copy />
-                        </template>
-                    </div>
-                    <div class="clue-hero__subline">
-                        <span
-                            >归属：{{
-                                clue.currentOwnerName || customerBasicInfo?.ownerName || '--'
-                            }}</span
-                        >
-                        <span
-                            >部门：{{
-                                clue.currentDepartmentName ||
-                                customerBasicInfo?.departmentName ||
-                                '--'
-                            }}</span
-                        >
-                        <span>名片编号：{{ clue.customerId || clue.id || '--' }}</span>
-                    </div>
+            </template>
+            <template #contact>
+                <div class="flex flex-wrap items-center gap-8px text-14px">
+                    <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile" />
+                    <template v-if="clue.mobile2">
+                        <span>/</span>
+                        <MobileCopyInline :mobile="clue.mobile2" direct-copy />
+                    </template>
                 </div>
-            </div>
-            <div class="clue-hero__actions">
+            </template>
+            <template #subline>
+                <span
+                    >归属：{{ clue.currentOwnerName || customerBasicInfo?.ownerName || '--' }}</span
+                >
+                <span
+                    >部门：{{
+                        clue.currentDepartmentName || customerBasicInfo?.departmentName || '--'
+                    }}</span
+                >
+                <span>名片编号：{{ clue.customerId || clue.id || '--' }}</span>
+            </template>
+            <template #actions>
                 <el-button plain @click="emit('sms')">短信</el-button>
                 <el-button plain @click="emit('enroll')">报名</el-button>
                 <el-button plain @click="emit('transfer')">转移</el-button>
                 <el-button plain @click="emit('tag')">加标签</el-button>
-            </div>
-        </div>
+            </template>
+        </DetailHeroCard>
 
         <div class="clue-columns">
             <div class="clue-column">
@@ -232,7 +215,13 @@
                             class="clue-info-item"
                         >
                             <label>{{ item.label }}</label>
-                            <div>{{ item.value }}</div>
+                            <div v-if="item.label === '手机号'">
+                                <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile" />
+                            </div>
+                            <div v-else-if="item.label === '手机号2'">
+                                <MobileCopyInline :mobile="clue.mobile2" direct-copy />
+                            </div>
+                            <div v-else>{{ item.value }}</div>
                         </div>
                     </div>
                 </section>
@@ -645,7 +634,11 @@
                                             v-if="relation.mobile"
                                             class="wework-relation-card__remark-item"
                                         >
-                                            备注手机号 {{ relation.mobile }}
+                                            备注手机号
+                                            <MobileCopyInline
+                                                :mobile="relation.mobile"
+                                                direct-copy
+                                            />
                                         </span>
                                         <span class="wework-relation-card__remark-item">
                                             添加方式 {{ formatAddWay(relation.addWay) }}
@@ -687,6 +680,7 @@ import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
 import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import ClueIntentLevel from '@/components/ClueIntentLevel'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
+import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
@@ -843,6 +837,57 @@ const formatDateTime = (value?: string | number | null) => {
     return resolveTimestamp(value)?.format('YYYY-MM-DD HH:mm:ss') || String(value)
 }
 
+const formatConsultValue = (value: unknown) => {
+    if (value === null || value === undefined || value === '') return ''
+    return String(value)
+}
+
+const buildConsultTrackLines = (content?: string) => {
+    if (!content || !content.trim().startsWith('{')) {
+        return content ? [content] : []
+    }
+    try {
+        const parsed = JSON.parse(content)
+        const campusName =
+            props.campusOptions.find((item) => Number(item.id) === Number(parsed.campusId))?.name ||
+            ''
+        const consultResultLabel = getDictLabel(
+            DICT_TYPE.CRM_CLUE_CONSULT_RESULT,
+            Number(parsed.consultResult)
+        )
+        const consultTypeLabel = getDictLabel(
+            DICT_TYPE.CRM_CLUE_CONSULT_TYPE,
+            Number(parsed.consultType)
+        )
+        const lines = [
+            consultResultLabel ? `是否有效：${consultResultLabel}` : '',
+            consultTypeLabel ? `操作类型：${consultTypeLabel}` : '',
+            campusName ? `校区：${campusName}` : '',
+            formatConsultValue(parsed.projectId) ? `咨询项目ID：${parsed.projectId}` : '',
+            formatConsultValue(parsed.productCategoryId)
+                ? `商品分类ID：${parsed.productCategoryId}`
+                : '',
+            formatConsultValue(parsed.productId) ? `商品ID：${parsed.productId}` : '',
+            formatConsultValue(parsed.appointmentPrice)
+                ? `预约价格：${parsed.appointmentPrice}`
+                : '',
+            parsed.appointmentTime
+                ? `预约时间：${formatDateTime(parsed.appointmentTime)}`
+                : '',
+            parsed.nextFollowTime
+                ? `下次回访时间：${formatDateTime(parsed.nextFollowTime)}`
+                : '',
+            parsed.needRemind !== null && parsed.needRemind !== undefined
+                ? `是否提醒：${parsed.needRemind ? '是' : '否'}`
+                : '',
+            parsed.consultContent ? `备注：${parsed.consultContent}` : ''
+        ].filter(Boolean)
+        return lines.length ? lines : [content]
+    } catch {
+        return [content]
+    }
+}
+
 const syncEditForm = () => {
     editForm.id = props.clue.id
     editForm.mobile = props.clue.mobile || ''
@@ -920,7 +965,14 @@ const complaintTagText = computed(() => {
 const parsedTrackList = computed(() =>
     (props.trackList || []).map((item) => ({
         ...item,
-        lines: item.contentLines || (item.content ? [item.content] : [])
+        lines:
+            item.contentLines?.length
+                ? item.contentLines
+                : item.type === 4 || item.typeName === '咨询信息'
+                  ? buildConsultTrackLines(item.content)
+                  : item.content
+                    ? [item.content]
+                    : []
     }))
 )
 

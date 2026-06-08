@@ -1,7 +1,7 @@
 <template>
     <el-drawer
         v-model="drawerVisible"
-        :with-header="false"
+        title="客户详情"
         direction="rtl"
         size="1120px"
         append-to-body
