@@ -68,7 +68,7 @@ export default defineComponent({
         const outboundStatus = ref(0)
         const outboundStatusLoading = ref(false)
         let exportTaskTimer: number | undefined
-        const message = useMessage()
+        const messageApi = useMessage()
 
         const outboundSignedIn = computed(() => outboundStatus.value === 1)
         const outboundStatusLabel = computed(() =>
@@ -139,9 +139,9 @@ export default defineComponent({
             try {
                 await updateUserOutboundStatus({ outboundStatus: nextStatus })
                 outboundStatus.value = nextStatus
-                message.success(nextStatus === 1 ? '已签入外呼' : '已签出外呼')
+                messageApi.success(nextStatus === 1 ? '已签入外呼' : '已签出外呼')
             } catch (error: any) {
-                message.error(error?.message || '更新外呼状态失败')
+                messageApi.error(error?.message || '更新外呼状态失败')
             } finally {
                 outboundStatusLoading.value = false
             }

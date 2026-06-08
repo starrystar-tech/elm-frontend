@@ -49,9 +49,11 @@ import { DictTag } from '@/components/DictTag'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
+import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'CrmContact' })
 
+const message = useMessage()
 const canCreate = hasPermission(['crm:contact:create'])
 const canUpdate = hasPermission(['crm:contact:update'])
 const canDelete = hasPermission(['crm:contact:delete'])
@@ -197,7 +199,21 @@ const tableColumns = reactive<TableColumn[]>([
             )
         }
     },
-    { field: 'mobile', label: '手机', width: '120px' },
+    {
+        field: 'mobile',
+        label: '手机',
+        width: '170px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: { id: data.row.id },
+                    mobile: data.row.mobile,
+                    directCopyWhenMissingClueId: true,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     { field: 'telephone', label: '电话', width: '130px' },
     { field: 'email', label: '邮箱', width: '180px' },
     { field: 'post', label: '职位', width: '120px' },

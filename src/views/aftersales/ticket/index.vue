@@ -43,6 +43,7 @@ import {
 import AftersalesAssignDialog from '../components/AftersalesAssignDialog.vue'
 import AftersalesProcessDialog from '../components/AftersalesProcessDialog.vue'
 import AftersalesDetailDialog from '../components/AftersalesDetailDialog.vue'
+import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'AftersalesTicket' })
 
@@ -109,7 +110,20 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'clueId', label: '线索ID', minWidth: '90px' },
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
     { field: 'customerName', label: '客户', minWidth: '100px' },
-    { field: 'customerMobile', label: '手机号', minWidth: '130px' },
+    {
+        field: 'customerMobile',
+        label: '手机号',
+        minWidth: '170px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: data.row,
+                    mobile: data.row.customerMobile,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     {
         field: 'ticketType',
         label: '类型',

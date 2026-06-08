@@ -25,6 +25,7 @@ import type { FormSchema } from '@/types/form'
 import { dateFormatter } from '@/utils/formatTime'
 import * as OrderApi from '@/api/crm/order'
 import { PAY_METHOD_OPTIONS, PAY_CONFIRM_STATUS_OPTIONS, formatAmount, getOptionLabel } from '../utils'
+import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'OrderPaymentConfirm' })
 
@@ -64,6 +65,11 @@ const setSearchParams = (params: Recordable) => {
     tableMethods.setSearchParams(params)
 }
 
+const getOrderClueDetail = async (id: number) => {
+    const detail = await OrderApi.getOrder(id)
+    return { clueId: detail.clueId }
+}
+
 const audit = async (row: OrderApi.OrderPayRecordRespVO, confirmStatus: number) => {
     const result = await ElMessageBox.prompt(confirmStatus === 20 ? '请输入通过结果' : '请输入驳回原因', '支付确认', {
         inputValue: confirmStatus === 20 ? '支付记录无误' : '支付凭证有误'
@@ -84,7 +90,21 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
     { field: 'customerName', label: '姓名', minWidth: '100px' },
     { field: 'customerId', label: '客户ID', minWidth: '100px' },
-    { field: 'customerMobile', label: '手机号', minWidth: '130px' },
+    {
+        field: 'customerMobile',
+        label: '手机号',
+        minWidth: '170px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: { id: data.row.orderId },
+                    mobile: data.row.customerMobile,
+                    getDetail: getOrderClueDetail,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     { field: 'payAmount', label: '支付金额', minWidth: '100px', formatter: (_r, _c, v) => formatAmount(v) },
     { field: 'payMethod', label: '支付方式', minWidth: '100px' },
     { field: 'payNo', label: '支付流水号', minWidth: '220px' },

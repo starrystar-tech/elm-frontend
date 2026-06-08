@@ -48,6 +48,7 @@ import { useTable } from '@/hooks/web/useTable'
 import * as WeworkContactApi from '@/api/crm/wework/contact'
 import * as WeappApi from '@/api/system/weapp'
 import ClueDetailDrawer from '@/views/crm/clue/detail/ClueDetailDrawer.vue'
+import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'CrmWeworkContact' })
 
@@ -305,7 +306,21 @@ const tableColumns = reactive<TableColumn[]>([
             }
         }
     },
-    { field: 'mobile', label: '手机号', width: '160px' },
+    {
+        field: 'mobile',
+        label: '手机号',
+        width: '190px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: data.row,
+                    mobile: data.row.mobile,
+                    directCopyWhenMissingClueId: true,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     {
         field: 'staffName',
         label: '添加成员',

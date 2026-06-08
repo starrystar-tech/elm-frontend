@@ -18,6 +18,7 @@ type RenderCopyMobileOptions<T extends CopyRow> = CopyFeedback & {
     mobile?: string
     clueId?: number
     getDetail?: (id: number) => Promise<{ clueId?: number } | undefined>
+    directCopyWhenMissingClueId?: boolean
 }
 
 export const renderCopyMobileCell = <T extends CopyRow>({
@@ -25,6 +26,7 @@ export const renderCopyMobileCell = <T extends CopyRow>({
     mobile,
     clueId,
     getDetail,
+    directCopyWhenMissingClueId = false,
     success,
     warning
 }: RenderCopyMobileOptions<T>) => {
@@ -32,6 +34,11 @@ export const renderCopyMobileCell = <T extends CopyRow>({
     const handleCopy = async () => {
         const resolvedClueId =
             clueId !== undefined ? Number(clueId) : await resolveClueIdForCopy({ row, getDetail })
+        if (!resolvedClueId && directCopyWhenMissingClueId && mobile) {
+            await navigator.clipboard.writeText(mobile)
+            success('复制成功')
+            return
+        }
         await copyMobileByClueId({
             clueId: resolvedClueId,
             onSuccess: success,

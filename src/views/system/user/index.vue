@@ -222,34 +222,11 @@ const batchUpdateForm = reactive({
 
 const searchSchema = reactive<FormSchema[]>([
     {
-        field: 'deptKeyword',
-        label: '企业名称',
-        component: 'Input',
-        componentProps: {
-            placeholder: '请输入企业名称',
-            clearable: true,
-            style: { width: '200px' }
-        }
-    },
-    {
-        field: 'queryType',
-        label: '搜索方式',
-        component: 'Select',
-        componentProps: {
-            placeholder: '请选择',
-            options: [
-                { label: '姓名', value: 'nickname' },
-                { label: '帐号', value: 'username' }
-            ],
-            style: { width: '200px' }
-        }
-    },
-    {
         field: 'keyword',
         label: '用户名称',
         component: 'Input',
         componentProps: {
-            placeholder: '请输入姓名或帐号',
+            placeholder: '请输入姓名或登录帐号',
             clearable: true,
             style: { width: '200px' }
         }
@@ -344,17 +321,14 @@ const {
 const exportLoading = computed(() => tableObject.exportLoading)
 
 const setSearchParams = (params: Recordable) => {
-    const queryType = params.queryType || 'username'
-    const keyword = params.keyword || ''
     const mappedParams = {
         ...params,
-        username: queryType === 'username' ? keyword : undefined,
+        keyword: params.keyword || undefined,
+        username: undefined,
         mobile: undefined,
-        nickname: queryType === 'nickname' ? keyword : undefined,
+        nickname: undefined,
         deptId: deptId.value
     }
-    delete mappedParams.queryType
-    delete mappedParams.keyword
     delete mappedParams.deptKeyword
     tableMethods.setSearchParams(mappedParams)
 }
@@ -499,7 +473,7 @@ const areaGroupRows = computed(() =>
 
 const tableColumns = reactive<TableColumn[]>([
     { field: 'nickname', label: '姓名', minWidth: 100, fixed: 'left' },
-    { field: 'username', label: '登录账号', minWidth: 100, fixed: 'left' },
+    { field: 'username', label: '登录账号', minWidth: 130, fixed: 'left' },
     {
         field: 'userLevel',
         label: '角色/等级',

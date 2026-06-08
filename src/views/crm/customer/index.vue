@@ -1,12 +1,31 @@
 <template>
     <ContentWrap>
         <Search
-            ref="searchRef"
             :schema="searchSchema"
             :model="searchForm"
-            @reset="setSearchParams"
+            @reset="resetSearchParams"
             @search="setSearchParams"
-        />
+        >
+            <template #enrollStatus>
+                <el-select
+                    v-model="searchForm.enrollStatus"
+                    clearable
+                    placeholder="请选择报名状态"
+                    style="width: 180px"
+                >
+                    <el-option label="未报名" value="unregistered" />
+                    <el-option label="已报名" value="registered" />
+                </el-select>
+            </template>
+            <template #areaId>
+                <AreaSelect
+                    v-model="searchForm.areaId"
+                    :include-all-node="false"
+                    placeholder="请选择地域"
+                    style="width: 220px"
+                />
+            </template>
+        </Search>
         <div class="mb-12px flex items-center justify-between action-btn-wrap">
             <BaseButton
                 type="primary"
@@ -31,6 +50,7 @@
     </ContentWrap>
 
     <BatchHeadteacherForm ref="batchHeadteacherFormRef" @success="handleBatchHeadteacherSuccess" />
+    <CustomerDetailDrawer ref="detailRef" @refresh="handleDetailRefresh" />
 </template>
 
 <script lang="tsx" setup>
@@ -39,21 +59,16 @@ import { ElLink } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import * as ClueApi from '@/api/crm/clue'
 import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
-import * as AreaApi from '@/api/system/area'
+import AreaSelect from '@/components/AreaSelect.vue'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
-import { useCache } from '@/hooks/web/useCache'
 import type { FormSchema } from '@/types/form'
-import type { SearchExpose } from '@/components/Search'
 import BatchHeadteacherForm from './BatchHeadteacherForm.vue'
-
-interface AreaOption {
-    label: string
-    value: number
-}
+import CustomerDetailDrawer from './detail/CustomerDetailDrawer.vue'
+import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 interface StudentSearchParams {
     mobile?: string
@@ -63,22 +78,14 @@ interface StudentSearchParams {
     enrollStatus?: 'registered' | 'unregistered'
 }
 
-interface CustomerListCacheState {
-    searchParams: StudentSearchParams
-    currentPage: number
-    pageSize: number
-}
-
 defineOptions({ name: 'CrmCustomer' })
 
-const CUSTOMER_LIST_CACHE_KEY = 'crmCustomerListState'
-const { wsCache } = useCache('sessionStorage')
-const searchRef = ref<SearchExpose>()
+const message = useMessage()
 const batchHeadteacherFormRef = ref<InstanceType<typeof BatchHeadteacherForm>>()
+const detailRef = ref<InstanceType<typeof CustomerDetailDrawer>>()
 const searchForm = reactive<StudentSearchParams>({})
 const selectionList = ref<ClueApi.ClueVO[]>([])
 const headteacherOptions = ref<{ label: string; value: number }[]>([])
-const areaOptions = ref<AreaOption[]>([])
 const searchSchema = reactive<FormSchema[]>([
     {
         field: 'mobile',
@@ -103,25 +110,19 @@ const searchSchema = reactive<FormSchema[]>([
     {
         field: 'enrollStatus',
         label: '报名状态',
-        component: 'Select',
+        component: 'Input',
         componentProps: {
             clearable: true,
-            style: { width: '180px' },
-            options: [
-                { label: '未报名', value: 'unregistered' },
-                { label: '已报名', value: 'registered' }
-            ]
+            style: { width: '180px' }
         }
     },
     {
         field: 'areaId',
         label: '地域',
-        component: 'Select',
+        component: 'Input',
         componentProps: {
             clearable: true,
-            filterable: true,
-            style: { width: '220px' },
-            options: areaOptions.value
+            style: { width: '220px' }
         }
     },
     {
@@ -137,15 +138,13 @@ const searchSchema = reactive<FormSchema[]>([
     }
 ])
 
-const { push } = useRouter()
 const tableRef = ref<any>()
 const {
     tableObject,
     tableMethods,
     register: tableRegister
 } = useTable<ClueApi.ClueVO>({
-    getListApi: async (params) =>
-        await ClueApi.getCluePage(buildListParams(params as StudentSearchParams))
+    getListApi: async (params) => await ClueApi.getCluePage(params)
 })
 
 const buildAreaLabel = (row: ClueApi.ClueVO) => {
@@ -163,13 +162,17 @@ const buildListParams = (params: StudentSearchParams = {}) => {
         mobile: params.mobile,
         customer: params.customer,
         areaId: params.areaId,
-        headteacherUserId: params.headteacherUserId
+        headteacherUserId: params.headteacherUserId,
+        minOrderCount: (params as Record<string, any>).minOrderCount,
+        maxOrderCount: (params as Record<string, any>).maxOrderCount
     }
     if (params.enrollStatus === 'registered') {
         nextParams.minOrderCount = 1
+        delete nextParams.maxOrderCount
     }
     if (params.enrollStatus === 'unregistered') {
         nextParams.maxOrderCount = 0
+        delete nextParams.minOrderCount
     }
     return nextParams
 }
@@ -181,18 +184,8 @@ const syncSearchForm = (params: StudentSearchParams = {}) => {
     Object.assign(searchForm, params)
 }
 
-const cacheListState = async () => {
-    const currentSearchParams = await searchRef.value?.getFormData<StudentSearchParams>()
-    wsCache.set(CUSTOMER_LIST_CACHE_KEY, {
-        searchParams: currentSearchParams || { ...searchForm },
-        currentPage: tableObject.currentPage,
-        pageSize: tableObject.pageSize
-    } as CustomerListCacheState)
-}
-
-const openDetail = async (id: number) => {
-    await cacheListState()
-    push({ name: 'CrmCustomerDetail', params: { id } })
+const openDetail = (id: number) => {
+    detailRef.value?.open(id)
 }
 
 const registerTable = (table: any, elTable: any) => {
@@ -200,24 +193,8 @@ const registerTable = (table: any, elTable: any) => {
     tableRef.value = table
 }
 
-const restoreListState = async () => {
-    const cachedState = wsCache.get(CUSTOMER_LIST_CACHE_KEY) as CustomerListCacheState | undefined
-    if (!cachedState) {
-        tableMethods.getList()
-        return
-    }
-    wsCache.delete(CUSTOMER_LIST_CACHE_KEY)
-    syncSearchForm(cachedState.searchParams || {})
-    await searchRef.value?.setValues(cachedState.searchParams || {})
-    const pageSizeChanged = !!cachedState.pageSize && cachedState.pageSize !== tableObject.pageSize
-    const currentPageChanged =
-        !!cachedState.currentPage && cachedState.currentPage !== tableObject.currentPage
-    tableObject.pageSize = cachedState.pageSize || tableObject.pageSize
-    tableObject.currentPage = cachedState.currentPage || tableObject.currentPage
-    tableObject.params = buildListParams(cachedState.searchParams || {})
-    if (!pageSizeChanged && !currentPageChanged) {
-        await tableMethods.getList()
-    }
+const handleDetailRefresh = async () => {
+    await tableMethods.getList()
 }
 
 const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
@@ -251,7 +228,20 @@ const tableColumns = computed<TableColumn[]>(() => [
             )
         }
     },
-    { field: 'mobile', label: '手机号', width: '140px' },
+    {
+        field: 'mobile',
+        label: '手机号',
+        minWidth: '170px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: data.row,
+                    mobile: data.row.mobile,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     {
         field: 'genderName',
         label: '性别',
@@ -267,7 +257,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'areaName',
         label: '地域',
-        minWidth: '180px',
+        minWidth: '200px',
         slots: { default: (data) => <span>{buildAreaLabel(data.row)}</span> }
     },
     {
@@ -300,35 +290,12 @@ const tableColumns = computed<TableColumn[]>(() => [
     }
 ])
 
-const flattenAreas = (nodes: any[] = [], parents: string[] = []): AreaOption[] => {
-    return nodes.flatMap((node) => {
-        const nextParents = [...parents, node.name]
-        const current = node.id
-            ? [
-                  {
-                      label: nextParents.join(' / '),
-                      value: Number(node.id)
-                  }
-              ]
-            : []
-        return current.concat(flattenAreas(node.children || [], nextParents))
-    })
-}
-
 const loadFilterOptions = async () => {
-    const [headteachers, areas] = await Promise.all([
-        HeadteacherApi.getHeadteacherSimpleList(),
-        AreaApi.getAreaTree()
-    ])
+    const [headteachers] = await Promise.all([HeadteacherApi.getHeadteacherSimpleList()])
     headteacherOptions.value = (headteachers || []).map((item) => ({
         label: item.nickname || item.username,
         value: item.id
     }))
-    areaOptions.value = flattenAreas(areas || [])
-    const areaField = searchSchema.find((item) => item.field === 'areaId')
-    if (areaField?.componentProps) {
-        areaField.componentProps.options = areaOptions.value
-    }
     const headteacherField = searchSchema.find((item) => item.field === 'headteacherUserId')
     if (headteacherField?.componentProps) {
         headteacherField.componentProps.options = headteacherOptions.value
@@ -336,12 +303,22 @@ const loadFilterOptions = async () => {
 }
 
 const setSearchParams = (params: StudentSearchParams) => {
-    syncSearchForm(params)
-    tableMethods.setSearchParams(buildListParams(params))
+    const mergedParams = {
+        ...params,
+        enrollStatus: searchForm.enrollStatus,
+        areaId: searchForm.areaId
+    }
+    syncSearchForm(mergedParams)
+    tableMethods.setSearchParams(buildListParams(mergedParams))
+}
+
+const resetSearchParams = () => {
+    syncSearchForm({})
+    tableMethods.setSearchParams(buildListParams({}))
 }
 
 onMounted(async () => {
     await loadFilterOptions()
-    await restoreListState()
+    await tableMethods.getList()
 })
 </script>

@@ -23,8 +23,11 @@ import type { FormSchema } from '@/types/form'
 import { dateFormatter } from '@/utils/formatTime'
 import * as OrderApi from '@/api/crm/order'
 import { PAY_METHOD_OPTIONS, PAY_STATUS_OPTIONS, formatAmount, getOptionLabel } from '../utils'
+import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'OrderPayRecord' })
+
+const message = useMessage()
 
 const searchSchema = computed<FormSchema[]>(() => [
     { field: 'mobile', label: '联系电话', component: 'Input', componentProps: { clearable: true, style: { width: '220px' } } },
@@ -57,11 +60,30 @@ const setSearchParams = (params: Recordable) => {
     tableMethods.setSearchParams(params)
 }
 
+const getOrderClueDetail = async (id: number) => {
+    const detail = await OrderApi.getOrder(id)
+    return { clueId: detail.clueId }
+}
+
 const tableColumns = computed<TableColumn[]>(() => [
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
     { field: 'customerName', label: '姓名', minWidth: '100px' },
     { field: 'customerId', label: '客户ID', minWidth: '100px' },
-    { field: 'customerMobile', label: '手机号', minWidth: '130px' },
+    {
+        field: 'customerMobile',
+        label: '手机号',
+        minWidth: '170px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: { id: data.row.orderId },
+                    mobile: data.row.customerMobile,
+                    getDetail: getOrderClueDetail,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     { field: 'payAmount', label: '支付金额', minWidth: '100px', formatter: (_r, _c, v) => formatAmount(v) },
     { field: 'payMethod', label: '支付方式', minWidth: '100px' },
     { field: 'payStatus', label: '支付状态', minWidth: '100px', formatter: (_r, _c, v) => getOptionLabel(PAY_STATUS_OPTIONS, v) },

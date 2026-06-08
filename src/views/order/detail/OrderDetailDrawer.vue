@@ -1,269 +1,366 @@
 <template>
-    <Dialog v-model="dialogVisible" title="订单详情" width="1200px">
-        <div class="flex flex-wrap gap-8px justify-end mb-16px">
-            <el-button type="primary" plain @click="handleContractSign()">签署合同</el-button>
-            <el-button type="primary" plain @click="handlePay">支付</el-button>
-            <el-button type="primary" plain @click="handleRefund">退款</el-button>
-            <el-button type="danger" plain @click="handleVoid">作废</el-button>
-            <el-button type="primary" plain @click="handleRepurchase">订单复购</el-button>
-        </div>
-        <div v-loading="loading">
-            <ContentWrap class="mb-16px">
-                <div class="flex flex-wrap items-start justify-between gap-16px p-16px">
-                    <div class="order-detail-summary">
-                        <div class="order-detail-summary__title">订单基本信息</div>
-                        <el-descriptions :column="4" border>
-                            <el-descriptions-item label="订单编号">{{
-                                detail.orderNo || '-'
-                            }}</el-descriptions-item>
-                            <el-descriptions-item label="报名时间">{{
-                                detail.enrollTime || '-'
-                            }}</el-descriptions-item>
-                            <el-descriptions-item label="订单状态">{{
-                                orderStatusLabel(detail.orderStatus)
-                            }}</el-descriptions-item>
-                            <el-descriptions-item label="订单归属">{{
-                                orderOwnerText
-                            }}</el-descriptions-item>
-                            <el-descriptions-item label="应付金额">{{
-                                `￥${formatAmount(detail.payableAmount)}`
-                            }}</el-descriptions-item>
-                            <el-descriptions-item label="已付金额">{{
-                                `￥${formatAmount(detail.paidAmount)}`
-                            }}</el-descriptions-item>
-                            <el-descriptions-item label="已退费金额">{{
-                                `￥${formatAmount(detail.refundAmount)}`
-                            }}</el-descriptions-item>
-                            <el-descriptions-item label="备注" :span="2">{{
-                                detail.remark || '-'
-                            }}</el-descriptions-item>
-                        </el-descriptions>
-                    </div>
+    <el-drawer
+        v-model="drawerVisible"
+        :with-header="false"
+        direction="rtl"
+        size="1200px"
+        append-to-body
+        :close-on-click-modal="false"
+        class="order-detail-drawer"
+    >
+        <div class="order-detail-drawer__shell">
+            <div class="order-detail-drawer__body">
+                <div class="flex flex-wrap gap-8px justify-end mb-16px">
+                    <el-button type="primary" plain @click="handleContractSign()"
+                        >签署合同</el-button
+                    >
+                    <el-button type="primary" plain @click="handlePay">支付</el-button>
+                    <el-button type="primary" plain @click="handleRefund">退款</el-button>
+                    <el-button type="danger" plain @click="handleVoid">作废</el-button>
+                    <el-button type="primary" plain @click="handleRepurchase">订单复购</el-button>
+                    <el-button @click="drawerVisible = false">关闭</el-button>
                 </div>
-            </ContentWrap>
-
-            <ContentWrap>
-                <el-tabs v-model="activeTab" class="p-16px">
-                    <el-tab-pane label="学员信息" name="student">
-                        <div class="order-detail-student p-10px">
-                            <el-descriptions :column="4" border>
-                                <el-descriptions-item label="姓名">{{
-                                    detail.customerName || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="性别">{{
-                                    genderText
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="手机号">{{
-                                    detail.customerMobile || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="手机号2">{{
-                                    detail.customerMobile2 || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="地区" :span="2">{{
-                                    areaText
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="微信">{{
-                                    detail.wechat || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="微信2">{{
-                                    detail.wechat2 || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="QQ">{{
-                                    detail.qq || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="出生日期">{{
-                                    detail.birthday || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="证件类型">{{
-                                    detail.certificateType || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="证件号码">{{
-                                    detail.idCardNo || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="最高学历">{{
-                                    educationText
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="职业">{{
-                                    detail.occupation || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="紧急联系号码">{{
-                                    detail.emergencyMobile || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="紧急联系人">{{
-                                    detail.emergencyContact || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="客户ID">{{
-                                    detail.customerId || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="信息ID">{{
-                                    detail.customerId || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="客户状态">{{
-                                    consultBasicInfo?.statusName || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="意向度">{{
-                                    consultBasicInfo?.intentLevelName || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="来源">{{
-                                    consultBasicInfo?.clueSourceName || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="咨询项目">{{
-                                    consultBasicInfo?.consultProjectName || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="名片归属">{{
-                                    consultBasicInfo?.ownerName || detail.cardOwnerUserName || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="归属部门">{{
-                                    consultBasicInfo?.departmentName || '-'
-                                }}</el-descriptions-item>
-                                <el-descriptions-item label="标签" :span="2">{{
-                                    consultTagText
-                                }}</el-descriptions-item>
-                            </el-descriptions>
+                <div v-loading="loading">
+                    <ContentWrap class="mb-16px">
+                        <div class="flex flex-wrap items-start justify-between gap-16px p-16px">
+                            <div class="order-detail-summary">
+                                <div class="order-detail-summary__title">订单基本信息</div>
+                                <el-descriptions :column="4" border>
+                                    <el-descriptions-item label="订单编号">{{
+                                        detail.orderNo || '-'
+                                    }}</el-descriptions-item>
+                                    <el-descriptions-item label="报名时间">{{
+                                        detail.enrollTime || '-'
+                                    }}</el-descriptions-item>
+                                    <el-descriptions-item label="订单状态">{{
+                                        orderStatusLabel(detail.orderStatus)
+                                    }}</el-descriptions-item>
+                                    <el-descriptions-item label="订单归属">{{
+                                        orderOwnerText
+                                    }}</el-descriptions-item>
+                                    <el-descriptions-item label="应付金额">{{
+                                        `￥${formatAmount(detail.payableAmount)}`
+                                    }}</el-descriptions-item>
+                                    <el-descriptions-item label="已付金额">{{
+                                        `￥${formatAmount(detail.paidAmount)}`
+                                    }}</el-descriptions-item>
+                                    <el-descriptions-item label="已退费金额">{{
+                                        `￥${formatAmount(detail.refundAmount)}`
+                                    }}</el-descriptions-item>
+                                    <el-descriptions-item label="备注" :span="2">{{
+                                        detail.remark || '-'
+                                    }}</el-descriptions-item>
+                                </el-descriptions>
+                            </div>
                         </div>
-                    </el-tab-pane>
-                    <el-tab-pane label="预约记录" name="appointments">
-                        <el-table
-                            v-if="consultAppointments.length"
-                            :data="consultAppointments"
-                            border
-                        >
-                            <el-table-column
-                                prop="appointmentTypeName"
-                                label="操作类型"
-                                min-width="120"
-                            />
-                            <el-table-column label="预约时间" min-width="160">
-                                <template #default="{ row }">
-                                    {{ formatDateTimeText(row.appointmentTime) }}
-                                </template>
-                            </el-table-column>
-                            <el-table-column prop="campusName" label="分校" min-width="140" />
-                            <el-table-column label="咨询项目" min-width="180">
-                                <template #default="{ row }">
-                                    {{
-                                        row.projectName ||
-                                        row.productCategoryName ||
-                                        row.productName ||
-                                        '-'
-                                    }}
-                                </template>
-                            </el-table-column>
-                            <el-table-column label="预约价格" min-width="120">
-                                <template #default="{ row }">
-                                    {{
-                                        row.appointmentPrice !== undefined
-                                            ? formatAmount(row.appointmentPrice)
-                                            : '-'
-                                    }}
-                                </template>
-                            </el-table-column>
-                            <el-table-column label="记录人" min-width="120">
-                                <template #default="{ row }">
-                                    {{ row.creatorName || row.creator || '-' }}
-                                </template>
-                            </el-table-column>
-                            <el-table-column label="创建时间" min-width="160">
-                                <template #default="{ row }">
-                                    {{ formatDateTimeText(row.createTime) }}
-                                </template>
-                            </el-table-column>
-                            <el-table-column prop="consultContent" label="备注" min-width="220" />
-                        </el-table>
-                        <el-empty
-                            v-else
-                            description="暂无咨询记录"
-                            :image-size="60"
-                            class="order-consult-section__empty"
-                        />
-                    </el-tab-pane>
-                    <el-tab-pane label="商品信息" name="goods">
-                        <el-table :data="detail.items || []" border>
-                            <el-table-column
-                                prop="productCategoryPath"
-                                label="商品分类"
-                                min-width="160"
-                            />
-                            <el-table-column prop="productCode" label="商品编码" min-width="120" />
-                            <el-table-column prop="productName" label="商品名称" min-width="180" />
-                            <el-table-column prop="productPrice" label="商品价格" min-width="100">
-                                <template #default="{ row }">{{
-                                    formatAmount(row.productPrice)
-                                }}</template>
-                            </el-table-column>
-                            <el-table-column prop="payableAmount" label="应付金额" min-width="100">
-                                <template #default="{ row }">{{
-                                    formatAmount(row.payableAmount)
-                                }}</template>
-                            </el-table-column>
-                            <el-table-column prop="expireTime" label="到期时间" min-width="120" />
-                            <el-table-column label="操作" min-width="120" fixed="right">
-                                <template #default="{ row }">
-                                    <el-button
-                                        link
-                                        type="success"
-                                        @click="handleContractSign(row.productId)"
+                    </ContentWrap>
+
+                    <ContentWrap>
+                        <el-tabs v-model="activeTab" class="p-16px">
+                            <el-tab-pane label="学员信息" name="student">
+                                <div class="order-detail-student p-10px">
+                                    <el-descriptions :column="4" border>
+                                        <el-descriptions-item label="姓名">{{
+                                            detail.customerName || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="性别">{{
+                                            genderText
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="手机号">{{
+                                            detail.customerMobile || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="手机号2">{{
+                                            detail.customerMobile2 || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="地区" :span="2">{{
+                                            areaText
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="微信">{{
+                                            detail.wechat || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="微信2">{{
+                                            detail.wechat2 || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="QQ">{{
+                                            detail.qq || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="出生日期">{{
+                                            detail.birthday || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="证件类型">{{
+                                            detail.certificateType || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="证件号码">{{
+                                            detail.idCardNo || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="最高学历">{{
+                                            educationText
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="职业">{{
+                                            detail.occupation || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="紧急联系号码">{{
+                                            detail.emergencyMobile || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="紧急联系人">{{
+                                            detail.emergencyContact || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="客户ID">{{
+                                            detail.customerId || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="信息ID">{{
+                                            detail.customerId || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="客户状态">{{
+                                            consultBasicInfo?.statusName || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="意向度">{{
+                                            consultBasicInfo?.intentLevelName || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="来源">{{
+                                            consultBasicInfo?.clueSourceName || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="咨询项目">{{
+                                            consultBasicInfo?.consultProjectName || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="名片归属">{{
+                                            consultBasicInfo?.ownerName ||
+                                            detail.cardOwnerUserName ||
+                                            '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="归属部门">{{
+                                            consultBasicInfo?.departmentName || '-'
+                                        }}</el-descriptions-item>
+                                        <el-descriptions-item label="标签" :span="2">{{
+                                            consultTagText
+                                        }}</el-descriptions-item>
+                                    </el-descriptions>
+                                </div>
+                            </el-tab-pane>
+                            <el-tab-pane label="预约记录" name="appointments">
+                                <el-table
+                                    v-if="consultAppointments.length"
+                                    :data="consultAppointments"
+                                    border
+                                >
+                                    <el-table-column
+                                        prop="appointmentTypeName"
+                                        label="操作类型"
+                                        min-width="120"
+                                    />
+                                    <el-table-column label="预约时间" min-width="160">
+                                        <template #default="{ row }">
+                                            {{ formatDateTimeText(row.appointmentTime) }}
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="campusName"
+                                        label="分校"
+                                        min-width="140"
+                                    />
+                                    <el-table-column label="咨询项目" min-width="180">
+                                        <template #default="{ row }">
+                                            {{
+                                                row.projectName ||
+                                                row.productCategoryName ||
+                                                row.productName ||
+                                                '-'
+                                            }}
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="预约价格" min-width="120">
+                                        <template #default="{ row }">
+                                            {{
+                                                row.appointmentPrice !== undefined
+                                                    ? formatAmount(row.appointmentPrice)
+                                                    : '-'
+                                            }}
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="记录人" min-width="120">
+                                        <template #default="{ row }">
+                                            {{ row.creatorName || row.creator || '-' }}
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="创建时间" min-width="160">
+                                        <template #default="{ row }">
+                                            {{ formatDateTimeText(row.createTime) }}
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="consultContent"
+                                        label="备注"
+                                        min-width="220"
+                                    />
+                                </el-table>
+                                <el-empty
+                                    v-else
+                                    description="暂无咨询记录"
+                                    :image-size="60"
+                                    class="order-consult-section__empty"
+                                />
+                            </el-tab-pane>
+                            <el-tab-pane label="商品信息" name="goods">
+                                <el-table :data="detail.items || []" border>
+                                    <el-table-column
+                                        prop="productCategoryPath"
+                                        label="商品分类"
+                                        min-width="160"
+                                    />
+                                    <el-table-column
+                                        prop="productCode"
+                                        label="商品编码"
+                                        min-width="120"
+                                    />
+                                    <el-table-column
+                                        prop="productName"
+                                        label="商品名称"
+                                        min-width="180"
+                                    />
+                                    <el-table-column
+                                        prop="productPrice"
+                                        label="商品价格"
+                                        min-width="100"
                                     >
-                                        签署合同
-                                    </el-button>
-                                </template>
-                            </el-table-column>
-                        </el-table>
-                    </el-tab-pane>
-                    <el-tab-pane label="支付记录" name="pays">
-                        <el-table :data="detail.payRecords || []" border>
-                            <el-table-column prop="payMethod" label="支付方式" min-width="120" />
-                            <el-table-column prop="payAmount" label="支付金额" min-width="100">
-                                <template #default="{ row }">{{
-                                    formatAmount(row.payAmount)
-                                }}</template>
-                            </el-table-column>
-                            <el-table-column prop="payStatus" label="支付状态" min-width="100">
-                                <template #default="{ row }">{{
-                                    payStatusLabel(row.payStatus)
-                                }}</template>
-                            </el-table-column>
-                            <el-table-column prop="payNo" label="支付流水号" min-width="200" />
-                            <el-table-column prop="payTime" label="支付时间" min-width="180" />
-                            <el-table-column prop="confirmStatus" label="财务确认" min-width="100">
-                                <template #default="{ row }">{{
-                                    payConfirmStatusLabel(row.confirmStatus)
-                                }}</template>
-                            </el-table-column>
-                            <el-table-column
-                                prop="confirmResult"
-                                label="确认结果"
-                                min-width="140"
-                            />
-                        </el-table>
-                    </el-tab-pane>
-                    <el-tab-pane label="退款记录" name="refunds">
-                        <el-table :data="detail.refunds || []" border>
-                            <el-table-column prop="refundNo" label="退款单号" min-width="180" />
-                            <el-table-column prop="refundMethod" label="退款方式" min-width="110" />
-                            <el-table-column prop="refundType" label="退款类型" min-width="100">
-                                <template #default="{ row }">{{
-                                    refundTypeLabel(row.refundType)
-                                }}</template>
-                            </el-table-column>
-                            <el-table-column prop="refundAmount" label="退款金额" min-width="100">
-                                <template #default="{ row }">{{
-                                    formatAmount(row.refundAmount)
-                                }}</template>
-                            </el-table-column>
-                            <el-table-column prop="refundStatus" label="退款状态" min-width="100">
-                                <template #default="{ row }">{{
-                                    refundStatusLabel(row.refundStatus)
-                                }}</template>
-                            </el-table-column>
-                            <el-table-column prop="refundReason" label="退款原因" min-width="160" />
-                            <el-table-column prop="refundRemark" label="退款备注" min-width="160" />
-                        </el-table>
-                    </el-tab-pane>
-                </el-tabs>
-            </ContentWrap>
+                                        <template #default="{ row }">{{
+                                            formatAmount(row.productPrice)
+                                        }}</template>
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="payableAmount"
+                                        label="应付金额"
+                                        min-width="100"
+                                    >
+                                        <template #default="{ row }">{{
+                                            formatAmount(row.payableAmount)
+                                        }}</template>
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="expireTime"
+                                        label="到期时间"
+                                        min-width="120"
+                                    />
+                                    <el-table-column label="操作" min-width="120" fixed="right">
+                                        <template #default="{ row }">
+                                            <el-button
+                                                link
+                                                type="success"
+                                                @click="handleContractSign(row.productId)"
+                                            >
+                                                签署合同
+                                            </el-button>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                            </el-tab-pane>
+                            <el-tab-pane label="支付记录" name="pays">
+                                <el-table :data="detail.payRecords || []" border>
+                                    <el-table-column
+                                        prop="payMethod"
+                                        label="支付方式"
+                                        min-width="120"
+                                    />
+                                    <el-table-column
+                                        prop="payAmount"
+                                        label="支付金额"
+                                        min-width="100"
+                                    >
+                                        <template #default="{ row }">{{
+                                            formatAmount(row.payAmount)
+                                        }}</template>
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="payStatus"
+                                        label="支付状态"
+                                        min-width="100"
+                                    >
+                                        <template #default="{ row }">{{
+                                            payStatusLabel(row.payStatus)
+                                        }}</template>
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="payNo"
+                                        label="支付流水号"
+                                        min-width="200"
+                                    />
+                                    <el-table-column
+                                        prop="payTime"
+                                        label="支付时间"
+                                        min-width="180"
+                                    />
+                                    <el-table-column
+                                        prop="confirmStatus"
+                                        label="财务确认"
+                                        min-width="100"
+                                    >
+                                        <template #default="{ row }">{{
+                                            payConfirmStatusLabel(row.confirmStatus)
+                                        }}</template>
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="confirmResult"
+                                        label="确认结果"
+                                        min-width="140"
+                                    />
+                                </el-table>
+                            </el-tab-pane>
+                            <el-tab-pane label="退款记录" name="refunds">
+                                <el-table :data="detail.refunds || []" border>
+                                    <el-table-column
+                                        prop="refundNo"
+                                        label="退款单号"
+                                        min-width="180"
+                                    />
+                                    <el-table-column
+                                        prop="refundMethod"
+                                        label="退款方式"
+                                        min-width="110"
+                                    />
+                                    <el-table-column
+                                        prop="refundType"
+                                        label="退款类型"
+                                        min-width="100"
+                                    >
+                                        <template #default="{ row }">{{
+                                            refundTypeLabel(row.refundType)
+                                        }}</template>
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="refundAmount"
+                                        label="退款金额"
+                                        min-width="100"
+                                    >
+                                        <template #default="{ row }">{{
+                                            formatAmount(row.refundAmount)
+                                        }}</template>
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="refundStatus"
+                                        label="退款状态"
+                                        min-width="100"
+                                    >
+                                        <template #default="{ row }">{{
+                                            refundStatusLabel(row.refundStatus)
+                                        }}</template>
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="refundReason"
+                                        label="退款原因"
+                                        min-width="160"
+                                    />
+                                    <el-table-column
+                                        prop="refundRemark"
+                                        label="退款备注"
+                                        min-width="160"
+                                    />
+                                </el-table>
+                            </el-tab-pane>
+                        </el-tabs>
+                    </ContentWrap>
+                </div>
+            </div>
         </div>
-    </Dialog>
+    </el-drawer>
 
     <RefundDialog ref="refundRef" @success="handleRefundSuccess" />
     <OrderContractSignDialog ref="contractSignRef" @success="handleContractSignSuccess" />
@@ -293,7 +390,7 @@ import {
 defineOptions({ name: 'OrderDetailDrawer' })
 
 const message = useMessage()
-const dialogVisible = ref(false)
+const drawerVisible = ref(false)
 const loading = ref(false)
 const refundRef = ref<InstanceType<typeof RefundDialog>>()
 const contractSignRef = ref<InstanceType<typeof OrderContractSignDialog>>()
@@ -366,7 +463,7 @@ const loadDetail = async (id: number) => {
 }
 
 const open = async (id: number, tab?: string) => {
-    dialogVisible.value = true
+    drawerVisible.value = true
     activeTab.value = tab || 'student'
     await loadDetail(id)
 }
@@ -437,5 +534,37 @@ defineExpose({ open })
 }
 .order-consult-section__empty {
     padding-top: 8px;
+}
+
+.order-detail-drawer__shell {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.order-detail-drawer__body {
+    flex: 1;
+    padding: 16px;
+    overflow: auto;
+}
+</style>
+
+<style lang="scss">
+.order-detail-drawer {
+    width: min(1320px, 92vw) !important;
+    border-radius: 20px 0 0 20px;
+    overflow: hidden;
+    box-shadow: -8px 0 32px rgba(15, 23, 42, 0.16);
+
+    .el-drawer__body {
+        padding: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .order-detail-drawer {
+        width: 100vw !important;
+        border-radius: 0;
+    }
 }
 </style>

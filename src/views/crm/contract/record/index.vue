@@ -25,9 +25,11 @@ import type { FormSchema } from '@/types/form'
 import { floatToFixed2 } from '@/utils'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import * as ContractApi from '@/api/system/contract'
+import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'ContractRecord' })
 
+const message = useMessage()
 const canDownload = hasPermission(['system:contract:download'])
 
 const contractTypeOptions = [
@@ -179,7 +181,21 @@ const tableColumns = reactive<TableColumn[]>([
             default: (data) => data.row.customerName || data.row.customerId || '-'
         }
     },
-    { field: 'customerMobile', label: '手机号', minWidth: '140px' },
+    {
+        field: 'customerMobile',
+        label: '手机号',
+        minWidth: '170px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: { id: data.row.id },
+                    mobile: data.row.customerMobile,
+                    directCopyWhenMissingClueId: true,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     { field: 'docTitle', label: '合同名称', minWidth: '220px', showOverflowTooltip: true },
     {
         field: 'contractType',

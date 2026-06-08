@@ -18,9 +18,32 @@
                         <el-input v-model="formData.mobile" placeholder="请输入联系电话" />
                     </el-form-item>
                 </el-col>
-            </el-row>
-
-            <el-row :gutter="16">
+                <el-col :span="12">
+                    <el-form-item label="咨询项目" prop="consultProjectId">
+                        <ProductCategorySelect
+                            v-model="formData.consultProjectId"
+                            style="width: 100%"
+                        />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="客户来源">
+                        <el-select
+                            v-model="formData.clueSourceId"
+                            clearable
+                            filterable
+                            placeholder="请选择客户来源"
+                            class="w-1/1"
+                        >
+                            <el-option
+                                v-for="item in clueSourceOptions"
+                                :key="item.id"
+                                :label="item.name"
+                                :value="item.id"
+                            />
+                        </el-select>
+                    </el-form-item>
+                </el-col>
                 <el-col :span="12">
                     <el-form-item label="备用电话">
                         <el-input v-model="formData.mobile2" placeholder="请输入备用电话" />
@@ -31,9 +54,7 @@
                         <el-input v-model="formData.wechat" placeholder="请输入微信号" />
                     </el-form-item>
                 </el-col>
-            </el-row>
 
-            <el-row :gutter="16">
                 <el-col :span="12">
                     <el-form-item label="微信2">
                         <el-input v-model="formData.wechat2" placeholder="请输入第二微信号" />
@@ -44,9 +65,7 @@
                         <el-input v-model="formData.wechatRemark" placeholder="请输入微信备注名" />
                     </el-form-item>
                 </el-col>
-            </el-row>
 
-            <el-row :gutter="16">
                 <el-col :span="12">
                     <el-form-item label="QQ">
                         <el-input v-model="formData.qq" placeholder="请输入QQ" />
@@ -57,9 +76,6 @@
                         <el-input v-model="formData.email" placeholder="请输入邮箱" />
                     </el-form-item>
                 </el-col>
-            </el-row>
-
-            <el-row :gutter="16">
                 <el-col :span="12">
                     <el-form-item label="性别">
                         <el-select
@@ -84,9 +100,7 @@
                         />
                     </el-form-item>
                 </el-col>
-            </el-row>
 
-            <el-row :gutter="16">
                 <el-col :span="12">
                     <el-form-item label="学历">
                         <el-select
@@ -113,46 +127,7 @@
                         />
                     </el-form-item>
                 </el-col>
-            </el-row>
 
-            <el-row :gutter="16">
-                <el-col :span="12">
-                    <el-form-item label="咨询项目" prop="consultProjectId">
-                        <el-tree-select
-                            v-model="formData.consultProjectId"
-                            :data="projectOptions"
-                            :props="treeProps"
-                            node-key="id"
-                            check-strictly
-                            clearable
-                            filterable
-                            default-expand-all
-                            placeholder="请选择咨询项目"
-                            style="width: 100%"
-                        />
-                    </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                    <el-form-item label="客户来源">
-                        <el-select
-                            v-model="formData.clueSourceId"
-                            clearable
-                            filterable
-                            placeholder="请选择客户来源"
-                            class="w-1/1"
-                        >
-                            <el-option
-                                v-for="item in clueSourceOptions"
-                                :key="item.id"
-                                :label="item.name"
-                                :value="item.id"
-                            />
-                        </el-select>
-                    </el-form-item>
-                </el-col>
-            </el-row>
-
-            <el-row :gutter="16">
                 <el-col :span="24">
                     <el-form-item label="标签">
                         <el-select
@@ -172,9 +147,7 @@
                         </el-select>
                     </el-form-item>
                 </el-col>
-            </el-row>
 
-            <el-row :gutter="16">
                 <el-col :span="24">
                     <el-form-item label="备注">
                         <el-input
@@ -197,8 +170,8 @@
 
 <script setup lang="ts">
 import AreaSelect from '@/components/AreaSelect.vue'
+import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import * as ClueApi from '@/api/crm/clue'
-import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 
@@ -231,15 +204,8 @@ const formLoading = ref(false)
 const formType = ref<'create' | 'update'>('create')
 const formRef = ref()
 
-const projectOptions = ref<ProductCategoryApi.ProductCategoryVO[]>([])
 const clueSourceOptions = ref<ClueSourceApi.ClueSourceVO[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
-
-const treeProps = {
-    value: 'id',
-    label: 'name',
-    children: 'children'
-}
 
 const educationOptions = [
     { label: '初中及以下', value: 1 },
@@ -279,12 +245,10 @@ const formRules = reactive({
 })
 
 const loadOptions = async () => {
-    const [projects, sources, tagGroups] = await Promise.all([
-        ProductCategoryApi.getProductCategorySimpleList(),
+    const [sources, tagGroups] = await Promise.all([
         ClueSourceApi.getEnabledClueSourceList(),
         TagGroupApi.getTagGroupList()
     ])
-    projectOptions.value = projects || []
     clueSourceOptions.value = sources || []
     tagOptions.value = (tagGroups || []).flatMap((group) =>
         (group.tags || []).map((tag) => ({
@@ -379,6 +343,9 @@ const submitForm = async () => {
                 education: formData.value.education,
                 areaId: Number(formData.value.areaId),
                 consultProjectId: Number(formData.value.consultProjectId),
+                clueSourceId: formData.value.clueSourceId
+                    ? Number(formData.value.clueSourceId)
+                    : undefined,
                 tagIds: formData.value.tagIds.length ? formData.value.tagIds : undefined,
                 remark: formData.value.remark?.trim() || undefined
             }

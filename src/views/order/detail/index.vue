@@ -52,7 +52,9 @@
                             <el-descriptions-item label="姓名">{{
                                 detail.customerName || '-'
                             }}</el-descriptions-item>
-                            <el-descriptions-item label="性别">{{ genderText }}</el-descriptions-item>
+                            <el-descriptions-item label="性别">{{
+                                genderText
+                            }}</el-descriptions-item>
                             <el-descriptions-item label="手机号">{{
                                 detail.customerMobile || '-'
                             }}</el-descriptions-item>
@@ -68,7 +70,9 @@
                             <el-descriptions-item label="微信2">{{
                                 detail.wechat2 || '-'
                             }}</el-descriptions-item>
-                            <el-descriptions-item label="QQ">{{ detail.qq || '-' }}</el-descriptions-item>
+                            <el-descriptions-item label="QQ">{{
+                                detail.qq || '-'
+                            }}</el-descriptions-item>
                             <el-descriptions-item label="出生日期">{{
                                 detail.birthday || '-'
                             }}</el-descriptions-item>
