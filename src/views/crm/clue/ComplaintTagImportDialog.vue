@@ -96,7 +96,7 @@ const handleImport = async () => {
     try {
         const formData = new FormData()
         formData.append('file', fileList.value[0].raw as Blob)
-        importResult.value = await ClueApi.importComplaintTags(formData)
+        importResult.value = (await ClueApi.importComplaintTags(formData)).data
         message.success('投诉标签导入完成')
         emit('success')
     } finally {

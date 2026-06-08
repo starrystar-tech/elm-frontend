@@ -55,12 +55,15 @@
                             <el-descriptions-item label="性别">{{
                                 genderText
                             }}</el-descriptions-item>
-                            <el-descriptions-item label="手机号">{{
-                                detail.customerMobile || '-'
-                            }}</el-descriptions-item>
-                            <el-descriptions-item label="手机号2">{{
-                                detail.customerMobile2 || '-'
-                            }}</el-descriptions-item>
+                            <el-descriptions-item label="手机号">
+                                <MobileCopyInline
+                                    :clue-id="detail.clueId"
+                                    :mobile="detail.customerMobile"
+                                />
+                            </el-descriptions-item>
+                            <el-descriptions-item label="手机号2">
+                                <MobileCopyInline :mobile="detail.customerMobile2" direct-copy />
+                            </el-descriptions-item>
                             <el-descriptions-item label="地区" :span="2">{{
                                 areaText
                             }}</el-descriptions-item>
@@ -270,6 +273,7 @@ import * as CustomerDetailApi from '@/api/crm/customerDetail'
 import * as OrderApi from '@/api/crm/order'
 import { DICT_TYPE, getDictLabel } from '@/utils/dict'
 import { resolveTimestamp } from '@/utils/formatTime'
+import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import OrderContractSignDialog from './OrderContractSignDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import {

@@ -9,12 +9,12 @@
                     <el-descriptions-item label="姓名">{{
                         clue.name || '--'
                     }}</el-descriptions-item>
-                    <el-descriptions-item label="联系电话">{{
-                        clue.mobile || '--'
-                    }}</el-descriptions-item>
-                    <el-descriptions-item label="备用电话">{{
-                        clue.mobile2 || '--'
-                    }}</el-descriptions-item>
+                    <el-descriptions-item label="联系电话">
+                        <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile" />
+                    </el-descriptions-item>
+                    <el-descriptions-item label="备用电话">
+                        <MobileCopyInline :mobile="clue.mobile2" direct-copy />
+                    </el-descriptions-item>
                     <el-descriptions-item label="性别">{{
                         clue.genderName || '--'
                     }}</el-descriptions-item>
@@ -84,6 +84,7 @@
 <script setup lang="ts">
 import * as ClueApi from '@/api/crm/clue'
 import { formatDate } from '@/utils/formatTime'
+import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO

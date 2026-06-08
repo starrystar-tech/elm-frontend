@@ -4,7 +4,7 @@
             :schema="searchSchema"
             :model="searchForm"
             @search="setSearchParams"
-            @reset="setSearchParams"
+            @reset="resetSearchParams"
         >
             <template #levelCode>
                 <UserLevelSelect
@@ -120,6 +120,11 @@ const {
 
 const setSearchParams = (params: Recordable) => {
     Object.assign(searchForm, params || {})
+    tableMethods.setSearchParams({ ...searchForm })
+}
+
+const resetSearchParams = () => {
+    searchForm.levelCode = undefined
     tableMethods.setSearchParams({ ...searchForm })
 }
 

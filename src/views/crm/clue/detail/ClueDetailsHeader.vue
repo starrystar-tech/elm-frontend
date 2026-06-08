@@ -15,7 +15,9 @@
 
     <ContentWrap class="mt-10px">
         <el-descriptions :column="5" direction="vertical">
-            <el-descriptions-item label="联系电话">{{ clue.mobile || '--' }}</el-descriptions-item>
+            <el-descriptions-item label="联系电话">
+                <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile" />
+            </el-descriptions-item>
             <el-descriptions-item label="归属人">{{
                 clue.currentOwnerName || '--'
             }}</el-descriptions-item>
@@ -33,6 +35,7 @@
 <script setup lang="ts">
 import * as ClueApi from '@/api/crm/clue'
 import { formatDate } from '@/utils/formatTime'
+import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO

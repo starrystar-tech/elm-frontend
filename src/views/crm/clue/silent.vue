@@ -32,6 +32,8 @@
         />
     </ContentWrap>
 
+    <ClueDetailDrawer ref="detailRef" @refresh="tableMethods.getList" />
+
     <Dialog v-model="assignDialogVisible" title="批量分配静默线索" width="420px">
         <el-form label-width="90px">
             <el-form-item label="归属人" required>
@@ -71,14 +73,17 @@ import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
+import { renderCopyMobileCell } from './mobileCopy'
 import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
 import { hasPermission } from '@/directives/permission/hasPermi'
+import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ExportTaskDialog from './components/ExportTaskDialog.vue'
 
 defineOptions({ name: 'CrmClueSilent' })
 
 const message = useMessage()
+const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
 const canExport = hasPermission(['crm:clue:silent:query'])
 const userOptions = ref<{ label: string; value: number; deptId?: number }[]>([])
 const deptOptions = ref<DeptApi.DeptVO[]>([])
@@ -181,8 +186,26 @@ const resetTableSelection = async () => {
     await tableMethods.clearSelection()
 }
 
+const openDetail = (id?: number) => {
+    if (!id) return
+    detailRef.value?.open(id)
+}
+
 const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'mobile', label: '联系电话', width: '140px' },
+    {
+        field: 'mobile',
+        label: '联系电话',
+        width: '170px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: data.row,
+                    mobile: data.row.mobile,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     { field: 'name', label: '姓名', width: '120px' },
     { field: 'currentOwnerName', label: '归属人', width: '120px' },
     { field: 'currentDepartmentName', label: '所属部门', width: '140px' },
@@ -197,7 +220,20 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'silentCount', label: '静默次数', width: '100px' },
     { field: 'silentReason', label: '最近静默原因', minWidth: '200px' },
     { field: 'lastSilentTime', label: '最近静默时间', minWidth: '170px', formatter: dateFormatter },
-    { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter }
+    { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter },
+    {
+        field: 'action',
+        label: '操作',
+        width: '120px',
+        fixed: 'right',
+        slots: {
+            default: (data) => (
+                <BaseButton link type="primary" onClick={() => openDetail(Number(data.row.id))}>
+                    详情
+                </BaseButton>
+            )
+        }
+    }
 ])
 
 const loadOptions = async () => {

@@ -103,6 +103,7 @@ import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
 import type { DeptVO } from '@/api/system/dept'
+import { renderCopyMobileCell } from './mobileCopy'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import {
     buildAreaLabel,
@@ -314,7 +315,20 @@ const claimSummaryText = computed(() => {
 })
 
 const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'mobile', label: '联系电话', width: '140px' },
+    {
+        field: 'mobile',
+        label: '联系电话',
+        width: '170px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: data.row,
+                    mobile: data.row.mobile,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     { field: 'name', label: '姓名', width: '120px' },
     {
         field: 'areaName',

@@ -1,5 +1,5 @@
 <template>
-    <Dialog v-model="dialogVisible" title="导入日志" width="1200px" class="search-table-dialog">
+    <Dialog v-model="dialogVisible" title="失败明细" width="1200px" class="search-table-dialog">
         <div>
             <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
             <Table
@@ -24,27 +24,12 @@ import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
 
-defineOptions({ name: 'ImportTaskLogDialog' })
+defineOptions({ name: 'ImportTaskFailDialog' })
 
 const dialogVisible = ref(false)
 const currentTaskId = ref<number>()
 
-const resultOptions = [
-    { label: '成功', value: 1 },
-    { label: '失败', value: 0 }
-]
-
 const searchSchema = reactive<FormSchema[]>([
-    {
-        field: 'engineName',
-        label: '分配引擎',
-        component: 'Input',
-        componentProps: {
-            placeholder: '请输入分配引擎',
-            clearable: true,
-            style: { width: '220px' }
-        }
-    },
     {
         field: 'customerName',
         label: '客户名称',
@@ -64,17 +49,6 @@ const searchSchema = reactive<FormSchema[]>([
             clearable: true,
             style: { width: '220px' }
         }
-    },
-    {
-        field: 'result',
-        label: '导入结果',
-        component: 'Select',
-        componentProps: {
-            placeholder: '请选择导入结果',
-            clearable: true,
-            options: resultOptions,
-            style: { width: '180px' }
-        }
     }
 ])
 
@@ -82,10 +56,10 @@ const {
     tableObject,
     tableMethods,
     register: tableRegister
-} = useTable<ClueApi.ClueImportTaskAllocLogVO>({
+} = useTable<ClueApi.ClueImportTaskItemVO>({
     getListApi: async (params) =>
-        await ClueApi.getClueImportTaskAllocLogPage({
-            ...(params as ClueApi.ClueImportTaskAllocLogPageReqVO),
+        await ClueApi.getClueImportTaskFailItemPage({
+            ...(params as ClueApi.ClueImportTaskItemPageReqVO),
             taskId: Number(currentTaskId.value)
         })
 })
@@ -98,7 +72,6 @@ const setSearchParams = (params: Record<string, any>) => {
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'engine', label: '分配引擎', minWidth: '160px' },
     { field: 'customerName', label: '客户名称', width: '120px' },
     { field: 'phone', label: '联系电话', width: '140px' },
     { field: 'phone2', label: '联系电话2', width: '140px' },
@@ -109,19 +82,9 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'city', label: '城市', width: '100px' },
     { field: 'district', label: '区县', width: '100px' },
     {
-        field: 'result',
+        field: 'status',
         label: '导入结果',
         width: '100px',
-        slots: {
-            default: (data) => (
-                <span>{resultOptions.find((item) => item.value === data.row.result)?.label || '--'}</span>
-            )
-        }
-    },
-    {
-        field: 'status',
-        label: '分配状态',
-        minWidth: '120px',
         slots: {
             default: (data) => <span>{data.row.status || '--'}</span>
         }

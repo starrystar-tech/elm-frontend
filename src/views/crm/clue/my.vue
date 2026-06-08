@@ -81,6 +81,7 @@ import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
+import { renderCopyMobileCell } from './mobileCopy'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import {
     buildAreaLabel,
@@ -285,7 +286,20 @@ const {
 
 const tableColumns = computed<TableColumn[]>(() => [
     { field: 'customerId', label: '客户编号', minWidth: '120px' },
-    { field: 'mobile', label: '联系电话', width: '140px' },
+    {
+        field: 'mobile',
+        label: '联系电话',
+        width: '170px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: data.row,
+                    mobile: data.row.mobile,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     { field: 'name', label: '姓名', width: '120px' },
     {
         field: 'areaName',

@@ -21,10 +21,13 @@
                             class="clue-hero__intent"
                         />
                     </div>
-                    <p>
-                        {{ clue.mobile || '--' }}
-                        <span v-if="clue.mobile2"> / {{ clue.mobile2 }} </span>
-                    </p>
+                    <div class="flex flex-wrap items-center gap-8px text-14px">
+                        <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile" />
+                        <template v-if="clue.mobile2">
+                            <span>/</span>
+                            <MobileCopyInline :mobile="clue.mobile2" direct-copy />
+                        </template>
+                    </div>
                     <div class="clue-hero__subline">
                         <span
                             >归属：{{
@@ -683,6 +686,7 @@ import { getAftersalesStatusLabel } from '@/views/aftersales/config'
 import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
 import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import ClueIntentLevel from '@/components/ClueIntentLevel'
+import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
