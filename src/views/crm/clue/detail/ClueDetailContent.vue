@@ -8,15 +8,6 @@
                     class="clue-hero__intent"
                 />
             </template>
-            <template #contact>
-                <div class="flex flex-wrap items-center gap-8px text-14px">
-                    <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile" />
-                    <template v-if="clue.mobile2">
-                        <span>/</span>
-                        <MobileCopyInline :mobile="clue.mobile2" direct-copy />
-                    </template>
-                </div>
-            </template>
             <template #subline>
                 <span
                     >归属：{{ clue.currentOwnerName || customerBasicInfo?.ownerName || '--' }}</span
@@ -871,12 +862,8 @@ const buildConsultTrackLines = (content?: string) => {
             formatConsultValue(parsed.appointmentPrice)
                 ? `预约价格：${parsed.appointmentPrice}`
                 : '',
-            parsed.appointmentTime
-                ? `预约时间：${formatDateTime(parsed.appointmentTime)}`
-                : '',
-            parsed.nextFollowTime
-                ? `下次回访时间：${formatDateTime(parsed.nextFollowTime)}`
-                : '',
+            parsed.appointmentTime ? `预约时间：${formatDateTime(parsed.appointmentTime)}` : '',
+            parsed.nextFollowTime ? `下次回访时间：${formatDateTime(parsed.nextFollowTime)}` : '',
             parsed.needRemind !== null && parsed.needRemind !== undefined
                 ? `是否提醒：${parsed.needRemind ? '是' : '否'}`
                 : '',
@@ -965,14 +952,13 @@ const complaintTagText = computed(() => {
 const parsedTrackList = computed(() =>
     (props.trackList || []).map((item) => ({
         ...item,
-        lines:
-            item.contentLines?.length
-                ? item.contentLines
-                : item.type === 4 || item.typeName === '咨询信息'
-                  ? buildConsultTrackLines(item.content)
-                  : item.content
-                    ? [item.content]
-                    : []
+        lines: item.contentLines?.length
+            ? item.contentLines
+            : item.type === 4 || item.typeName === '咨询信息'
+              ? buildConsultTrackLines(item.content)
+              : item.content
+                ? [item.content]
+                : []
     }))
 )
 
