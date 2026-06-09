@@ -183,7 +183,7 @@ const handleConfirmMove = async () => {
 
 const buildNameIndent = (row: any) => {
     const level = Number(row?.level || 1)
-    return `${Math.max(level - 1, 0) * 24}px`
+    return `${Math.max(level - 1, 0) * 12}px`
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
@@ -191,11 +191,8 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'name',
         label: '分类名称',
         minWidth: '220px',
-        slots: {
-            default: (data) => (
-                <span style={{ marginLeft: buildNameIndent(data.row) }}>{data.row.name || '-'}</span>
-            )
-        }
+        align: 'left',
+        headerAlign: 'left'
     },
     {
         field: 'status',
