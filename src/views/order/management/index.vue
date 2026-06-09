@@ -2,7 +2,10 @@
     <ContentWrap>
         <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
         <div class="action-btn-wrap flex items-center gap-2">
-            <BaseButton type="primary" @click="openBatchUpdateOwnerDialog"
+            <BaseButton
+                v-hasPermi="['crm:order:batch-update-owner']"
+                type="primary"
+                @click="openBatchUpdateOwnerDialog"
                 >修改订单归属人</BaseButton
             >
             <BaseButton @click="handleBatchRepurchase">激活订单</BaseButton>
