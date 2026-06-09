@@ -188,6 +188,11 @@ export interface OrderPayConfirmReqVO {
   confirmRemark?: string
 }
 
+export interface OrderBatchUpdateOwnerReqVO {
+  orderIds: number[]
+  ownerUserId: number
+}
+
 export interface OrderPayRecordPageReqVO extends PageParam {
   customer?: string
   mobile?: string
@@ -260,6 +265,10 @@ export const voidOrder = async (id: number) => {
 
 export const repurchaseOrder = async (id: number) => {
   return await request.post<number>({ url: '/crm/order/repurchase', params: { id } })
+}
+
+export const batchUpdateOwner = async (data: OrderBatchUpdateOwnerReqVO) => {
+  return await request.put<boolean>({ url: '/crm/order/batch-update-owner', data })
 }
 
 export const getPayRecordPage = async (params: OrderPayRecordPageReqVO) => {

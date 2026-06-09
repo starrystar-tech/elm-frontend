@@ -1,8 +1,14 @@
 <template>
     <ContentWrap>
         <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
-        <div class="action-btn-wrap">
-            <BaseButton type="primary" @click="handleBatchRepurchase">订单复购</BaseButton>
+        <div class="action-btn-wrap flex items-center gap-2">
+            <BaseButton type="primary" @click="handleBatchRepurchase">订单激活</BaseButton>
+            <el-tooltip
+                content="订单激活后，客户自动进入成单人复购列表，支持持续跟进与再次下单"
+                placement="top"
+            >
+                <Icon class="text-orange-400" icon="ep:question-filled" />
+            </el-tooltip>
         </div>
         <Table
             selection

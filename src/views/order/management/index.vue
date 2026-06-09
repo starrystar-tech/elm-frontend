@@ -1,8 +1,17 @@
 <template>
     <ContentWrap>
         <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
-        <div class="action-btn-wrap">
-            <BaseButton type="primary" @click="handleBatchRepurchase">订单复购</BaseButton>
+        <div class="action-btn-wrap flex items-center gap-2">
+            <BaseButton type="primary" @click="openBatchUpdateOwnerDialog"
+                >修改订单归属人</BaseButton
+            >
+            <BaseButton @click="handleBatchRepurchase">激活订单</BaseButton>
+            <el-tooltip
+                content="订单激活后，客户自动进入成单人复购列表，支持持续跟进与再次下单"
+                placement="top"
+            >
+                <Icon class="text-orange-400" icon="ep:question-filled" />
+            </el-tooltip>
         </div>
         <Table
             selection
@@ -19,6 +28,7 @@
     <OrderDetailDrawer ref="detailRef" />
     <OrderContractSignDialog ref="contractSignRef" @success="tableMethods.getList" />
     <RefundDialog ref="refundRef" @success="tableMethods.getList" />
+    <BatchUpdateOwnerDialog ref="batchUpdateOwnerDialogRef" @confirm="submitBatchUpdateOwner" />
 </template>
 
 <script setup lang="tsx">
@@ -44,6 +54,7 @@ import OrderDetailDrawer from '../detail/OrderDetailDrawer.vue'
 import OrderContractSignDialog from '../detail/OrderContractSignDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import BatchUpdateOwnerDialog from './BatchUpdateOwnerDialog.vue'
 
 defineOptions({ name: 'OrderManagement' })
 
@@ -51,6 +62,7 @@ const message = useMessage()
 const detailRef = ref<InstanceType<typeof OrderDetailDrawer>>()
 const contractSignRef = ref<InstanceType<typeof OrderContractSignDialog>>()
 const refundRef = ref<InstanceType<typeof RefundDialog>>()
+const batchUpdateOwnerDialogRef = ref<InstanceType<typeof BatchUpdateOwnerDialog>>()
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
@@ -125,7 +137,7 @@ const searchSchema = computed<FormSchema[]>(() => [
     },
     {
         field: 'ownerUserName',
-        label: '订单归属',
+        label: '订单归属人',
         component: 'Input',
         componentProps: { clearable: true, style: { width: '220px' } }
     },
@@ -243,6 +255,29 @@ const handleBatchRepurchase = async () => {
     await tableMethods.getList()
 }
 
+const openBatchUpdateOwnerDialog = async () => {
+    const selections = await tableMethods.getSelections()
+    if (!selections.length) {
+        message.warning('请先选择订单')
+        return
+    }
+    batchUpdateOwnerDialogRef.value?.open()
+}
+
+const submitBatchUpdateOwner = async (ownerUserId: number) => {
+    const selections = await tableMethods.getSelections()
+    if (!selections.length) {
+        message.warning('请先选择订单')
+        return
+    }
+    await OrderApi.batchUpdateOwner({
+        orderIds: selections.map((item) => item.id),
+        ownerUserId
+    })
+    message.success('订单归属人修改成功')
+    await tableMethods.getList()
+}
+
 const handleContractSign = (row: OrderApi.OrderPageRespVO) => {
     contractSignRef.value?.open(row)
 }
@@ -309,6 +344,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         formatter: (_r, _c, v) => formatAmount(v)
     },
     { field: 'campusName', label: '报名分校', minWidth: '120px' },
+    { field: 'ownerUserName', label: '订单归属人', minWidth: '110px' },
     { field: 'cardOwnerUserName', label: '名片归属', minWidth: '110px' },
     { field: 'remark', label: '备注', minWidth: '140px', showOverflowTooltip: true },
     {
