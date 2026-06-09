@@ -33,8 +33,6 @@
                     </BaseButton>
                     <BaseButton
                         v-if="canUpdate"
-                        plain
-                        type="primary"
                         :disabled="checkedRows.length === 0"
                         @click="handleBatchStatus(true)"
                     >
@@ -42,8 +40,6 @@
                     </BaseButton>
                     <BaseButton
                         v-if="canUpdate"
-                        plain
-                        type="primary"
                         :disabled="checkedRows.length === 0"
                         @click="handleBatchStatus(false)"
                     >
@@ -150,7 +146,7 @@ const searchSchema = reactive<FormSchema[]>([
         componentProps: {
             clearable: true,
             placeholder: '请输入姓名/账号',
-            style: { width: '240px' }
+            style: { width: '220px' }
         }
     }
 ])
@@ -178,7 +174,7 @@ const syncSearchForm = (
 }
 
 const setSearchParams = (params: Recordable) => {
-    Object.assign(searchForm, params || {})
+    syncSearchForm(params || {})
     tableMethods.setSearchParams({ ...searchForm, deptId: deptId.value })
 }
 
@@ -189,7 +185,7 @@ const resetSearchParams = () => {
 
 const handleDeptNodeClick = (row: any) => {
     deptId.value = row?.id
-    tableMethods.setSearchParams({ ...(tableObject.params || {}), deptId: deptId.value })
+    tableMethods.setSearchParams({ ...searchForm, deptId: deptId.value })
 }
 
 const handleSelectionChange = (rows: AllocationLimitApi.AllocationUserLimitVO[]) => {
