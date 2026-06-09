@@ -20,11 +20,13 @@ import {
   ElDivider
 } from 'element-plus'
 import { InputPassword } from '@/components/InputPassword'
+import AmountRangeInput from '@/components/AmountRangeInput.vue'
 import { Editor } from '@/components/Editor'
 import { UploadImg, UploadImgs, UploadFile } from '@/components/UploadFile'
 import { ComponentName } from '@/types/components'
 
 const componentMap: Recordable<Component, ComponentName> = {
+  AmountRangeInput: AmountRangeInput,
   Radio: ElRadioGroup,
   Checkbox: ElCheckboxGroup,
   CheckboxButton: ElCheckboxGroup,

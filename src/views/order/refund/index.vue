@@ -88,8 +88,12 @@ const searchSchema = computed<FormSchema[]>(() => [
     {
         field: 'refundAmountRange',
         label: '退款金额',
-        component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        component: 'AmountRangeInput',
+        componentProps: {
+            style: { width: '220px' },
+            startPlaceholder: '最小金额',
+            endPlaceholder: '最大金额'
+        }
     },
     {
         field: 'creator',
@@ -115,18 +119,20 @@ const {
     register: tableRegister
 } = useTable<OrderApi.OrderRefundRespVO>({
     getListApi: async (params) => {
-        const { refundTimeRange = [], refundAmountRange, createTimeRange = [], ...rest } = params
-        const [minRefundAmount, maxRefundAmount] = String(refundAmountRange || '')
-            .split('-')
-            .map((item: string) => item.trim())
+        const {
+            refundTimeRange = [],
+            refundAmountRange = [],
+            createTimeRange = [],
+            ...rest
+        } = params
         return await OrderApi.getRefundPage({
             ...rest,
             beginRefundTime: refundTimeRange[0],
             endRefundTime: refundTimeRange[1],
             beginCreateTime: createTimeRange[0],
             endCreateTime: createTimeRange[1],
-            minRefundAmount: minRefundAmount ? Number(minRefundAmount) : undefined,
-            maxRefundAmount: maxRefundAmount ? Number(maxRefundAmount) : undefined
+            minRefundAmount: refundAmountRange[0] ? Number(refundAmountRange[0]) : undefined,
+            maxRefundAmount: refundAmountRange[1] ? Number(refundAmountRange[1]) : undefined
         })
     }
 })

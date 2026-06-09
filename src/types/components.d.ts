@@ -1,4 +1,5 @@
 export type ComponentName =
+  | 'AmountRangeInput'
   | 'Radio'
   | 'RadioButton'
   | 'Checkbox'

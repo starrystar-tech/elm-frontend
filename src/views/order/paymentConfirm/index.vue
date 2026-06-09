@@ -90,8 +90,12 @@ const searchSchema = computed<FormSchema[]>(() => [
     {
         field: 'payAmountRange',
         label: '支付金额',
-        component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        component: 'AmountRangeInput',
+        componentProps: {
+            style: { width: '260px' },
+            startPlaceholder: '最小金额',
+            endPlaceholder: '最大金额'
+        }
     }
 ])
 
@@ -101,16 +105,13 @@ const {
     register: tableRegister
 } = useTable<OrderApi.OrderPayRecordRespVO>({
     getListApi: async (params) => {
-        const { payTimeRange = [], payAmountRange, ...rest } = params
-        const [minPayAmount, maxPayAmount] = String(payAmountRange || '')
-            .split('-')
-            .map((item: string) => item.trim())
+        const { payTimeRange = [], payAmountRange = [], ...rest } = params
         return await OrderApi.getPayConfirmPage({
             ...rest,
             beginPayTime: payTimeRange[0],
             endPayTime: payTimeRange[1],
-            minPayAmount: minPayAmount ? Number(minPayAmount) : undefined,
-            maxPayAmount: maxPayAmount ? Number(maxPayAmount) : undefined
+            minPayAmount: payAmountRange[0] ? Number(payAmountRange[0]) : undefined,
+            maxPayAmount: payAmountRange[1] ? Number(payAmountRange[1]) : undefined
         })
     },
     defaultParams: {
@@ -146,13 +147,13 @@ const audit = async (row: OrderApi.OrderPayRecordRespVO, confirmStatus: number) 
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
-    {
-        field: 'confirmStatus',
-        label: '确认状态',
-        minWidth: '100px',
-        formatter: (_r, _c, v) => getOptionLabel(PAY_CONFIRM_STATUS_OPTIONS, v)
-    },
-    { field: 'confirmResult', label: '确认结果', minWidth: '160px' },
+    // {
+    //     field: 'confirmStatus',
+    //     label: '确认状态',
+    //     minWidth: '100px',
+    //     formatter: (_r, _c, v) => getOptionLabel(PAY_CONFIRM_STATUS_OPTIONS, v)
+    // },
+    // { field: 'confirmResult', label: '确认结果', minWidth: '160px' },
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
     { field: 'customerName', label: '姓名', minWidth: '100px' },
     { field: 'customerId', label: '客户ID', minWidth: '100px' },

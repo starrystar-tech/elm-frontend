@@ -793,6 +793,7 @@ const consultRules = reactive({
     ],
     nextFollowTime: [{ required: true, message: '请选择下次回访时间', trigger: 'change' }],
     productId: [
+        { required: true, message: '请选择商品', trigger: 'change' },
         {
             validator: (_rule: any, value: number | undefined, callback: any) => {
                 if (consultForm.consultType === 2 && !value) {
@@ -802,18 +803,6 @@ const consultRules = reactive({
                 callback()
             },
             trigger: 'change'
-        }
-    ],
-    consultContent: [
-        {
-            validator: (_rule: any, value: string | undefined, callback: any) => {
-                if (consultForm.consultType === 2 && !String(value || '').trim()) {
-                    callback(new Error('请输入预约备注'))
-                    return
-                }
-                callback()
-            },
-            trigger: 'blur'
         }
     ]
 })

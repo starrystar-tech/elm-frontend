@@ -51,7 +51,7 @@
                                         detail.orderNo || '-'
                                     }}</el-descriptions-item>
                                     <el-descriptions-item label="报名时间">{{
-                                        detail.enrollTime || '-'
+                                        formatDateTimeText(detail.createTime) || '-'
                                     }}</el-descriptions-item>
                                     <el-descriptions-item label="订单状态">{{
                                         orderStatusLabel(detail.orderStatus)
@@ -314,7 +314,11 @@
                                         prop="payTime"
                                         label="支付时间"
                                         min-width="180"
-                                    />
+                                    >
+                                        <template #default="{ row }"
+                                            >{{ formatDateTimeText(row.payTime) }}
+                                        </template>
+                                    </el-table-column>
                                     <el-table-column
                                         prop="confirmStatus"
                                         label="财务确认"
@@ -446,7 +450,7 @@ const areaText = computed(() => {
     return value || '-'
 })
 const educationText = computed(() =>
-    detail.value.education === undefined
+    detail.value.education === undefined || detail.value.education === null
         ? '-'
         : getDictLabel(DICT_TYPE.CRM_CLUE_EDUCATION, detail.value.education) ||
           String(detail.value.education)

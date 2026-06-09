@@ -30,28 +30,77 @@ defineOptions({ name: 'OrderPayRecord' })
 const message = useMessage()
 
 const searchSchema = computed<FormSchema[]>(() => [
-    { field: 'mobile', label: '联系电话', component: 'Input', componentProps: { clearable: true, style: { width: '220px' } } },
-    { field: 'customer', label: '客户', component: 'Input', componentProps: { clearable: true, style: { width: '220px' } } },
-    { field: 'orderNo', label: '订单编号', component: 'Input', componentProps: { clearable: true, style: { width: '220px' } } },
-    { field: 'payStatus', label: '支付状态', component: 'Select', componentProps: { options: PAY_STATUS_OPTIONS, clearable: true, style: { width: '220px' } } },
-    { field: 'payNo', label: '支付流水号', component: 'Input', componentProps: { clearable: true, style: { width: '220px' } } },
-    { field: 'payMethod', label: '支付方式', component: 'Select', componentProps: { options: PAY_METHOD_OPTIONS, clearable: true, style: { width: '220px' } } },
-    { field: 'payTimeRange', label: '支付时间', component: 'DatePicker', componentProps: { type: 'daterange', valueFormat: 'YYYY-MM-DD HH:mm:ss', style: { width: '260px' } } },
-    { field: 'payAmountRange', label: '支付金额', component: 'Input', componentProps: { clearable: true, style: { width: '220px' } } }
+    {
+        field: 'mobile',
+        label: '联系电话',
+        component: 'Input',
+        componentProps: { clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'customer',
+        label: '客户',
+        component: 'Input',
+        componentProps: { clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'orderNo',
+        label: '订单编号',
+        component: 'Input',
+        componentProps: { clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'payStatus',
+        label: '支付状态',
+        component: 'Select',
+        componentProps: { options: PAY_STATUS_OPTIONS, clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'payNo',
+        label: '支付流水号',
+        component: 'Input',
+        componentProps: { clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'payMethod',
+        label: '支付方式',
+        component: 'Select',
+        componentProps: { options: PAY_METHOD_OPTIONS, clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'payTimeRange',
+        label: '支付时间',
+        component: 'DatePicker',
+        componentProps: {
+            type: 'daterange',
+            valueFormat: 'YYYY-MM-DD HH:mm:ss',
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'payAmountRange',
+        label: '支付金额',
+        component: 'AmountRangeInput',
+        componentProps: {
+            style: { width: '220px' },
+            startPlaceholder: '最小金额',
+            endPlaceholder: '最大金额'
+        }
+    }
 ])
 
-const { tableObject, tableMethods, register: tableRegister } = useTable<OrderApi.OrderPayRecordRespVO>({
+const {
+    tableObject,
+    tableMethods,
+    register: tableRegister
+} = useTable<OrderApi.OrderPayRecordRespVO>({
     getListApi: async (params) => {
-        const { payTimeRange = [], payAmountRange, ...rest } = params
-        const [minPayAmount, maxPayAmount] = String(payAmountRange || '')
-            .split('-')
-            .map((item: string) => item.trim())
+        const { payTimeRange = [], payAmountRange = [], ...rest } = params
         return await OrderApi.getPayRecordPage({
             ...rest,
             beginPayTime: payTimeRange[0],
             endPayTime: payTimeRange[1],
-            minPayAmount: minPayAmount ? Number(minPayAmount) : undefined,
-            maxPayAmount: maxPayAmount ? Number(maxPayAmount) : undefined
+            minPayAmount: payAmountRange[0] ? Number(payAmountRange[0]) : undefined,
+            maxPayAmount: payAmountRange[1] ? Number(payAmountRange[1]) : undefined
         })
     }
 })
@@ -84,9 +133,19 @@ const tableColumns = computed<TableColumn[]>(() => [
                 })
         }
     },
-    { field: 'payAmount', label: '支付金额', minWidth: '100px', formatter: (_r, _c, v) => formatAmount(v) },
+    {
+        field: 'payAmount',
+        label: '支付金额',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => formatAmount(v)
+    },
     { field: 'payMethod', label: '支付方式', minWidth: '100px' },
-    { field: 'payStatus', label: '支付状态', minWidth: '100px', formatter: (_r, _c, v) => getOptionLabel(PAY_STATUS_OPTIONS, v) },
+    {
+        field: 'payStatus',
+        label: '支付状态',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => getOptionLabel(PAY_STATUS_OPTIONS, v)
+    },
     { field: 'payNo', label: '支付流水号', minWidth: '220px' },
     { field: 'payTime', label: '支付时间', minWidth: '180px', formatter: dateFormatter }
 ])

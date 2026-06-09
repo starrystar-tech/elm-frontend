@@ -7,10 +7,7 @@
         >
             <template #contact>
                 <div class="flex flex-wrap items-center gap-8px text-14px">
-                    <MobileCopyInline
-                        :clue-id="detail.clueId"
-                        :mobile="detail.customerMobile"
-                    />
+                    <MobileCopyInline :clue-id="detail.clueId" :mobile="detail.customerMobile" />
                     <template v-if="detail.customerMobile2">
                         <span>/</span>
                         <MobileCopyInline :mobile="detail.customerMobile2" direct-copy />
@@ -37,14 +34,30 @@
             <div class="order-detail-summary">
                 <div class="order-detail-summary__title">订单基本信息</div>
                 <el-descriptions :column="4" border>
-                    <el-descriptions-item label="订单编号">{{ detail.orderNo || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="报名时间">{{ detail.enrollTime || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="订单状态">{{ orderStatusLabel(detail.orderStatus) }}</el-descriptions-item>
-                    <el-descriptions-item label="订单归属">{{ orderOwnerText }}</el-descriptions-item>
-                    <el-descriptions-item label="应付金额">{{ `￥${formatAmount(detail.payableAmount)}` }}</el-descriptions-item>
-                    <el-descriptions-item label="已付金额">{{ `￥${formatAmount(detail.paidAmount)}` }}</el-descriptions-item>
-                    <el-descriptions-item label="已退费金额">{{ `￥${formatAmount(detail.refundAmount)}` }}</el-descriptions-item>
-                    <el-descriptions-item label="备注" :span="2">{{ detail.remark || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="订单编号">{{
+                        detail.orderNo || '-'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="报名时间">{{
+                        formatDateTimeText(detail.createTime) || '-'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="订单状态">{{
+                        orderStatusLabel(detail.orderStatus)
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="订单归属">{{
+                        orderOwnerText
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="应付金额">{{
+                        `￥${formatAmount(detail.payableAmount)}`
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="已付金额">{{
+                        `￥${formatAmount(detail.paidAmount)}`
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="已退费金额">{{
+                        `￥${formatAmount(detail.refundAmount)}`
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="备注" :span="2">{{
+                        detail.remark || '-'
+                    }}</el-descriptions-item>
                 </el-descriptions>
             </div>
         </ContentWrap>
@@ -230,7 +243,11 @@
                             }}</template>
                         </el-table-column>
                         <el-table-column prop="payNo" label="支付流水号" min-width="200" />
-                        <el-table-column prop="payTime" label="支付时间" min-width="180" />
+                        <el-table-column prop="payTime" label="支付时间" min-width="180">
+                            <template #default="{ row }"
+                                >{{ formatDateTimeText(row.payTime) }}
+                            </template>
+                        </el-table-column>
                         <el-table-column prop="confirmStatus" label="财务确认" min-width="100">
                             <template #default="{ row }">{{
                                 payConfirmStatusLabel(row.confirmStatus)
@@ -326,7 +343,7 @@ const areaText = computed(() => {
     return value || '-'
 })
 const educationText = computed(() =>
-    detail.value.education === undefined
+    detail.value.education === undefined || detail.value.education === null
         ? '-'
         : getDictLabel(DICT_TYPE.CRM_CLUE_EDUCATION, detail.value.education) ||
           String(detail.value.education)

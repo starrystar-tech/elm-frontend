@@ -114,16 +114,14 @@ const searchSchema = computed<FormSchema[]>(() => [
         componentProps: { clearable: true, style: { width: '220px' } }
     },
     {
-        field: 'minPaidAmount',
-        label: '已付金额起',
-        component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
-    },
-    {
-        field: 'maxPaidAmount',
-        label: '已付金额止',
-        component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        field: 'paidAmountRange',
+        label: '已付金额',
+        component: 'AmountRangeInput',
+        componentProps: {
+            style: { width: '220px' },
+            startPlaceholder: '最小金额',
+            endPlaceholder: '最大金额'
+        }
     },
     {
         field: 'ownerUserName',
@@ -172,9 +170,17 @@ const {
 const orderStatusLabel = (value?: number) => getOptionLabel(ORDER_STATUS_OPTIONS, value)
 
 const setSearchParams = (params: Recordable) => {
-    const { enrollTimeRange = [], expireTimeRange = [], createTimeRange = [], ...rest } = params
+    const {
+        enrollTimeRange = [],
+        expireTimeRange = [],
+        createTimeRange = [],
+        paidAmountRange = [],
+        ...rest
+    } = params
     tableMethods.setSearchParams({
         ...rest,
+        minPaidAmount: paidAmountRange[0] ? Number(paidAmountRange[0]) : undefined,
+        maxPaidAmount: paidAmountRange[1] ? Number(paidAmountRange[1]) : undefined,
         beginEnrollTime: enrollTimeRange[0],
         endEnrollTime: enrollTimeRange[1],
         beginExpireTime: expireTimeRange[0],
@@ -305,7 +311,12 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'campusName', label: '报名分校', minWidth: '120px' },
     { field: 'cardOwnerUserName', label: '名片归属', minWidth: '110px' },
     { field: 'remark', label: '备注', minWidth: '140px', showOverflowTooltip: true },
-    { field: 'creator', label: '订单创建人', minWidth: '110px' },
+    {
+        field: 'creatorName',
+        label: '订单创建人',
+        minWidth: '110px',
+        formatter: (_row, _column, value, _index, item) => value || item.creator || '-'
+    },
     { field: 'createTime', label: '订单创建时间', minWidth: '170px', formatter: dateFormatter },
     {
         field: 'action',

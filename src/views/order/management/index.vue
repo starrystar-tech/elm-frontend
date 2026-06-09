@@ -114,16 +114,14 @@ const searchSchema = computed<FormSchema[]>(() => [
         componentProps: { clearable: true, style: { width: '220px' } }
     },
     {
-        field: 'minPaidAmount',
-        label: '已付金额起',
-        component: 'Input',
-        componentProps: { clearable: true, style: { width: '160px' } }
-    },
-    {
-        field: 'maxPaidAmount',
-        label: '已付金额止',
-        component: 'Input',
-        componentProps: { clearable: true, style: { width: '160px' } }
+        field: 'paidAmountRange',
+        label: '已付金额',
+        component: 'AmountRangeInput',
+        componentProps: {
+            style: { width: '220px' },
+            startPlaceholder: '最小金额',
+            endPlaceholder: '最大金额'
+        }
     },
     {
         field: 'ownerUserName',
@@ -141,7 +139,7 @@ const searchSchema = computed<FormSchema[]>(() => [
         field: 'expireTimeRange',
         label: '到期时间',
         component: 'DatePicker',
-        componentProps: { type: 'daterange', valueFormat: 'YYYY-MM-DD', style: { width: '240px' } }
+        componentProps: { type: 'daterange', valueFormat: 'YYYY-MM-DD', style: { width: '220px' } }
     },
     {
         field: 'creator',
@@ -156,7 +154,7 @@ const searchSchema = computed<FormSchema[]>(() => [
         componentProps: {
             type: 'daterange',
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
-            style: { width: '260px' }
+            style: { width: '220px' }
         }
     }
 ])
@@ -172,9 +170,17 @@ const {
 const orderStatusLabel = (value?: number) => getOptionLabel(ORDER_STATUS_OPTIONS, value)
 
 const setSearchParams = (params: Recordable) => {
-    const { enrollTimeRange = [], expireTimeRange = [], createTimeRange = [], ...rest } = params
+    const {
+        enrollTimeRange = [],
+        expireTimeRange = [],
+        createTimeRange = [],
+        paidAmountRange = [],
+        ...rest
+    } = params
     tableMethods.setSearchParams({
         ...rest,
+        minPaidAmount: paidAmountRange[0] ? Number(paidAmountRange[0]) : undefined,
+        maxPaidAmount: paidAmountRange[1] ? Number(paidAmountRange[1]) : undefined,
         beginEnrollTime: enrollTimeRange[0],
         endEnrollTime: enrollTimeRange[1],
         beginExpireTime: expireTimeRange[0],

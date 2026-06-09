@@ -36,6 +36,10 @@ const formatDuration = (durationSeconds?: number) => {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
+const buildCallResultText = (row: Recordable) => {
+    return row.hangupCause || row.originateDisposition || row.failReason || '-'
+}
+
 const searchSchema = reactive<FormSchema[]>([
     {
         field: 'calleeMobile',
@@ -162,7 +166,14 @@ const tableColumns = reactive<TableColumn[]>([
     },
     // { field: 'callTypeDesc', label: '通话类型', width: '110px' },
     { field: 'submitMessage', label: '提交日志', minWidth: '160px' },
-    { field: 'originateDisposition', label: '外呼结果', width: '160px' },
+    {
+        field: 'callResult',
+        label: '呼叫结果',
+        width: '180px',
+        slots: {
+            default: (data) => <span>{buildCallResultText(data.row)}</span>
+        }
+    },
     { field: 'jobUuid', label: '任务号', width: '240px' },
     { field: 'statusDesc', label: '状态', width: '110px' },
     { field: 'userNickname', label: '发起人', width: '120px' },
@@ -170,7 +181,8 @@ const tableColumns = reactive<TableColumn[]>([
     // { field: 'backupGatewayName', label: '备网关', width: '170px' },
     { field: 'durationSeconds', label: '通话时长(秒)', width: '120px' },
     { field: 'failReason', label: '失败原因', minWidth: '220px' },
-    { field: 'hangupCause', label: '挂断原因', width: '160px' }
+    { field: 'originateDisposition', label: '外呼结果原值', width: '160px' },
+    { field: 'hangupCause', label: '挂断原因原值', width: '160px' }
 ])
 
 onMounted(() => {
