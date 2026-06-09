@@ -1,6 +1,6 @@
 <template>
     <ContentWrap>
-        <Search :schema="searchSchema" @reset="getList" @search="setSearchParams" />
+        <Search :schema="searchSchema" @reset="resetSearchParams" @search="setSearchParams" />
         <div class="mb-10px">
             <BaseButton
                 type="primary"
@@ -72,7 +72,12 @@ const canCreate = hasPermission(['system:product-category:create'])
 const canUpdate = hasPermission(['system:product-category:update'])
 const canDelete = hasPermission(['system:product-category:delete'])
 
-const searchParams = reactive<Recordable>({ name: undefined })
+const createSearchParams = () => ({
+    name: undefined,
+    status: undefined
+})
+
+const searchParams = reactive<Recordable>(createSearchParams())
 const loading = ref(true)
 const list = ref<any[]>([])
 const simpleList = ref<any[]>([])
@@ -105,7 +110,12 @@ const searchSchema = reactive<FormSchema[]>([
 ])
 
 const setSearchParams = (params: Recordable) => {
-    Object.assign(searchParams, params)
+    Object.assign(searchParams, createSearchParams(), params)
+    getList()
+}
+
+const resetSearchParams = () => {
+    Object.assign(searchParams, createSearchParams())
     getList()
 }
 

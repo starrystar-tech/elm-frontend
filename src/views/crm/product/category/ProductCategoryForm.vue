@@ -79,7 +79,7 @@ const formRules = reactive({
   status: [{ required: true, message: '状态不能为空', trigger: 'change' }]
 })
 const formRef = ref() // 表单 Ref
-const productCategoryList = ref<any[]>([]) // 产品分类树
+const productCategoryList = ref<any[]>([]) // 产品分类列表
 
 /** 打开弹窗 */
 const open = async (type: string, id?: number, parentId?: number) => {
@@ -99,9 +99,8 @@ const open = async (type: string, id?: number, parentId?: number) => {
   if (type === 'create' && parentId !== undefined) {
     formData.value.parentId = parentId
   }
-  // 获得分类树
-  const resp = await ProductCategoryApi.getProductCategoryList({})
-  productCategoryList.value = resp?.list || resp || []
+  // 获得分类列表，使用扁平数据保证父级分类能正确回显名称
+  productCategoryList.value = await ProductCategoryApi.getProductCategorySimpleList()
 }
 defineExpose({ open }) // 提供 open 方法，用于打开弹窗
 

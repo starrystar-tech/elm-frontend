@@ -1,6 +1,6 @@
 <template>
   <ContentWrap>
-    <Search :schema="searchSchema" @reset="getList" @search="setSearchParams" />
+    <Search :schema="searchSchema" @reset="resetSearchParams" @search="setSearchParams" />
     <div class="mb-10px">
       <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
       <BaseButton v-if="canExport" type="primary" plain :loading="exportLoading" @click="handleExport">
@@ -44,10 +44,12 @@ const canUpdate = hasPermission(['infra:demo02-category:update'])
 const canDelete = hasPermission(['infra:demo02-category:delete'])
 const canExport = hasPermission(['infra:demo02-category:export'])
 
-const searchParams = reactive<Recordable>({
+const createSearchParams = () => ({
   name: undefined,
   createTime: []
 })
+
+const searchParams = reactive<Recordable>(createSearchParams())
 
 const searchSchema = reactive<FormSchema[]>([
   {
@@ -79,7 +81,12 @@ const isExpandAll = ref(true)
 const refreshTable = ref(true)
 
 const setSearchParams = (params: Recordable) => {
-  Object.assign(searchParams, params)
+  Object.assign(searchParams, createSearchParams(), params)
+  getList()
+}
+
+const resetSearchParams = () => {
+  Object.assign(searchParams, createSearchParams())
   getList()
 }
 

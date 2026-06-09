@@ -34,7 +34,8 @@ const message = useMessage()
 
 const loading = ref(true)
 const list = ref<LevelApi.LevelVO[]>([])
-const searchParams = reactive({ name: null, status: null })
+const createSearchParams = () => ({ name: null, status: null })
+const searchParams = reactive(createSearchParams())
 const searchSchema = reactive<FormSchema[]>([
   { field: 'name', label: '等级名称', component: 'Input', componentProps: { placeholder: '请输入等级名称', clearable: true, style: { width: '240px' } } },
   { field: 'status', label: '状态', component: 'Select', componentProps: { placeholder: '请选择状态', clearable: true, options: getIntDictOptions(DICT_TYPE.COMMON_STATUS), style: { width: '240px' } } }
@@ -49,7 +50,7 @@ const getList = async () => {
   }
 }
 const setSearchParams = async (params: Recordable) => {
-  Object.assign(searchParams, params)
+  Object.assign(searchParams, createSearchParams(), params)
   await getList()
 }
 const formRef = ref<InstanceType<typeof LevelForm>>()

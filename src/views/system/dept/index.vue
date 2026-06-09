@@ -51,10 +51,11 @@ const canUpdate = hasPermission(['system:dept:update'])
 const canDelete = hasPermission(['system:dept:delete'])
 
 const message = useMessage()
-const searchParams = reactive({
+const createSearchParams = () => ({
   name: undefined,
   status: undefined
 })
+const searchParams = reactive(createSearchParams())
 const loading = ref(true)
 const list = ref<DeptApi.DeptVO[]>([])
 const isExpandAll = ref(true)
@@ -106,7 +107,7 @@ const getList = async () => {
 }
 
 const setSearchParams = async (params: Recordable) => {
-  Object.assign(searchParams, params)
+  Object.assign(searchParams, createSearchParams(), params)
   await getList()
 }
 

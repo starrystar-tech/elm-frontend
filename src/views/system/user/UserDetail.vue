@@ -2,7 +2,7 @@
     <el-drawer
         v-model="drawerVisible"
         direction="rtl"
-        size="980px"
+        size="780px"
         append-to-body
         title="用户详情"
         :close-on-click-modal="false"
