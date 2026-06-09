@@ -1,11 +1,11 @@
 <template>
     <ContentWrap>
         <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
-        <div class="mb-10px">
+        <div class="action-btn-wrap">
             <BaseButton v-if="canCreate" type="primary" @click="openForm('create')"
                 >新增</BaseButton
             >
-            <BaseButton type="danger" @click="toggleExpandAll">展开/折叠</BaseButton>
+            <BaseButton @click="toggleExpandAll">展开/折叠</BaseButton>
             <BaseButton @click="refreshMenu">刷新菜单缓存</BaseButton>
         </div>
 

@@ -1,11 +1,10 @@
 <template>
     <div class="panel-wrap" v-loading="loading">
         <div class="tag-toolbar">
-            <BaseButton v-if="canCreate" type="success" @click="openForm('create')"
+            <BaseButton v-if="canCreate" type="primary" @click="openForm('create')"
                 >添加标签组</BaseButton
             >
         </div>
-
         <div class="tag-group-list" v-if="tagGroups.length">
             <div v-for="group in tagGroups" :key="group.id" class="tag-group-item">
                 <div class="tag-group-header">
@@ -170,13 +169,13 @@ const removeTagRow = (index: number) => {
 }
 
 const buildTags = (tags: Array<{ name: string }>) => {
-  const names = (tags || []).map((item) => item.name?.trim()).filter((item) => !!item)
+    const names = (tags || []).map((item) => item.name?.trim()).filter((item) => !!item)
 
-  return names.map((name, index) => {
-    return {
-      name,
-      sort: (index + 1) * 10
-    }
+    return names.map((name, index) => {
+        return {
+            name,
+            sort: (index + 1) * 10
+        }
     })
 }
 
@@ -223,13 +222,13 @@ const submitForm = async () => {
 
     formLoading.value = true
     try {
-    const data: SystemTagGroupApi.SystemTagGroupVO = {
-      id: formData.value.id,
-      name: formData.value.name,
-      sort: formData.value.sort,
-      remark: formData.value.remark,
-      tags: buildTags(formData.value.tags)
-    }
+        const data: SystemTagGroupApi.SystemTagGroupVO = {
+            id: formData.value.id,
+            name: formData.value.name,
+            sort: formData.value.sort,
+            remark: formData.value.remark,
+            tags: buildTags(formData.value.tags)
+        }
 
         if (formType.value === 'create') {
             await SystemTagGroupApi.createTagGroup(data)
@@ -259,11 +258,11 @@ onMounted(() => {
 
 <style scoped>
 .panel-wrap {
-    padding: 8px 6px;
+    padding: 0px 6px 8px 6px;
 }
 .tag-toolbar {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     margin-bottom: 16px;
 }
 .tag-group-list {
