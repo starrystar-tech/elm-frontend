@@ -109,11 +109,11 @@ const setSearchParams = (params: Recordable) => {
 
 const tableColumns = reactive<TableColumn[]>([
     { field: 'recordNo', label: '记录编号', width: '150px' },
-    { field: 'callerDisplayNumber', label: '主叫号码', width: '130px' },
+    { field: 'callerDisplayNumber', label: '主叫号码', width: '150px' },
     { field: 'calleeMobile', label: '被叫号码', width: '120px' },
-    { field: 'createTime', label: '发起时间', formatter: dateFormatter, width: '170px' },
-    { field: 'answerTime', label: '接通时间', formatter: dateFormatter, width: '170px' },
-    { field: 'endTime', label: '结束时间', formatter: dateFormatter, width: '170px' },
+    { field: 'createTime', label: '发起时间', formatter: dateFormatter, width: '180px' },
+    { field: 'answerTime', label: '接通时间', formatter: dateFormatter, width: '180px' },
+    { field: 'endTime', label: '结束时间', formatter: dateFormatter, width: '180px' },
     {
         field: 'recordingFileUrl',
         label: '通话录音',

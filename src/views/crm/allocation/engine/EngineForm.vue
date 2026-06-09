@@ -6,8 +6,8 @@
             </el-form-item>
             <el-form-item label="状态" prop="status">
                 <el-radio-group v-model="localForm.status">
-                    <el-radio :value="0">停用</el-radio>
-                    <el-radio :value="1">启用</el-radio>
+                    <el-radio :value="0">启用</el-radio>
+                    <el-radio :value="1">停用</el-radio>
                 </el-radio-group>
             </el-form-item>
             <el-form-item label="分配时间范围类型" prop="timeRangeType">
@@ -163,9 +163,10 @@ const editingRuleIndex = ref<number>(-1)
 
 const formatRegionName = (regionId?: number) => {
     if (!regionId) return '--'
-    const path = findPath(props.areaTree || [], (node: any) => Number(node?.id) === Number(regionId)) as
-        | any[]
-        | null
+    const path = findPath(
+        props.areaTree || [],
+        (node: any) => Number(node?.id) === Number(regionId)
+    ) as any[] | null
     const names = Array.isArray(path)
         ? path
               .filter((item) => Number(item?.id) !== -1)

@@ -347,7 +347,7 @@ const resetEngineForm = () => {
     Object.assign(engineForm, {
         id: undefined,
         engineName: '',
-        status: 1,
+        status: 0,
         timeRangeType: 'unlimited',
         startTime: undefined,
         endTime: undefined,
