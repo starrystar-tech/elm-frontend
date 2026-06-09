@@ -82,7 +82,7 @@ const searchSchema = computed<FormSchema[]>(() => [
         componentProps: {
             type: 'daterange',
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
-            style: { width: '260px' }
+            style: { width: '220px' }
         }
     },
     {
@@ -104,7 +104,7 @@ const searchSchema = computed<FormSchema[]>(() => [
         componentProps: {
             type: 'daterange',
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
-            style: { width: '260px' }
+            style: { width: '220px' }
         }
     }
 ])

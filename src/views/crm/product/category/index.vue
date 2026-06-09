@@ -16,6 +16,7 @@
             :loading="loading"
             row-key="id"
             default-expand-all
+            :indent="32"
         />
     </ContentWrap>
 
@@ -200,6 +201,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                     {canCreate ? (
                         <BaseButton
                             link
+                            title="创建子分类"
                             type="primary"
                             onClick={() => openForm('create', undefined, data.row.id)}
                         >
@@ -207,14 +209,10 @@ const tableColumns = computed<TableColumn[]>(() => [
                         </BaseButton>
                     ) : null}
                     {canUpdate ? (
-                        <BaseButton link type="primary" onClick={() => openMoveDialog(data.row)}>
-                            <Icon icon="ep:rank" />
-                        </BaseButton>
-                    ) : null}
-                    {canUpdate ? (
                         <BaseButton
                             link
                             type="primary"
+                            title="上移"
                             onClick={() => handleSort(data.row.id, 'UP')}
                         >
                             <Icon icon="ep:top" />
@@ -224,9 +222,20 @@ const tableColumns = computed<TableColumn[]>(() => [
                         <BaseButton
                             link
                             type="primary"
+                            title="下移"
                             onClick={() => handleSort(data.row.id, 'DOWN')}
                         >
                             <Icon icon="ep:bottom" />
+                        </BaseButton>
+                    ) : null}
+                    {canUpdate ? (
+                        <BaseButton
+                            title="移动父分类"
+                            link
+                            type="primary"
+                            onClick={() => openMoveDialog(data.row)}
+                        >
+                            <Icon icon="ep:rank" />
                         </BaseButton>
                     ) : null}
                     {canUpdate ? (

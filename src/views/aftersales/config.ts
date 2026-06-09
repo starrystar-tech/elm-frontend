@@ -119,7 +119,7 @@ export const buildBaseSearchSchema = (
         componentProps: {
             type: 'daterange',
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
-            style: { width: '260px' }
+            style: { width: '220px' }
         }
     },
     {
@@ -129,7 +129,7 @@ export const buildBaseSearchSchema = (
         componentProps: {
             type: 'daterange',
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
-            style: { width: '260px' }
+            style: { width: '220px' }
         }
     }
 ]
