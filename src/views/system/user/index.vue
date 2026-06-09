@@ -14,7 +14,6 @@
                     >
                     <BaseButton
                         v-if="canExport"
-                        type="primary"
                         plain
                         :loading="exportLoading"
                         @click="handleExport"
@@ -31,16 +30,13 @@
                     </BaseButton>
                     <BaseButton
                         v-if="canUpdate"
-                        type="primary"
                         plain
                         :disabled="checkedIds.length === 0"
                         @click="openBatchUpdateForm"
                     >
                         批量修改复制次数
                     </BaseButton>
-                    <BaseButton type="primary" plain @click="handleSetDeptPermission"
-                        >设置部门权限</BaseButton
-                    >
+                    <BaseButton plain @click="handleSetDeptPermission">设置部门权限</BaseButton>
                 </div>
 
                 <Table

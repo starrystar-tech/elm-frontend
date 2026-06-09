@@ -1,6 +1,11 @@
 <template>
-    <Dialog v-model="dialogVisible" title="失败明细" width="1200px" class="search-table-dialog">
-        <div>
+    <Dialog
+        v-model="dialogVisible"
+        title="导入名片失败明细"
+        width="1200px"
+        class="search-table-dialog"
+    >
+        <div class="list-tabs-compact-in-pane">
             <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
             <Table
                 v-model:currentPage="tableObject.currentPage"

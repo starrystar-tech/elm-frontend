@@ -2,10 +2,12 @@
     <Dialog v-model="dialogVisible" :title="dialogTitle" width="900px">
         <el-form
             ref="formRef"
+            :key="formRenderKey"
             v-loading="formLoading"
             :model="formData"
             :rules="formRules"
             label-width="100px"
+            autocomplete="off"
         >
             <el-row>
                 <el-col :span="12">
@@ -20,8 +22,13 @@
                     </el-form-item>
                 </el-col> -->
                 <el-col :span="12">
-                    <el-form-item label="登录名称" prop="username">
-                        <el-input v-model="formData.username" placeholder="请输入用户名称" />
+                    <el-form-item label="登录账号" prop="username">
+                        <el-input
+                            v-model="formData.username"
+                            placeholder="请输入登录账号"
+                            name="system-user-create-username"
+                            autocomplete="off"
+                        />
                     </el-form-item>
                 </el-col>
                 <el-col :span="12" v-if="formData.id === undefined">
@@ -29,6 +36,8 @@
                         <el-input
                             v-model="formData.password"
                             placeholder="请输入用户密码"
+                            name="system-user-create-password"
+                            autocomplete="new-password"
                             show-password
                             type="password"
                         />
@@ -364,6 +373,7 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const formLoading = ref(false)
 const formType = ref('')
+const formRenderKey = ref(0)
 
 const formData = ref({
     nickname: '',
@@ -456,6 +466,7 @@ const open = async (type: string, id?: number) => {
     dialogTitle.value = type === 'update' ? '编辑用户' : t('action.' + type)
     formType.value = type
     resetForm()
+    formRenderKey.value += 1
 
     const [deptData, postData, weappData, wecomMembers, campusData, areaData, categoryData] =
         await Promise.all([
@@ -504,6 +515,11 @@ const open = async (type: string, id?: number) => {
         } finally {
             formLoading.value = false
         }
+    } else {
+        nextTick(() => {
+            formData.value.username = ''
+            formData.value.password = ''
+        })
     }
 }
 defineExpose({ open })

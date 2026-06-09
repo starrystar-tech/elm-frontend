@@ -1,5 +1,12 @@
 <template>
-    <Dialog v-model="dialogVisible" :title="readonly ? '查看' : '审核'" width="920px">
+    <el-drawer
+        v-model="dialogVisible"
+        :title="readonly ? '查看退款单' : '审核退款单'"
+        size="920px"
+        append-to-body
+        :close-on-click-modal="false"
+        class="refund-audit-drawer"
+    >
         <div v-loading="loading" class="refund-audit-dialog">
             <div class="refund-audit-section">
                 <div class="refund-audit-section__title">订单信息</div>
@@ -129,19 +136,34 @@
             </div>
         </div>
         <template #footer>
-            <el-button @click="dialogVisible = false">{{ readonly ? '关闭' : '取消' }}</el-button>
-            <el-button v-if="!readonly" type="primary" :loading="submitting" @click="handleSubmit">
-                提交
-            </el-button>
+            <div class="refund-audit-drawer__footer">
+                <el-button @click="dialogVisible = false">
+                    {{ readonly ? '关闭' : '取消' }}
+                </el-button>
+                <el-button
+                    v-if="!readonly"
+                    type="primary"
+                    :loading="submitting"
+                    @click="handleSubmit"
+                >
+                    提交
+                </el-button>
+            </div>
         </template>
-    </Dialog>
+    </el-drawer>
 </template>
 
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
 import { nextTick } from 'vue'
 import * as OrderApi from '@/api/crm/order'
-import { REFUND_STATUS_OPTIONS, REFUND_TYPE_OPTIONS, formatAmount, getOptionLabel, getRefundableAmount } from '../utils'
+import {
+    REFUND_STATUS_OPTIONS,
+    REFUND_TYPE_OPTIONS,
+    formatAmount,
+    getOptionLabel,
+    getRefundableAmount
+} from '../utils'
 
 defineOptions({ name: 'RefundAuditDialog' })
 
@@ -227,50 +249,71 @@ defineExpose({ open })
 
 <style scoped lang="scss">
 .refund-audit-dialog {
-  padding: 8px 4px 0;
+    padding: 16px 20px 0;
 }
 
 .refund-audit-section {
-  margin-bottom: 28px;
+    margin-bottom: 28px;
 }
 
 .refund-audit-section__title {
-  position: relative;
-  padding-left: 12px;
-  margin-bottom: 18px;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
+    position: relative;
+    padding-left: 12px;
+    margin-bottom: 18px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
 }
 
 .refund-audit-section__title::before {
-  position: absolute;
-  top: 2px;
-  left: 0;
-  width: 4px;
-  height: 18px;
-  content: '';
-  background: var(--el-color-primary);
-  border-radius: 4px;
+    position: absolute;
+    top: 2px;
+    left: 0;
+    width: 4px;
+    height: 18px;
+    content: '';
+    background: var(--el-color-primary);
+    border-radius: 4px;
 }
 
 .refund-audit-section__grid,
 .refund-audit-form__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px 48px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 48px;
 }
 
 .refund-audit-section__item {
-  font-size: 15px;
-  color: var(--el-text-color-primary);
+    font-size: 15px;
+    color: var(--el-text-color-primary);
 }
 
 .refund-audit-section__item--full {
-  grid-column: 1 / -1;
+    grid-column: 1 / -1;
 }
 
 .refund-audit-section__item .label {
-  color: var(--el-text-color-regular);
+    color: var(--el-text-color-regular);
+}
+
+.refund-audit-drawer__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+:deep(.refund-audit-drawer .el-drawer__header) {
+    margin-bottom: 0;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+:deep(.refund-audit-drawer .el-drawer__body) {
+    padding: 0;
+}
+
+:deep(.refund-audit-drawer .el-drawer__footer) {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--el-border-color-lighter);
 }
 </style>

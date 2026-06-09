@@ -25,7 +25,6 @@
             <div class="action-btn-wrap">
                 <BaseButton
                     type="primary"
-                    plain
                     :disabled="selectionList.length === 0"
                     @click="releaseDialogVisible = true"
                 >
@@ -315,7 +314,15 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'tagNames',
         label: '标签',
         minWidth: '150px',
-        slots: { default: (data) => <span>{(data.row.tagNames as string[])?.length ? (data.row.tagNames as string[]).join('、') : '-'}</span> }
+        slots: {
+            default: (data) => (
+                <span>
+                    {(data.row.tagNames as string[])?.length
+                        ? (data.row.tagNames as string[]).join('、')
+                        : '-'}
+                </span>
+            )
+        }
     },
     {
         field: 'complaintTagNames',

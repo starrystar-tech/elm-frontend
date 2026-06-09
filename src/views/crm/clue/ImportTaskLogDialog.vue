@@ -1,6 +1,6 @@
 <template>
-    <Dialog v-model="dialogVisible" title="导入日志" width="1200px" class="search-table-dialog">
-        <div>
+    <Dialog v-model="dialogVisible" title="导入名片日志" width="1200px" class="search-table-dialog">
+        <div class="list-tabs-compact-in-pane">
             <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
             <Table
                 v-model:currentPage="tableObject.currentPage"
@@ -73,7 +73,7 @@ const searchSchema = reactive<FormSchema[]>([
             placeholder: '请选择导入结果',
             clearable: true,
             options: resultOptions,
-            style: { width: '180px' }
+            style: { width: '220px' }
         }
     }
 ])
@@ -114,7 +114,9 @@ const tableColumns = computed<TableColumn[]>(() => [
         width: '100px',
         slots: {
             default: (data) => (
-                <span>{resultOptions.find((item) => item.value === data.row.result)?.label || '--'}</span>
+                <span>
+                    {resultOptions.find((item) => item.value === data.row.result)?.label || '--'}
+                </span>
             )
         }
     },

@@ -24,7 +24,12 @@ import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { dateFormatter } from '@/utils/formatTime'
 import * as OrderApi from '@/api/crm/order'
-import { PAY_METHOD_OPTIONS, PAY_CONFIRM_STATUS_OPTIONS, formatAmount, getOptionLabel } from '../utils'
+import {
+    PAY_METHOD_OPTIONS,
+    PAY_CONFIRM_STATUS_OPTIONS,
+    formatAmount,
+    getOptionLabel
+} from '../utils'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'OrderPaymentConfirm' })
@@ -32,17 +37,69 @@ defineOptions({ name: 'OrderPaymentConfirm' })
 const message = useMessage()
 
 const searchSchema = computed<FormSchema[]>(() => [
-    { field: 'mobile', label: '联系电话', component: 'Input', componentProps: { clearable: true, style: { width: '220px' } } },
-    { field: 'customer', label: '客户', component: 'Input', componentProps: { clearable: true, style: { width: '220px' } } },
-    { field: 'orderNo', label: '订单编号', component: 'Input', componentProps: { clearable: true, style: { width: '220px' } } },
-    { field: 'confirmStatus', label: '确认状态', component: 'Select', componentProps: { options: PAY_CONFIRM_STATUS_OPTIONS, clearable: true, style: { width: '220px' } } },
-    { field: 'payNo', label: '支付流水号', component: 'Input', componentProps: { clearable: true, style: { width: '220px' } } },
-    { field: 'payMethod', label: '支付方式', component: 'Select', componentProps: { options: PAY_METHOD_OPTIONS, clearable: true, style: { width: '220px' } } },
-    { field: 'payTimeRange', label: '支付时间', component: 'DatePicker', componentProps: { type: 'daterange', valueFormat: 'YYYY-MM-DD HH:mm:ss', style: { width: '260px' } } },
-    { field: 'payAmountRange', label: '支付金额', component: 'Input', componentProps: { clearable: true, style: { width: '220px' } } }
+    {
+        field: 'mobile',
+        label: '联系电话',
+        component: 'Input',
+        componentProps: { clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'customer',
+        label: '客户',
+        component: 'Input',
+        componentProps: { clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'orderNo',
+        label: '订单编号',
+        component: 'Input',
+        componentProps: { clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'confirmStatus',
+        label: '确认状态',
+        component: 'Select',
+        componentProps: {
+            options: PAY_CONFIRM_STATUS_OPTIONS,
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'payNo',
+        label: '支付流水号',
+        component: 'Input',
+        componentProps: { clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'payMethod',
+        label: '支付方式',
+        component: 'Select',
+        componentProps: { options: PAY_METHOD_OPTIONS, clearable: true, style: { width: '220px' } }
+    },
+    {
+        field: 'payTimeRange',
+        label: '支付时间',
+        component: 'DatePicker',
+        componentProps: {
+            type: 'daterange',
+            valueFormat: 'YYYY-MM-DD HH:mm:ss',
+            style: { width: '260px' }
+        }
+    },
+    {
+        field: 'payAmountRange',
+        label: '支付金额',
+        component: 'Input',
+        componentProps: { clearable: true, style: { width: '220px' } }
+    }
 ])
 
-const { tableObject, tableMethods, register: tableRegister } = useTable<OrderApi.OrderPayRecordRespVO>({
+const {
+    tableObject,
+    tableMethods,
+    register: tableRegister
+} = useTable<OrderApi.OrderPayRecordRespVO>({
     getListApi: async (params) => {
         const { payTimeRange = [], payAmountRange, ...rest } = params
         const [minPayAmount, maxPayAmount] = String(payAmountRange || '')
@@ -71,9 +128,13 @@ const getOrderClueDetail = async (id: number) => {
 }
 
 const audit = async (row: OrderApi.OrderPayRecordRespVO, confirmStatus: number) => {
-    const result = await ElMessageBox.prompt(confirmStatus === 20 ? '请输入通过结果' : '请输入驳回原因', '支付确认', {
-        inputValue: confirmStatus === 20 ? '支付记录无误' : '支付凭证有误'
-    })
+    const result = await ElMessageBox.prompt(
+        confirmStatus === 20 ? '请输入通过结果' : '请输入驳回原因',
+        '支付确认',
+        {
+            inputValue: confirmStatus === 20 ? '支付记录无误' : '支付凭证有误'
+        }
+    )
     await OrderApi.confirmPayRecord({
         id: row.id,
         confirmStatus,
@@ -85,7 +146,12 @@ const audit = async (row: OrderApi.OrderPayRecordRespVO, confirmStatus: number) 
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'confirmStatus', label: '确认状态', minWidth: '100px', formatter: (_r, _c, v) => getOptionLabel(PAY_CONFIRM_STATUS_OPTIONS, v) },
+    {
+        field: 'confirmStatus',
+        label: '确认状态',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => getOptionLabel(PAY_CONFIRM_STATUS_OPTIONS, v)
+    },
     { field: 'confirmResult', label: '确认结果', minWidth: '160px' },
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
     { field: 'customerName', label: '姓名', minWidth: '100px' },
@@ -105,7 +171,12 @@ const tableColumns = computed<TableColumn[]>(() => [
                 })
         }
     },
-    { field: 'payAmount', label: '支付金额', minWidth: '100px', formatter: (_r, _c, v) => formatAmount(v) },
+    {
+        field: 'payAmount',
+        label: '支付金额',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => formatAmount(v)
+    },
     { field: 'payMethod', label: '支付方式', minWidth: '100px' },
     { field: 'payNo', label: '支付流水号', minWidth: '220px' },
     { field: 'payTime', label: '支付时间', minWidth: '180px', formatter: dateFormatter },
@@ -122,7 +193,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                         <BaseButton link type="primary" onClick={() => audit(row, 20)}>
                             通过
                         </BaseButton>
-                        <BaseButton link type="warning" onClick={() => audit(row, 30)}>
+                        <BaseButton link type="danger" onClick={() => audit(row, 30)}>
                             驳回
                         </BaseButton>
                     </>

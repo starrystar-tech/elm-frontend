@@ -4,12 +4,10 @@
             <el-tab-pane label="合同模板" name="templates">
                 <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
                 <div class="action-btn-wrap">
-                    <BaseButton v-if="canSync" type="primary" plain @click="handleSync"
-                        >同步合同模板</BaseButton
-                    >
-                    <BaseButton v-if="canManage" type="primary" plain @click="openManageUrl"
+                    <BaseButton v-if="canManage" type="primary" @click="openManageUrl"
                         >模板管理</BaseButton
                     >
+                    <BaseButton v-if="canSync" @click="handleSync">同步合同模板</BaseButton>
                 </div>
                 <Table
                     v-model:currentPage="tableObject.currentPage"
