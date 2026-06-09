@@ -109,8 +109,8 @@ const engineSearchSchema = reactive<FormSchema[]>([
             clearable: true,
             placeholder: '请选择状态',
             options: [
-                { label: '启用', value: 1 },
-                { label: '停用', value: 0 }
+                { label: '启用', value: 0 },
+                { label: '停用', value: 1 }
             ],
             style: { width: '220px' }
         }
@@ -197,19 +197,14 @@ const areaTree = ref<any[]>([])
 const projectNameMap = ref<Record<string, string>>({})
 
 const dedupeTexts = (values: Array<string | undefined | null>) =>
-    Array.from(
-        new Set(
-            values
-                .map((item) => String(item || '').trim())
-                .filter(Boolean)
-        )
-    )
+    Array.from(new Set(values.map((item) => String(item || '').trim()).filter(Boolean)))
 
 const formatRegionName = (regionId?: number) => {
     if (!regionId) return ''
-    const path = findPath(areaTree.value || [], (node: any) => Number(node?.id) === Number(regionId)) as
-        | any[]
-        | null
+    const path = findPath(
+        areaTree.value || [],
+        (node: any) => Number(node?.id) === Number(regionId)
+    ) as any[] | null
     const names = Array.isArray(path)
         ? path
               .filter((item) => Number(item?.id) !== -1)
@@ -247,8 +242,8 @@ const engineColumns = computed<TableColumn[]>(() => [
         width: '90px',
         slots: {
             default: (data) => (
-                <el-tag type={data.row.status === 1 ? 'success' : 'info'}>
-                    {data.row.status === 1 ? '启用' : '停用'}
+                <el-tag type={data.row.status === 0 ? 'success' : 'info'}>
+                    {data.row.status === 0 ? '启用' : '停用'}
                 </el-tag>
             )
         }
@@ -301,7 +296,7 @@ const engineColumns = computed<TableColumn[]>(() => [
                             type="primary"
                             onClick={() => toggleEngineStatus(data.row)}
                         >
-                            {data.row.status === 1 ? '停用' : '启用'}
+                            {data.row.status === 0 ? '停用' : '启用'}
                         </BaseButton>
                     ) : null}
                 </>
@@ -406,7 +401,7 @@ const saveEngine = async (payload: Recordable) => {
 
 const toggleEngineStatus = async (row: EngineApi.AllocationEngineVO) => {
     await EngineApi.updateAllocationEngineStatus({ id: row.id!, status: row.status === 1 ? 0 : 1 })
-    message.success(row.status === 1 ? '停用成功' : '启用成功')
+    message.success(row.status === 0 ? '停用成功' : '启用成功')
     await engineTableMethods.getList()
 }
 

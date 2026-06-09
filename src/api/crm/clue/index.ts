@@ -64,6 +64,9 @@ export interface ClueVO {
     orderCount?: number
     creator?: string
     creatorName?: string
+    creatorUserName?: string
+    createUserName?: string
+    createByName?: string
     createTime?: string
     updateTime?: string
     silentReason?: string

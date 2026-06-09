@@ -81,6 +81,10 @@ const formRules = reactive({
 const formRef = ref() // 表单 Ref
 const productCategoryList = ref<any[]>([]) // 产品分类列表
 
+const flattenCategoryList = (categories: any[] = []): any[] => {
+  return categories.flatMap((item) => [item, ...flattenCategoryList(item.children || [])])
+}
+
 /** 打开弹窗 */
 const open = async (type: string, id?: number, parentId?: number) => {
   dialogVisible.value = true
@@ -99,8 +103,9 @@ const open = async (type: string, id?: number, parentId?: number) => {
   if (type === 'create' && parentId !== undefined) {
     formData.value.parentId = parentId
   }
-  // 获得分类列表，使用扁平数据保证父级分类能正确回显名称
-  productCategoryList.value = await ProductCategoryApi.getProductCategorySimpleList()
+  // simple-list 仅返回启用分类，禁用父分类会导致 select 只能显示 id
+  const resp = await ProductCategoryApi.getProductCategoryList({})
+  productCategoryList.value = flattenCategoryList(resp?.list || resp || [])
 }
 defineExpose({ open }) // 提供 open 方法，用于打开弹窗
 
