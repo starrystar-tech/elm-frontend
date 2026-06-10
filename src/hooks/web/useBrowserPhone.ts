@@ -79,6 +79,19 @@ const syncCallerFromProfile = () => {
     }
 }
 
+const applyBrowserPhoneCredentials = (payload?: {
+    wsServer?: string
+    domain?: string
+    username?: string
+    password?: string
+}) => {
+    if (!payload) return
+    if (typeof payload.wsServer === 'string') browserForm.wsServer = payload.wsServer
+    if (typeof payload.domain === 'string') browserForm.domain = payload.domain
+    if (typeof payload.username === 'string') browserForm.username = payload.username
+    if (typeof payload.password === 'string') browserForm.password = payload.password
+}
+
 const reloadProfile = async () => {
     profileLoading.value = true
     try {
@@ -865,6 +878,7 @@ export const useBrowserPhone = () => {
         isInCall,
         isRingingState,
         reloadProfile,
+        applyBrowserPhoneCredentials,
         connectBrowserPhone,
         disconnectBrowserPhone,
         makeBrowserCall,

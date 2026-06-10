@@ -18,6 +18,7 @@ import {
     markExportTaskCenterViewed
 } from '@/api/system/exportTask'
 import { getUserProfile, updateUserOutboundStatus } from '@/api/system/user/profile'
+import { useBrowserPhone } from '@/hooks/web/useBrowserPhone'
 import ToolHeaderDialer from './ToolHeaderDialer.vue'
 
 const { getPrefixCls, variables } = useDesign()
@@ -68,12 +69,51 @@ export default defineComponent({
         const outboundStatusLoading = ref(false)
         let exportTaskTimer: number | undefined
         const messageApi = useMessage()
+        const {
+            browserLoading,
+            browserRegistered,
+            browserStatus,
+            activeCall,
+            incomingCall,
+            formattedCallDuration,
+            browserForm,
+            connectBrowserPhone,
+            disconnectBrowserPhone,
+            makeBrowserCall,
+            hangupBrowserCall,
+            applyBrowserPhoneCredentials
+        } = useBrowserPhone()
 
-        const outboundSignedIn = computed(() => outboundStatus.value === 1)
-        const outboundStatusLabel = computed(() =>
-            outboundSignedIn.value ? '外呼已签入' : '外呼已签出'
-        )
+        const outboundSignedIn = computed(() => outboundStatus.value === 1 && browserRegistered.value)
+        const outboundStatusLabel = computed(() => {
+            if (browserStatus.value === '通话中') return '通话中'
+            if (browserStatus.value === '呼叫中') return '呼叫中'
+            if (browserStatus.value === '来电响铃') return '来电响铃'
+            return outboundSignedIn.value ? '外呼已签入' : '外呼已签出'
+        })
         const outboundStatusActionLabel = computed(() => (outboundSignedIn.value ? '签出' : '签入'))
+        const dialerStatusType = computed(() => {
+            if (browserStatus.value === '通话中') return 'inCall'
+            if (browserStatus.value === '呼叫中' || browserStatus.value === '来电响铃') return 'ringing'
+            if (browserStatus.value === '已注册') return 'registered'
+            if (browserStatus.value === '连接失败') return 'failed'
+            return 'idle'
+        })
+        const dialerStatusMessage = computed(() => {
+            if (browserStatus.value === '通话中') {
+                return dialerMobile.value ? `正在与 ${dialerMobile.value} 通话` : '当前通话已接通'
+            }
+            if (browserStatus.value === '呼叫中') {
+                return dialerMobile.value ? `正在呼叫 ${dialerMobile.value}` : '正在等待对方接听'
+            }
+            if (browserStatus.value === '来电响铃') {
+                return '当前有来电等待接听，请使用来电浮层处理'
+            }
+            if (outboundSignedIn.value) {
+                return '浏览器分机已注册，支持电脑端通话'
+            }
+            return '点击签入后，将自动注册浏览器分机 1001'
+        })
 
         const syncDialerCursor = async () => {
             await nextTick()
@@ -109,6 +149,13 @@ export default defineComponent({
             try {
                 const profile = await getUserProfile()
                 outboundStatus.value = profile?.outboundStatus === 1 ? 1 : 0
+                applyBrowserPhoneCredentials({
+                    username: '1001',
+                    password: '123456'
+                })
+                if (outboundStatus.value === 1 && !browserRegistered.value && !browserLoading.value) {
+                    await connectBrowserPhone()
+                }
             } catch (error) {
                 console.warn('[ToolHeader] load outbound profile failed', error)
                 outboundStatus.value = 0
@@ -122,7 +169,17 @@ export default defineComponent({
             const nextStatus = outboundSignedIn.value ? 0 : 1
             outboundStatusLoading.value = true
             try {
-                await updateUserOutboundStatus({ outboundStatus: nextStatus })
+                applyBrowserPhoneCredentials({
+                    username: '1001',
+                    password: '123456'
+                })
+                if (nextStatus === 1) {
+                    await connectBrowserPhone()
+                    await updateUserOutboundStatus({ outboundStatus: nextStatus })
+                } else {
+                    await disconnectBrowserPhone(true)
+                    await updateUserOutboundStatus({ outboundStatus: nextStatus })
+                }
                 outboundStatus.value = nextStatus
                 messageApi.success(nextStatus === 1 ? '已签入外呼' : '已签出外呼')
             } catch (error: any) {
@@ -130,6 +187,27 @@ export default defineComponent({
             } finally {
                 outboundStatusLoading.value = false
             }
+        }
+
+        const handleBrowserDial = async () => {
+            if (!outboundSignedIn.value) {
+                messageApi.warning('当前未签入，请先签入浏览器分机')
+                return
+            }
+            const targetMobile = dialerMobile.value.trim()
+            if (!/^\d{3,20}$/.test(targetMobile)) {
+                messageApi.warning('请输入正确的号码')
+                return
+            }
+            browserForm.target = targetMobile
+            await makeBrowserCall()
+        }
+
+        const handleBrowserHangup = async () => {
+            if (!activeCall.value && !incomingCall.value && browserStatus.value !== '呼叫中') {
+                return
+            }
+            await hangupBrowserCall()
         }
 
         onMounted(() => {
@@ -174,7 +252,15 @@ export default defineComponent({
                             ref={dialerRef}
                             v-model={dialerMobile.value}
                             outboundEnabled={outboundSignedIn.value}
+                            dialing={browserLoading.value}
+                            statusText={outboundStatusLabel.value}
+                            statusType={dialerStatusType.value}
+                            statusMessage={dialerStatusMessage.value}
+                            durationText={formattedCallDuration.value}
+                            showDuration={browserStatus.value === '通话中'}
                             onKeypadInput={syncDialerCursor}
+                            onDial={handleBrowserDial}
+                            onHangup={handleBrowserHangup}
                         >
                             <div
                                 class="outbound-toolbar__reference"
@@ -198,7 +284,7 @@ export default defineComponent({
                                         dialerRef.value?.openDialer?.()
                                         toggleOutboundStatus()
                                     }}
-                                    disabled={outboundStatusLoading.value}
+                                    disabled={outboundStatusLoading.value || browserLoading.value}
                                 >
                                     <span class="outbound-toolbar__status-dot"></span>
                                     <span class="outbound-toolbar__status-text">
@@ -235,7 +321,7 @@ export default defineComponent({
                                     type="primary"
                                     class="outbound-toolbar__button"
                                     disabled={!outboundSignedIn.value}
-                                    loading={dialerRef.value?.dialing}
+                                    loading={browserLoading.value}
                                     onMousedown={(event: MouseEvent) => {
                                         event.stopPropagation()
                                         dialerRef.value?.holdOpen?.(1200)
