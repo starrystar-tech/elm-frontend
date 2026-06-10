@@ -14,8 +14,7 @@ import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
 import { checkPermi } from '@/utils/permission'
 import {
-    getExportTaskCenterViewedAt,
-    getExportTaskPage,
+    getExportTaskReminderSummary,
     markExportTaskCenterViewed
 } from '@/api/system/exportTask'
 import { getUserProfile, updateUserOutboundStatus } from '@/api/system/user/profile'
@@ -76,18 +75,6 @@ export default defineComponent({
         )
         const outboundStatusActionLabel = computed(() => (outboundSignedIn.value ? '签出' : '签入'))
 
-        const parseTaskTime = (value?: string | number | null) => {
-            if (value === undefined || value === null || value === '') {
-                return 0
-            }
-            if (typeof value === 'number') {
-                return value
-            }
-            const normalized = value.includes('T') ? value : value.replace(/-/g, '/')
-            const time = new Date(normalized).getTime()
-            return Number.isNaN(time) ? 0 : time
-        }
-
         const syncDialerCursor = async () => {
             await nextTick()
             const inputInstance = dialerInputRef.value as any
@@ -105,29 +92,15 @@ export default defineComponent({
                 return
             }
             try {
-                const data = await getExportTaskPage({
-                    pageNo: 1,
-                    pageSize: 100,
-                    status: 2
-                })
-                const list = data?.list || []
-                const lastViewedAt = getExportTaskCenterViewedAt()
-                if (!lastViewedAt) {
-                    newExportTaskCount.value = list.length
-                    return
-                }
-                const lastViewedTime = parseTaskTime(lastViewedAt)
-                newExportTaskCount.value = list.filter((item) => {
-                    const taskTime = item.finishedAt || item.createTime
-                    return parseTaskTime(taskTime) > lastViewedTime
-                }).length
+                const data = await getExportTaskReminderSummary()
+                newExportTaskCount.value = Number(data?.unreadCount || 0)
             } catch {
                 newExportTaskCount.value = 0
             }
         }
 
         const openExportTaskCenter = async () => {
-            markExportTaskCenterViewed()
+            await markExportTaskCenterViewed()
             newExportTaskCount.value = 0
             await push({ name: 'SystemExportTaskCenter' })
         }

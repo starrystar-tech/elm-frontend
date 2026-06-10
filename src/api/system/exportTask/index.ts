@@ -1,7 +1,5 @@
 import request from '@/config/axios'
 
-export const EXPORT_TASK_LAST_VIEWED_AT_KEY = 'export_task_last_viewed_at'
-
 export interface ExportTaskPageReqVO extends PageParam {
   bizType?: string
   taskName?: string
@@ -34,6 +32,10 @@ export interface ExportAuthSendRespVO {
   expireMinutes?: number
 }
 
+export interface ExportTaskReminderSummaryVO {
+  unreadCount: number
+}
+
 export const getExportTaskPage = async (params: ExportTaskPageReqVO) => {
   return await request.get({ url: '/system/export-task/page', params })
 }
@@ -45,10 +47,10 @@ export const sendExportAuthCode = async (data: ExportAuthSendReqVO) => {
   })
 }
 
-export const markExportTaskCenterViewed = (time?: string) => {
-  window.localStorage.setItem(EXPORT_TASK_LAST_VIEWED_AT_KEY, time || new Date().toISOString())
+export const getExportTaskReminderSummary = async () => {
+  return await request.get<ExportTaskReminderSummaryVO>({ url: '/system/export-task/reminder-summary' })
 }
 
-export const getExportTaskCenterViewedAt = () => {
-  return window.localStorage.getItem(EXPORT_TASK_LAST_VIEWED_AT_KEY)
+export const markExportTaskCenterViewed = async () => {
+  return await request.post<boolean>({ url: '/system/export-task/mark-viewed' })
 }
