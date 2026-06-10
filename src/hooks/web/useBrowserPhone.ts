@@ -21,6 +21,7 @@ const incomingCall = ref(false)
 const activeCall = ref(false)
 const browserStatus = ref('未连接')
 const browserDisconnecting = ref(false)
+const browserHangupPending = ref(false)
 const browserClient = shallowRef<any>()
 const browserRecordId = ref<number>()
 const currentSessionDirection = ref<'incoming' | 'outgoing' | null>(null)
@@ -30,11 +31,15 @@ const incomingToastVisible = ref(false)
 const incomingToastCaller = ref('')
 const incomingRingEnableRequired = ref(false)
 const incomingRingBlockedReason = ref('')
+const outgoingWaitingToneRequired = ref(false)
+const outgoingWaitingToneBlockedReason = ref('')
 const remoteAudioRef = ref<HTMLAudioElement>()
 const localAudioRef = ref<HTMLAudioElement>()
 const callDurationSeconds = ref(0)
 const incomingRingAudio = new Audio('/bell.mp3')
+const outgoingWaitingAudio = new Audio('/call-waiting.mp3')
 const incomingRingUnlocked = ref(false)
+const outgoingWaitingUnlocked = ref(false)
 const initialized = ref(false)
 
 let callDurationTimer: ReturnType<typeof setInterval> | undefined
@@ -57,6 +62,8 @@ const logs = ref<BrowserPhoneLogItem[]>([])
 
 incomingRingAudio.loop = true
 incomingRingAudio.preload = 'auto'
+outgoingWaitingAudio.loop = true
+outgoingWaitingAudio.preload = 'auto'
 
 const message = useMessage()
 
@@ -322,6 +329,13 @@ const stopIncomingRing = () => {
     incomingRingEnableRequired.value = false
 }
 
+const stopOutgoingWaitingTone = () => {
+    outgoingWaitingAudio.pause()
+    outgoingWaitingAudio.currentTime = 0
+    outgoingWaitingToneBlockedReason.value = ''
+    outgoingWaitingToneRequired.value = false
+}
+
 const buildIncomingRingDiagnostics = () => {
     return [
         `src=${incomingRingAudio.currentSrc || incomingRingAudio.src || '<empty>'}`,
@@ -329,6 +343,20 @@ const buildIncomingRingDiagnostics = () => {
         `networkState=${incomingRingAudio.networkState}`,
         `muted=${incomingRingAudio.muted}`,
         `volume=${incomingRingAudio.volume}`,
+        typeof document !== 'undefined' ? `visibility=${document.visibilityState}` : '',
+        typeof document !== 'undefined' ? `focused=${document.hasFocus()}` : ''
+    ]
+        .filter(Boolean)
+        .join(', ')
+}
+
+const buildOutgoingWaitingDiagnostics = () => {
+    return [
+        `src=${outgoingWaitingAudio.currentSrc || outgoingWaitingAudio.src || '<empty>'}`,
+        `readyState=${outgoingWaitingAudio.readyState}`,
+        `networkState=${outgoingWaitingAudio.networkState}`,
+        `muted=${outgoingWaitingAudio.muted}`,
+        `volume=${outgoingWaitingAudio.volume}`,
         typeof document !== 'undefined' ? `visibility=${document.visibilityState}` : '',
         typeof document !== 'undefined' ? `focused=${document.hasFocus()}` : ''
     ]
@@ -357,6 +385,27 @@ const playIncomingRing = async () => {
     }
 }
 
+const playOutgoingWaitingTone = async () => {
+    try {
+        outgoingWaitingAudio.pause()
+        outgoingWaitingAudio.currentTime = 0
+        outgoingWaitingAudio.muted = false
+        outgoingWaitingAudio.volume = 1
+        await outgoingWaitingAudio.play()
+        outgoingWaitingToneRequired.value = false
+        outgoingWaitingToneBlockedReason.value = ''
+        traceBrowserStep('OUTGOING_WAITING_PLAYING', buildOutgoingWaitingDiagnostics())
+    } catch (error: any) {
+        outgoingWaitingToneRequired.value = true
+        outgoingWaitingToneBlockedReason.value = error?.message || '浏览器阻止了外呼等待音自动播放'
+        traceBrowserStep(
+            'OUTGOING_WAITING_BLOCKED',
+            `${outgoingWaitingToneBlockedReason.value}; ${buildOutgoingWaitingDiagnostics()}`,
+            'danger'
+        )
+    }
+}
+
 const unlockIncomingRingAudio = async () => {
     if (incomingRingUnlocked.value) return
     try {
@@ -378,10 +427,32 @@ const unlockIncomingRingAudio = async () => {
     }
 }
 
+const unlockOutgoingWaitingAudio = async () => {
+    if (outgoingWaitingUnlocked.value) return
+    try {
+        outgoingWaitingAudio.load()
+        outgoingWaitingAudio.muted = true
+        await outgoingWaitingAudio.play()
+        outgoingWaitingAudio.pause()
+        outgoingWaitingAudio.currentTime = 0
+        outgoingWaitingAudio.muted = false
+        outgoingWaitingUnlocked.value = true
+        traceBrowserStep('OUTGOING_WAITING_UNLOCKED', buildOutgoingWaitingDiagnostics())
+    } catch (error: any) {
+        outgoingWaitingAudio.muted = false
+        traceBrowserStep(
+            'OUTGOING_WAITING_UNLOCK_FAILED',
+            `${error?.message || '外呼等待音预热失败'}; ${buildOutgoingWaitingDiagnostics()}`,
+            'danger'
+        )
+    }
+}
+
 const bindIncomingRingUnlock = () => {
     if (typeof window === 'undefined') return
     const unlock = async () => {
         await unlockIncomingRingAudio()
+        await unlockOutgoingWaitingAudio()
         if (!incomingRingUnlocked.value) return
         window.removeEventListener('pointerdown', unlock)
         window.removeEventListener('keydown', unlock)
@@ -391,6 +462,7 @@ const bindIncomingRingUnlock = () => {
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             void unlockIncomingRingAudio()
+            void unlockOutgoingWaitingAudio()
         }
     })
 }
@@ -571,6 +643,8 @@ const createBrowserClient = async () => {
                 void syncBrowserRecord({ event: 'start', caller, callee })
             },
             onCallAnswered: () => {
+                stopOutgoingWaitingTone()
+                browserHangupPending.value = false
                 const session = getCurrentBrowserSession()
                 const remoteUser = resolveRemoteBrowserExtension(
                     session?.remoteIdentity,
@@ -596,6 +670,8 @@ const createBrowserClient = async () => {
                 addBrowserLog('通话已接通', '通话中')
             },
             onCallHangup: () => {
+                stopOutgoingWaitingTone()
+                browserHangupPending.value = false
                 const session = getCurrentBrowserSession()
                 const remoteUser = resolveRemoteBrowserExtension(
                     session?.remoteIdentity,
@@ -634,6 +710,7 @@ const connectBrowserPhone = async () => {
     try {
         browserDisconnecting.value = false
         void unlockIncomingRingAudio()
+        void unlockOutgoingWaitingAudio()
         traceBrowserStep('CONNECT_START')
         await ensureBrowserPrerequisites()
         if (browserClient.value) {
@@ -663,7 +740,7 @@ const connectBrowserPhone = async () => {
         await registerRequest
         traceBrowserStep('REGISTER_REQUEST_SENT')
         await registrationPromise
-        message.success('浏览器分机已连接')
+        // message.success('浏览器分机已连接')
     } catch (error: any) {
         const errorMessage = formatBrowserError(error) || '浏览器分机连接失败'
         updateBrowserStatus('连接失败')
@@ -702,12 +779,14 @@ const disconnectBrowserPhone = async (silent = false) => {
         } catch {}
     }
     browserRegistered.value = false
+    browserHangupPending.value = false
     incomingCall.value = false
     activeCall.value = false
     currentSessionDirection.value = null
     browserRecordId.value = undefined
     hideIncomingToast()
     stopIncomingRing()
+    stopOutgoingWaitingTone()
     stopCallTimer()
     resetBrowserCallParties()
     updateBrowserStatus('未连接')
@@ -732,6 +811,9 @@ const makeBrowserCall = async () => {
         currentSessionDirection.value = 'outgoing'
         activeCall.value = true
         updateBrowserStatus('呼叫中')
+        void unlockOutgoingWaitingAudio().finally(() => {
+            void playOutgoingWaitingTone()
+        })
         traceBrowserStep('CALL_START', `target=${target}`)
         await syncBrowserRecord({
             event: 'start',
@@ -746,6 +828,7 @@ const makeBrowserCall = async () => {
         traceBrowserStep('CALL_SENT', `target=${target}`)
         addBrowserLog(`已向 ${target} 发起网页呼叫`)
     } catch (error: any) {
+        stopOutgoingWaitingTone()
         activeCall.value = false
         updateBrowserStatus('已注册')
         const errorMessage = formatBrowserError(error) || '网页呼叫失败'
@@ -817,7 +900,12 @@ const hangupBrowserCall = async () => {
         traceBrowserStep('HANGUP_BLOCKED', '浏览器分机客户端不存在', 'danger')
         return
     }
+    if (browserHangupPending.value) {
+        traceBrowserStep('HANGUP_SKIPPED', '挂断流程处理中，忽略重复操作')
+        return
+    }
     try {
+        browserHangupPending.value = true
         traceBrowserStep(
             'HANGUP_START',
             `direction=${currentSessionDirection.value}, state=${session.state}`
@@ -827,13 +915,12 @@ const hangupBrowserCall = async () => {
         } else {
             await browserClient.value.hangup()
         }
-        incomingCall.value = false
-        activeCall.value = false
-        currentSessionDirection.value = null
-        updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
+        updateBrowserStatus('挂断中')
         hideIncomingToast()
         stopIncomingRing()
+        stopOutgoingWaitingTone()
     } catch (error: any) {
+        browserHangupPending.value = false
         const errorMessage = formatBrowserError(error) || '挂断失败'
         traceBrowserStep('HANGUP_FAILED', errorMessage, 'danger')
         addBrowserLog(errorMessage, '失败', 'danger')
@@ -849,6 +936,7 @@ const initBrowserPhone = async () => {
     if (initialized.value) return
     initialized.value = true
     incomingRingAudio.load()
+    outgoingWaitingAudio.load()
     bindIncomingRingUnlock()
     await reloadProfile()
 }
@@ -864,6 +952,7 @@ export const useBrowserPhone = () => {
         activeCall,
         browserStatus,
         browserDisconnecting,
+        browserHangupPending,
         browserClient,
         browserForm,
         logs,

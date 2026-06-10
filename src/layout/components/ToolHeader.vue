@@ -75,6 +75,7 @@ export default defineComponent({
             browserStatus,
             activeCall,
             incomingCall,
+            browserHangupPending,
             formattedCallDuration,
             browserForm,
             connectBrowserPhone,
@@ -89,12 +90,14 @@ export default defineComponent({
             if (browserStatus.value === '通话中') return '通话中'
             if (browserStatus.value === '呼叫中') return '呼叫中'
             if (browserStatus.value === '来电响铃') return '来电响铃'
+            if (browserStatus.value === '挂断中') return '挂断中'
             return outboundSignedIn.value ? '外呼已签入' : '外呼已签出'
         })
         const outboundStatusActionLabel = computed(() => (outboundSignedIn.value ? '签出' : '签入'))
         const dialerStatusType = computed(() => {
             if (browserStatus.value === '通话中') return 'inCall'
             if (browserStatus.value === '呼叫中' || browserStatus.value === '来电响铃') return 'ringing'
+            if (browserStatus.value === '挂断中') return 'dialing'
             if (browserStatus.value === '已注册') return 'registered'
             if (browserStatus.value === '连接失败') return 'failed'
             return 'idle'
@@ -108,6 +111,9 @@ export default defineComponent({
             }
             if (browserStatus.value === '来电响铃') {
                 return '当前有来电等待接听，请使用来电浮层处理'
+            }
+            if (browserStatus.value === '挂断中') {
+                return '挂断请求已发送，等待对端确认'
             }
             if (outboundSignedIn.value) {
                 return '浏览器分机已注册，支持电脑端通话'
@@ -204,7 +210,10 @@ export default defineComponent({
         }
 
         const handleBrowserHangup = async () => {
-            if (!activeCall.value && !incomingCall.value && browserStatus.value !== '呼叫中') {
+            if (
+                (!activeCall.value && !incomingCall.value && browserStatus.value !== '呼叫中') ||
+                browserHangupPending.value
+            ) {
                 return
             }
             await hangupBrowserCall()
