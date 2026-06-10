@@ -412,6 +412,8 @@ export interface ClueImportTaskAllocLogPageReqVO extends PageParam {
     taskId: number
     result?: number
     status?: string
+    importResult?: 'SUCCESS' | 'FAIL'
+    importStatus?: string
     engineName?: string
     phone?: string
     customerName?: string
@@ -429,6 +431,9 @@ export interface ClueImportTaskAllocLogVO {
     result?: number
     status?: string
     failReason?: string
+    importResult?: 'SUCCESS' | 'FAIL'
+    importStatus?: string
+    importFailReason?: string
     allocationOwner?: string
     customerName?: string
     phone?: string

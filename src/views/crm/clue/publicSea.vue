@@ -11,13 +11,22 @@
         <div class="tab-content-wrap">
             <Search
                 :schema="searchSchema"
+                :model="searchForm"
                 expand-field="enterPublicSeaTimeRange"
-                @reset="setSearchParams"
-                @search="setSearchParams"
+                @reset="handleResetSearch"
+                @search="handleSearch"
             >
-                <template #consultProjectId="formModel">
+                <template #areaId>
+                    <AreaSelect
+                        v-model="searchForm.areaId"
+                        :include-all-node="false"
+                        placeholder="请选择地区"
+                        style="width: 220px"
+                    />
+                </template>
+                <template #consultProjectId>
                     <ProductCategorySelect
-                        v-model="formModel.consultProjectId"
+                        v-model="searchForm.consultProjectId"
                         placeholder="请选择咨询项目"
                     />
                 </template>
@@ -98,6 +107,7 @@ import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import AreaSelect from '@/components/AreaSelect.vue'
 import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
@@ -149,6 +159,7 @@ const publicSeaCounts = reactive({
     firstConsultCount: 0,
     repurchaseCount: 0
 })
+const searchForm = reactive<PublicSeaSearchParams>({})
 const claimSummary = reactive<ClueApi.PublicSeaClaimSummaryRespVO>({
     unlimited: false,
     dailyLimit: 0,
@@ -194,11 +205,9 @@ const searchSchema = reactive<FormSchema[]>([
     {
         field: 'areaId',
         label: '地区',
-        component: 'Select',
+        component: 'Input',
         componentProps: {
             clearable: true,
-            filterable: true,
-            options: [],
             style: { width: '220px' }
         }
     },
@@ -324,6 +333,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                 renderCopyMobileCell({
                     row: data.row,
                     mobile: data.row.mobile,
+                    clueId: data.row.id,
                     success: message.success,
                     warning: message.warning
                 })
@@ -433,12 +443,26 @@ const handleSelectionChange = (rows: ClueApi.PublicSeaPageRespVO[]) => {
     selectionList.value = rows || []
 }
 
-const setSearchParams = (params: PublicSeaSearchParams) => {
-    tableMethods.setSearchParams(buildSearchParams(params))
+const mergeSearchParams = (params: PublicSeaSearchParams = {}): PublicSeaSearchParams => ({
+    ...params,
+    areaId: searchForm.areaId,
+    consultProjectId: searchForm.consultProjectId
+})
+
+const handleSearch = (params: PublicSeaSearchParams) => {
+    tableMethods.setSearchParams(buildSearchParams(mergeSearchParams(params)))
+}
+
+const handleResetSearch = (params: PublicSeaSearchParams) => {
+    searchForm.areaId = undefined
+    searchForm.consultProjectId = undefined
+    tableMethods.setSearchParams(buildSearchParams(mergeSearchParams(params)))
 }
 
 const handleTabChange = async () => {
     selectionList.value = []
+    searchForm.areaId = undefined
+    searchForm.consultProjectId = undefined
     await loadClaimSummary()
     tableMethods.setSearchParams(buildSearchParams({}))
 }

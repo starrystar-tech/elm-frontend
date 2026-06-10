@@ -383,8 +383,8 @@ defineExpose(defaultExpose)
               <slot name="actionMore"></slot>
             </div>
           </template>
-          <template v-for="name in Object.keys($slots)" :key="name" #[name]>
-            <slot :name="name"></slot>
+          <template v-for="name in Object.keys($slots)" :key="name" #[name]="slotProps">
+            <slot :name="name" v-bind="slotProps"></slot>
           </template>
         </Form>
       </div>

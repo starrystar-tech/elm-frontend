@@ -36,12 +36,7 @@
                     >
                         批量修改复制次数
                     </BaseButton>
-                    <BaseButton
-                        plain
-                        :disabled="checkedIds.length === 0"
-                        @click="handleSetDeptPermission"
-                        >设置部门权限</BaseButton
-                    >
+                    <!-- <BaseButton plain @click="handleSetDeptPermission">设置部门权限</BaseButton> -->
                 </div>
 
                 <Table

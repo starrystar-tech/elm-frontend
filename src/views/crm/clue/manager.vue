@@ -11,13 +11,22 @@
         <div class="tab-content-wrap">
             <Search
                 :schema="searchSchema"
+                :model="searchForm"
                 expand-field="allocationTimeRange"
-                @reset="setSearchParams"
-                @search="setSearchParams"
+                @reset="handleResetSearch"
+                @search="handleSearch"
             >
-                <template #consultProjectId="formModel">
+                <template #areaId>
+                    <AreaSelect
+                        v-model="searchForm.areaId"
+                        :include-all-node="false"
+                        placeholder="请选择地区"
+                        style="width: 220px"
+                    />
+                </template>
+                <template #consultProjectId>
                     <ProductCategorySelect
-                        v-model="formModel.consultProjectId"
+                        v-model="searchForm.consultProjectId"
                         placeholder="请选择咨询项目"
                     />
                 </template>
@@ -116,6 +125,7 @@ import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import AreaSelect from '@/components/AreaSelect.vue'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
@@ -183,6 +193,7 @@ const assignForm = reactive({
 const releaseForm = reactive({
     reason: ''
 })
+const searchForm = reactive<ManagerSearchParams>({})
 const currentSearchParams = ref<ManagerSearchParams>({})
 
 const searchSchema = reactive<FormSchema[]>([
@@ -220,11 +231,9 @@ const searchSchema = reactive<FormSchema[]>([
     {
         field: 'areaId',
         label: '地区',
-        component: 'Select',
+        component: 'Input',
         componentProps: {
             clearable: true,
-            filterable: true,
-            options: [],
             style: { width: '220px' }
         }
     },
@@ -447,13 +456,30 @@ const handleSelectionChange = (rows: ClueApi.ClueManagementPageRespVO[]) => {
     selectionList.value = rows || []
 }
 
-const setSearchParams = (params: ManagerSearchParams) => {
-    currentSearchParams.value = { ...params }
-    tableMethods.setSearchParams(buildSearchParams(params))
+const mergeSearchParams = (params: ManagerSearchParams = {}): ManagerSearchParams => ({
+    ...params,
+    areaId: searchForm.areaId,
+    consultProjectId: searchForm.consultProjectId
+})
+
+const handleSearch = (params: ManagerSearchParams) => {
+    const nextParams = mergeSearchParams(params)
+    currentSearchParams.value = { ...nextParams }
+    tableMethods.setSearchParams(buildSearchParams(nextParams))
+}
+
+const handleResetSearch = (params: ManagerSearchParams) => {
+    searchForm.areaId = undefined
+    searchForm.consultProjectId = undefined
+    const nextParams = mergeSearchParams(params)
+    currentSearchParams.value = { ...nextParams }
+    tableMethods.setSearchParams(buildSearchParams(nextParams))
 }
 
 const handleTabChange = async () => {
     selectionList.value = []
+    searchForm.areaId = undefined
+    searchForm.consultProjectId = undefined
     tableMethods.setSearchParams(buildSearchParams({}))
 }
 

@@ -2,13 +2,22 @@
     <ContentWrap>
         <Search
             :schema="searchSchema"
+            :model="searchForm"
             expand-field="wechat"
-            @reset="setSearchParams"
-            @search="setSearchParams"
+            @reset="handleResetSearch"
+            @search="handleSearch"
         >
-            <template #consultProjectId="formModel">
+            <template #areaId>
+                <AreaSelect
+                    v-model="searchForm.areaId"
+                    :include-all-node="false"
+                    placeholder="请选择地区"
+                    style="width: 220px"
+                />
+            </template>
+            <template #consultProjectId>
                 <ProductCategorySelect
-                    v-model="formModel.consultProjectId"
+                    v-model="searchForm.consultProjectId"
                     placeholder="请选择咨询项目"
                 />
             </template>
@@ -225,6 +234,7 @@ import { Table, type TableColumn } from '@/components/Table'
 import { Search } from '@/components/Search'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import AreaSelect from '@/components/AreaSelect.vue'
 import { getClueIntentLevelOptions } from '@/components/ClueIntentLevel'
 import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import { hasPermission } from '@/directives/permission/hasPermi'
@@ -263,7 +273,7 @@ interface SearchParams {
     feedbackStatus?: number
     minOrderCount?: number
     maxOrderCount?: number
-    creator?: string
+    creator?: string | number
     createTimeRange?: string[]
 }
 
@@ -293,6 +303,7 @@ const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
 const importFileList = ref<UploadUserFile[]>([])
 const importLoading = ref(false)
 const importDialogVisible = ref(false)
+const searchForm = reactive<SearchParams>({})
 const selectionList = ref<ClueApi.ClueVO[]>([])
 const assignModeDialogVisible = ref(false)
 const silentDialogVisible = ref(false)
@@ -366,12 +377,9 @@ const searchSchema = reactive<FormSchema[]>([
     {
         field: 'areaId',
         label: '地区',
-        component: 'Select',
+        component: 'Input',
         componentProps: {
-            placeholder: '请选择地区',
             clearable: true,
-            filterable: true,
-            options: [],
             style: { width: '220px' }
         }
     },
@@ -528,8 +536,14 @@ const searchSchema = reactive<FormSchema[]>([
     {
         field: 'creator',
         label: '创建人',
-        component: 'Input',
-        componentProps: { placeholder: '请输入创建人', clearable: true, style: { width: '220px' } }
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择创建人',
+            clearable: true,
+            filterable: true,
+            options: [],
+            style: { width: '220px' }
+        }
     },
     {
         field: 'createTimeRange',
@@ -574,7 +588,10 @@ const buildPageParams = (params: SearchParams = {}): ClueApi.CluePageReqVO => ({
     feedbackStatus: params.feedbackStatus,
     minOrderCount: params.minOrderCount,
     maxOrderCount: params.maxOrderCount,
-    creator: params.creator || undefined,
+    creator:
+        params.creator === undefined || params.creator === null || params.creator === ''
+            ? undefined
+            : String(params.creator),
     beginCreateTime: params.createTimeRange?.[0],
     endCreateTime: params.createTimeRange?.[1]
 })
@@ -750,6 +767,7 @@ const loadOptions = async () => {
 
     updateSchemaOptions('areaId', areaOptions.value)
     updateSchemaOptions('currentOwnerId', userOptions.value)
+    updateSchemaOptions('creator', userOptions.value)
     updateSchemaOptions('clueSourceId', clueSourceOptions.value)
     updateSchemaOptions('tagId', tagOptions.value)
     updateSchemaOptions('complaintTagId', complaintTagOptions.value)
@@ -759,9 +777,24 @@ const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
     selectionList.value = rows || []
 }
 
-const setSearchParams = (params: SearchParams) => {
-    currentSearchParams.value = { ...params }
-    tableMethods.setSearchParams(buildPageParams(params))
+const mergeSearchParams = (params: SearchParams = {}): SearchParams => ({
+    ...params,
+    areaId: searchForm.areaId,
+    consultProjectId: searchForm.consultProjectId
+})
+
+const handleSearch = (params: SearchParams) => {
+    const nextParams = mergeSearchParams(params)
+    currentSearchParams.value = { ...nextParams }
+    tableMethods.setSearchParams(buildPageParams(nextParams))
+}
+
+const handleResetSearch = (params: SearchParams) => {
+    searchForm.areaId = undefined
+    searchForm.consultProjectId = undefined
+    const nextParams = mergeSearchParams(params)
+    currentSearchParams.value = { ...nextParams }
+    tableMethods.setSearchParams(buildPageParams(nextParams))
 }
 
 const openExportDialog = () => {

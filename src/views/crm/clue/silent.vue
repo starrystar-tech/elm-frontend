@@ -201,6 +201,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                 renderCopyMobileCell({
                     row: data.row,
                     mobile: data.row.mobile,
+                    clueId: data.row.id,
                     success: message.success,
                     warning: message.warning
                 })

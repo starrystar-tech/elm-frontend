@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElLink } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
@@ -27,6 +27,7 @@ import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
+import * as UserApi from '@/api/system/user'
 import ImportTaskFailDialog from './ImportTaskFailDialog.vue'
 import ImportTaskLogDialog from './ImportTaskLogDialog.vue'
 
@@ -34,6 +35,7 @@ defineOptions({ name: 'CrmClueImportTask' })
 
 const logDialogRef = ref<InstanceType<typeof ImportTaskLogDialog>>()
 const failDialogRef = ref<InstanceType<typeof ImportTaskFailDialog>>()
+const userOptions = ref<{ label: string; value: number }[]>([])
 
 const statusOptions = [
     { label: '处理中', value: 1 },
@@ -65,10 +67,12 @@ const searchSchema = reactive<FormSchema[]>([
     {
         field: 'creator',
         label: '创建人',
-        component: 'Input',
+        component: 'Select',
         componentProps: {
-            placeholder: '请输入创建人',
+            placeholder: '请选择创建人',
             clearable: true,
+            filterable: true,
+            options: [],
             style: { width: '220px' }
         }
     },
@@ -95,13 +99,33 @@ const {
         await ClueApi.getClueImportTaskPage(params as ClueApi.ClueImportTaskPageReqVO)
 })
 
+const updateSchemaOptions = (field: string, options: { label: string; value: number }[]) => {
+    const target = searchSchema.find((item) => item.field === field)
+    if (target?.componentProps) {
+        target.componentProps.options = options
+    }
+}
+
 const setSearchParams = (params: Record<string, any>) => {
     const { createTimeRange, ...rest } = params
     tableMethods.setSearchParams({
         ...rest,
+        creator:
+            rest.creator === undefined || rest.creator === null || rest.creator === ''
+                ? undefined
+                : String(rest.creator),
         beginCreateTime: createTimeRange?.[0],
         endCreateTime: createTimeRange?.[1]
     })
+}
+
+const loadUserOptions = async () => {
+    const users = await UserApi.getSimpleUserList()
+    userOptions.value = (users || []).map((item) => ({
+        label: item.nickname || item.username,
+        value: item.id
+    }))
+    updateSchemaOptions('creator', userOptions.value)
 }
 
 const openAllocLogDialog = async (taskId: number) => {
@@ -128,10 +152,10 @@ const tableColumns = computed<TableColumn[]>(() => [
         }
     },
     { field: 'totalCount', label: '导入总数', width: '100px' },
-    { field: 'successCount', label: '成功数', width: '100px' },
+    { field: 'successCount', label: '导入成功数', width: '100px' },
     {
         field: 'failCount',
-        label: '失败数',
+        label: '导入失败数',
         width: '100px',
         slots: {
             default: (data) =>
@@ -175,6 +199,7 @@ const tableColumns = computed<TableColumn[]>(() => [
 ])
 
 onMounted(() => {
+    loadUserOptions()
     tableMethods.getList()
 })
 </script>

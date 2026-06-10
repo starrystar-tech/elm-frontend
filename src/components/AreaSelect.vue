@@ -1,6 +1,7 @@
 <template>
     <el-tree-select
         v-model="model"
+        class="area-select"
         :data="innerData"
         :props="defaultProps"
         node-key="id"
@@ -91,3 +92,9 @@ onMounted(() => {
     loadAreaTree()
 })
 </script>
+
+<style scoped>
+.area-select {
+    width: 100%;
+}
+</style>

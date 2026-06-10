@@ -29,9 +29,14 @@ defineOptions({ name: 'ImportTaskLogDialog' })
 const dialogVisible = ref(false)
 const currentTaskId = ref<number>()
 
-const resultOptions = [
+const allocationResultOptions = [
     { label: '成功', value: 1 },
     { label: '失败', value: 0 }
+]
+
+const importResultOptions = [
+    { label: '成功', value: 'SUCCESS' },
+    { label: '失败', value: 'FAIL' }
 ]
 
 const searchSchema = reactive<FormSchema[]>([
@@ -66,13 +71,24 @@ const searchSchema = reactive<FormSchema[]>([
         }
     },
     {
-        field: 'result',
+        field: 'status',
+        label: '分配状态',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择分配状态',
+            clearable: true,
+            options: allocationResultOptions,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'importResult',
         label: '导入结果',
         component: 'Select',
         componentProps: {
             placeholder: '请选择导入结果',
             clearable: true,
-            options: resultOptions,
+            options: importResultOptions,
             style: { width: '220px' }
         }
     }
@@ -109,15 +125,11 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'city', label: '城市', width: '100px' },
     { field: 'district', label: '区县', width: '100px' },
     {
-        field: 'result',
+        field: 'importStatus',
         label: '导入结果',
         width: '100px',
         slots: {
-            default: (data) => (
-                <span>
-                    {resultOptions.find((item) => item.value === data.row.result)?.label || '--'}
-                </span>
-            )
+            default: (data) => <span>{data.row.importStatus || '--'}</span>
         }
     },
     {
@@ -128,6 +140,7 @@ const tableColumns = computed<TableColumn[]>(() => [
             default: (data) => <span>{data.row.status || '--'}</span>
         }
     },
+    { field: 'importFailReason', label: '导入失败原因', minWidth: '180px' },
     { field: 'failReason', label: '失败原因', minWidth: '180px' },
     { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter }
 ])
