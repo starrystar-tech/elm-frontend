@@ -193,6 +193,11 @@ export interface OrderBatchUpdateOwnerReqVO {
   ownerUserId: number
 }
 
+export interface OrderExportReqVO extends OrderPageReqVO {
+  authCode?: string
+  exportPlainMobile?: boolean
+}
+
 export interface OrderPayRecordPageReqVO extends PageParam {
   customer?: string
   mobile?: string
@@ -243,6 +248,10 @@ export const getMyOrderPage = async (params: OrderPageReqVO) => {
   return await request.get({ url: '/crm/order/my-page', params })
 }
 
+export const createMyOrderExportTask = async (data: OrderExportReqVO) => {
+  return await request.post<number>({ url: '/crm/order/my-export-task', data })
+}
+
 export const getOrderPage = async (params: OrderPageReqVO) => {
   return await request.get({ url: '/crm/order/page', params })
 }
@@ -269,6 +278,10 @@ export const repurchaseOrder = async (id: number) => {
 
 export const batchUpdateOwner = async (data: OrderBatchUpdateOwnerReqVO) => {
   return await request.put<boolean>({ url: '/crm/order/batch-update-owner', data })
+}
+
+export const createOrderExportTask = async (data: OrderExportReqVO) => {
+  return await request.post<number>({ url: '/crm/order/export-task', data })
 }
 
 export const getPayRecordPage = async (params: OrderPayRecordPageReqVO) => {

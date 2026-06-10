@@ -8,6 +8,9 @@
                 @click="openBatchUpdateOwnerDialog"
                 >修改订单归属人</BaseButton
             >
+            <BaseButton v-hasPermi="['crm:order:export']" plain @click="openExportDialog"
+                >导出</BaseButton
+            >
             <BaseButton @click="handleBatchRepurchase">激活订单</BaseButton>
             <el-tooltip
                 content="订单激活后，客户自动进入成单人复购列表，支持持续跟进与再次下单"
@@ -32,6 +35,7 @@
     <OrderContractSignDialog ref="contractSignRef" @success="tableMethods.getList" />
     <RefundDialog ref="refundRef" @success="tableMethods.getList" />
     <BatchUpdateOwnerDialog ref="batchUpdateOwnerDialogRef" @confirm="submitBatchUpdateOwner" />
+    <ExportTaskDialog ref="exportDialogRef" @success="handleExportSuccess" />
 </template>
 
 <script setup lang="tsx">
@@ -58,6 +62,7 @@ import OrderContractSignDialog from '../detail/OrderContractSignDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 import BatchUpdateOwnerDialog from './BatchUpdateOwnerDialog.vue'
+import ExportTaskDialog from '@/views/crm/clue/components/ExportTaskDialog.vue'
 
 defineOptions({ name: 'OrderManagement' })
 
@@ -66,6 +71,8 @@ const detailRef = ref<InstanceType<typeof OrderDetailDrawer>>()
 const contractSignRef = ref<InstanceType<typeof OrderContractSignDialog>>()
 const refundRef = ref<InstanceType<typeof RefundDialog>>()
 const batchUpdateOwnerDialogRef = ref<InstanceType<typeof BatchUpdateOwnerDialog>>()
+const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
+const currentSearchParams = ref<Recordable>({})
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
@@ -185,6 +192,7 @@ const {
 const orderStatusLabel = (value?: number) => getOptionLabel(ORDER_STATUS_OPTIONS, value)
 
 const setSearchParams = (params: Recordable) => {
+    currentSearchParams.value = { ...params }
     const {
         enrollTimeRange = [],
         expireTimeRange = [],
@@ -279,6 +287,38 @@ const submitBatchUpdateOwner = async (ownerUserId: number) => {
     })
     message.success('订单归属人修改成功')
     await tableMethods.getList()
+}
+
+const openExportDialog = () => {
+    exportDialogRef.value?.open({
+        title: '导出订单管理',
+        bizType: 'crm_order_management_page_export',
+        submit: async (payload) => {
+            const {
+                enrollTimeRange = [],
+                expireTimeRange = [],
+                createTimeRange = [],
+                paidAmountRange = [],
+                ...rest
+            } = currentSearchParams.value || {}
+            await OrderApi.createOrderExportTask({
+                ...rest,
+                minPaidAmount: paidAmountRange[0] ? Number(paidAmountRange[0]) : undefined,
+                maxPaidAmount: paidAmountRange[1] ? Number(paidAmountRange[1]) : undefined,
+                beginEnrollTime: enrollTimeRange[0],
+                endEnrollTime: enrollTimeRange[1],
+                beginExpireTime: expireTimeRange[0],
+                endExpireTime: expireTimeRange[1],
+                beginCreateTime: createTimeRange[0],
+                endCreateTime: createTimeRange[1],
+                ...payload
+            })
+        }
+    })
+}
+
+const handleExportSuccess = async () => {
+    message.success('导出任务已创建，请到下载中心查看')
 }
 
 const handleContractSign = (row: OrderApi.OrderPageRespVO) => {

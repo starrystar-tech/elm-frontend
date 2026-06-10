@@ -64,7 +64,7 @@ export default defineComponent({
         const dialerMobile = ref('')
         const dialerRef = ref<InstanceType<typeof ToolHeaderDialer>>()
         const dialerInputRef = ref()
-        const hasNewExportTask = ref(false)
+        const newExportTaskCount = ref(0)
         const outboundStatus = ref(0)
         const outboundStatusLoading = ref(false)
         let exportTaskTimer: number | undefined
@@ -75,6 +75,18 @@ export default defineComponent({
             outboundSignedIn.value ? '外呼已签入' : '外呼已签出'
         )
         const outboundStatusActionLabel = computed(() => (outboundSignedIn.value ? '签出' : '签入'))
+
+        const parseTaskTime = (value?: string | number | null) => {
+            if (value === undefined || value === null || value === '') {
+                return 0
+            }
+            if (typeof value === 'number') {
+                return value
+            }
+            const normalized = value.includes('T') ? value : value.replace(/-/g, '/')
+            const time = new Date(normalized).getTime()
+            return Number.isNaN(time) ? 0 : time
+        }
 
         const syncDialerCursor = async () => {
             await nextTick()
@@ -89,34 +101,34 @@ export default defineComponent({
 
         const checkExportTaskBadge = async () => {
             if (!hasExportTaskPermission.value) {
-                hasNewExportTask.value = false
+                newExportTaskCount.value = 0
                 return
             }
             try {
                 const data = await getExportTaskPage({
                     pageNo: 1,
-                    pageSize: 20,
+                    pageSize: 100,
                     status: 2
                 })
                 const list = data?.list || []
                 const lastViewedAt = getExportTaskCenterViewedAt()
                 if (!lastViewedAt) {
-                    hasNewExportTask.value = list.length > 0
+                    newExportTaskCount.value = list.length
                     return
                 }
-                const lastViewedTime = new Date(lastViewedAt).getTime()
-                hasNewExportTask.value = list.some((item) => {
+                const lastViewedTime = parseTaskTime(lastViewedAt)
+                newExportTaskCount.value = list.filter((item) => {
                     const taskTime = item.finishedAt || item.createTime
-                    return !!taskTime && new Date(taskTime).getTime() > lastViewedTime
-                })
+                    return parseTaskTime(taskTime) > lastViewedTime
+                }).length
             } catch {
-                hasNewExportTask.value = false
+                newExportTaskCount.value = 0
             }
         }
 
         const openExportTaskCenter = async () => {
             markExportTaskCenterViewed()
-            hasNewExportTask.value = false
+            newExportTaskCount.value = 0
             await push({ name: 'SystemExportTaskCenter' })
         }
 
@@ -152,7 +164,7 @@ export default defineComponent({
             checkExportTaskBadge()
             exportTaskTimer = window.setInterval(() => {
                 checkExportTaskBadge()
-            }, 1000 * 60)
+            }, 1000 * 15)
         })
 
         onBeforeUnmount(() => {
@@ -296,7 +308,11 @@ export default defineComponent({
                         ></Message>
                     ) : undefined}
                     {hasExportTaskPermission.value ? (
-                        <ElBadge isDot={hasNewExportTask.value} class="header-icon-badge">
+                        <ElBadge
+                            hidden={newExportTaskCount.value <= 0}
+                            value={newExportTaskCount.value > 99 ? '99+' : newExportTaskCount.value}
+                            class="header-icon-badge"
+                        >
                             <div
                                 class="custom-hover header-icon-button"
                                 onClick={openExportTaskCenter}
@@ -445,6 +461,11 @@ $prefix-cls: #{$namespace}-tool-header;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+
+    :deep(.el-badge__content) {
+        border: none;
+        box-shadow: 0 6px 14px rgba(239, 68, 68, 0.28);
+    }
 }
 
 .header-icon-button {

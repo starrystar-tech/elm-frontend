@@ -2,6 +2,7 @@
     <ContentWrap>
         <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
         <div class="action-btn-wrap flex items-center gap-2">
+            <BaseButton plain @click="openExportDialog">导出</BaseButton>
             <BaseButton type="primary" @click="handleBatchRepurchase">订单激活</BaseButton>
             <el-tooltip
                 content="订单激活后，客户自动进入成单人复购列表，支持持续跟进与再次下单"
@@ -25,6 +26,7 @@
     <OrderDetailDrawer ref="detailRef" />
     <OrderContractSignDialog ref="contractSignRef" @success="tableMethods.getList" />
     <RefundDialog ref="refundRef" @success="tableMethods.getList" />
+    <ExportTaskDialog ref="exportDialogRef" @success="handleExportSuccess" />
 </template>
 
 <script setup lang="tsx">
@@ -50,6 +52,7 @@ import OrderDetailDrawer from '../detail/OrderDetailDrawer.vue'
 import OrderContractSignDialog from '../detail/OrderContractSignDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import ExportTaskDialog from '@/views/crm/clue/components/ExportTaskDialog.vue'
 
 defineOptions({ name: 'OrderMy' })
 
@@ -57,6 +60,8 @@ const message = useMessage()
 const detailRef = ref<InstanceType<typeof OrderDetailDrawer>>()
 const contractSignRef = ref<InstanceType<typeof OrderContractSignDialog>>()
 const refundRef = ref<InstanceType<typeof RefundDialog>>()
+const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
+const currentSearchParams = ref<Recordable>({})
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
@@ -176,6 +181,7 @@ const {
 const orderStatusLabel = (value?: number) => getOptionLabel(ORDER_STATUS_OPTIONS, value)
 
 const setSearchParams = (params: Recordable) => {
+    currentSearchParams.value = { ...params }
     const {
         enrollTimeRange = [],
         expireTimeRange = [],
@@ -247,6 +253,38 @@ const handleBatchRepurchase = async () => {
     }
     message.success('复购订单已生成')
     await tableMethods.getList()
+}
+
+const openExportDialog = () => {
+    exportDialogRef.value?.open({
+        title: '导出我的订单',
+        bizType: 'crm_my_order_page_export',
+        submit: async (payload) => {
+            const {
+                enrollTimeRange = [],
+                expireTimeRange = [],
+                createTimeRange = [],
+                paidAmountRange = [],
+                ...rest
+            } = currentSearchParams.value || {}
+            await OrderApi.createMyOrderExportTask({
+                ...rest,
+                minPaidAmount: paidAmountRange[0] ? Number(paidAmountRange[0]) : undefined,
+                maxPaidAmount: paidAmountRange[1] ? Number(paidAmountRange[1]) : undefined,
+                beginEnrollTime: enrollTimeRange[0],
+                endEnrollTime: enrollTimeRange[1],
+                beginExpireTime: expireTimeRange[0],
+                endExpireTime: expireTimeRange[1],
+                beginCreateTime: createTimeRange[0],
+                endCreateTime: createTimeRange[1],
+                ...payload
+            })
+        }
+    })
+}
+
+const handleExportSuccess = async () => {
+    message.success('导出任务已创建，请到下载中心查看')
 }
 
 const handleContractSign = (row: OrderApi.OrderPageRespVO) => {
