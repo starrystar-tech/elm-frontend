@@ -4,6 +4,7 @@ export interface AllocationEngineRuleVO {
   id?: number
   sourceCode: string
   projectCode: string
+  projectName?: string
   regionId: number
 }
 
@@ -51,4 +52,3 @@ export const updateAllocationEngine = async (data: AllocationEngineVO) => {
 export const updateAllocationEngineStatus = async (data: { id: number; status: number }) => {
   return await request.put({ url: '/system/allocation-engine/update-status', data })
 }
-

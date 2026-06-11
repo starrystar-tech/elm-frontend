@@ -84,7 +84,11 @@
                 <el-button type="primary" plain @click="openRuleDialog()">新增规则</el-button>
                 <el-table :data="localForm.rules" border class="mt-15px">
                     <el-table-column label="来源" prop="sourceCode" />
-                    <el-table-column label="项目" prop="projectCode" />
+                    <el-table-column label="项目" prop="projectName">
+                        <template #default="{ row }">
+                            {{ formatProjectName(row) }}
+                        </template>
+                    </el-table-column>
                     <el-table-column label="地区" prop="regionId">
                         <template #default="{ row }">
                             {{ formatRegionName(row.regionId) }}
@@ -128,11 +132,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import CallGroupSelect from '@/components/CallGroupSelect.vue'
 import UserLevelSelect from '@/components/UserLevelSelect.vue'
 import EngineRuleDialog from './EngineRuleDialog.vue'
 import { findPath } from '@/utils/tree'
+import * as ProductCategoryApi from '@/api/crm/product/category'
 
 const props = defineProps<{
     modelValue: boolean
@@ -160,6 +165,7 @@ const ruleDialogVisible = ref(false)
 const ruleDialogTitle = ref('新增规则')
 const editingRule = ref<Recordable | undefined>(undefined)
 const editingRuleIndex = ref<number>(-1)
+const projectNameMap = ref<Record<string, string>>({})
 
 const formatRegionName = (regionId?: number) => {
     if (!regionId) return '--'
@@ -174,6 +180,16 @@ const formatRegionName = (regionId?: number) => {
               .filter(Boolean)
         : []
     return names.length ? names.join(' / ') : String(regionId)
+}
+
+const formatProjectName = (row: Recordable) => {
+    if (row?.projectName) {
+        return row.projectName
+    }
+    if (row?.projectCode && projectNameMap.value[row.projectCode]) {
+        return projectNameMap.value[row.projectCode]
+    }
+    return row?.projectCode || '--'
 }
 
 const resetLocalForm = () => {
@@ -230,6 +246,15 @@ const handleSubmit = async () => {
     emit('submit', localForm.value)
 }
 
+const loadProjectNameMap = async () => {
+    const list = (await ProductCategoryApi.getProductCategorySimpleList()) || []
+    projectNameMap.value = Object.fromEntries(
+        (list as ProductCategoryApi.ProductCategoryVO[])
+            .filter((item) => Number(item.parentId) === 0)
+            .map((item) => [item.code, item.name])
+    )
+}
+
 watch(
     () => [props.modelValue, props.formData],
     ([visible]) => {
@@ -238,4 +263,8 @@ watch(
     },
     { immediate: true, deep: true }
 )
+
+onMounted(() => {
+    loadProjectNameMap()
+})
 </script>
