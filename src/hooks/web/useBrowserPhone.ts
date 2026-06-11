@@ -54,9 +54,9 @@ const profile = reactive<Partial<ProfileVO>>({})
 const browserForm = reactive({
     wsServer: 'wss://sip.bgwa.cn:7443',
     domain: '60.205.112.131',
-    username: '1001',
+    username: '',
     password: '123456',
-    target: '1002'
+    target: ''
 })
 const logs = ref<BrowserPhoneLogItem[]>([])
 

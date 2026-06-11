@@ -17,7 +17,7 @@ import {
     getExportTaskReminderSummary,
     markExportTaskCenterViewed
 } from '@/api/system/exportTask'
-import { getUserProfile, updateUserOutboundStatus } from '@/api/system/user/profile'
+import { updateUserOutboundStatus } from '@/api/system/user/profile'
 import { useBrowserPhone } from '@/hooks/web/useBrowserPhone'
 import ToolHeaderDialer from './ToolHeaderDialer.vue'
 
@@ -70,6 +70,7 @@ export default defineComponent({
         let exportTaskTimer: number | undefined
         const messageApi = useMessage()
         const {
+            profile,
             browserLoading,
             browserRegistered,
             browserStatus,
@@ -82,8 +83,27 @@ export default defineComponent({
             disconnectBrowserPhone,
             makeBrowserCall,
             hangupBrowserCall,
-            applyBrowserPhoneCredentials
+            applyBrowserPhoneCredentials,
+            reloadProfile
         } = useBrowserPhone()
+
+        const resolveSeatExtension = () => {
+            const seat = String(profile.callExt || profile.callNo || '').trim()
+            return /^\d+$/.test(seat) ? seat : ''
+        }
+
+        const ensureSeatBound = async () => {
+            await reloadProfile()
+            const seat = resolveSeatExtension()
+            if (!seat) {
+                throw new Error('当前未绑定坐席，请联系管理员绑定坐席')
+            }
+            applyBrowserPhoneCredentials({
+                username: seat,
+                password: '123456'
+            })
+            return seat
+        }
 
         const outboundSignedIn = computed(() => outboundStatus.value === 1 && browserRegistered.value)
         const outboundStatusLabel = computed(() => {
@@ -118,7 +138,9 @@ export default defineComponent({
             if (outboundSignedIn.value) {
                 return '浏览器分机已注册，支持电脑端通话'
             }
-            return '点击签入后，将自动注册浏览器分机 1001'
+            return resolveSeatExtension()
+                ? `点击签入后，将自动注册浏览器分机 ${resolveSeatExtension()}`
+                : '当前未绑定坐席，签入前请联系管理员绑定'
         })
 
         const syncDialerCursor = async () => {
@@ -153,13 +175,19 @@ export default defineComponent({
 
         const loadOutboundProfile = async () => {
             try {
-                const profile = await getUserProfile()
-                outboundStatus.value = profile?.outboundStatus === 1 ? 1 : 0
+                await reloadProfile()
+                outboundStatus.value = profile.outboundStatus === 1 ? 1 : 0
+                const seat = resolveSeatExtension()
                 applyBrowserPhoneCredentials({
-                    username: '1001',
+                    username: seat,
                     password: '123456'
                 })
-                if (outboundStatus.value === 1 && !browserRegistered.value && !browserLoading.value) {
+                if (
+                    outboundStatus.value === 1 &&
+                    seat &&
+                    !browserRegistered.value &&
+                    !browserLoading.value
+                ) {
                     await connectBrowserPhone()
                 }
             } catch (error) {
@@ -175,11 +203,8 @@ export default defineComponent({
             const nextStatus = outboundSignedIn.value ? 0 : 1
             outboundStatusLoading.value = true
             try {
-                applyBrowserPhoneCredentials({
-                    username: '1001',
-                    password: '123456'
-                })
                 if (nextStatus === 1) {
+                    await ensureSeatBound()
                     await connectBrowserPhone()
                     await updateUserOutboundStatus({ outboundStatus: nextStatus })
                 } else {

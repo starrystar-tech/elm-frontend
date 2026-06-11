@@ -8,6 +8,7 @@ export interface UserVO {
   userLevel?: string
   accountType?: string
   deptId: number
+  deptName?: string
   postIds: number[]
   email: string
   mobile: string
@@ -19,6 +20,7 @@ export interface UserVO {
   expireTime?: Date
   callNo?: string
   callExt?: string
+  outboundStatus?: number
   mobileCopyLimitTimes?: number
   manageCompanyIds?: number[]
   companyName?: string
