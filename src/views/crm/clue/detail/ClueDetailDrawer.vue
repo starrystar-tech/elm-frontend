@@ -36,7 +36,7 @@
                     @save-consult="handleSaveConsult"
                     @sms="handleSms"
                     @enroll="openEnroll"
-                    @transfer="handleTransfer"
+                    @release="handleRelease"
                     @tag="handleTag"
                     @close="drawerVisible = false"
                 />
@@ -46,11 +46,6 @@
 
     <ClueEnrollDialog ref="enrollRef" @success="handleEnrollSuccess" />
     <ClueSmsDialog ref="smsDialogRef" />
-    <CrmTransferForm
-        ref="transferRef"
-        :biz-type="BizTypeEnum.CRM_CLUE"
-        @success="handleTransferSuccess"
-    />
     <Dialog v-model="tagDialogVisible" title="加标签" width="520px">
         <el-form label-width="80px">
             <el-form-item label="标签" required>
@@ -85,13 +80,11 @@ import * as CustomerDetailApi from '@/api/crm/customerDetail'
 import * as OrderApi from '@/api/crm/order'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import { getOperateLogPage } from '@/api/crm/operateLog'
-import { BizTypeEnum } from '@/api/crm/permission'
 import type { OperateLogVO } from '@/api/system/operatelog'
 import * as CampusApi from '@/api/system/campus'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 import { hasPermission } from '@/directives/permission/hasPermi'
-import CrmTransferForm from '@/views/crm/permission/components/TransferForm.vue'
 import ClueSmsDialog from '../ClueSmsDialog.vue'
 import ClueEnrollDialog from './ClueEnrollDialog.vue'
 import ClueDetailContent from './ClueDetailContent.vue'
@@ -111,9 +104,9 @@ const editing = ref(false)
 const clue = ref<ClueApi.ClueVO>({})
 const logList = ref<OperateLogVO[]>([])
 const canUpdate = hasPermission(['crm:clue:basic-info:update'])
+const canClueManagementRelease = hasPermission(['crm:clue-management:query'])
 const enrollRef = ref<InstanceType<typeof ClueEnrollDialog>>()
 const smsDialogRef = ref<InstanceType<typeof ClueSmsDialog>>()
-const transferRef = ref<InstanceType<typeof CrmTransferForm>>()
 const message = useMessage()
 const projectOptions = ref<{ id: number; name: string; children?: any[] }[]>([])
 const productCategoryOptions = ref<any[]>([])
@@ -289,20 +282,26 @@ const handleSms = () => {
     smsDialogRef.value?.open([Number(clue.value.id)])
 }
 
-const handleTransfer = () => {
+const handleRelease = async () => {
     if (!clue.value.id) return
-    transferRef.value?.open(Number(clue.value.id))
+    await message.confirm('确认释放该客户吗？')
+    if (canClueManagementRelease) {
+        await ClueApi.releaseClueManagement({
+            clueIds: [Number(clue.value.id)]
+        })
+    } else {
+        await ClueApi.releaseMyClue({
+            clueIds: [Number(clue.value.id)]
+        })
+    }
+    message.success('释放成功')
+    await getClue()
+    emit('refresh')
 }
 
 const handleTag = () => {
     tagForm.tagIds = (clue.value.tagIds || []).map((item) => Number(item))
     tagDialogVisible.value = true
-}
-
-const handleTransferSuccess = async () => {
-    message.success('转移成功')
-    await getClue()
-    emit('refresh')
 }
 
 const submitTag = async () => {

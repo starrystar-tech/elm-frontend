@@ -46,13 +46,13 @@
                     @click="tagDialogVisible = true"
                     >标签</BaseButton
                 >
-                <BaseButton
+                <!-- <BaseButton
                     v-if="canSmsSend"
                     plain
                     :disabled="selectionList.length === 0"
                     @click="openSmsDialog"
                     >发短信</BaseButton
-                >
+                > -->
                 <BaseButton
                     v-if="canComplaintTagUpdate"
                     plain
@@ -696,18 +696,13 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'action',
         label: '操作',
-        width: '170px',
+        width: '100px',
         fixed: 'right',
         slots: {
             default: (data) => (
-                <>
-                    <BaseButton link type="primary" onClick={() => openDetail(data.row.id)}>
-                        详情
-                    </BaseButton>
-                    <BaseButton link type="primary" onClick={() => openEnroll(data.row.id)}>
-                        报名
-                    </BaseButton>
-                </>
+                <BaseButton link type="primary" onClick={() => openDetail(data.row.id)}>
+                    详情
+                </BaseButton>
             )
         }
     }

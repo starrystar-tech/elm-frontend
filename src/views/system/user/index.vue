@@ -542,7 +542,7 @@ const tableColumns = reactive<TableColumn[]>([
         field: 'expireTime',
         label: '到期时间',
         minWidth: 120,
-        formatter: (_, __, value) => textCell(value)
+        formatter: dateFormatter
     },
     { field: 'createTime', label: '创建时间', width: 180, formatter: dateFormatter },
     { field: 'deptName', label: '所属部门', minWidth: 120, showOverflowTooltip: true },

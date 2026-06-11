@@ -72,8 +72,16 @@
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item label="邮箱">
-                        <el-input v-model="formData.email" placeholder="请输入邮箱" />
+                    <el-form-item label="证件类型">
+                        <el-input
+                            v-model="formData.certificateType"
+                            placeholder="请输入证件类型"
+                        />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="证件号码">
+                        <el-input v-model="formData.idCardNo" placeholder="请输入证件号码" />
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -184,6 +192,8 @@ interface FormData {
     wechat2?: string
     wechatRemark?: string
     qq?: string
+    certificateType?: string
+    idCardNo?: string
     email?: string
     gender?: number
     birthday?: string
@@ -224,6 +234,8 @@ const createDefaultFormData = (): FormData => ({
     wechat2: '',
     wechatRemark: '',
     qq: '',
+    certificateType: '',
+    idCardNo: '',
     email: '',
     gender: undefined,
     birthday: '',
@@ -267,6 +279,8 @@ const mapClueToForm = (detail: ClueApi.ClueVO): FormData => ({
     wechat2: detail.wechat2 || '',
     wechatRemark: detail.wechatRemark || '',
     qq: detail.qq || '',
+    certificateType: detail.certificateType || '',
+    idCardNo: detail.idCardNo || '',
     email: detail.email || '',
     gender: detail.gender,
     birthday: detail.birthday || '',
@@ -311,6 +325,8 @@ const submitForm = async () => {
                 wechat2: formData.value.wechat2?.trim() || undefined,
                 wechatRemark: formData.value.wechatRemark?.trim() || undefined,
                 qq: formData.value.qq?.trim() || undefined,
+                certificateType: formData.value.certificateType?.trim() || undefined,
+                idCardNo: formData.value.idCardNo?.trim() || undefined,
                 email: formData.value.email?.trim() || undefined,
                 name: formData.value.name.trim() || undefined,
                 gender: formData.value.gender,
@@ -338,6 +354,8 @@ const submitForm = async () => {
                 wechat2: formData.value.wechat2?.trim() || undefined,
                 wechatRemark: formData.value.wechatRemark?.trim() || undefined,
                 qq: formData.value.qq?.trim() || undefined,
+                certificateType: formData.value.certificateType?.trim() || undefined,
+                idCardNo: formData.value.idCardNo?.trim() || undefined,
                 gender: formData.value.gender,
                 birthday: formData.value.birthday || undefined,
                 education: formData.value.education,

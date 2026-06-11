@@ -37,9 +37,7 @@
                 <el-descriptions-item label="状态">
                     <DictTag :type="DICT_TYPE.COMMON_STATUS" :value="userDetail.status" />
                 </el-descriptions-item>
-                <el-descriptions-item label="到期时间">{{
-                    text(userDetail.expireTime)
-                }}</el-descriptions-item>
+                <el-descriptions-item label="到期时间">{{ formatExpireTime }}</el-descriptions-item>
                 <el-descriptions-item label="管理企业" :span="2">{{
                     text(userDetail.companyName)
                 }}</el-descriptions-item>
@@ -66,12 +64,15 @@
                 <el-descriptions-item label="所属部门">{{
                     text(userDetail.deptName)
                 }}</el-descriptions-item>
+                <el-descriptions-item label="岗位信息">{{
+                    formatPostNames
+                }}</el-descriptions-item>
                 <el-descriptions-item label="创建时间">{{ formatCreateTime }}</el-descriptions-item>
                 <el-descriptions-item label="校区权限" :span="2">{{
                     text(userDetail.campusNames)
                 }}</el-descriptions-item>
                 <el-descriptions-item label="管辖地区" :span="2">{{
-                    text(userDetail.areaNames)
+                    formatAreaNames
                 }}</el-descriptions-item>
                 <el-descriptions-item label="管辖产品" :span="2">{{
                     text(userDetail.categoryNames)
@@ -95,6 +96,7 @@
 <script setup lang="ts">
 import { DICT_TYPE } from '@/utils/dict'
 import * as UserApi from '@/api/system/user'
+import * as PostApi from '@/api/system/post'
 import { DictTag } from '@/components/DictTag'
 import { formatDate } from '@/utils/formatTime'
 
@@ -103,6 +105,7 @@ defineOptions({ name: 'SystemUserDetail' })
 const drawerVisible = ref(false)
 const loading = ref(false)
 const userDetail = ref({} as UserApi.UserVO)
+const postMap = ref(new Map<number, string>())
 
 const text = (v: unknown) => (v === null || v === undefined || v === '' ? '--' : String(v))
 
@@ -129,11 +132,38 @@ const formatCreateTime = computed(() => {
     return formatDate(new Date(val as any)) || '--'
 })
 
+const formatExpireTime = computed(() => {
+    const val = userDetail.value.expireTime
+    if (!val) return '--'
+    return formatDate(new Date(val as any)) || '--'
+})
+
+const formatAreaNames = computed(() => {
+    const ids = Array.isArray(userDetail.value.areaIds) ? userDetail.value.areaIds : []
+    if (ids.some((id) => Number(id) === -1)) {
+        return '全国'
+    }
+    return text(userDetail.value.areaNames)
+})
+
+const formatPostNames = computed(() => {
+    const ids = Array.isArray(userDetail.value.postIds) ? userDetail.value.postIds : []
+    if (!ids.length) {
+        return '--'
+    }
+    const names = ids
+        .map((id) => postMap.value.get(Number(id)))
+        .filter((name): name is string => !!name)
+    return names.length ? names.join('、') : ids.join('、')
+})
+
 const open = async (id: number) => {
     drawerVisible.value = true
     loading.value = true
     try {
-        userDetail.value = await UserApi.getUser(id)
+        const [detail, posts] = await Promise.all([UserApi.getUser(id), PostApi.getSimplePostList()])
+        userDetail.value = detail
+        postMap.value = new Map((posts || []).map((item) => [Number(item.id), item.name]))
     } finally {
         loading.value = false
     }

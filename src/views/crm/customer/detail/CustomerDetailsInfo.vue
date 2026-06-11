@@ -18,8 +18,12 @@
                     <el-descriptions-item label="出生日期">{{
                         clue.birthday || '--'
                     }}</el-descriptions-item>
-                    <el-descriptions-item label="年龄">{{
-                        clue.age ? `${clue.age}岁` : '--'
+                    <el-descriptions-item label="年龄">{{ ageText }}</el-descriptions-item>
+                    <el-descriptions-item label="证件类型">{{
+                        clue.certificateType || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="证件号码">{{
+                        clue.idCardNo || '--'
                     }}</el-descriptions-item>
                     <el-descriptions-item label="微信">{{
                         clue.wechat || '--'
@@ -38,12 +42,6 @@
                         clue.clueSourceName || '--'
                     }}</el-descriptions-item>
                     <el-descriptions-item label="详细地址">{{ addressText }}</el-descriptions-item>
-                    <el-descriptions-item label="邮箱">{{
-                        clue.email || '--'
-                    }}</el-descriptions-item>
-                    <el-descriptions-item label="意向度">{{
-                        clue.intentLevelName || '--'
-                    }}</el-descriptions-item>
                     <el-descriptions-item label="备注" :span="2">{{
                         clue.remark || '--'
                     }}</el-descriptions-item>
@@ -87,5 +85,20 @@ const addressText = computed(() => {
     const names = [props.clue.province, props.clue.city, props.clue.district].filter(Boolean)
     const region = names.join(' / ')
     return [region, props.clue.detailAddress].filter(Boolean).join(' ') || '--'
+})
+
+const ageText = computed(() => {
+    const birthday = props.clue.birthday
+    if (!birthday) return '--'
+    const birthDate = new Date(birthday)
+    if (Number.isNaN(birthDate.getTime())) return '--'
+    const today = new Date()
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    const dayDiff = today.getDate() - birthDate.getDate()
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+        age -= 1
+    }
+    return age >= 0 ? `${age}岁` : '--'
 })
 </script>

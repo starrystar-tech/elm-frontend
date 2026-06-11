@@ -55,6 +55,15 @@
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
+                    <el-form-item label="邮箱" prop="email">
+                        <el-input
+                            v-model="formData.email"
+                            maxlength="50"
+                            placeholder="请输入邮箱"
+                        />
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
                     <el-form-item label="头像" prop="avatar">
                         <UploadImg
                             v-model="formData.avatar"
@@ -67,11 +76,6 @@
                     </el-form-item>
                 </el-col>
                 <el-col :span="12" />
-            </el-row>
-            <el-row>
-                <!-- <el-form-item label="邮箱" prop="email">
-                    <el-input v-model="formData.email" maxlength="50" placeholder="请输入邮箱" />
-                </el-form-item> -->
             </el-row>
 
             <!-- <el-row>
@@ -363,6 +367,7 @@ import WeworkAccountSelector from './components/WeworkAccountSelector.vue'
 import UserLevelSelect from '@/components/UserLevelSelect.vue'
 import { FormRules } from 'element-plus'
 import { normalizeAreaIds } from '@/utils/areaScope'
+import { formatDate } from '@/utils/formatTime'
 
 defineOptions({ name: 'SystemUserForm' })
 
@@ -449,6 +454,16 @@ const getCorpName = (corpId?: string) => {
 
 const wecomSelectorVisible = ref(false)
 
+const normalizeDateTimeValue = (value: unknown): string | undefined => {
+    if (value === null || value === undefined || value === '') {
+        return undefined
+    }
+    if (typeof value === 'string') {
+        return value.replace('T', ' ').slice(0, 19)
+    }
+    return formatDate(new Date(value as any)) || undefined
+}
+
 const openWecomSelector = () => {
     wecomSelectorVisible.value = true
 }
@@ -463,7 +478,7 @@ const removeWecomBindRow = (index: number) => {
 
 const open = async (type: string, id?: number) => {
     dialogVisible.value = true
-    dialogTitle.value = type === 'update' ? '编辑用户' : t('action.' + type)
+    dialogTitle.value = type === 'update' ? '编辑用户' : t('action.' + type) + '用户'
     formType.value = type
     resetForm()
     formRenderKey.value += 1
@@ -508,6 +523,7 @@ const open = async (type: string, id?: number) => {
                 wecomBindList: detail.wecomBindList || [],
                 accountType: detail.accountType || 'free',
                 memberId: detail.memberId || '',
+                expireTime: normalizeDateTimeValue(detail.expireTime),
                 callNo: detail.callNo || '',
                 callExt: detail.callExt || '',
                 mobileCopyLimitTimes: detail.mobileCopyLimitTimes

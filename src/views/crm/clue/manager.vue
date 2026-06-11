@@ -48,6 +48,14 @@
                     >
                         批量释放
                     </BaseButton>
+                    <BaseButton
+                        v-if="canSmsSend"
+                        plain
+                        :disabled="selectionList.length === 0"
+                        @click="openSmsDialog"
+                    >
+                        批量发短信
+                    </BaseButton>
                     <BaseButton v-if="canExport" plain @click="openExportDialog">导出</BaseButton>
                 </div>
             </div>
@@ -69,6 +77,8 @@
     </ContentWrap>
 
     <ClueDetailDrawer ref="detailRef" @refresh="handleDetailRefresh" />
+    <ClueSmsDialog ref="smsDialogRef" @success="handleDetailRefresh" />
+    <ClueEnrollDialog ref="enrollRef" @success="handleDetailRefresh" />
 
     <Dialog v-model="assignDialogVisible" title="批量分配客户" width="420px">
         <el-form label-width="90px">
@@ -132,7 +142,9 @@ import { hasPermission } from '@/directives/permission/hasPermi'
 import * as ClueApi from '@/api/crm/clue'
 import type { DeptVO } from '@/api/system/dept'
 import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
+import ClueSmsDialog from './ClueSmsDialog.vue'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
+import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'
 import ExportTaskDialog from './components/ExportTaskDialog.vue'
 import {
     ALLOCATION_TYPE_OPTIONS,
@@ -167,7 +179,10 @@ interface ManagerSearchParams {
 
 const message = useMessage()
 const canExport = hasPermission(['crm:clue-management:query'])
+const canSmsSend = hasPermission(['crm:clue:sms:send'])
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
+const smsDialogRef = ref<InstanceType<typeof ClueSmsDialog>>()
+const enrollRef = ref<InstanceType<typeof ClueEnrollDialog>>()
 const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
 const activeTab = ref('FIRST')
 const selectionList = ref<ClueApi.ClueManagementPageRespVO[]>([])
@@ -401,13 +416,29 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'action',
         label: '操作',
-        width: '160px',
+        width: '240px',
         fixed: 'right',
         slots: {
             default: (data) => (
                 <>
                     <BaseButton link type="primary" onClick={() => openDetail(Number(data.row.id))}>
                         详情
+                    </BaseButton>
+                    {canSmsSend ? (
+                        <BaseButton
+                            link
+                            type="primary"
+                            onClick={() => smsDialogRef.value?.open([Number(data.row.id)])}
+                        >
+                            发短信
+                        </BaseButton>
+                    ) : null}
+                    <BaseButton
+                        link
+                        type="primary"
+                        onClick={() => openEnroll(Number(data.row.id))}
+                    >
+                        报名
                     </BaseButton>
                     <BaseButton
                         link
@@ -485,6 +516,15 @@ const handleTabChange = async () => {
 
 const openDetail = (id: number) => {
     detailRef.value?.open(id)
+}
+
+const openSmsDialog = () => {
+    smsDialogRef.value?.open(selectionList.value.map((item) => Number(item.id)))
+}
+
+const openEnroll = async (id: number) => {
+    const detail = await ClueApi.getClue(id)
+    enrollRef.value?.open(detail)
 }
 
 const openAssignDialog = async (ids?: number[]) => {
@@ -582,6 +622,9 @@ const handleRelease = async (ids?: number[]) => {
         message.warning('请选择要释放的客户')
         return
     }
+    await message.confirm(
+        clueIds.length > 1 ? `确认释放选中的 ${clueIds.length} 位客户吗？` : '确认释放该客户吗？'
+    )
     await ClueApi.releaseClueManagement({
         clueIds,
         reason: releaseForm.reason || undefined

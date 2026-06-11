@@ -22,7 +22,7 @@
             <template #actions>
                 <el-button plain @click="emit('sms')">短信</el-button>
                 <el-button plain @click="emit('enroll')">报名</el-button>
-                <el-button plain @click="emit('transfer')">转移</el-button>
+                <el-button plain @click="emit('release')">释放</el-button>
                 <el-button plain @click="emit('tag')">加标签</el-button>
             </template>
         </DetailHeroCard>
@@ -700,7 +700,7 @@ const emit = defineEmits<{
     'save-consult': [payload: CustomerDetailApi.CustomerConsultRecordCreateReqVO]
     sms: []
     enroll: []
-    transfer: []
+    release: []
     tag: []
     close: []
 }>()
