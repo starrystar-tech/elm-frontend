@@ -45,6 +45,12 @@ export interface UserWecomBindVO {
   staffName?: string
 }
 
+export interface UserCallSeatStatsVO {
+  total: number
+  bound: number
+  unbound: number
+}
+
 export interface UserBatchUpdateReqVO {
   ids: number[]
   mobileCopyLimitTimes?: number
@@ -53,6 +59,10 @@ export interface UserBatchUpdateReqVO {
 // 查询用户管理列表
 export const getUserPage = (params: PageParam) => {
   return request.get({ url: '/system/user/page', params })
+}
+
+export const getUserCallSeatStats = (): Promise<UserCallSeatStatsVO> => {
+  return request.get({ url: '/system/user/call-seat-stats' })
 }
 
 // 查询用户详情

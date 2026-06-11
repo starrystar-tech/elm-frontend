@@ -178,24 +178,7 @@ const {
     tableMethods,
     register: tableRegister
 } = useTable<UserApi.UserVO>({
-    getListApi: async (params) => {
-        const result = await UserApi.getUserPage(params)
-        const rawList = result?.list || []
-        let filteredList = rawList
-        if (params?.hasCallExt === true) {
-            filteredList = rawList.filter((item) => !!item.callExt?.trim())
-        } else if (params?.hasCallExt === false) {
-            filteredList = rawList.filter((item) => !item.callExt?.trim())
-        }
-        return {
-            ...result,
-            list: filteredList,
-            total:
-                params?.hasCallExt === true || params?.hasCallExt === false
-                    ? filteredList.length
-                    : result?.total || filteredList.length
-        }
-    }
+    getListApi: UserApi.getUserPage
 })
 
 const stats = reactive({
@@ -205,27 +188,10 @@ const stats = reactive({
 })
 
 const loadGlobalStats = async () => {
-    const pageSize = 100
-    let pageNo = 1
-    let total = 0
-    let loaded = 0
-    let bound = 0
-
-    do {
-        const result = await UserApi.getUserPage({ pageNo, pageSize })
-        const list = result?.list || []
-        total = Number(result?.total || 0)
-        loaded += list.length
-        bound += list.filter((item) => !!item.callExt?.trim()).length
-        if (!list.length) {
-            break
-        }
-        pageNo += 1
-    } while (loaded < total)
-
-    stats.total = total || loaded
-    stats.bound = bound
-    stats.unbound = Math.max(0, stats.total - stats.bound)
+    const result = await UserApi.getUserCallSeatStats()
+    stats.total = Number(result?.total || 0)
+    stats.bound = Number(result?.bound || 0)
+    stats.unbound = Number(result?.unbound || 0)
 }
 
 const setSearchParams = (params: SeatSearchParams) => {
