@@ -45,19 +45,8 @@
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item label="备用电话">
-                        <el-input v-model="formData.mobile2" placeholder="请输入备用电话" />
-                    </el-form-item>
-                </el-col>
-                <el-col :span="12">
                     <el-form-item label="微信">
                         <el-input v-model="formData.wechat" placeholder="请输入微信号" />
-                    </el-form-item>
-                </el-col>
-
-                <el-col :span="12">
-                    <el-form-item label="微信2">
-                        <el-input v-model="formData.wechat2" placeholder="请输入第二微信号" />
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -73,10 +62,16 @@
                 </el-col>
                 <el-col :span="12">
                     <el-form-item label="证件类型">
-                        <el-input
+                        <el-select
                             v-model="formData.certificateType"
-                            placeholder="请输入证件类型"
-                        />
+                            clearable
+                            placeholder="请选择"
+                            class="w-1/1"
+                        >
+                            <el-option label="身份证" value="身份证" />
+                            <el-option label="护照" value="护照" />
+                            <el-option label="港澳通行证" value="港澳通行证" />
+                        </el-select>
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">

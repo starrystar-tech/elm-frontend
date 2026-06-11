@@ -140,6 +140,14 @@ const tableColumns = computed<TableColumn[]>(() => [
             default: (data) => <span>{data.row.status || '--'}</span>
         }
     },
+    {
+        field: 'ownerName',
+        label: '分配归属',
+        minWidth: '120px',
+        slots: {
+            default: (data) => <span>{data.row.ownerName || '--'}</span>
+        }
+    },
     { field: 'importFailReason', label: '导入失败原因', minWidth: '180px' },
     { field: 'failReason', label: '失败原因', minWidth: '180px' },
     { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter }
