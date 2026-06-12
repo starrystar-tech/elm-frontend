@@ -131,7 +131,7 @@
                     </el-form-item>
                 </el-col>
 
-                <el-col :span="24">
+                <el-col :span="12">
                     <el-form-item label="标签">
                         <el-select
                             v-model="formData.tagIds"
@@ -150,7 +150,7 @@
                         </el-select>
                     </el-form-item>
                 </el-col>
-                <el-col :span="24">
+                <el-col :span="12">
                     <el-form-item label="投诉标签">
                         <el-select
                             v-model="formData.complaintTagIds"
@@ -328,7 +328,10 @@ const mapClueToForm = (detail: ClueApi.ClueVO): FormData => ({
     email: detail.email || '',
     gender: detail.gender,
     birthday: normalizeBirthday(detail.birthday as string | number | null | undefined),
-    education: detail.education === null || detail.education === undefined ? undefined : Number(detail.education),
+    education:
+        detail.education === null || detail.education === undefined
+            ? undefined
+            : Number(detail.education),
     areaId: detail.areaId,
     consultProjectId: detail.consultProjectId,
     clueSourceId: detail.clueSourceId,
