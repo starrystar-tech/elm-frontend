@@ -134,12 +134,12 @@ const searchSchema = computed<FormSchema[]>(() => [
             endPlaceholder: '最大金额'
         }
     },
-    {
-        field: 'ownerUserName',
-        label: '订单归属',
-        component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
-    },
+    // {
+    //     field: 'ownerUserName',
+    //     label: '订单归属',
+    //     component: 'Input',
+    //     componentProps: { clearable: true, style: { width: '220px' } }
+    // },
     {
         field: 'cardOwnerUserName',
         label: '名片归属',
