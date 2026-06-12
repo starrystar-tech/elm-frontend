@@ -35,6 +35,9 @@
                     <el-descriptions-item label="学历">{{
                         clue.educationName || '--'
                     }}</el-descriptions-item>
+                    <el-descriptions-item label="投诉标签">{{
+                        complaintTagText
+                    }}</el-descriptions-item>
                     <el-descriptions-item label="咨询项目">{{
                         clue.consultProjectName || '--'
                     }}</el-descriptions-item>
@@ -100,5 +103,10 @@ const ageText = computed(() => {
         age -= 1
     }
     return age >= 0 ? `${age}岁` : '--'
+})
+
+const complaintTagText = computed(() => {
+    const names = props.clue.complaintTagNames || []
+    return names.length ? names.join('、') : '--'
 })
 </script>

@@ -131,6 +131,7 @@ export interface ClueCreateReqVO {
     consultProjectId?: number
     clueSourceId?: number
     tagIds?: number[]
+    complaintTagIds?: number[]
     remark?: string
 }
 
@@ -156,6 +157,7 @@ export interface ClueUpdateBasicInfoReqVO {
     consultProjectId: number
     clueSourceId?: number
     tagIds?: number[]
+    complaintTagIds?: number[]
     remark?: string
 }
 

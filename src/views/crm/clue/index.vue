@@ -639,15 +639,17 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'name',
         label: '姓名',
-        width: '130px',
+        width: '170px',
         fixed: 'left',
         slots: {
             default: (data) => (
-                <div class="flex items-center gap-8px">
-                    <el-avatar size={32} src={data.row.avatar}>
+                <div class="flex items-center gap-8px min-w-0">
+                    <el-avatar size={32} src={data.row.avatar} class="shrink-0">
                         {(data.row.name || '线').slice(0, 1)}
                     </el-avatar>
                     <el-link
+                        class="min-w-0 flex-1 overflow-hidden whitespace-nowrap text-ellipsis"
+                        title={data.row.name || '-'}
                         underline={false}
                         type="primary"
                         onClick={() => openDetail(data.row.id!)}

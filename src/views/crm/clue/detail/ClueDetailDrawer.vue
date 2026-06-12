@@ -24,6 +24,7 @@
                     :campus-options="campusOptions"
                     :clue-source-options="clueSourceOptions"
                     :tag-options="tagOptions"
+                    :complaint-tag-options="complaintTagOptions"
                     :wework-contacts="weworkContacts"
                     :customer-basic-info="customerBasicInfo"
                     :appointments="appointments"
@@ -82,6 +83,7 @@ import * as ProductCategoryApi from '@/api/crm/product/category'
 import { getOperateLogPage } from '@/api/crm/operateLog'
 import type { OperateLogVO } from '@/api/system/operatelog'
 import * as CampusApi from '@/api/system/campus'
+import * as ComplaintTagApi from '@/api/system/complaintTag'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 import { hasPermission } from '@/directives/permission/hasPermi'
@@ -113,6 +115,7 @@ const productCategoryOptions = ref<any[]>([])
 const campusOptions = ref<CampusApi.CampusVO[]>([])
 const clueSourceOptions = ref<{ label: string; value: number }[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
+const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 const weworkContacts = ref<CustomerDetailApi.CustomerWeworkContactItem[]>([])
 const customerBasicInfo = ref<CustomerDetailApi.CustomerBasicInfoRespVO>()
 const appointments = ref<CustomerDetailApi.CustomerAppointmentRespVO[]>([])
@@ -123,9 +126,10 @@ const tagDialogVisible = ref(false)
 const tagForm = reactive({ tagIds: [] as number[] })
 
 const loadOptions = async () => {
-    const [projects, tagGroups, clueSources, campuses] = await Promise.all([
+    const [projects, tagGroups, complaintTags, clueSources, campuses] = await Promise.all([
         ProductCategoryApi.getProductCategorySimpleList(),
         TagGroupApi.getTagGroupList(),
+        ComplaintTagApi.getComplaintTagSimpleList(),
         ClueSourceApi.getEnabledClueSourceList(),
         CampusApi.getSimpleCampusList()
     ])
@@ -141,6 +145,10 @@ const loadOptions = async () => {
             value: Number(tag.id)
         }))
     )
+    complaintTagOptions.value = (complaintTags || []).map((item) => ({
+        label: item.name,
+        value: Number(item.id)
+    }))
     clueSourceOptions.value = (clueSources || []).map((item) => ({
         label: item.name,
         value: Number(item.id)
@@ -241,6 +249,9 @@ const handleSave = async (payload: { formRef: any; formData: any }) => {
             consultProjectId: Number(formData.consultProjectId),
             clueSourceId: formData.clueSourceId ? Number(formData.clueSourceId) : undefined,
             tagIds: formData.tagIds?.length ? formData.tagIds : undefined,
+            complaintTagIds: formData.complaintTagIds?.length
+                ? formData.complaintTagIds
+                : undefined,
             remark: formData.remark?.trim() || undefined
         })
         message.success('保存成功')

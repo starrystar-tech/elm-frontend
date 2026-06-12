@@ -150,6 +150,25 @@
                         </el-select>
                     </el-form-item>
                 </el-col>
+                <el-col :span="24">
+                    <el-form-item label="投诉标签">
+                        <el-select
+                            v-model="formData.complaintTagIds"
+                            multiple
+                            filterable
+                            clearable
+                            placeholder="请选择投诉标签"
+                            class="w-1/1"
+                        >
+                            <el-option
+                                v-for="item in complaintTagOptions"
+                                :key="item.value"
+                                :label="item.label"
+                                :value="item.value"
+                            />
+                        </el-select>
+                    </el-form-item>
+                </el-col>
 
                 <el-col :span="24">
                     <el-form-item label="备注">
@@ -175,6 +194,7 @@
 import AreaSelect from '@/components/AreaSelect.vue'
 import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import * as ClueApi from '@/api/crm/clue'
+import * as ComplaintTagApi from '@/api/system/complaintTag'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
@@ -198,6 +218,7 @@ interface FormData {
     consultProjectId?: number
     clueSourceId?: number
     tagIds: number[]
+    complaintTagIds: number[]
     remark?: string
 }
 
@@ -212,6 +233,7 @@ const formRef = ref()
 
 const clueSourceOptions = ref<ClueSourceApi.ClueSourceVO[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
+const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 
 const educationOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_EDUCATION)
 
@@ -234,6 +256,7 @@ const createDefaultFormData = (): FormData => ({
     consultProjectId: undefined,
     clueSourceId: undefined,
     tagIds: [],
+    complaintTagIds: [],
     remark: ''
 })
 
@@ -273,9 +296,10 @@ const normalizeBirthday = (birthday?: string | number | null) => {
 }
 
 const loadOptions = async () => {
-    const [sources, tagGroups] = await Promise.all([
+    const [sources, tagGroups, complaintTags] = await Promise.all([
         ClueSourceApi.getEnabledClueSourceList(),
-        TagGroupApi.getTagGroupList()
+        TagGroupApi.getTagGroupList(),
+        ComplaintTagApi.getComplaintTagSimpleList()
     ])
     clueSourceOptions.value = sources || []
     tagOptions.value = (tagGroups || []).flatMap((group) =>
@@ -284,6 +308,10 @@ const loadOptions = async () => {
             value: Number(tag.id)
         }))
     )
+    complaintTagOptions.value = (complaintTags || []).map((item) => ({
+        label: item.name,
+        value: Number(item.id)
+    }))
 }
 
 const mapClueToForm = (detail: ClueApi.ClueVO): FormData => ({
@@ -305,6 +333,7 @@ const mapClueToForm = (detail: ClueApi.ClueVO): FormData => ({
     consultProjectId: detail.consultProjectId,
     clueSourceId: detail.clueSourceId,
     tagIds: (detail.tagIds || []).map((item) => Number(item)),
+    complaintTagIds: (detail.complaintTagIds || []).map((item) => Number(item)),
     remark: detail.remark || ''
 })
 
@@ -356,6 +385,9 @@ const submitForm = async () => {
                     ? Number(formData.value.clueSourceId)
                     : undefined,
                 tagIds: formData.value.tagIds.length ? formData.value.tagIds : undefined,
+                complaintTagIds: formData.value.complaintTagIds.length
+                    ? formData.value.complaintTagIds
+                    : undefined,
                 remark: formData.value.remark?.trim() || undefined
             }
             await ClueApi.createClue(payload)
@@ -381,6 +413,9 @@ const submitForm = async () => {
                     ? Number(formData.value.clueSourceId)
                     : undefined,
                 tagIds: formData.value.tagIds.length ? formData.value.tagIds : undefined,
+                complaintTagIds: formData.value.complaintTagIds.length
+                    ? formData.value.complaintTagIds
+                    : undefined,
                 remark: formData.value.remark?.trim() || undefined
             }
             await ClueApi.updateClueBasicInfo(payload)

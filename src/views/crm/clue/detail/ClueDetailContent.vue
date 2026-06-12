@@ -180,6 +180,23 @@
                                     />
                                 </el-select>
                             </el-form-item>
+                            <el-form-item label="投诉标签">
+                                <el-select
+                                    v-model="editForm.complaintTagIds"
+                                    multiple
+                                    filterable
+                                    clearable
+                                    placeholder="请选择投诉标签"
+                                    class="w-1/1"
+                                >
+                                    <el-option
+                                        v-for="item in complaintTagOptions"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value"
+                                    />
+                                </el-select>
+                            </el-form-item>
                             <el-form-item label="咨询备注" class="clue-edit-form__full">
                                 <el-input
                                     v-model="editForm.remark"
@@ -685,6 +702,7 @@ const props = defineProps<{
     campusOptions: CampusApi.CampusVO[]
     clueSourceOptions: { label: string; value: number }[]
     tagOptions: { label: string; value: number }[]
+    complaintTagOptions: { label: string; value: number }[]
     weworkContacts?: CustomerDetailApi.CustomerWeworkContactItem[]
     customerBasicInfo?: CustomerDetailApi.CustomerBasicInfoRespVO
     appointments?: CustomerDetailApi.CustomerAppointmentRespVO[]
@@ -751,6 +769,7 @@ const editForm = reactive({
     consultProjectId: undefined as number | undefined,
     clueSourceId: undefined as number | undefined,
     tagIds: [] as number[],
+    complaintTagIds: [] as number[],
     remark: ''
 })
 
@@ -882,6 +901,7 @@ const syncEditForm = () => {
     editForm.consultProjectId = props.clue.consultProjectId
     editForm.clueSourceId = props.clue.clueSourceId
     editForm.tagIds = (props.clue.tagIds || []).map((item) => Number(item))
+    editForm.complaintTagIds = (props.clue.complaintTagIds || []).map((item) => Number(item))
     editForm.remark = props.clue.remark || ''
 }
 
