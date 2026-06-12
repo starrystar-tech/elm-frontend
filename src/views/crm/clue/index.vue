@@ -16,7 +16,7 @@
                 />
             </template>
             <template #consultProjectId>
-                <ProductCategorySelect
+                <ProductTypeSelect
                     v-model="searchForm.consultProjectId"
                     placeholder="请选择咨询项目"
                 />
@@ -236,7 +236,7 @@ import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import AreaSelect from '@/components/AreaSelect.vue'
 import { getClueIntentLevelOptions } from '@/components/ClueIntentLevel'
-import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
+import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
@@ -944,7 +944,7 @@ const handleMerge = async ({
         remark,
         mergedData
     })
-    message.success('线索合并成功')
+    message.success('名片合并成功')
     mergeDialogVisible.value = false
     await resetTableSelection()
     await tableMethods.getList()

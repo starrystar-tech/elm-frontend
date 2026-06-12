@@ -1,5 +1,5 @@
 <template>
-    <Dialog v-model="dialogVisible" title="线索合并" width="1280px" append-to-body>
+    <Dialog v-model="dialogVisible" title="名片合并" width="1280px" append-to-body>
         <div class="clue-merge-dialog" v-loading="loading">
             <div class="clue-merge-dialog__tip">
                 请先确认两张名片信息，选择一张作为合并后保留名片。确认后，另一张名片将被合并并删除。
@@ -327,7 +327,10 @@ const searchLoading = reactive<Record<MergeSide, boolean>>({
 const leftForm = reactive<MergeFormState>(createEmptyForm())
 const rightForm = reactive<MergeFormState>(createEmptyForm())
 const tagOptions = ref<{ label: string; value: number }[]>([])
-const genderOptions = getIntDictOptions(DICT_TYPE.USER_SEX)
+const genderOptions = [
+    { label: '男', value: 1 },
+    { label: '女', value: 2 }
+]
 const educationOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_EDUCATION)
 
 const dialogVisible = computed({

@@ -177,6 +177,7 @@ import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
 import * as ClueApi from '@/api/crm/clue'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
+import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 
 interface FormData {
     id?: number
@@ -212,13 +213,7 @@ const formRef = ref()
 const clueSourceOptions = ref<ClueSourceApi.ClueSourceVO[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
 
-const educationOptions = [
-    { label: '初中及以下', value: 1 },
-    { label: '高中/中专', value: 2 },
-    { label: '大专', value: 3 },
-    { label: '本科', value: 4 },
-    { label: '硕士及以上', value: 5 }
-]
+const educationOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_EDUCATION)
 
 const createDefaultFormData = (): FormData => ({
     id: undefined,
@@ -251,6 +246,32 @@ const formRules = reactive({
     consultProjectId: [{ required: true, message: '请选择咨询项目', trigger: 'change' }]
 })
 
+const normalizeBirthday = (birthday?: string | number | null) => {
+    if (birthday === null || birthday === undefined || birthday === '') {
+        return ''
+    }
+    if (typeof birthday === 'number') {
+        const date = new Date(birthday)
+        if (Number.isNaN(date.getTime())) return ''
+        return date.toISOString().slice(0, 10)
+    }
+    const text = String(birthday).trim()
+    if (!text) return ''
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+        return text
+    }
+    if (/^\d{4}\/\d{2}\/\d{2}$/.test(text)) {
+        return text.replace(/\//g, '-')
+    }
+    const matched = text.match(/^(\d{4}[-/]\d{2}[-/]\d{2})/)
+    if (matched) {
+        return matched[1].replace(/\//g, '-')
+    }
+    const date = new Date(text.replace(/-/g, '/'))
+    if (Number.isNaN(date.getTime())) return ''
+    return date.toISOString().slice(0, 10)
+}
+
 const loadOptions = async () => {
     const [sources, tagGroups] = await Promise.all([
         ClueSourceApi.getEnabledClueSourceList(),
@@ -278,8 +299,8 @@ const mapClueToForm = (detail: ClueApi.ClueVO): FormData => ({
     idCardNo: detail.idCardNo || '',
     email: detail.email || '',
     gender: detail.gender,
-    birthday: detail.birthday || '',
-    education: detail.education,
+    birthday: normalizeBirthday(detail.birthday as string | number | null | undefined),
+    education: detail.education === null || detail.education === undefined ? undefined : Number(detail.education),
     areaId: detail.areaId,
     consultProjectId: detail.consultProjectId,
     clueSourceId: detail.clueSourceId,

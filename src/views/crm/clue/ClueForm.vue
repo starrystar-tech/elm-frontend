@@ -47,7 +47,7 @@
                 </el-col>
                 <el-col :span="12">
                     <el-form-item label="咨询项目" prop="consultProjectId">
-                        <ProductCategorySelect
+                        <ProductTypeSelect
                             v-model="formData.consultProjectId"
                             placeholder="请选择咨询项目"
                         />
@@ -173,7 +173,7 @@
 <script setup lang="ts">
 import AreaSelect from '@/components/AreaSelect.vue'
 import ClueIntentLevel from '@/components/ClueIntentLevel'
-import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
+import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 import * as ClueApi from '@/api/crm/clue'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'

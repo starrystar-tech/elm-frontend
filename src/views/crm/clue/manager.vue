@@ -25,7 +25,7 @@
                     />
                 </template>
                 <template #consultProjectId>
-                    <ProductCategorySelect
+                    <ProductTypeSelect
                         v-model="searchForm.consultProjectId"
                         placeholder="请选择咨询项目"
                     />
@@ -141,7 +141,7 @@ import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import * as ClueApi from '@/api/crm/clue'
 import type { DeptVO } from '@/api/system/dept'
-import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
+import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 import ClueSmsDialog from './ClueSmsDialog.vue'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'

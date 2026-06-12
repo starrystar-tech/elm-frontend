@@ -419,7 +419,7 @@ const handleMerge = async ({
         remark,
         mergedData
     })
-    message.success('线索合并成功')
+    message.success('名片合并成功')
     mergeDialogVisible.value = false
     await resetTableSelection()
     await tableMethods.getList()

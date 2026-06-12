@@ -25,7 +25,7 @@
                     />
                 </template>
                 <template #consultProjectId>
-                    <ProductCategorySelect
+                    <ProductTypeSelect
                         v-model="searchForm.consultProjectId"
                         placeholder="请选择咨询项目"
                     />
@@ -96,7 +96,7 @@ import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import AreaSelect from '@/components/AreaSelect.vue'
-import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
+import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'

@@ -95,7 +95,7 @@
                                 />
                             </el-form-item>
                             <el-form-item label="咨询项目" prop="consultProjectId">
-                                <ProductCategorySelect
+                                <ProductTypeSelect
                                     v-model="editForm.consultProjectId"
                                     placeholder="请选择"
                                 />
@@ -482,7 +482,7 @@
                             </el-col>
                             <el-col :span="12">
                                 <el-form-item v-if="consultForm.consultType === 2" label="咨询项目">
-                                    <ProductCategorySelect
+                                    <ProductTypeSelect
                                         v-model="consultForm.projectId"
                                         placeholder="请选择咨询项目"
                                         @update:model-value="handleConsultProjectChange"
@@ -493,7 +493,7 @@
                         <el-row :gutter="20">
                             <el-col :span="12">
                                 <el-form-item v-if="consultForm.consultType === 2" label="商品分类">
-                                    <ProductCategorySelect
+                                    <ProductTypeSelect
                                         v-model="consultForm.productCategoryId"
                                         :parent-id="consultForm.projectId"
                                         @update:model-value="handleConsultCategoryChange"
@@ -668,7 +668,7 @@ import { DICT_TYPE, getDictLabel, getIntDictOptions } from '@/utils/dict'
 import { resolveTimestamp } from '@/utils/formatTime'
 import { getAftersalesStatusLabel } from '@/views/aftersales/config'
 import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
-import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
+import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 import ClueIntentLevel from '@/components/ClueIntentLevel'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
