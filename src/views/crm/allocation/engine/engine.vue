@@ -200,6 +200,7 @@ const dedupeTexts = (values: Array<string | undefined | null>) =>
     Array.from(new Set(values.map((item) => String(item || '').trim()).filter(Boolean)))
 
 const formatRegionName = (regionId?: number) => {
+    if (Number(regionId) === -1) return '全国'
     if (!regionId) return ''
     const path = findPath(
         areaTree.value || [],
@@ -381,7 +382,7 @@ const saveEngine = async (payload: Recordable) => {
         const submitData = {
             ...payload,
             rules: (payload.rules || []).filter(
-                (i: any) => i.sourceCode && i.projectCode && i.regionId
+                (i: any) => i.sourceCode || i.projectCode || i.regionId
             ),
             weightLimits: payload.enableWeightLimit ? payload.weightLimits || [] : []
         }

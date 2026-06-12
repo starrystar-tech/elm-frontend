@@ -7,6 +7,7 @@
         node-key="id"
         value-key="id"
         :check-strictly="checkStrictly"
+        :show-checked-strategy="showCheckedStrategy"
         :check-on-click-node="checkOnClickNode"
         :expand-on-click-node="expandOnClickNode"
         :multiple="multiple"
@@ -34,6 +35,7 @@ const props = defineProps<{
     multiple?: boolean
     includeAllNode?: boolean
     checkStrictly?: boolean
+    showCheckedStrategy?: 'child' | 'parent'
     checkOnClickNode?: boolean
     expandOnClickNode?: boolean
     placeholder?: string
@@ -46,6 +48,7 @@ const emit = defineEmits<{
 const multiple = computed(() => props.multiple ?? false)
 const includeAllNode = computed(() => props.includeAllNode ?? true)
 const checkStrictly = computed(() => props.checkStrictly ?? true)
+const showCheckedStrategy = computed(() => props.showCheckedStrategy)
 const checkOnClickNode = computed(() => props.checkOnClickNode ?? true)
 const expandOnClickNode = computed(() => props.expandOnClickNode ?? false)
 const placeholder = computed(() => props.placeholder || '请选择地区')

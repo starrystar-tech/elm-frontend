@@ -7,8 +7,18 @@
       <el-form-item label="项目" prop="projectCode">
         <ProjectSelect v-model="formData.projectCode" placeholder="请选择项目" style="width: 100%" />
       </el-form-item>
-      <el-form-item label="地区" prop="regionId">
-        <AreaSelect v-model="formData.regionId" :data="areaTree" placeholder="请选择地区" style="width: 100%" />
+      <el-form-item label="地区" prop="regionIds">
+        <el-cascader
+          v-model="formData.regionIds"
+          :options="areaOptions"
+          :props="areaCascaderProps"
+          collapse-tags
+          collapse-tags-tooltip
+          show-checked-strategy="parent"
+          placeholder="请选择地区"
+          clearable
+          style="width: 100%"
+        />
       </el-form-item>
     </el-form>
     <template #footer>
@@ -22,7 +32,6 @@
 import { computed, reactive, ref, watch } from 'vue'
 import SourceSelect from '@/components/SourceSelect.vue'
 import ProjectSelect from '@/components/ProjectSelect.vue'
-import AreaSelect from '@/components/AreaSelect.vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -33,7 +42,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
-  (e: 'confirm', value: Recordable): void
+  (e: 'confirm', value: Recordable[]): void
 }>()
 
 const dialogVisible = computed({
@@ -45,27 +54,62 @@ const formRef = ref()
 const formData = reactive<Recordable>({
   sourceCode: '',
   projectCode: '',
-  regionId: undefined
+  regionIds: []
 })
 
-const formRules = {
-  sourceCode: [{ required: true, message: '来源不能为空', trigger: 'change' }],
-  projectCode: [{ required: true, message: '项目不能为空', trigger: 'change' }],
-  regionId: [{ required: true, message: '地区不能为空', trigger: 'change' }]
+const areaOptions = computed(() => [
+  { id: -1, name: '全国', children: [] },
+  ...(props.areaTree || []).filter((item) => Number(item?.id) !== -1)
+])
+
+const areaCascaderProps = {
+  value: 'id',
+  label: 'name',
+  children: 'children',
+  multiple: true,
+  checkStrictly: true,
+  emitPath: false
 }
 
+const formRules = {}
+
 const resetFormData = () => {
+  const regionIds = Array.isArray(props.value?.regionIds)
+    ? props.value.regionIds
+    : props.value?.regionId
+      ? [props.value.regionId]
+      : []
   Object.assign(formData, {
     sourceCode: props.value?.sourceCode || '',
     projectCode: props.value?.projectCode || '',
-    regionId: props.value?.regionId
+    regionIds
   })
 }
 
 const handleSubmit = async () => {
   const valid = await formRef.value?.validate()
   if (!valid) return
-  emit('confirm', { ...formData })
+  if (!formData.sourceCode && !formData.projectCode && !(formData.regionIds || []).length) {
+    dialogVisible.value = false
+    return
+  }
+  const regionIds = (formData.regionIds || []) as number[]
+  emit(
+    'confirm',
+    regionIds.length
+      ? regionIds.map((regionId: number) => ({
+          sourceCode: formData.sourceCode,
+          projectCode: formData.projectCode,
+          regionId
+        }))
+      : [
+          {
+            sourceCode: formData.sourceCode,
+            projectCode: formData.projectCode,
+            regionId: undefined
+          }
+        ]
+  )
   dialogVisible.value = false
 }
 

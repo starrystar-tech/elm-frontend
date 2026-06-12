@@ -45,6 +45,7 @@
                     multiple
                     placeholder="请选择等级"
                     style="width: 100%"
+                    @change="syncWeightLimitsWithApplicableLevels"
                 />
             </el-form-item>
             <el-form-item label="是否配置权重上限" prop="enableWeightLimit">
@@ -58,25 +59,34 @@
             </el-form-item>
 
             <template v-if="localForm.enableWeightLimit">
-                <el-form-item
-                    v-for="(item, index) in localForm.weightLimits"
-                    :key="index"
-                    :label="`权重上限 ${index + 1}`"
-                >
-                    <el-select v-model="item.userLevel" placeholder="用户等级" style="width: 180px">
-                        <el-option
-                            v-for="dict in userLevelOptions"
-                            :key="dict.value"
-                            :label="dict.label"
-                            :value="dict.value"
-                        />
-                    </el-select>
-                    <el-input-number v-model="item.weight" :min="0" class="mx-2" />
-                    <el-input-number v-model="item.allocationLimit" :min="0" />
-                    <el-button class="ml-2" @click="removeWeightLimit(index)">删除</el-button>
-                </el-form-item>
-                <el-form-item>
-                    <el-button @click="addWeightLimit">新增权重上限</el-button>
+                <el-form-item label="权重上限配置">
+                    <el-table
+                        :data="weightLimitTableRows"
+                        border
+                        size="small"
+                        class="weight-limit-table"
+                    >
+                        <el-table-column label="项" prop="label" width="120" fixed="left" />
+                        <el-table-column
+                            v-for="level in selectedApplicableLevels"
+                            :key="level.value"
+                            :label="level.label"
+                            min-width="180"
+                        >
+                            <template #default="{ row }">
+                                <el-input-number
+                                    v-if="getWeightLimitByLevel(level.value)"
+                                    v-model="getWeightLimitByLevel(level.value)![row.field]"
+                                    :min="0"
+                                    controls-position="right"
+                                    style="width: 140px"
+                                />
+                            </template>
+                        </el-table-column>
+                        <template #empty>
+                            <span>请先选择适用等级</span>
+                        </template>
+                    </el-table>
                 </el-form-item>
             </template>
 
@@ -166,8 +176,13 @@ const ruleDialogTitle = ref('新增规则')
 const editingRule = ref<Recordable | undefined>(undefined)
 const editingRuleIndex = ref<number>(-1)
 const projectNameMap = ref<Record<string, string>>({})
+const weightLimitTableRows = [
+    { field: 'weight', label: '权重' },
+    { field: 'allocationLimit', label: '分配上限' }
+]
 
 const formatRegionName = (regionId?: number) => {
+    if (Number(regionId) === -1) return '全国'
     if (!regionId) return '--'
     const path = findPath(
         props.areaTree || [],
@@ -194,7 +209,12 @@ const formatProjectName = (row: Recordable) => {
 
 const resetLocalForm = () => {
     localForm.value = JSON.parse(JSON.stringify(props.formData || {}))
+    localForm.value.applicableLevelList = localForm.value.applicableLevelList || []
+    localForm.value.weightLimits = localForm.value.weightLimits || []
     localForm.value.rules = localForm.value.rules || []
+    if (localForm.value.enableWeightLimit) {
+        syncWeightLimitsWithApplicableLevels()
+    }
 }
 
 const changeEngineTimeRangeType = () => {
@@ -207,33 +227,71 @@ const changeEngineTimeRangeType = () => {
 const changeEnableWeightLimit = () => {
     if (!localForm.value.enableWeightLimit) {
         localForm.value.weightLimits = []
+        return
     }
+    syncWeightLimitsWithApplicableLevels()
 }
 
-const addWeightLimit = () => {
-    localForm.value.weightLimits?.push({ userLevel: '', weight: 0, allocationLimit: 0 })
+const selectedApplicableLevels = computed(() => {
+    const levelMap = new Map((props.userLevelOptions || []).map((item: any) => [item.value, item.label]))
+    return (localForm.value.applicableLevelList || []).map((value: string) => ({
+        value,
+        label: levelMap.get(value) || value
+    }))
+})
+
+const syncWeightLimitsWithApplicableLevels = () => {
+    const selectedLevels = localForm.value.applicableLevelList || []
+    const currentLimits = Array.isArray(localForm.value.weightLimits) ? localForm.value.weightLimits : []
+    const currentMap = new Map(currentLimits.map((item: any) => [item.userLevel, item]))
+    localForm.value.weightLimits = selectedLevels.map((level: string) => {
+        const current = currentMap.get(level)
+        return {
+            userLevel: level,
+            weight: current?.weight ?? 0,
+            allocationLimit: current?.allocationLimit ?? 0
+        }
+    })
 }
 
-const removeWeightLimit = (index: number) => {
-    localForm.value.weightLimits?.splice(index, 1)
-}
+const getWeightLimitByLevel = (userLevel: string) =>
+    (localForm.value.weightLimits || []).find((item: any) => item.userLevel === userLevel)
 
 const openRuleDialog = (row?: Recordable, index = -1) => {
     editingRuleIndex.value = index
-    editingRule.value = row ? { ...row } : undefined
+    editingRule.value = row
+        ? {
+              ...row,
+              regionIds: row.regionId ? [row.regionId] : []
+          }
+        : undefined
     ruleDialogTitle.value = row ? '编辑规则' : '新增规则'
     ruleDialogVisible.value = true
 }
 
-const confirmRule = (rule: Recordable) => {
+const dedupeRules = (rules: Recordable[] = []) => {
+    const seen = new Set<string>()
+    return rules.filter((item) => {
+        const key = [item.sourceCode, item.projectCode, item.regionId].join('::')
+        if (seen.has(key)) {
+            return false
+        }
+        seen.add(key)
+        return true
+    })
+}
+
+const confirmRule = (ruleList: Recordable | Recordable[]) => {
+    const nextRules = Array.isArray(ruleList) ? ruleList : [ruleList]
     if (!Array.isArray(localForm.value.rules)) {
         localForm.value.rules = []
     }
     if (editingRuleIndex.value >= 0) {
-        localForm.value.rules.splice(editingRuleIndex.value, 1, rule)
+        localForm.value.rules.splice(editingRuleIndex.value, 1, ...nextRules)
     } else {
-        localForm.value.rules.push(rule)
+        localForm.value.rules.push(...nextRules)
     }
+    localForm.value.rules = dedupeRules(localForm.value.rules)
 }
 
 const removeRule = (index: number) => {

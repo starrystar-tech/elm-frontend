@@ -285,7 +285,7 @@ interface AreaOption {
 defineOptions({ name: 'CrmClue' })
 
 const CLUE_IMPORT_TEMPLATE_URL =
-    'https://file.bgwa.cn/bgwa/20260604/%E9%A6%96%E5%92%A8%E5%90%8D%E7%89%87%E4%B8%8A%E4%BC%A0%E6%A8%A1%E6%9D%BF_1780538759251.csv'
+    'https://file.bgwa.cn/bgwa/20260611/首咨名片上传模板_1781163860531.xlsx'
 
 const message = useMessage()
 const canCreate = hasPermission(['crm:clue:create'])
