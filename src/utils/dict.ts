@@ -164,6 +164,9 @@ export enum DICT_TYPE {
     MP_AUTO_REPLY_REQUEST_MATCH = 'mp_auto_reply_request_match', // 自动回复请求匹配类型
     MP_MESSAGE_TYPE = 'mp_message_type', // 消息类型
 
+    // ========== CRM 模块 ==========
+    CRM_CLUE_FEEDBACK_STATUS = 'crm_clue_feedback_status', // 线索反馈状态
+
     // ========== Member 会员模块 ==========
     MEMBER_POINT_BIZ_TYPE = 'member_point_biz_type', // 积分的业务类型
     MEMBER_EXPERIENCE_BIZ_TYPE = 'member_experience_biz_type', // 会员经验业务类型

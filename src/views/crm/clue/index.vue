@@ -253,6 +253,7 @@ import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'
 import ClueMergeDialog from './components/ClueMergeDialog.vue'
 import ExportTaskDialog from './components/ExportTaskDialog.vue'
 import { renderCopyMobileCell } from './mobileCopy'
+import { FEEDBACK_STATUS_OPTIONS } from './listShared'
 
 interface SearchParams {
     customer?: string
@@ -336,11 +337,6 @@ const intentLevelOptions = getClueIntentLevelOptions()
 const assignModeOptions = [
     { label: '自动', value: 1 },
     { label: '手动', value: 2 }
-]
-const feedbackStatusOptions = [
-    { label: '有效', value: 1 },
-    { label: '无效', value: 2 },
-    { label: '未接通', value: 3 }
 ]
 const allocationTypeOptions = [
     { label: '自动分配', value: 1 },
@@ -515,7 +511,7 @@ const searchSchema = reactive<FormSchema[]>([
         componentProps: {
             placeholder: '请选择反馈状态',
             clearable: true,
-            options: feedbackStatusOptions,
+            options: FEEDBACK_STATUS_OPTIONS,
             style: { width: '220px' }
         }
     },
@@ -630,8 +626,8 @@ const tableColumns = computed<TableColumn[]>(() => [
         slots: {
             default: (data) => (
                 <span>
-                    {feedbackStatusOptions.find((item) => item.value === data.row.feedbackStatus)
-                        ?.label || '-'}
+                    {FEEDBACK_STATUS_OPTIONS.find((item) => item.value === data.row.feedbackStatus)
+                        ?.label || data.row.feedbackStatusName || '-'}
                 </span>
             )
         }

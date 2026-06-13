@@ -157,12 +157,12 @@ const searchSchema = computed<FormSchema[]>(() => [
         component: 'Input',
         componentProps: { clearable: true, style: { width: '220px' } }
     },
-    {
-        field: 'expireTimeRange',
-        label: '到期时间',
-        component: 'DatePicker',
-        componentProps: { type: 'daterange', valueFormat: 'YYYY-MM-DD', style: { width: '220px' } }
-    },
+    // {
+    //     field: 'expireTimeRange',
+    //     label: '到期时间',
+    //     component: 'DatePicker',
+    //     componentProps: { type: 'daterange', valueFormat: 'YYYY-MM-DD', style: { width: '220px' } }
+    // },
     {
         field: 'creator',
         label: '创建人',
@@ -367,6 +367,27 @@ const tableColumns = computed<TableColumn[]>(() => [
         label: '订单状态',
         minWidth: '100px',
         formatter: (_r, _c, v) => orderStatusLabel(v)
+    },
+    {
+        field: 'mainProductCode',
+        label: '商品编号',
+        minWidth: '140px',
+        showOverflowTooltip: true,
+        formatter: (_row, _column, value) => value || '-'
+    },
+    {
+        field: 'mainProductName',
+        label: '商品名称',
+        minWidth: '180px',
+        showOverflowTooltip: true,
+        formatter: (_row, _column, value) => value || '-'
+    },
+    {
+        field: 'mainProductCategoryPath',
+        label: '商品分类',
+        minWidth: '180px',
+        showOverflowTooltip: true,
+        formatter: (_row, _column, value) => value || '-'
     },
     {
         field: 'payableAmount',

@@ -335,6 +335,27 @@ const tableColumns = computed<TableColumn[]>(() => [
         formatter: (_r, _c, v) => orderStatusLabel(v)
     },
     {
+        field: 'mainProductCode',
+        label: '商品编号',
+        minWidth: '140px',
+        showOverflowTooltip: true,
+        formatter: (_row, _column, value) => value || '-'
+    },
+    {
+        field: 'mainProductName',
+        label: '商品名称',
+        minWidth: '180px',
+        showOverflowTooltip: true,
+        formatter: (_row, _column, value) => value || '-'
+    },
+    {
+        field: 'mainProductCategoryPath',
+        label: '商品分类',
+        minWidth: '180px',
+        showOverflowTooltip: true,
+        formatter: (_row, _column, value) => value || '-'
+    },
+    {
         field: 'payableAmount',
         label: '应付金额',
         minWidth: '100px',

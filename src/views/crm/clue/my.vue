@@ -366,12 +366,12 @@ const tableColumns = computed<TableColumn[]>(() => [
         minWidth: '170px',
         formatter: dateFormatter
     },
-    {
-        field: 'expireTime',
-        label: '保护期截止',
-        minWidth: '170px',
-        formatter: dateFormatter
-    },
+    // {
+    //     field: 'expireTime',
+    //     label: '保护期截止',
+    //     minWidth: '170px',
+    //     formatter: dateFormatter
+    // },
     {
         field: 'action',
         label: '操作',
@@ -392,11 +392,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                             发短信
                         </BaseButton>
                     ) : null}
-                    <BaseButton
-                        link
-                        type="primary"
-                        onClick={() => openEnroll(Number(data.row.id))}
-                    >
+                    <BaseButton link type="primary" onClick={() => openEnroll(Number(data.row.id))}>
                         报名
                     </BaseButton>
                     <BaseButton

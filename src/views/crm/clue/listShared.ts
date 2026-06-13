@@ -6,6 +6,7 @@ import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
+import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 
 export interface LabelValueOption {
   label: string
@@ -22,15 +23,11 @@ export interface UserOption extends LabelValueOption {
 }
 
 export const INTENT_LEVEL_OPTIONS: LabelValueOption[] = [
-  { label: '未知', value: 0 },
-  { label: '低', value: 1 },
-  { label: '中', value: 2 },
-  { label: '高', value: 3 }
+  ...getIntDictOptions(DICT_TYPE.CRM_CLUE_INTENT_LEVEL)
 ]
 
 export const FEEDBACK_STATUS_OPTIONS: LabelValueOption[] = [
-  { label: '有效', value: 1 },
-  { label: '无效', value: 2 }
+  ...getIntDictOptions(DICT_TYPE.CRM_CLUE_FEEDBACK_STATUS)
 ]
 
 export const ALLOCATION_TYPE_OPTIONS: LabelValueOption[] = [

@@ -55,6 +55,24 @@
                     <el-descriptions-item label="已退费金额">{{
                         `￥${formatAmount(detail.refundAmount)}`
                     }}</el-descriptions-item>
+                    <el-descriptions-item label="商品编号">{{
+                        firstProduct.productCode || detail.mainProductCode || '-'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="商品名称">{{
+                        firstProduct.productName || detail.mainProductName || '-'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="商品分类">{{
+                        firstProduct.productCategoryPath || detail.mainProductCategoryPath || '-'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="商品价格">{{
+                        formatCurrencyText(firstProduct.productPrice)
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="商品应付金额">{{
+                        formatCurrencyText(firstProduct.payableAmount)
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="商品到期时间">{{
+                        formatDateTimeText(firstProduct.expireTime)
+                    }}</el-descriptions-item>
                     <el-descriptions-item label="备注" :span="2">{{
                         detail.remark || '-'
                     }}</el-descriptions-item>
@@ -323,6 +341,7 @@ const consultBasicInfo = ref<CustomerDetailApi.CustomerBasicInfoRespVO>()
 const consultAppointments = ref<CustomerDetailApi.CustomerAppointmentRespVO[]>([])
 const activeTab = ref((route.query.tab as string) || 'student')
 const orderAvatarText = computed(() => (detail.value.customerName || '订').slice(0, 1))
+const firstProduct = computed(() => detail.value.items?.[0] || ({} as OrderApi.OrderItemRespVO))
 
 const orderId = computed(() => Number(route.params.id))
 
@@ -363,6 +382,8 @@ const formatDateTimeText = (value?: string | number | null) => {
     }
     return resolveTimestamp(value)?.format('YYYY-MM-DD HH:mm:ss') || String(value)
 }
+const formatCurrencyText = (value?: number | null) =>
+    value === null || value === undefined ? '-' : `￥${formatAmount(value)}`
 
 const loadConsultInfo = async () => {
     const clueId = detail.value.clueId
