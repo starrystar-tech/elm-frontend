@@ -1,300 +1,194 @@
 <template>
-    <div class="home-page">
-        <section class="home-hero">
-            <div class="home-hero__copy">
-                <div class="home-hero__eyebrow">Elm Workspace</div>
-                <h1 class="home-hero__title">欢迎回来，{{ displayName }}</h1>
-                <p class="home-hero__subtitle">
-                    首页已经从内部分机测试中收口出来，浏览器分机注册、来电接听和 FreeSWITCH
-                    调试统一保留在 CRM 呼叫测试页，后续维护只需要看一处。
-                </p>
-                <div class="home-hero__actions">
-                    <el-button type="primary" size="large" @click="goToCallTest">
-                        前往呼叫测试
-                    </el-button>
-                    <el-button size="large" @click="goToProfile">个人中心</el-button>
-                </div>
-            </div>
-            <div class="home-hero__panel">
-                <div class="hero-panel-card">
-                    <div class="hero-panel-card__label">当前建议</div>
-                    <div class="hero-panel-card__value">浏览器分机能力仅保留在 CRM</div>
-                    <div class="hero-panel-card__hint">
-                        后续来电提醒、录音回写、签入签出、外呼调试都只维护一份页面逻辑。
-                    </div>
-                </div>
-            </div>
+    <div v-loading="loading" class="dashboard-page">
+        <section class="dashboard-summary">
+            <SummaryCard
+                v-for="item in dashboard.summaryCards"
+                :key="item.code"
+                :item="item"
+                @navigate="goTo"
+            />
         </section>
 
-        <el-row :gutter="16" class="home-grid">
-            <el-col :xl="8" :lg="8" :md="24" :sm="24" :xs="24">
-                <el-card shadow="never" class="home-card home-card--accent">
+        <section class="dashboard-main">
+            <div class="dashboard-column">
+                <el-card shadow="never" class="dashboard-card">
                     <template #header>
-                        <div class="home-card__header">
-                            <span>呼叫测试入口</span>
+                        <div class="dashboard-card__header">
+                            <span>快捷入口</span>
+                            <span class="dashboard-card__meta">常用业务直达</span>
                         </div>
                     </template>
-                    <div class="home-card__body">
-                        <div class="home-card__title">CRM / 呼叫测试</div>
-                        <p class="home-card__text">
-                            浏览器分机注册、来电桌面浮层、内部号拨打、服务器桥接测试都在这里。
-                        </p>
-                        <el-button type="primary" plain @click="goToCallTest">
-                            打开测试页
-                        </el-button>
-                    </div>
+                    <ShortcutGrid :items="dashboard.shortcuts" @navigate="goTo" />
                 </el-card>
-            </el-col>
 
-            <el-col :xl="8" :lg="8" :md="12" :sm="24" :xs="24">
-                <el-card shadow="never" class="home-card">
+                <el-card shadow="never" class="dashboard-card">
                     <template #header>
-                        <div class="home-card__header">
-                            <span>当前账号</span>
+                        <div class="dashboard-card__header">
+                            <span>最近动态</span>
+                            <span class="dashboard-card__meta">跨线索 / 订单 / 工单</span>
                         </div>
                     </template>
-                    <div class="profile-list">
-                        <div class="profile-item">
-                            <span>昵称</span>
-                            <strong>{{ displayName }}</strong>
-                        </div>
-                        <div class="profile-item">
-                            <span>登录账号</span>
-                            <strong>{{ userStore.getUser.username || '-' }}</strong>
-                        </div>
-                        <div class="profile-item">
-                            <span>手机号</span>
-                            <strong>{{ userStore.getUser.mobile || '-' }}</strong>
-                        </div>
-                    </div>
+                    <ActivityTimeline :items="dashboard.activities" @navigate="goTo" />
                 </el-card>
-            </el-col>
+            </div>
 
-            <el-col :xl="8" :lg="8" :md="12" :sm="24" :xs="24">
-                <el-card shadow="never" class="home-card">
+            <div class="dashboard-side">
+                <el-card shadow="never" class="dashboard-card dashboard-card--warm">
                     <template #header>
-                        <div class="home-card__header">
-                            <span>维护说明</span>
+                        <div class="dashboard-card__header">
+                            <span>待办事项</span>
+                            <span class="dashboard-card__meta">建议优先处理</span>
                         </div>
                     </template>
-                    <div class="home-notes">
-                        <div class="home-note">首页不再承载内部分机测试逻辑。</div>
-                        <div class="home-note">后续 SIP/通知问题只需要排查 CRM 测试页。</div>
-                        <div class="home-note">避免 `Home` 和 `call/test` 两份代码继续漂移。</div>
-                    </div>
+                    <TodoPanel :items="dashboard.todoItems" @navigate="goTo" />
                 </el-card>
-            </el-col>
-        </el-row>
+            </div>
+        </section>
     </div>
 </template>
 
-<script lang="ts" setup>
+<script setup lang="ts">
+import { getHomeDashboard, type HomeDashboardVO } from '@/api/home'
 import { useUserStore } from '@/store/modules/user'
+import SummaryCard from './components/SummaryCard.vue'
+import ShortcutGrid from './components/ShortcutGrid.vue'
+import TodoPanel from './components/TodoPanel.vue'
+import ActivityTimeline from './components/ActivityTimeline.vue'
 
 defineOptions({ name: 'HomeIndex' })
 
 const userStore = useUserStore()
 const { push } = useRouter()
 
+const loading = ref(false)
+const dashboard = ref<HomeDashboardVO>({
+    summaryCards: [],
+    shortcuts: [],
+    todoItems: [],
+    activities: []
+})
+
 const displayName = computed(
     () => userStore.getUser.nickname || userStore.getUser.username || '同学'
 )
 
-const goToCallTest = () => {
-    push('/call/test')
+const todayFocusText = computed(() => {
+    const todo = dashboard.value.todoItems[0]
+    if (!todo) {
+        return '首页数据加载完成后会在这里给出优先建议。'
+    }
+    return `${todo.title}：${todo.description}`
+})
+
+const getDashboard = async () => {
+    loading.value = true
+    try {
+        dashboard.value = await getHomeDashboard()
+    } finally {
+        loading.value = false
+    }
 }
 
-const goToProfile = () => {
-    push('/user/profile')
+const goTo = (path?: string) => {
+    if (!path) return
+    push(path)
 }
+
+onMounted(() => {
+    getDashboard()
+})
 </script>
 
 <style scoped>
-.home-page {
-    padding: 4px 0 24px;
+.dashboard-page {
+    padding: 6px 0 24px;
 }
 
-.home-hero {
+.dashboard-summary {
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
-    gap: 18px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
     margin-bottom: 18px;
 }
 
-.home-hero__copy,
-.home-hero__panel {
+.dashboard-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
+    gap: 18px;
+}
+
+.dashboard-column,
+.dashboard-side {
+    display: grid;
+    gap: 18px;
     min-width: 0;
 }
 
-.home-hero__copy {
-    padding: 30px 32px;
-    border-radius: 28px;
-    background:
-        radial-gradient(circle at top left, rgba(14, 165, 233, 0.2), transparent 32%),
-        linear-gradient(135deg, #082f49, #0f766e 58%, #ecfeff 168%);
-    color: #f8fafc;
-}
-
-.home-hero__eyebrow {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    opacity: 0.76;
-}
-
-.home-hero__title {
-    margin: 14px 0 10px;
-    font-size: 36px;
-    line-height: 1.08;
-    font-weight: 700;
-}
-
-.home-hero__subtitle {
-    margin: 0;
-    max-width: 700px;
-    font-size: 15px;
-    line-height: 1.8;
-    color: rgba(248, 250, 252, 0.86);
-}
-
-.home-hero__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 24px;
-}
-
-.home-hero__panel {
-    display: flex;
-}
-
-.hero-panel-card {
-    width: 100%;
-    padding: 22px 22px 20px;
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    border-radius: 24px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.98));
-    box-shadow:
-        0 16px 36px rgba(15, 23, 42, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.86);
-}
-
-.hero-panel-card__label {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #0f766e;
-}
-
-.hero-panel-card__value {
-    margin-top: 12px;
-    font-size: 24px;
-    line-height: 1.35;
-    font-weight: 700;
-    color: #0f172a;
-}
-
-.hero-panel-card__hint {
-    margin-top: 12px;
-    font-size: 13px;
-    line-height: 1.7;
-    color: #475569;
-}
-
-.home-grid {
-    margin-top: 0;
-}
-
-.home-card {
-    height: 100%;
-    border-radius: 22px;
+.dashboard-card {
     border: 1px solid #e2e8f0;
+    border-radius: 24px;
 }
 
-.home-card--accent {
+:deep(.dashboard-card .el-card__header) {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+:deep(.dashboard-card .el-card__body) {
+    padding-top: 18px;
+}
+
+.dashboard-card--warm {
     background:
-        radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 30%),
+        radial-gradient(circle at top right, rgba(187, 247, 208, 0.26), transparent 28%),
         linear-gradient(180deg, #ffffff, #f8fafc);
 }
 
-.home-card__header {
+.dashboard-card__header {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
-}
-
-.home-card__body {
-    display: grid;
     gap: 12px;
 }
 
-.home-card__title {
-    font-size: 22px;
+.dashboard-card__header span:first-child {
+    font-size: 18px;
     font-weight: 700;
     color: #0f172a;
 }
 
-.home-card__text {
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.8;
-    color: #475569;
+.dashboard-card__meta {
+    font-size: 12px;
+    color: #94a3b8;
 }
 
-.profile-list,
-.home-notes {
-    display: grid;
-    gap: 12px;
-}
+@media (max-width: 1200px) {
+    .dashboard-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 
-.profile-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 14px 16px;
-    border-radius: 16px;
-    background: #f8fafc;
-    color: #334155;
-}
-
-.profile-item span {
-    font-size: 13px;
-    color: #64748b;
-}
-
-.profile-item strong {
-    font-size: 14px;
-    color: #0f172a;
-    word-break: break-all;
-    text-align: right;
-}
-
-.home-note {
-    padding: 14px 16px;
-    border-radius: 16px;
-    border: 1px solid #e2e8f0;
-    background: linear-gradient(180deg, #ffffff, #f8fafc);
-    font-size: 14px;
-    line-height: 1.7;
-    color: #475569;
-}
-
-@media (max-width: 1024px) {
-    .home-hero {
+    .dashboard-main {
         grid-template-columns: 1fr;
     }
 }
 
 @media (max-width: 768px) {
-    .home-hero__copy {
-        padding: 24px 20px;
+    .dashboard-hero {
+        grid-template-columns: 1fr;
     }
 
-    .home-hero__title {
+    .dashboard-hero__copy,
+    .dashboard-hero__aside {
+        padding: 22px;
+        border-radius: 22px;
+    }
+
+    .dashboard-hero__title {
         font-size: 28px;
+    }
+
+    .dashboard-summary {
+        grid-template-columns: 1fr;
     }
 }
 </style>
