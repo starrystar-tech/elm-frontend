@@ -202,6 +202,7 @@ const handleRegister = async (params: any) => {
 
     authUtil.removeLoginForm()
 
+    authUtil.removeVisitTenantId()
     authUtil.setToken(res)
     if (!redirect.value) {
       redirect.value = '/'
@@ -238,18 +239,6 @@ const getTenantId = async () => {
   }
 }
 
-// 根据域名，获得租户信息
-const getTenantByWebsite = async () => {
-  if (registerData.tenantEnable === 'true') {
-    const website = location.host
-    const res = await LoginApi.getTenantByWebsite(website)
-    if (res) {
-      registerData.registerForm.tenantName = res.name
-      authUtil.setTenantId(res.id)
-    }
-  }
-}
-
 watch(
   () => currentRoute.value,
   (route: RouteLocationNormalizedLoaded) => {
@@ -261,7 +250,6 @@ watch(
 )
 onMounted(() => {
   // getCookie()
-  getTenantByWebsite()
 })
 </script>
 

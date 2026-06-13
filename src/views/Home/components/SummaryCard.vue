@@ -32,7 +32,7 @@ defineEmits<{
   border: 1px solid #d7e3f4;
   border-radius: 22px;
   background:
-    radial-gradient(circle at top right, rgba(244, 114, 182, 0.16), transparent 34%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 34%),
     linear-gradient(145deg, #ffffff, #f7fafc);
   box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
   cursor: pointer;
@@ -45,8 +45,8 @@ defineEmits<{
 
 .summary-card:hover {
   transform: translateY(-3px);
-  border-color: #93c5fd;
-  box-shadow: 0 20px 40px rgba(14, 116, 144, 0.12);
+  border-color: #60a5fa;
+  box-shadow: 0 20px 40px rgba(37, 99, 235, 0.14);
 }
 
 .summary-card__icon {
@@ -56,7 +56,7 @@ defineEmits<{
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #0f766e, #0284c7);
+  background: linear-gradient(135deg, #1d4ed8, #0ea5e9);
   color: #fff;
   flex-shrink: 0;
 }

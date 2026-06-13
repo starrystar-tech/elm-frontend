@@ -15,6 +15,7 @@ export type TokenType = {
   userType: number //用户类型
   clientId: string //客户端编号
   expiresTime: number //过期时间
+  tenantId?: number // 租户编号
 }
 
 export type UserVO = {

@@ -255,6 +255,7 @@ const tryLogin = async () => {
     const state = route?.query?.state as string
 
     const res = await LoginApi.socialLogin(type, code, state)
+    authUtil.removeVisitTenantId()
     authUtil.setToken(res)
 
     router.push({ path: redirect || '/' })
@@ -301,6 +302,7 @@ const handleLogin = async (params) => {
     } else {
       authUtil.removeLoginForm()
     }
+    authUtil.removeVisitTenantId()
     authUtil.setToken(res)
     if (!redirect) {
       redirect = '/'

@@ -97,7 +97,7 @@ import type { RouteLocationNormalizedLoaded } from 'vue-router'
 
 import { useIcon } from '@/hooks/web/useIcon'
 
-import { setTenantId, setToken } from '@/utils/auth'
+import { removeVisitTenantId, setTenantId, setToken } from '@/utils/auth'
 import { usePermissionStore } from '@/store/modules/permission'
 import { getTenantIdByName, sendSmsCode, smsLogin } from '@/api/login'
 import LoginFormTitle from './LoginFormTitle.vue'
@@ -196,6 +196,7 @@ const signIn = async () => {
   smsVO.loginSms.code = loginData.loginForm.code
   await smsLogin(smsVO.loginSms)
     .then(async (res) => {
+      removeVisitTenantId()
       setToken(res)
       if (!redirect.value) {
         redirect.value = '/'
