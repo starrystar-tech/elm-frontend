@@ -22,6 +22,7 @@ const activeCall = ref(false)
 const browserStatus = ref('未连接')
 const browserDisconnecting = ref(false)
 const browserHangupPending = ref(false)
+const browserCallStarting = ref(false)
 const browserClient = shallowRef<any>()
 const browserRecordId = ref<number>()
 const currentSessionDirection = ref<'incoming' | 'outgoing' | null>(null)
@@ -41,8 +42,11 @@ const outgoingWaitingAudio = new Audio('/call-waiting.mp3')
 const incomingRingUnlocked = ref(false)
 const outgoingWaitingUnlocked = ref(false)
 const initialized = ref(false)
+const callRetryCooldownMs = 500
+let lastBrowserCallFinishedAt = 0
 
 let callDurationTimer: ReturnType<typeof setInterval> | undefined
+let hangupFallbackTimer: ReturnType<typeof setTimeout> | undefined
 let browserRegisterWaiter:
     | {
           resolve: () => void
@@ -266,6 +270,35 @@ const stopCallTimer = () => {
         callDurationTimer = undefined
     }
     callDurationSeconds.value = 0
+}
+
+const markBrowserCallFinished = () => {
+    lastBrowserCallFinishedAt = Date.now()
+}
+
+const clearHangupFallbackTimer = () => {
+    if (!hangupFallbackTimer) return
+    clearTimeout(hangupFallbackTimer)
+    hangupFallbackTimer = undefined
+}
+
+const finalizeBrowserCall = (reason: string, caller?: string, callee?: string) => {
+    clearHangupFallbackTimer()
+    stopOutgoingWaitingTone()
+    browserCallStarting.value = false
+    browserHangupPending.value = false
+    incomingCall.value = false
+    activeCall.value = false
+    hideIncomingToast()
+    stopIncomingRing()
+    stopCallTimer()
+    browserRecordId.value = undefined
+    currentSessionDirection.value = null
+    resetBrowserCallParties()
+    markBrowserCallFinished()
+    clearTerminatedBrowserSessionReference(reason)
+    updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
+    traceBrowserStep('CALL_FINALIZED', `reason=${reason}, caller=${caller || '-'}, callee=${callee || '-'}`)
 }
 
 const startCallTimer = () => {
@@ -576,9 +609,27 @@ const showIncomingNotification = (caller: string) => {
     }
 }
 
-const syncBrowserRecord = async (payload: BrowserCallRecordSyncReqVO) => {
+const syncBrowserRecord = async (
+    payload: BrowserCallRecordSyncReqVO,
+    options?: {
+        timeoutMs?: number
+    }
+) => {
+    const timeoutMs = options?.timeoutMs ?? 1500
     try {
-        const result = await syncBrowserCallRecord(payload)
+        const result = (await Promise.race([
+            syncBrowserCallRecord(payload),
+            new Promise<undefined>((resolve) => {
+                window.setTimeout(() => resolve(undefined), timeoutMs)
+            })
+        ])) as Awaited<ReturnType<typeof syncBrowserCallRecord>> | undefined
+        if (!result) {
+            traceBrowserStep(
+                'SYNC_TIMEOUT',
+                `event=${payload.event}, timeoutMs=${timeoutMs}, recordId=${payload.recordId ?? '-'}`
+            )
+            return
+        }
         if (result?.recordId) browserRecordId.value = result.recordId
     } catch (error) {
         console.warn('[BrowserPhone] sync browser record failed', error)
@@ -669,10 +720,33 @@ const createBrowserClient = async () => {
     } as any)
     const sessionManager = (client as any).sessionManager
     if (sessionManager) {
+        const attachSessionTerminationListener = (session?: any) => {
+            if (!session?.stateChange || session.__browserTerminationListenerAttached) return
+            session.__browserTerminationListenerAttached = true
+            session.stateChange.addListener((state: string) => {
+                traceBrowserStep('SESSION_STATE', `state=${state}`)
+                if (String(state) !== 'Terminated') return
+                const remoteUser = resolveRemoteBrowserExtension(
+                    session?.remoteIdentity,
+                    currentBrowserCaller.value || browserForm.target
+                )
+                const localUser = resolveCurrentBrowserExtension()
+                const caller =
+                    currentSessionDirection.value === 'incoming'
+                        ? remoteUser || currentBrowserCaller.value
+                        : currentBrowserCaller.value || localUser
+                const callee =
+                    currentSessionDirection.value === 'incoming'
+                        ? currentBrowserCallee.value || localUser
+                        : currentBrowserCallee.value || remoteUser
+                finalizeBrowserCall('session-terminated', caller, callee)
+            })
+        }
         sessionManager.delegate = {
             ...sessionManager.delegate,
             onCallReceived: () => {
                 const session = getCurrentBrowserSession()
+                attachSessionTerminationListener(session)
                 currentSessionDirection.value = 'incoming'
                 const caller = resolveRemoteBrowserExtension(
                     session?.remoteIdentity,
@@ -697,8 +771,10 @@ const createBrowserClient = async () => {
             },
             onCallAnswered: () => {
                 stopOutgoingWaitingTone()
+                clearHangupFallbackTimer()
                 browserHangupPending.value = false
                 const session = getCurrentBrowserSession()
+                attachSessionTerminationListener(session)
                 const remoteUser = resolveRemoteBrowserExtension(
                     session?.remoteIdentity,
                     currentBrowserCaller.value || browserForm.target
@@ -723,8 +799,6 @@ const createBrowserClient = async () => {
                 addBrowserLog('通话已接通', '通话中')
             },
             onCallHangup: () => {
-                stopOutgoingWaitingTone()
-                browserHangupPending.value = false
                 const session = getCurrentBrowserSession()
                 const remoteUser = resolveRemoteBrowserExtension(
                     session?.remoteIdentity,
@@ -733,10 +807,6 @@ const createBrowserClient = async () => {
                 const localUser = resolveCurrentBrowserExtension()
                 const caller = currentBrowserCaller.value || localUser
                 const callee = currentBrowserCallee.value || remoteUser
-                incomingCall.value = false
-                activeCall.value = false
-                hideIncomingToast()
-                stopIncomingRing()
                 void syncBrowserRecord({
                     recordId: browserRecordId.value,
                     event: 'hangup',
@@ -744,14 +814,9 @@ const createBrowserClient = async () => {
                     callee,
                     durationSeconds: callDurationSeconds.value
                 })
-                stopCallTimer()
-                updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
                 traceBrowserStep('CALL_HANGUP', `caller=${caller}, callee=${callee}`)
                 addBrowserLog('通话已结束', '已挂断')
-                browserRecordId.value = undefined
-                currentSessionDirection.value = null
-                resetBrowserCallParties()
-                clearTerminatedBrowserSessionReference('hangup-callback')
+                finalizeBrowserCall('hangup-callback', caller, callee)
             }
         }
     }
@@ -833,7 +898,9 @@ const disconnectBrowserPhone = async (silent = false) => {
         } catch {}
     }
     browserRegistered.value = false
+    browserCallStarting.value = false
     browserHangupPending.value = false
+    clearHangupFallbackTimer()
     incomingCall.value = false
     activeCall.value = false
     currentSessionDirection.value = null
@@ -855,6 +922,17 @@ const makeBrowserCall = async () => {
         message.error('请先注册浏览器分机')
         return
     }
+    if (browserCallStarting.value) {
+        traceBrowserStep('CALL_BLOCKED', '当前拨号流程仍在处理中', 'danger')
+        message.warning('正在发起呼叫，请勿重复点击')
+        return
+    }
+    const cooldownRemaining = callRetryCooldownMs - (Date.now() - lastBrowserCallFinishedAt)
+    if (cooldownRemaining > 0) {
+        traceBrowserStep('CALL_BLOCKED', `通话刚结束，等待 ${cooldownRemaining}ms 后重试`, 'danger')
+        message.warning('通话刚结束，请稍后再拨')
+        return
+    }
     const target = browserForm.target.trim()
     if (!/^\d+$/.test(target)) {
         traceBrowserStep('CALL_BLOCKED', '目标分机格式不合法', 'danger')
@@ -862,6 +940,7 @@ const makeBrowserCall = async () => {
         return
     }
     try {
+        browserCallStarting.value = true
         await ensureBrowserSessionReadyForCall()
         setBrowserCallParties(browserForm.username.trim(), target)
         currentSessionDirection.value = 'outgoing'
@@ -898,10 +977,13 @@ const makeBrowserCall = async () => {
         browserRecordId.value = undefined
         currentSessionDirection.value = null
         resetBrowserCallParties()
+        markBrowserCallFinished()
         clearTerminatedBrowserSessionReference('call-failed')
         traceBrowserStep('CALL_FAILED', `${errorMessage}; ${describeBrowserError(error)}`, 'danger')
         addBrowserLog(errorMessage, '失败', 'danger')
         message.error(errorMessage)
+    } finally {
+        browserCallStarting.value = false
     }
 }
 
@@ -976,8 +1058,24 @@ const hangupBrowserCall = async () => {
         hideIncomingToast()
         stopIncomingRing()
         stopOutgoingWaitingTone()
+        clearHangupFallbackTimer()
+        hangupFallbackTimer = setTimeout(() => {
+            const activeSession = getCurrentBrowserSession()
+            const sessionState = getBrowserSessionState(activeSession)
+            if (
+                !browserHangupPending.value ||
+                (sessionState && sessionState !== 'Terminated' && sessionState !== 'Terminating')
+            ) {
+                return
+            }
+            const caller = currentBrowserCaller.value || resolveCurrentBrowserExtension()
+            const callee = currentBrowserCallee.value || normalizeExtension(browserForm.target)
+            traceBrowserStep('HANGUP_FALLBACK_TRIGGERED', `state=${sessionState || '<empty>'}`)
+            finalizeBrowserCall('hangup-fallback', caller, callee)
+        }, 2500)
     } catch (error: any) {
         browserHangupPending.value = false
+        clearHangupFallbackTimer()
         const errorMessage = formatBrowserError(error) || '挂断失败'
         traceBrowserStep('HANGUP_FAILED', errorMessage, 'danger')
         addBrowserLog(errorMessage, '失败', 'danger')
@@ -1010,6 +1108,7 @@ export const useBrowserPhone = () => {
         browserStatus,
         browserDisconnecting,
         browserHangupPending,
+        browserCallStarting,
         browserClient,
         browserForm,
         logs,

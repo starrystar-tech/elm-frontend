@@ -74,6 +74,7 @@ export default defineComponent({
             activeCall,
             incomingCall,
             browserHangupPending,
+            browserCallStarting,
             formattedCallDuration,
             browserForm,
             connectBrowserPhone,
@@ -354,7 +355,7 @@ export default defineComponent({
                                 <ElButton
                                     type="primary"
                                     class="outbound-toolbar__button"
-                                    disabled={!outboundSignedIn.value}
+                                    disabled={!outboundSignedIn.value || browserCallStarting.value}
                                     loading={browserLoading.value}
                                     onMousedown={(event: MouseEvent) => {
                                         event.stopPropagation()

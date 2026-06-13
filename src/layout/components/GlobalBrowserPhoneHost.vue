@@ -90,9 +90,10 @@ onMounted(() => {
 
 .incoming-toast {
     position: fixed;
-    top: 76px;
+    top: 116px;
     right: 24px;
-    z-index: 2200;
+    z-index: 1800;
+    pointer-events: none;
     display: flex;
     align-items: center;
     gap: 16px;
@@ -165,6 +166,7 @@ onMounted(() => {
 .incoming-toast__button {
     width: 100%;
     margin-left: 0 !important;
+    pointer-events: auto;
 }
 
 @keyframes incoming-toast-pulse {
@@ -180,7 +182,7 @@ onMounted(() => {
 
 @media (max-width: 768px) {
     .incoming-toast {
-        top: 68px;
+        top: 88px;
         right: 16px;
         left: 16px;
         width: auto;
