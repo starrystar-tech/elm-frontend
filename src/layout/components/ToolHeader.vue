@@ -13,10 +13,7 @@ import TenantVisit from '@/layout/components/TenantVisit/index.vue'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
 import { checkPermi } from '@/utils/permission'
-import {
-    getExportTaskReminderSummary,
-    markExportTaskCenterViewed
-} from '@/api/system/exportTask'
+import { getExportTaskReminderSummary, markExportTaskCenterViewed } from '@/api/system/exportTask'
 import { updateUserOutboundStatus } from '@/api/system/user/profile'
 import { useBrowserPhone } from '@/hooks/web/useBrowserPhone'
 import ToolHeaderDialer from './ToolHeaderDialer.vue'
@@ -105,7 +102,9 @@ export default defineComponent({
             return seat
         }
 
-        const outboundSignedIn = computed(() => outboundStatus.value === 1 && browserRegistered.value)
+        const outboundSignedIn = computed(
+            () => outboundStatus.value === 1 && browserRegistered.value
+        )
         const outboundStatusLabel = computed(() => {
             if (browserStatus.value === '通话中') return '通话中'
             if (browserStatus.value === '呼叫中') return '呼叫中'
@@ -116,7 +115,8 @@ export default defineComponent({
         const outboundStatusActionLabel = computed(() => (outboundSignedIn.value ? '签出' : '签入'))
         const dialerStatusType = computed(() => {
             if (browserStatus.value === '通话中') return 'inCall'
-            if (browserStatus.value === '呼叫中' || browserStatus.value === '来电响铃') return 'ringing'
+            if (browserStatus.value === '呼叫中' || browserStatus.value === '来电响铃')
+                return 'ringing'
             if (browserStatus.value === '挂断中') return 'dialing'
             if (browserStatus.value === '已注册') return 'registered'
             if (browserStatus.value === '连接失败') return 'failed'
@@ -249,7 +249,7 @@ export default defineComponent({
             checkExportTaskBadge()
             exportTaskTimer = window.setInterval(() => {
                 checkExportTaskBadge()
-            }, 1000 * 15)
+            }, 1000 * 30)
         })
 
         onBeforeUnmount(() => {
@@ -336,7 +336,7 @@ export default defineComponent({
                                     class="outbound-toolbar__input"
                                     placeholder="输入手机号"
                                     clearable
-                                    maxlength={11}
+                                    maxlength={20}
                                     onMousedown={(event: MouseEvent) => {
                                         event.stopPropagation()
                                         dialerRef.value?.holdOpen?.()

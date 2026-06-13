@@ -312,6 +312,59 @@ const getCurrentBrowserSession = () => {
     return browserClient.value?.session
 }
 
+const getBrowserSessionState = (session?: any) => {
+    if (!session?.state) return ''
+    return String(session.state)
+}
+
+const clearTerminatedBrowserSessionReference = (reason: string) => {
+    const client = browserClient.value as any
+    const session = client?.session
+    if (!client || !session) return false
+    const state = getBrowserSessionState(session)
+    if (state !== 'Terminated') return false
+    client.session = undefined
+    traceBrowserStep('SESSION_REFERENCE_CLEARED', `reason=${reason}, state=${state}`)
+    return true
+}
+
+const ensureBrowserSessionReadyForCall = async () => {
+    const client = browserClient.value as any
+    const session = client?.session
+    if (!client || !session) return
+    const state = getBrowserSessionState(session)
+    if (state === 'Terminated') {
+        clearTerminatedBrowserSessionReference('before-call')
+        return
+    }
+    traceBrowserStep('SESSION_CONFLICT_DETECTED', `state=${state}`)
+    try {
+        if (state === 'Initial' && currentSessionDirection.value === 'incoming') {
+            await client.decline?.()
+        } else {
+            await client.hangup?.()
+        }
+    } catch (error: any) {
+        traceBrowserStep(
+            'SESSION_CONFLICT_RELEASE_FAILED',
+            `${state}; ${formatBrowserError(error)}`,
+            'danger'
+        )
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, 300))
+    if (clearTerminatedBrowserSessionReference('after-conflict-release')) {
+        return
+    }
+    const remainingState = getBrowserSessionState(client.session)
+    if (client.session && remainingState && remainingState !== 'Terminated') {
+        throw new Error('当前分机存在未释放通话，请先签出后重新签入')
+    }
+    if (client.session && !remainingState) {
+        client.session = undefined
+        traceBrowserStep('SESSION_REFERENCE_CLEARED', 'reason=empty-state-after-conflict')
+    }
+}
+
 const hideIncomingToast = () => {
     incomingToastVisible.value = false
     incomingToastCaller.value = ''
@@ -698,6 +751,7 @@ const createBrowserClient = async () => {
                 browserRecordId.value = undefined
                 currentSessionDirection.value = null
                 resetBrowserCallParties()
+                clearTerminatedBrowserSessionReference('hangup-callback')
             }
         }
     }
@@ -789,6 +843,7 @@ const disconnectBrowserPhone = async (silent = false) => {
     stopOutgoingWaitingTone()
     stopCallTimer()
     resetBrowserCallParties()
+    clearTerminatedBrowserSessionReference('disconnect')
     updateBrowserStatus('未连接')
     if (!silent) addBrowserLog('浏览器分机已断开')
     traceBrowserStep('DISCONNECT_DONE', `silent=${silent}`)
@@ -807,6 +862,7 @@ const makeBrowserCall = async () => {
         return
     }
     try {
+        await ensureBrowserSessionReadyForCall()
         setBrowserCallParties(browserForm.username.trim(), target)
         currentSessionDirection.value = 'outgoing'
         activeCall.value = true
@@ -842,6 +898,7 @@ const makeBrowserCall = async () => {
         browserRecordId.value = undefined
         currentSessionDirection.value = null
         resetBrowserCallParties()
+        clearTerminatedBrowserSessionReference('call-failed')
         traceBrowserStep('CALL_FAILED', `${errorMessage}; ${describeBrowserError(error)}`, 'danger')
         addBrowserLog(errorMessage, '失败', 'danger')
         message.error(errorMessage)

@@ -5,12 +5,7 @@
         </div>
 
         <Teleport to="body">
-            <div
-                v-show="popoverVisible"
-                ref="panelRef"
-                class="dialer-panel"
-                :style="panelStyle"
-            >
+            <div v-show="popoverVisible" ref="panelRef" class="dialer-panel" :style="panelStyle">
                 <div class="dialer-status">
                     <span class="dialer-status__dot" :class="`is-${statusType}`"></span>
                     <span class="dialer-status__text">{{ statusText || '空闲' }}</span>
