@@ -92,7 +92,7 @@ onMounted(() => {
     position: fixed;
     top: 116px;
     right: 24px;
-    z-index: 1800;
+    z-index: 5800;
     pointer-events: none;
     display: flex;
     align-items: center;

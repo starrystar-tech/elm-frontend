@@ -47,6 +47,7 @@ let lastBrowserCallFinishedAt = 0
 
 let callDurationTimer: ReturnType<typeof setInterval> | undefined
 let hangupFallbackTimer: ReturnType<typeof setTimeout> | undefined
+let hangupStatusResetTimer: ReturnType<typeof setTimeout> | undefined
 let browserRegisterWaiter:
     | {
           resolve: () => void
@@ -116,6 +117,19 @@ const reloadProfile = async () => {
 
 const updateBrowserStatus = (status: string) => {
     browserStatus.value = status
+    if (hangupStatusResetTimer) {
+        clearTimeout(hangupStatusResetTimer)
+        hangupStatusResetTimer = undefined
+    }
+    if (status === '挂断中') {
+        hangupStatusResetTimer = setTimeout(() => {
+            if (browserStatus.value !== '挂断中') return
+            const caller = currentBrowserCaller.value || resolveCurrentBrowserExtension()
+            const callee = currentBrowserCallee.value || normalizeExtension(browserForm.target)
+            traceBrowserStep('HANGUP_STATUS_STUCK', 'status remained hangup-pending for 3000ms', 'danger')
+            finalizeBrowserCall('hangup-status-stuck', caller, callee)
+        }, 3000)
+    }
 }
 
 const buildBrowserTraceContext = () => ({
@@ -282,8 +296,15 @@ const clearHangupFallbackTimer = () => {
     hangupFallbackTimer = undefined
 }
 
+const clearHangupStatusResetTimer = () => {
+    if (!hangupStatusResetTimer) return
+    clearTimeout(hangupStatusResetTimer)
+    hangupStatusResetTimer = undefined
+}
+
 const finalizeBrowserCall = (reason: string, caller?: string, callee?: string) => {
     clearHangupFallbackTimer()
+    clearHangupStatusResetTimer()
     stopOutgoingWaitingTone()
     browserCallStarting.value = false
     browserHangupPending.value = false
@@ -296,7 +317,17 @@ const finalizeBrowserCall = (reason: string, caller?: string, callee?: string) =
     currentSessionDirection.value = null
     resetBrowserCallParties()
     markBrowserCallFinished()
-    clearTerminatedBrowserSessionReference(reason)
+    if (!clearTerminatedBrowserSessionReference(reason)) {
+        const client = browserClient.value as any
+        if (client?.session) {
+            const state = getBrowserSessionState(client.session)
+            client.session = undefined
+            traceBrowserStep(
+                'SESSION_REFERENCE_FORCE_CLEARED',
+                `reason=${reason}, state=${state || '<empty>'}`
+            )
+        }
+    }
     updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
     traceBrowserStep('CALL_FINALIZED', `reason=${reason}, caller=${caller || '-'}, callee=${callee || '-'}`)
 }
@@ -1060,14 +1091,11 @@ const hangupBrowserCall = async () => {
         stopOutgoingWaitingTone()
         clearHangupFallbackTimer()
         hangupFallbackTimer = setTimeout(() => {
-            const activeSession = getCurrentBrowserSession()
-            const sessionState = getBrowserSessionState(activeSession)
-            if (
-                !browserHangupPending.value ||
-                (sessionState && sessionState !== 'Terminated' && sessionState !== 'Terminating')
-            ) {
+            if (!browserHangupPending.value) {
                 return
             }
+            const activeSession = getCurrentBrowserSession()
+            const sessionState = getBrowserSessionState(activeSession)
             const caller = currentBrowserCaller.value || resolveCurrentBrowserExtension()
             const callee = currentBrowserCallee.value || normalizeExtension(browserForm.target)
             traceBrowserStep('HANGUP_FALLBACK_TRIGGERED', `state=${sessionState || '<empty>'}`)
