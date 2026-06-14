@@ -61,6 +61,30 @@ defineEmits<{
   flex-shrink: 0;
 }
 
+.summary-card:nth-child(1) .summary-card__icon {
+  background:
+    radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.34), transparent 30%),
+    linear-gradient(135deg, #1d4ed8, #0ea5e9);
+}
+
+.summary-card:nth-child(2) .summary-card__icon {
+  background:
+    radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.34), transparent 30%),
+    linear-gradient(135deg, #2563eb, #14b8a6);
+}
+
+.summary-card:nth-child(3) .summary-card__icon {
+  background:
+    radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.32), transparent 30%),
+    linear-gradient(135deg, #4338ca, #38bdf8);
+}
+
+.summary-card:nth-child(4) .summary-card__icon {
+  background:
+    radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.34), transparent 30%),
+    linear-gradient(135deg, #0f766e, #3b82f6);
+}
+
 .summary-card__main {
   min-width: 0;
 }

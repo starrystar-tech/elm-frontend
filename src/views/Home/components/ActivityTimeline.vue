@@ -56,6 +56,30 @@ const formatTime = (time?: string) => {
   cursor: pointer;
 }
 
+.activity-item:nth-child(4n + 1) .activity-item__icon {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.3), transparent 28%),
+    linear-gradient(135deg, #1d4ed8, #06b6d4);
+}
+
+.activity-item:nth-child(4n + 2) .activity-item__icon {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.3), transparent 28%),
+    linear-gradient(135deg, #0f766e, #38bdf8);
+}
+
+.activity-item:nth-child(4n + 3) .activity-item__icon {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.28), transparent 28%),
+    linear-gradient(135deg, #7c3aed, #2563eb);
+}
+
+.activity-item:nth-child(4n) .activity-item__icon {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.3), transparent 28%),
+    linear-gradient(135deg, #ea580c, #ef4444);
+}
+
 .activity-item__content {
   flex: 1;
   min-width: 0;

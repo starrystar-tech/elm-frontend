@@ -63,6 +63,42 @@ defineEmits<{
   color: #fff;
 }
 
+.shortcut-grid__item:nth-child(6n + 1) .shortcut-grid__icon {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.34), transparent 28%),
+    linear-gradient(135deg, #f97316, #fb7185);
+}
+
+.shortcut-grid__item:nth-child(6n + 2) .shortcut-grid__icon {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.34), transparent 28%),
+    linear-gradient(135deg, #f59e0b, #f97316);
+}
+
+.shortcut-grid__item:nth-child(6n + 3) .shortcut-grid__icon {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.32), transparent 28%),
+    linear-gradient(135deg, #ef4444, #f97316);
+}
+
+.shortcut-grid__item:nth-child(6n + 4) .shortcut-grid__icon {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.34), transparent 28%),
+    linear-gradient(135deg, #2563eb, #06b6d4);
+}
+
+.shortcut-grid__item:nth-child(6n + 5) .shortcut-grid__icon {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.32), transparent 28%),
+    linear-gradient(135deg, #0f766e, #22c55e);
+}
+
+.shortcut-grid__item:nth-child(6n) .shortcut-grid__icon {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.34), transparent 28%),
+    linear-gradient(135deg, #7c3aed, #ec4899);
+}
+
 .shortcut-grid__text {
   margin-top: 12px;
   font-size: 14px;
