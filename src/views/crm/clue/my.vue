@@ -321,6 +321,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     },
     { field: 'consultProjectName', label: '咨询项目', minWidth: '160px' },
     { field: 'claimSourceName', label: '领取来源', width: '110px' },
+    { field: 'intentLevelName', label: '意向度', width: '100px' },
     { field: 'feedbackStatusName', label: '反馈状态', width: '100px' },
     { field: 'allocationTypeName', label: '分配类型', minWidth: '120px' },
     {
