@@ -137,6 +137,7 @@ interface MyClueSearchParams {
 }
 
 const message = useMessage()
+const route = useRoute()
 const canSmsSend = hasPermission(['crm:clue:sms:send'])
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
 const smsDialogRef = ref<InstanceType<typeof ClueSmsDialog>>()
@@ -469,6 +470,25 @@ const handleResetSearch = (params: MyClueSearchParams) => {
     tableMethods.setSearchParams(buildSearchParams(mergeSearchParams(params)))
 }
 
+const getQueryString = (value: unknown) => {
+    if (Array.isArray(value)) {
+        return typeof value[0] === 'string' ? value[0] : ''
+    }
+    return typeof value === 'string' ? value : ''
+}
+
+const initSearchFormFromRoute = () => {
+    const tabType = getQueryString(route.query.tabType)
+    const beginCreateTime = getQueryString(route.query.beginCreateTime)
+    const endCreateTime = getQueryString(route.query.endCreateTime)
+    if (tabType) {
+        activeTab.value = tabType
+    }
+    if (beginCreateTime && endCreateTime) {
+        searchForm.createTimeRange = [beginCreateTime, endCreateTime]
+    }
+}
+
 const handleTabChange = async () => {
     selectionList.value = []
     searchForm.areaId = undefined
@@ -565,6 +585,7 @@ const handleRelease = async (ids?: number[]) => {
 }
 
 onMounted(async () => {
+    initSearchFormFromRoute()
     await Promise.all([
         loadClueListOptions({
             schema: searchSchema,
@@ -575,7 +596,7 @@ onMounted(async () => {
         }),
         loadCounts()
     ])
-    tableMethods.setSearchParams(buildSearchParams({}))
+    tableMethods.setSearchParams(buildSearchParams(mergeSearchParams(searchForm)))
 })
 </script>
 

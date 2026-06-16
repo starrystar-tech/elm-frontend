@@ -170,6 +170,23 @@ const handlePhoneTabChange = () => {
     tableMethods.setSearchParams({ ...params, hasPhone: hasPhone.value })
 }
 
+const getQueryString = (value: unknown) => {
+    if (Array.isArray(value)) {
+        return typeof value[0] === 'string' ? value[0] : ''
+    }
+    return typeof value === 'string' ? value : ''
+}
+
+const initSearchParamsFromRoute = () => {
+    const beginAddTime = getQueryString(route.query.beginAddTime)
+    const endAddTime = getQueryString(route.query.endAddTime)
+    const params: Recordable = {}
+    if (beginAddTime && endAddTime) {
+        params.dateRange = [beginAddTime, endAddTime]
+    }
+    return params
+}
+
 const applyRouteTab = (tab?: string | null) => {
     if (tab === 'noMobile') {
         activeName.value = '2'
@@ -425,6 +442,12 @@ const tableColumns = reactive<TableColumn[]>([
 onMounted(async () => {
     applyRouteTab(route.query.tab as string | undefined)
     await loadFilterOptions()
+    const initialParams = initSearchParamsFromRoute()
+    if (Object.keys(initialParams).length > 0) {
+        await searchRef.value?.setValues(initialParams)
+        await setSearchParams(initialParams)
+        return
+    }
     await tableMethods.getList()
 })
 
