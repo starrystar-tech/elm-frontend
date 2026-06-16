@@ -722,7 +722,6 @@ const tableColumns = computed<TableColumn[]>(() => [
         slots: {
             default: (data) => {
                 const rowId = Number(data.row.id)
-                const moreActions = getMoreActions(rowId)
                 return (
                     <div class="flex items-center justify-center">
                         <BaseButton link type="primary" onClick={() => openDetail(rowId)}>
