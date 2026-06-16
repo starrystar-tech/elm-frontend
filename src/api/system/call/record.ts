@@ -31,6 +31,41 @@ export interface OutboundCallRecordVO {
   createTime: string
 }
 
+export interface CallMonitorPageReqVO extends PageParam {
+  deptId?: number
+  userId?: number
+  beginCreateTime?: string
+  endCreateTime?: string
+  authCode?: string
+  exportPlainMobile?: boolean
+}
+
+export interface CallMonitorVO {
+  userId?: number
+  userName: string
+  departmentName: string
+  outgoingCalls: number
+  outgoingCustomers: number
+  outgoingDurationSeconds: number
+  averageOutgoingDurationSeconds: number
+  answeredCalls: number
+  answeredCustomers: number
+  answeredDurationSeconds: number
+  averageAnsweredDurationSeconds: number
+}
+
 export const getOutboundCallRecordPage = (params: PageParam) => {
   return request.get({ url: '/crm/call/outbound-record/page', params })
+}
+
+export const getCallMonitorPage = (params: CallMonitorPageReqVO) => {
+  return request.get({ url: '/crm/call/monitor/page', params })
+}
+
+export const getCallMonitorList = (params: Omit<CallMonitorPageReqVO, 'pageNo' | 'pageSize'>) => {
+  return request.get({ url: '/crm/call/monitor/list', params })
+}
+
+export const createCallMonitorExportTask = (data: CallMonitorPageReqVO) => {
+  return request.post<number>({ url: '/crm/call/monitor/export-task', data })
 }

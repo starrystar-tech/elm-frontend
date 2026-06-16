@@ -6,33 +6,34 @@
                 <BaseButton plain @click="handleExport">导出</BaseButton>
             </div>
             <Table
+                v-model:currentPage="tableObject.currentPage"
+                v-model:pageSize="tableObject.pageSize"
                 :columns="tableColumns"
-                :data="tableData"
-                :loading="false"
-                :pagination="{ total: tableData.length }"
+                :data="tableObject.tableList"
+                :loading="tableObject.loading"
+                :pagination="{ total: tableObject.total }"
+                @register="tableRegister"
             />
         </ContentWrap>
     </div>
 </template>
 
 <script setup lang="tsx">
-import { computed, reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { Search } from '@/components/Search'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import { Table, type TableColumn } from '@/components/Table'
+import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
-import {
-    aggregateCallMonitorRows,
-    callDeptUserOptions,
-    callRecordMocks,
-    formatDurationClock,
-    toDateOnly
-} from '../mock'
+import * as UserApi from '@/api/system/user'
+import * as DeptApi from '@/api/system/dept'
+import * as OutboundCallRecordApi from '@/api/system/call/record'
 
 defineOptions({ name: 'CrmCallMonitor' })
 
 const message = useMessage()
+const deptUserOptions = ref<{ label: string; value: string }[]>([])
 
 const defaultSearchParams = {
     deptUserKeyword: undefined as string | undefined,
@@ -61,28 +62,29 @@ const searchSchema = reactive<FormSchema[]>([
         componentProps: {
             placeholder: '请选择部门或用户',
             clearable: true,
-            options: callDeptUserOptions,
+            options: deptUserOptions.value,
             style: { width: '220px' }
         }
     }
 ])
 
-const filteredRecords = computed(() => {
-    return callRecordMocks.filter((item) => {
-        const deptUserKeyword = searchParams.value.deptUserKeyword
-        const dateRange = searchParams.value.dateRange
-        const dateOnly = toDateOnly(item.date)
-        const matchesDeptOrUser =
-            !deptUserKeyword ||
-            item.userName === deptUserKeyword ||
-            item.departmentName === deptUserKeyword
-        const matchesDate =
-            !dateRange?.length || (dateOnly >= dateRange[0] && dateOnly <= dateRange[1])
-        return matchesDeptOrUser && matchesDate
-    })
-})
+const formatDurationClock = (durationSeconds?: number) => {
+    const totalSeconds = Math.max(0, Math.floor(durationSeconds || 0))
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
 
-const tableData = computed(() => aggregateCallMonitorRows(filteredRecords.value))
+const {
+    tableObject,
+    tableMethods,
+    register: tableRegister
+} = useTable<OutboundCallRecordApi.CallMonitorVO>({
+    getListApi: async (params) =>
+        await OutboundCallRecordApi.getCallMonitorPage(
+            params as OutboundCallRecordApi.CallMonitorPageReqVO
+        )
+})
 
 const tableColumns = reactive<TableColumn[]>([
     { field: 'userName', label: '用户', minWidth: '120px' },
@@ -126,52 +128,55 @@ const setSearchParams = (params: Recordable) => {
         deptUserKeyword: params.deptUserKeyword || undefined,
         dateRange: params.dateRange?.length ? params.dateRange : undefined
     }
+    tableMethods.setSearchParams(buildPageParams(searchParams.value))
 }
 
 const resetSearchParams = () => {
     searchParams.value = { ...defaultSearchParams }
+    tableMethods.setSearchParams(buildPageParams({}))
 }
 
-const handleExport = () => {
-    if (!tableData.value.length) {
-        message.warning('暂无可导出的数据')
-        return
+const buildPageParams = (params: typeof defaultSearchParams) => {
+    const deptUserKeyword = params.deptUserKeyword
+    const result: OutboundCallRecordApi.CallMonitorPageReqVO = {}
+    if (deptUserKeyword?.startsWith('dept:')) {
+        result.deptId = Number(deptUserKeyword.slice(5))
+    } else if (deptUserKeyword?.startsWith('user:')) {
+        result.userId = Number(deptUserKeyword.slice(5))
     }
-
-    const headers = [
-        '用户',
-        '所在部门',
-        '呼出次数',
-        '呼出客户数',
-        '呼出总时长',
-        '平均呼出时长',
-        '接听次数',
-        '接听客户数',
-        '接听总时长',
-        '平均接听时长'
-    ]
-    const rows = tableData.value.map((item) => [
-        item.userName,
-        item.departmentName,
-        item.outgoingCalls,
-        item.outgoingCustomers,
-        formatDurationClock(item.outgoingDurationSeconds),
-        formatDurationClock(item.averageOutgoingDurationSeconds),
-        item.answeredCalls,
-        item.answeredCustomers,
-        formatDurationClock(item.answeredDurationSeconds),
-        formatDurationClock(item.averageAnsweredDurationSeconds)
-    ])
-    const csv = [headers, ...rows]
-        .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-        .join('\n')
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = '通话监控.csv'
-    link.click()
-    URL.revokeObjectURL(url)
-    message.success('导出成功')
+    if (params.dateRange?.length) {
+        result.beginCreateTime = `${params.dateRange[0]} 00:00:00`
+        result.endCreateTime = `${params.dateRange[1]} 23:59:59`
+    }
+    return result
 }
+
+const loadDeptUserOptions = async () => {
+    const [users, depts] = await Promise.all([UserApi.getSimpleUserList(), DeptApi.getSimpleDeptList()])
+    const deptEntries = (depts || []).map((item) => ({
+        label: `部门 / ${item.name}`,
+        value: `dept:${item.id}`
+    }))
+    const userEntries = (users || []).map((item) => ({
+        label: `用户 / ${item.nickname || item.username}`,
+        value: `user:${item.id}`
+    }))
+    deptUserOptions.value = [...deptEntries, ...userEntries]
+    const target = searchSchema.find((item) => item.field === 'deptUserKeyword')
+    if (target?.componentProps) {
+        target.componentProps.options = deptUserOptions.value
+    }
+}
+
+const handleExport = async () => {
+    await OutboundCallRecordApi.createCallMonitorExportTask({
+        ...buildPageParams(searchParams.value)
+    })
+    message.success('导出任务已创建，请到下载中心查看')
+}
+
+onMounted(async () => {
+    await loadDeptUserOptions()
+    await tableMethods.getList()
+})
 </script>
