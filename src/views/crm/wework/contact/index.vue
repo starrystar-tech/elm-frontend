@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="tsx">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { ElMessageBox, type TabsPaneContext } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import { DICT_TYPE, getStrDictOptions } from '@/utils/dict'
@@ -53,6 +53,7 @@ import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 defineOptions({ name: 'CrmWeworkContact' })
 
 const message = useMessage()
+const route = useRoute()
 const searchRef = ref<SearchExpose>()
 const syncLoading = ref(false)
 const hasPhone = ref(true)
@@ -167,6 +168,16 @@ const setSearchParams = async (params: Recordable) => {
 const handlePhoneTabChange = () => {
     const params = { ...(tableObject.params || {}) }
     tableMethods.setSearchParams({ ...params, hasPhone: hasPhone.value })
+}
+
+const applyRouteTab = (tab?: string | null) => {
+    if (tab === 'noMobile') {
+        activeName.value = '2'
+        hasPhone.value = false
+        return
+    }
+    activeName.value = '1'
+    hasPhone.value = true
 }
 
 const handleTabClick = (tab: TabsPaneContext) => {
@@ -412,7 +423,16 @@ const tableColumns = reactive<TableColumn[]>([
 ])
 
 onMounted(async () => {
+    applyRouteTab(route.query.tab as string | undefined)
     await loadFilterOptions()
     await tableMethods.getList()
 })
+
+watch(
+    () => route.query.tab,
+    (tab) => {
+        applyRouteTab(tab as string | undefined)
+        handlePhoneTabChange()
+    }
+)
 </script>

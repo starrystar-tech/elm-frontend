@@ -417,46 +417,50 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'action',
         label: '操作',
-        width: '240px',
+        width: '140px',
         fixed: 'right',
         slots: {
-            default: (data) => (
-                <>
-                    <BaseButton link type="primary" onClick={() => openDetail(Number(data.row.id))}>
-                        详情
-                    </BaseButton>
-                    {canSmsSend ? (
-                        <BaseButton
-                            link
-                            type="primary"
-                            onClick={() => smsDialogRef.value?.open([Number(data.row.id)])}
-                        >
-                            发短信
+            default: (data) => {
+                const rowId = Number(data.row.id)
+                const moreActions = getMoreActions(rowId)
+                return (
+                    <div class="flex items-center justify-center">
+                        <BaseButton link type="primary" onClick={() => openDetail(rowId)}>
+                            详情
                         </BaseButton>
-                    ) : null}
-                    <BaseButton
-                        link
-                        type="primary"
-                        onClick={() => openEnroll(Number(data.row.id))}
-                    >
-                        报名
-                    </BaseButton>
-                    <BaseButton
-                        link
-                        type="primary"
-                        onClick={() => openAssignDialog([Number(data.row.id)])}
-                    >
-                        分配
-                    </BaseButton>
-                    <BaseButton
-                        link
-                        type="danger"
-                        onClick={() => handleRelease([Number(data.row.id)])}
-                    >
-                        释放
-                    </BaseButton>
-                </>
-            )
+                        {moreActions.length ? (
+                            <ElDropdown
+                                trigger="click"
+                                onCommand={(command: string) => handleMoreCommand(command, rowId)}
+                            >
+                                {{
+                                    default: () => (
+                                        <BaseButton link type="primary" class="clue-manager-more-btn">
+                                            更多
+                                        </BaseButton>
+                                    ),
+                                    dropdown: () => (
+                                        <ElDropdownMenu>
+                                            {moreActions.map((item) => (
+                                                <ElDropdownItem
+                                                    command={item.command}
+                                                    style={
+                                                        item.type === 'danger'
+                                                            ? 'color: var(--el-color-danger)'
+                                                            : undefined
+                                                    }
+                                                >
+                                                    {item.label}
+                                                </ElDropdownItem>
+                                            ))}
+                                        </ElDropdownMenu>
+                                    )
+                                }}
+                            </ElDropdown>
+                        ) : null}
+                    </div>
+                )
+            }
         }
     }
 ])
@@ -526,6 +530,48 @@ const openSmsDialog = () => {
 const openEnroll = async (id: number) => {
     const detail = await ClueApi.getClue(id)
     enrollRef.value?.open(detail)
+}
+
+const getMoreActions = (rowId: number) =>
+    [
+        canSmsSend
+            ? {
+                  command: 'sms',
+                  label: '发短信'
+              }
+            : null,
+        {
+            command: 'enroll',
+            label: '报名'
+        },
+        {
+            command: 'assign',
+            label: '分配'
+        },
+        {
+            command: 'release',
+            label: '释放',
+            type: 'danger' as const
+        }
+    ].filter((item): item is { command: string; label: string; type?: 'danger' } => Boolean(item && rowId))
+
+const handleMoreCommand = async (command: string, rowId: number) => {
+    switch (command) {
+        case 'sms':
+            smsDialogRef.value?.open([rowId])
+            break
+        case 'enroll':
+            await openEnroll(rowId)
+            break
+        case 'assign':
+            await openAssignDialog([rowId])
+            break
+        case 'release':
+            await handleRelease([rowId])
+            break
+        default:
+            break
+    }
 }
 
 const openAssignDialog = async (ids?: number[]) => {
@@ -657,3 +703,11 @@ onMounted(async () => {
     tableMethods.setSearchParams(buildSearchParams({}))
 })
 </script>
+
+<style lang="scss" scoped>
+.clue-manager-more-btn:focus,
+.clue-manager-more-btn:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+</style>

@@ -1,6 +1,11 @@
 <template>
     <ContentWrap>
-        <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
+        <Search
+            :schema="searchSchema"
+            :model="searchForm"
+            @search="setSearchParams"
+            @reset="handleResetSearch"
+        />
         <div class="action-btn-wrap">
             <BaseButton type="primary" @click="openAssign">分配处理人</BaseButton>
         </div>
@@ -21,7 +26,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, reactive } from 'vue'
 import { ElLink } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
 import { Search } from '@/components/Search'
@@ -48,11 +53,13 @@ import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 defineOptions({ name: 'AftersalesTicket' })
 
 const message = useMessage()
+const route = useRoute()
 const assignRef = ref()
 const processRef = ref()
 const detailRef = ref()
 const handlerOptions = ref<{ label: string; value: number }[]>([])
 const complaintTagOptions = ref<{ label: string; value: number }[]>([])
+const searchForm = reactive<Recordable>({})
 
 const searchSchema = computed<FormSchema[]>(() =>
     buildBaseSearchSchema(handlerOptions.value, complaintTagOptions.value)
@@ -68,6 +75,44 @@ const {
 
 const setSearchParams = (params: Recordable) => {
     tableMethods.setSearchParams(buildPageParams(params))
+}
+
+const clearSearchForm = () => {
+    Object.keys(searchForm).forEach((key) => {
+        delete searchForm[key]
+    })
+}
+
+const handleResetSearch = () => {
+    clearSearchForm()
+    setSearchParams({})
+}
+
+const getQueryString = (value: unknown) => {
+    if (Array.isArray(value)) {
+        return value[0]
+    }
+    return typeof value === 'string' ? value : undefined
+}
+
+const getQueryNumber = (value: unknown) => {
+    const queryValue = getQueryString(value)
+    if (queryValue === undefined || queryValue === '') {
+        return undefined
+    }
+    const numberValue = Number(queryValue)
+    return Number.isNaN(numberValue) ? undefined : numberValue
+}
+
+const initSearchFormFromRoute = () => {
+    const status = getQueryNumber(route.query.status)
+    const priority = getQueryNumber(route.query.priority)
+    if (status !== undefined) {
+        searchForm.status = status
+    }
+    if (priority !== undefined) {
+        searchForm.priority = priority
+    }
 }
 
 const openAssign = async () => {
@@ -171,6 +216,7 @@ const tableColumns = computed<TableColumn[]>(() => [
 ])
 
 onMounted(async () => {
+    initSearchFormFromRoute()
     const [list, complaintTags] = await Promise.all([
         HeadteacherApi.getHeadteacherSimpleList(),
         ComplaintTagApi.getComplaintTagSimpleList()
@@ -183,6 +229,10 @@ onMounted(async () => {
         label: item.name,
         value: item.id
     }))
+    if (Object.keys(searchForm).length) {
+        setSearchParams(searchForm)
+        return
+    }
     await tableMethods.getList()
 })
 </script>

@@ -238,6 +238,7 @@ const handleSave = async (payload: { formRef: any; formData: any }) => {
             mobile2: formData.mobile2?.trim() || undefined,
             wechat: formData.wechat?.trim() || undefined,
             wechat2: formData.wechat2?.trim() || undefined,
+            wechatRemark: formData.wechatRemark?.trim() || undefined,
             qq: formData.qq?.trim() || undefined,
             avatar: formData.avatar?.trim() || undefined,
             idCardNo: formData.idCardNo?.trim() || undefined,

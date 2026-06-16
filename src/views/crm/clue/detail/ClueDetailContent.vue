@@ -116,6 +116,12 @@
                             <el-form-item label="微信号2">
                                 <el-input v-model="editForm.wechat2" placeholder="请输入微信号2" />
                             </el-form-item>
+                            <el-form-item label="微信备注名">
+                                <el-input
+                                    v-model="editForm.wechatRemark"
+                                    placeholder="请输入微信备注名"
+                                />
+                            </el-form-item>
                             <el-form-item label="QQ">
                                 <el-input v-model="editForm.qq" placeholder="请输入QQ" />
                             </el-form-item>
@@ -757,6 +763,7 @@ const editForm = reactive({
     mobile2: '',
     wechat: '',
     wechat2: '',
+    wechatRemark: '',
     qq: '',
     avatar: '',
     certificateType: '',
@@ -889,6 +896,7 @@ const syncEditForm = () => {
     editForm.mobile2 = props.clue.mobile2 || ''
     editForm.wechat = props.clue.wechat || ''
     editForm.wechat2 = props.clue.wechat2 || ''
+    editForm.wechatRemark = props.clue.wechatRemark || ''
     editForm.qq = props.clue.qq || ''
     editForm.avatar = props.clue.avatar || ''
     editForm.certificateType = props.clue.certificateType || ''
@@ -983,6 +991,7 @@ const basicInfoItems = computed(() => [
     { label: '报名次数', value: props.clue.orderCount ?? '--' },
     { label: '微信号', value: props.clue.wechat || '--' },
     { label: '微信号2', value: props.clue.wechat2 || '--' },
+    { label: '微信备注名', value: props.clue.wechatRemark || '--' },
     { label: 'QQ', value: props.clue.qq || '--' },
     { label: '证件类型', value: props.clue.certificateType || '--' },
     { label: '证件号码', value: props.clue.idCardNo || '--' },

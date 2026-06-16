@@ -1,6 +1,11 @@
 <template>
     <ContentWrap>
-        <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
+        <Search
+            :schema="searchSchema"
+            :model="searchForm"
+            @search="setSearchParams"
+            @reset="setSearchParams"
+        />
         <div class="action-btn-wrap">
             <BaseButton type="primary" @click="openCreate">新增工单</BaseButton>
         </div>
@@ -20,7 +25,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, reactive } from 'vue'
 import { ElLink } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
 import { Search } from '@/components/Search'
@@ -47,11 +52,13 @@ import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 defineOptions({ name: 'AftersalesMy' })
 
 const message = useMessage()
+const route = useRoute()
 const handlerOptions = ref<{ label: string; value: number }[]>([])
 const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 const formRef = ref()
 const processRef = ref()
 const detailRef = ref()
+const searchForm = reactive<Recordable>({})
 
 const searchSchema = computed<FormSchema[]>(() => {
     const schema = buildBaseSearchSchema(handlerOptions.value, complaintTagOptions.value)
@@ -68,6 +75,21 @@ const {
 
 const setSearchParams = (params: Recordable) => {
     tableMethods.setSearchParams(buildPageParams(params))
+}
+
+const getQueryString = (value: unknown) => {
+    if (Array.isArray(value)) {
+        return typeof value[0] === 'string' ? value[0] : ''
+    }
+    return typeof value === 'string' ? value : ''
+}
+
+const initSearchFormFromRoute = () => {
+    const status = getQueryString(route.query.status)
+    if (!status) {
+        return
+    }
+    searchForm.status = Number(status)
 }
 
 const openCreate = () => formRef.value.open()
@@ -154,6 +176,7 @@ const tableColumns = computed<TableColumn[]>(() => [
 ])
 
 onMounted(async () => {
+    initSearchFormFromRoute()
     const [list, complaintTags] = await Promise.all([
         HeadteacherApi.getHeadteacherSimpleList(),
         ComplaintTagApi.getComplaintTagSimpleList()
@@ -166,6 +189,10 @@ onMounted(async () => {
         label: item.name,
         value: item.id
     }))
+    if (Object.keys(searchForm).length) {
+        setSearchParams({ ...searchForm })
+        return
+    }
     await tableMethods.getList()
 })
 </script>

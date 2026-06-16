@@ -226,7 +226,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, nextTick, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import type { UploadUserFile } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import { useTable } from '@/hooks/web/useTable'
@@ -289,6 +289,7 @@ const CLUE_IMPORT_TEMPLATE_URL =
     'https://file.bgwa.cn/bgwa/20260611/首咨名片上传模板_1781163860531.xlsx'
 
 const message = useMessage()
+const route = useRoute()
 const canCreate = hasPermission(['crm:clue:create'])
 const canExport = hasPermission(['crm:clue:export'])
 const canSmsSend = hasPermission(['crm:clue:sms:send'])
@@ -348,6 +349,22 @@ const allocationTypeOptions = [
     { label: '批量分配', value: 7 },
     { label: '复购系统分配', value: 8 }
 ]
+
+const getQueryString = (value: unknown) => {
+    if (Array.isArray(value)) {
+        return value[0]
+    }
+    return typeof value === 'string' ? value : undefined
+}
+
+const initSearchFormFromRoute = () => {
+    const beginCreateTime = getQueryString(route.query.beginCreateTime)
+    const endCreateTime = getQueryString(route.query.endCreateTime)
+    if (!beginCreateTime || !endCreateTime) {
+        return
+    }
+    searchForm.createTimeRange = [beginCreateTime, endCreateTime]
+}
 
 const searchSchema = reactive<FormSchema[]>([
     {
@@ -555,15 +572,6 @@ const searchSchema = reactive<FormSchema[]>([
     }
 ])
 
-const {
-    tableObject,
-    tableMethods,
-    register: tableRegister
-} = useTable<ClueApi.ClueVO>({
-    getListApi: async (params) =>
-        await ClueApi.getCluePage({ ...(params as ClueApi.CluePageReqVO) })
-})
-
 const buildPageParams = (params: SearchParams = {}): ClueApi.CluePageReqVO => ({
     customer: params.customer || undefined,
     mobile: params.mobile || undefined,
@@ -590,6 +598,19 @@ const buildPageParams = (params: SearchParams = {}): ClueApi.CluePageReqVO => ({
             : String(params.creator),
     beginCreateTime: params.createTimeRange?.[0],
     endCreateTime: params.createTimeRange?.[1]
+})
+
+initSearchFormFromRoute()
+currentSearchParams.value = { ...searchForm }
+
+const {
+    tableObject,
+    tableMethods,
+    register: tableRegister
+} = useTable<ClueApi.ClueVO>({
+    getListApi: async (params) =>
+        await ClueApi.getCluePage({ ...(params as ClueApi.CluePageReqVO) }),
+    defaultParams: buildPageParams(searchForm)
 })
 
 const buildRegionText = (row: ClueApi.ClueVO) => {
@@ -627,7 +648,9 @@ const tableColumns = computed<TableColumn[]>(() => [
             default: (data) => (
                 <span>
                     {FEEDBACK_STATUS_OPTIONS.find((item) => item.value === data.row.feedbackStatus)
-                        ?.label || data.row.feedbackStatusName || '-'}
+                        ?.label ||
+                        data.row.feedbackStatusName ||
+                        '-'}
                 </span>
             )
         }
@@ -694,14 +717,20 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'action',
         label: '操作',
-        width: '100px',
+        width: '140px',
         fixed: 'right',
         slots: {
-            default: (data) => (
-                <BaseButton link type="primary" onClick={() => openDetail(data.row.id)}>
-                    详情
-                </BaseButton>
-            )
+            default: (data) => {
+                const rowId = Number(data.row.id)
+                const moreActions = getMoreActions(rowId)
+                return (
+                    <div class="flex items-center justify-center">
+                        <BaseButton link type="primary" onClick={() => openDetail(rowId)}>
+                            详情
+                        </BaseButton>
+                    </div>
+                )
+            }
         }
     }
 ])
@@ -814,6 +843,16 @@ const openDetail = (id: number) => {
 const openEnroll = async (id: number) => {
     const detail = await ClueApi.getClue(id)
     enrollRef.value?.open(detail)
+}
+
+const handleMoreCommand = async (command: string, rowId: number) => {
+    switch (command) {
+        case 'enroll':
+            await openEnroll(rowId)
+            break
+        default:
+            break
+    }
 }
 
 const openForm = (type: 'create' | 'update', id?: number) => {
@@ -973,6 +1012,18 @@ const openComplaintImportDialog = () => {
 
 onMounted(async () => {
     await loadOptions()
+    if (Object.keys(searchForm).length) {
+        handleSearch({ ...searchForm })
+        return
+    }
     tableMethods.getList()
 })
 </script>
+
+<style lang="scss" scoped>
+.clue-more-btn:focus,
+.clue-more-btn:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+</style>

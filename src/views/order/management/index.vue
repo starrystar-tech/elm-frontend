@@ -1,6 +1,11 @@
 <template>
     <ContentWrap>
-        <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
+        <Search
+            :schema="searchSchema"
+            :model="searchForm"
+            @search="setSearchParams"
+            @reset="setSearchParams"
+        />
         <div class="action-btn-wrap flex items-center gap-2">
             <BaseButton
                 v-hasPermi="['crm:order:batch-update-owner']"
@@ -39,7 +44,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElLink, ElMessageBox } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
 import { Search } from '@/components/Search'
@@ -67,12 +72,14 @@ import ExportTaskDialog from '@/views/crm/clue/components/ExportTaskDialog.vue'
 defineOptions({ name: 'OrderManagement' })
 
 const message = useMessage()
+const route = useRoute()
 const detailRef = ref<InstanceType<typeof OrderDetailDrawer>>()
 const contractSignRef = ref<InstanceType<typeof OrderContractSignDialog>>()
 const refundRef = ref<InstanceType<typeof RefundDialog>>()
 const batchUpdateOwnerDialogRef = ref<InstanceType<typeof BatchUpdateOwnerDialog>>()
 const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
 const currentSearchParams = ref<Recordable>({})
+const searchForm = reactive<Recordable>({})
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
@@ -213,6 +220,23 @@ const setSearchParams = (params: Recordable) => {
     })
 }
 
+const getQueryString = (value: unknown) => {
+    if (Array.isArray(value)) {
+        return value[0]
+    }
+    return typeof value === 'string' ? value : undefined
+}
+
+const initSearchFormFromRoute = () => {
+    const beginCreateTime = getQueryString(route.query.beginCreateTime)
+    const endCreateTime = getQueryString(route.query.endCreateTime)
+    if (!beginCreateTime || !endCreateTime) {
+        return
+    }
+    searchForm.createTimeRange = [beginCreateTime, endCreateTime]
+    searchForm.enrollTimeRange = [beginCreateTime, endCreateTime]
+}
+
 const openDetail = (id: number, tab?: string) => {
     detailRef.value?.open(id, tab)
 }
@@ -325,6 +349,50 @@ const handleContractSign = (row: OrderApi.OrderPageRespVO) => {
     contractSignRef.value?.open(row)
 }
 
+const getMoreActions = (row: OrderApi.OrderPageRespVO) => [
+    {
+        command: 'contractSign',
+        label: '签署合同',
+        show: true
+    },
+    {
+        command: 'pay',
+        label: '支付',
+        show: getRemainingAmount(row.payableAmount, row.paidAmount) > 0
+    },
+    {
+        command: 'refund',
+        label: '退款',
+        show: getRefundableAmount(row.paidAmount, row.refundAmount) > 0,
+        type: 'danger' as const
+    },
+    {
+        command: 'void',
+        label: '作废',
+        show: row.orderStatus !== 30,
+        type: 'danger' as const
+    }
+].filter((item) => item.show)
+
+const handleMoreCommand = async (command: string, row: OrderApi.OrderPageRespVO) => {
+    switch (command) {
+        case 'contractSign':
+            handleContractSign(row)
+            break
+        case 'pay':
+            await handlePay(row)
+            break
+        case 'refund':
+            await handleRefund(row)
+            break
+        case 'void':
+            await handleVoid(row)
+            break
+        default:
+            break
+    }
+}
+
 const getOrderClueDetail = async (id: number) => {
     const detail = await OrderApi.getOrder(id)
     return { clueId: detail.clueId }
@@ -420,35 +488,48 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'action',
         label: '操作',
-        width: '250px',
+        width: '140px',
         fixed: 'right',
         slots: {
             default: (data) => {
                 const row = data.row as OrderApi.OrderPageRespVO
+                const moreActions = getMoreActions(row)
                 return (
-                    <>
+                    <div class="flex items-center justify-center">
                         <BaseButton link type="primary" onClick={() => openDetail(row.id)}>
                             详情
                         </BaseButton>
-                        <BaseButton link type="primary" onClick={() => handleContractSign(row)}>
-                            签署合同
-                        </BaseButton>
-                        {getRemainingAmount(row.payableAmount, row.paidAmount) > 0 ? (
-                            <BaseButton link type="primary" onClick={() => handlePay(row)}>
-                                支付
-                            </BaseButton>
+                        {moreActions.length ? (
+                            <ElDropdown
+                                trigger="click"
+                                onCommand={(command: string) => handleMoreCommand(command, row)}
+                            >
+                                {{
+                                    default: () => (
+                                        <BaseButton link type="primary" class="order-more-btn">
+                                            更多
+                                        </BaseButton>
+                                    ),
+                                    dropdown: () => (
+                                        <ElDropdownMenu>
+                                            {moreActions.map((item) => (
+                                                <ElDropdownItem
+                                                    command={item.command}
+                                                    style={
+                                                        item.type === 'danger'
+                                                            ? 'color: var(--el-color-danger)'
+                                                            : undefined
+                                                    }
+                                                >
+                                                    {item.label}
+                                                </ElDropdownItem>
+                                            ))}
+                                        </ElDropdownMenu>
+                                    )
+                                }}
+                            </ElDropdown>
                         ) : null}
-                        {getRefundableAmount(row.paidAmount, row.refundAmount) > 0 ? (
-                            <BaseButton link type="danger" onClick={() => handleRefund(row)}>
-                                退款
-                            </BaseButton>
-                        ) : null}
-                        {row.orderStatus !== 30 ? (
-                            <BaseButton link type="danger" onClick={() => handleVoid(row)}>
-                                作废
-                            </BaseButton>
-                        ) : null}
-                    </>
+                    </div>
                 )
             }
         }
@@ -456,6 +537,19 @@ const tableColumns = computed<TableColumn[]>(() => [
 ])
 
 onMounted(() => {
+    initSearchFormFromRoute()
+    if (Object.keys(searchForm).length) {
+        setSearchParams(searchForm)
+        return
+    }
     tableMethods.getList()
 })
 </script>
+
+<style lang="scss" scoped>
+.order-more-btn:focus,
+.order-more-btn:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+</style>
