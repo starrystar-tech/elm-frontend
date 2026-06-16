@@ -20,6 +20,7 @@ export interface UserVO {
   expireTime?: Date
   callNo?: string
   callExt?: string
+  callerDisplayNumber?: string
   outboundStatus?: number
   mobileCopyLimitTimes?: number
   manageCompanyIds?: number[]

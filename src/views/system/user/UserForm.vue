@@ -131,8 +131,7 @@
                     </el-form-item>
                 </el-col>
             </el-row>
-
-            <el-row>
+            <!-- <el-row>
                 <el-col :span="12">
                     <el-form-item label="呼叫工号" prop="callNo">
                         <el-input v-model="formData.callNo" placeholder="请输入呼叫工号" />
@@ -143,7 +142,7 @@
                         <el-input v-model="formData.callExt" placeholder="请输入呼叫分机" />
                     </el-form-item>
                 </el-col>
-            </el-row>
+            </el-row> -->
             <el-row>
                 <el-col :span="12">
                     <el-form-item label="归属部门" prop="deptId">
@@ -400,6 +399,7 @@ const formData = ref({
     expireTime: undefined as string | undefined,
     callNo: '',
     callExt: '',
+    callerDisplayNumber: '',
     mobileCopyLimitTimes: undefined as number | undefined,
     manageCompanyIds: [] as number[],
     campusIds: [] as number[],
@@ -526,6 +526,7 @@ const open = async (type: string, id?: number) => {
                 expireTime: normalizeDateTimeValue(detail.expireTime),
                 callNo: detail.callNo || '',
                 callExt: detail.callExt || '',
+                callerDisplayNumber: detail.callerDisplayNumber || '',
                 mobileCopyLimitTimes: detail.mobileCopyLimitTimes
             }
         } finally {
@@ -591,6 +592,7 @@ const resetForm = () => {
         expireTime: undefined,
         callNo: '',
         callExt: '',
+        callerDisplayNumber: '',
         mobileCopyLimitTimes: undefined,
         manageCompanyIds: [],
         campusIds: [],

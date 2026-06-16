@@ -45,20 +45,25 @@
                 <el-form-item label="所属部门">
                     <el-input :model-value="formData.deptName" disabled />
                 </el-form-item>
-                <el-form-item label="呼叫工号">
+                <!-- <el-form-item label="呼叫工号">
                     <el-input :model-value="formData.callNo || '--'" disabled />
-                </el-form-item>
-                <el-form-item label="坐席分机" prop="callExt">
+                </el-form-item> -->
+                <el-form-item label="坐席" prop="callExt">
                     <el-input
                         v-model="formData.callExt"
                         maxlength="32"
                         clearable
-                        placeholder="请输入坐席分机，例如 1001"
+                        placeholder="请输入坐席，例如 1001"
                     />
                 </el-form-item>
-                <div class="seat-dialog__hint">
-                    顶部外呼签入会优先使用这里配置的坐席分机，密码当前固定为 `123456`。
-                </div>
+                <el-form-item label="外显号码" prop="callerDisplayNumber">
+                    <el-input
+                        v-model="formData.callerDisplayNumber"
+                        maxlength="32"
+                        clearable
+                        placeholder="请输入外显号码"
+                    />
+                </el-form-item>
             </el-form>
             <template #footer>
                 <el-button @click="dialogVisible = false">取消</el-button>
@@ -106,14 +111,15 @@ const formData = reactive({
     username: '',
     deptName: '',
     callNo: '',
-    callExt: ''
+    callExt: '',
+    callerDisplayNumber: ''
 })
 
 const formRules = reactive<FormRules>({
     callExt: [
         {
             pattern: /^\d+$/,
-            message: '坐席分机只能输入数字',
+            message: '坐席只能输入数字',
             trigger: 'blur'
         }
     ]
@@ -228,6 +234,7 @@ const resetDialog = () => {
     formData.deptName = ''
     formData.callNo = ''
     formData.callExt = ''
+    formData.callerDisplayNumber = ''
     formRef.value?.resetFields?.()
 }
 
@@ -245,6 +252,7 @@ const openBindDialog = async (row: UserApi.UserVO) => {
         formData.deptName = detail.deptName || ''
         formData.callNo = detail.callNo || ''
         formData.callExt = detail.callExt || ''
+        formData.callerDisplayNumber = detail.callerDisplayNumber || ''
     } finally {
         dialogLoading.value = false
     }
@@ -252,12 +260,13 @@ const openBindDialog = async (row: UserApi.UserVO) => {
 
 const handleClearSeat = async (row: UserApi.UserVO) => {
     const detail = await UserApi.getUser(row.id)
-    await message.confirm(`确认清空“${row.nickname}”的坐席分机吗？`)
+    await message.confirm(`确认清空“${row.nickname}”的坐席吗？`)
     await UserApi.updateUser({
         ...detail,
-        callExt: ''
+        callExt: '',
+        callerDisplayNumber: ''
     })
-    message.success('已清空坐席分机')
+    message.success('已清空坐席')
     await tableMethods.getList()
     await loadGlobalStats()
 }
@@ -269,7 +278,8 @@ const handleSubmit = async () => {
     try {
         await UserApi.updateUser({
             ...currentUserDetail.value,
-            callExt: formData.callExt.trim()
+            callExt: formData.callExt.trim(),
+            callerDisplayNumber: formData.callerDisplayNumber.trim()
         })
         message.success('坐席绑定已保存')
         dialogVisible.value = false
@@ -295,15 +305,15 @@ const tableColumns = computed<TableColumn[]>(() => [
         minWidth: 140,
         formatter: (_, __, value) => textCell(value)
     },
-    {
-        field: 'callNo',
-        label: '呼叫工号',
-        width: 110,
-        formatter: (_, __, value) => textCell(value)
-    },
+    // {
+    //     field: 'callNo',
+    //     label: '呼叫工号',
+    //     width: 110,
+    //     formatter: (_, __, value) => textCell(value)
+    // },
     {
         field: 'callExt',
-        label: '坐席分机',
+        label: '坐席',
         width: 120,
         slots: {
             default: (data) =>
@@ -313,6 +323,12 @@ const tableColumns = computed<TableColumn[]>(() => [
                     <span class="seat-tag seat-tag--empty">未绑定</span>
                 )
         }
+    },
+    {
+        field: 'callerDisplayNumber',
+        label: '名显号码',
+        minWidth: 140,
+        formatter: (_, __, value) => textCell(value)
     },
     { field: 'createTime', label: '创建时间', minWidth: 170, formatter: dateFormatter },
     {
@@ -465,16 +481,6 @@ onMounted(async () => {
 .seat-tag--empty {
     color: #b45309;
     background: #ffedd5;
-}
-
-.seat-dialog__hint {
-    margin-top: 4px;
-    padding: 10px 12px;
-    border-radius: 12px;
-    background: #f8fafc;
-    color: #64748b;
-    font-size: 12px;
-    line-height: 1.6;
 }
 
 @media (max-width: 900px) {

@@ -564,18 +564,18 @@ const tableColumns = reactive<TableColumn[]>([
         minWidth: 220,
         formatter: (_, __, value) => textCell(value)
     },
-    {
-        field: 'callNo',
-        label: '呼叫工号',
-        width: 100,
-        formatter: (_, __, value) => textCell(value)
-    },
-    {
-        field: 'callExt',
-        label: '呼叫分机',
-        width: 100,
-        formatter: (_, __, value) => textCell(value)
-    },
+    // {
+    //     field: 'callNo',
+    //     label: '呼叫工号',
+    //     width: 100,
+    //     formatter: (_, __, value) => textCell(value)
+    // },
+    // {
+    //     field: 'callExt',
+    //     label: '呼叫分机',
+    //     width: 100,
+    //     formatter: (_, __, value) => textCell(value)
+    // },
     {
         field: 'mobileCopyLimitTimes',
         label: '批量复制次数',

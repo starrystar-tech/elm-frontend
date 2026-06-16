@@ -55,18 +55,10 @@
                     </div>
                     <span v-else>--</span>
                 </el-descriptions-item>
-                <el-descriptions-item label="呼叫工号">{{
-                    text(userDetail.callNo)
-                }}</el-descriptions-item>
-                <el-descriptions-item label="呼叫分机">{{
-                    text(userDetail.callExt)
-                }}</el-descriptions-item>
                 <el-descriptions-item label="所属部门">{{
                     text(userDetail.deptName)
                 }}</el-descriptions-item>
-                <el-descriptions-item label="岗位信息">{{
-                    formatPostNames
-                }}</el-descriptions-item>
+                <el-descriptions-item label="岗位信息">{{ formatPostNames }}</el-descriptions-item>
                 <el-descriptions-item label="创建时间">{{ formatCreateTime }}</el-descriptions-item>
                 <el-descriptions-item label="校区权限" :span="2">{{
                     text(userDetail.campusNames)
@@ -161,7 +153,10 @@ const open = async (id: number) => {
     drawerVisible.value = true
     loading.value = true
     try {
-        const [detail, posts] = await Promise.all([UserApi.getUser(id), PostApi.getSimplePostList()])
+        const [detail, posts] = await Promise.all([
+            UserApi.getUser(id),
+            PostApi.getSimplePostList()
+        ])
         userDetail.value = detail
         postMap.value = new Map((posts || []).map((item) => [Number(item.id), item.name]))
     } finally {
