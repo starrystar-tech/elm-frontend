@@ -130,24 +130,12 @@ const searchSchema = reactive<FormSchema[]>([
         }
     },
     {
-        field: 'minSilentCount',
-        label: '静默次数起',
-        component: 'InputNumber',
-        value: null,
+        field: 'silentCountRange',
+        label: '静默次数',
+        component: 'AmountRangeInput',
         componentProps: {
-            min: 0,
-            controlsPosition: 'right',
-            style: { width: '220px' }
-        }
-    },
-    {
-        field: 'maxSilentCount',
-        label: '静默次数止',
-        component: 'InputNumber',
-        value: null,
-        componentProps: {
-            min: 0,
-            controlsPosition: 'right',
+            startPlaceholder: '静默次数起',
+            endPlaceholder: '静默次数止',
             style: { width: '220px' }
         }
     },
@@ -257,18 +245,22 @@ const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
 
 const setSearchParams = (params: Record<string, any>) => {
     currentSearchParams.value = { ...params }
-    const { silentTimeRange, ...rest } = params
+    const { silentTimeRange, silentCountRange, ...rest } = params
     tableMethods.setSearchParams({
         ...rest,
+        minSilentCount: silentCountRange?.[0] ? Number(silentCountRange[0]) : undefined,
+        maxSilentCount: silentCountRange?.[1] ? Number(silentCountRange[1]) : undefined,
         beginSilentTime: silentTimeRange?.[0],
         endSilentTime: silentTimeRange?.[1]
     })
 }
 
 const buildExportParams = () => {
-    const { silentTimeRange, ...rest } = currentSearchParams.value
+    const { silentTimeRange, silentCountRange, ...rest } = currentSearchParams.value
     return {
         ...rest,
+        minSilentCount: silentCountRange?.[0] ? Number(silentCountRange[0]) : undefined,
+        maxSilentCount: silentCountRange?.[1] ? Number(silentCountRange[1]) : undefined,
         beginSilentTime: silentTimeRange?.[0],
         endSilentTime: silentTimeRange?.[1]
     }

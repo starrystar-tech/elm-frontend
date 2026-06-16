@@ -19,6 +19,14 @@
                 <ProductTypeSelect
                     v-model="searchForm.consultProjectId"
                     placeholder="请选择咨询项目"
+                    style="width: 220px"
+                />
+            </template>
+            <template #allocationType>
+                <AllocationTypeSelect
+                    v-model="searchForm.allocationType"
+                    placeholder="请选择分配类型"
+                    style="width: 220px; min-width: 220px"
                 />
             </template>
         </Search>
@@ -235,6 +243,7 @@ import { Search } from '@/components/Search'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import AreaSelect from '@/components/AreaSelect.vue'
+import AllocationTypeSelect from '@/components/AllocationTypeSelect.vue'
 import { getClueIntentLevelOptions } from '@/components/ClueIntentLevel'
 import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 import { hasPermission } from '@/directives/permission/hasPermi'
@@ -272,8 +281,7 @@ interface SearchParams {
     allocationType?: number
     assignMode?: number
     feedbackStatus?: number
-    minOrderCount?: number
-    maxOrderCount?: number
+    orderCountRange?: Array<string | number | undefined>
     creator?: string | number
     createTimeRange?: string[]
 }
@@ -339,16 +347,6 @@ const assignModeOptions = [
     { label: '自动', value: 1 },
     { label: '手动', value: 2 }
 ]
-const allocationTypeOptions = [
-    { label: '自动分配', value: 1 },
-    { label: '手动分配', value: 2 },
-    { label: '自己创建', value: 3 },
-    { label: '公海领取', value: 4 },
-    { label: '主管调配', value: 5 },
-    { label: '无效再分配', value: 6 },
-    { label: '批量分配', value: 7 },
-    { label: '复购系统分配', value: 8 }
-]
 
 const getQueryString = (value: unknown) => {
     if (Array.isArray(value)) {
@@ -404,7 +402,7 @@ const searchSchema = reactive<FormSchema[]>([
             placeholder: '请选择客户状态',
             clearable: true,
             options: statusOptions,
-            style: { width: '220px' }
+            style: { width: '220px', minWidth: '220px' }
         }
     },
     {
@@ -416,7 +414,7 @@ const searchSchema = reactive<FormSchema[]>([
             clearable: true,
             filterable: true,
             options: [],
-            style: { width: '220px' }
+            style: { width: '220px', minWidth: '220px' }
         }
     },
     {
@@ -428,7 +426,7 @@ const searchSchema = reactive<FormSchema[]>([
             clearable: true,
             filterable: true,
             options: [],
-            style: { width: '220px' }
+            style: { width: '220px', minWidth: '220px' }
         }
     },
     {
@@ -437,7 +435,7 @@ const searchSchema = reactive<FormSchema[]>([
         component: 'Select',
         componentProps: {
             clearable: true,
-            style: { width: '220px' }
+            style: { width: '220px', minWidth: '220px' }
         }
     },
     {
@@ -449,7 +447,7 @@ const searchSchema = reactive<FormSchema[]>([
             clearable: true,
             filterable: true,
             options: [],
-            style: { width: '220px' }
+            style: { width: '220px', minWidth: '220px' }
         }
     },
     {
@@ -460,7 +458,7 @@ const searchSchema = reactive<FormSchema[]>([
             placeholder: '请选择意向度',
             clearable: true,
             options: intentLevelOptions,
-            style: { width: '220px' }
+            style: { width: '220px', minWidth: '220px' }
         }
     },
     {
@@ -484,7 +482,7 @@ const searchSchema = reactive<FormSchema[]>([
             clearable: true,
             filterable: true,
             options: [],
-            style: { width: '220px' }
+            style: { width: '220px', minWidth: '220px' }
         }
     },
     {
@@ -506,8 +504,7 @@ const searchSchema = reactive<FormSchema[]>([
         componentProps: {
             placeholder: '请选择分配类型',
             clearable: true,
-            options: allocationTypeOptions,
-            style: { width: '220px' }
+            style: { width: '220px', minWidth: '220px' }
         }
     },
     {
@@ -533,18 +530,14 @@ const searchSchema = reactive<FormSchema[]>([
         }
     },
     {
-        field: 'minOrderCount',
-        label: '报名次数起',
-        value: null,
-        component: 'InputNumber',
-        componentProps: { min: 0, controlsPosition: 'right', style: { width: '220px' } }
-    },
-    {
-        field: 'maxOrderCount',
-        label: '报名次数止',
-        value: null,
-        component: 'InputNumber',
-        componentProps: { min: 0, controlsPosition: 'right', style: { width: '220px' } }
+        field: 'orderCountRange',
+        label: '报名次数',
+        component: 'AmountRangeInput',
+        componentProps: {
+            startPlaceholder: '报名次数起',
+            endPlaceholder: '报名次数止',
+            style: { width: '220px' }
+        }
     },
     {
         field: 'creator',
@@ -590,8 +583,8 @@ const buildPageParams = (params: SearchParams = {}): ClueApi.CluePageReqVO => ({
     allocationType: params.allocationType,
     assignMode: params.assignMode,
     feedbackStatus: params.feedbackStatus,
-    minOrderCount: params.minOrderCount,
-    maxOrderCount: params.maxOrderCount,
+    minOrderCount: params.orderCountRange?.[0] ? Number(params.orderCountRange[0]) : undefined,
+    maxOrderCount: params.orderCountRange?.[1] ? Number(params.orderCountRange[1]) : undefined,
     creator:
         params.creator === undefined || params.creator === null || params.creator === ''
             ? undefined

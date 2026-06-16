@@ -166,6 +166,7 @@ export enum DICT_TYPE {
 
     // ========== CRM 模块 ==========
     CRM_CLUE_FEEDBACK_STATUS = 'crm_clue_feedback_status', // 线索反馈状态
+    CRM_CLUE_ALLOCATION_TYPE = 'crm_clue_allocation_type', // 线索分配类型
 
     // ========== Member 会员模块 ==========
     MEMBER_POINT_BIZ_TYPE = 'member_point_biz_type', // 积分的业务类型

@@ -1,6 +1,19 @@
 <template>
     <ContentWrap>
-        <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+        <Search
+            :schema="searchSchema"
+            :model="searchParams"
+            @reset="setSearchParams"
+            @search="setSearchParams"
+        >
+            <template #allocationType>
+                <AllocationTypeSelect
+                    v-model="searchParams.allocationType"
+                    placeholder="请选择分配类型"
+                    style="width: 220px; min-width: 220px"
+                />
+            </template>
+        </Search>
 
         <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
             <div class="flex gap-8px flex-wrap">
@@ -108,6 +121,7 @@ import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import AllocationTypeSelect from '@/components/AllocationTypeSelect.vue'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
@@ -128,6 +142,7 @@ const assignDialogVisible = ref(false)
 const silentDialogVisible = ref(false)
 const mergeDialogVisible = ref(false)
 const mergeKeepClueId = ref<number | undefined>()
+const searchParams = reactive<Record<string, any>>({})
 
 const assignForm = reactive({ ownerId: undefined as number | undefined })
 const silentForm = reactive({ silentReason: '', silentDays: 7, remark: '' })
@@ -140,16 +155,6 @@ const statusOptions = [
 const assignModeOptions = [
     { label: '自动', value: 1 },
     { label: '手动', value: 2 }
-]
-const allocationTypeOptions = [
-    { label: '自动分配', value: 1 },
-    { label: '手动分配', value: 2 },
-    { label: '自己创建', value: 3 },
-    { label: '公海领取', value: 4 },
-    { label: '主管调配', value: 5 },
-    { label: '无效再分配', value: 6 },
-    { label: '批量分配', value: 7 },
-    { label: '复购系统分配', value: 8 }
 ]
 
 const searchSchema = reactive<FormSchema[]>([
@@ -214,7 +219,6 @@ const searchSchema = reactive<FormSchema[]>([
         componentProps: {
             placeholder: '请选择分配类型',
             clearable: true,
-            options: allocationTypeOptions,
             style: { width: '220px' }
         }
     },
@@ -342,6 +346,7 @@ const resetTableSelection = async () => {
 }
 
 const setSearchParams = (params: Record<string, any>) => {
+    Object.assign(searchParams, params)
     const { allocationTimeRange, ...rest } = params
     tableMethods.setSearchParams({
         ...rest,

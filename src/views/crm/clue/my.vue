@@ -28,6 +28,7 @@
                     <ProductTypeSelect
                         v-model="searchForm.consultProjectId"
                         placeholder="请选择咨询项目"
+                        style="width: 220px; min-width: 220px"
                     />
                 </template>
             </Search>
@@ -207,7 +208,7 @@ const searchSchema = reactive<FormSchema[]>([
         component: 'Select',
         componentProps: {
             clearable: true,
-            style: { width: '220px' }
+            style: { width: '220px', minWidth: '220px' }
         }
     },
     {
@@ -218,7 +219,7 @@ const searchSchema = reactive<FormSchema[]>([
             clearable: true,
             filterable: true,
             options: [],
-            style: { width: '220px' }
+            style: { width: '220px', minWidth: '220px' }
         }
     },
     {

@@ -28,6 +28,8 @@
                     <ProductTypeSelect
                         v-model="searchForm.consultProjectId"
                         placeholder="请选择咨询项目"
+                        style="width: 220px"
+                        min-width="220px"
                     />
                 </template>
             </Search>
@@ -141,8 +143,7 @@ interface PublicSeaSearchParams {
     feedbackStatus?: number
     minOrderCount?: number
     maxOrderCount?: number
-    minEnterPublicSeaCount?: number
-    maxEnterPublicSeaCount?: number
+    enterPublicSeaCountRange?: Array<string | number | undefined>
     enterPublicSeaTimeRange?: string[]
 }
 
@@ -217,7 +218,7 @@ const searchSchema = reactive<FormSchema[]>([
         component: 'Select',
         componentProps: {
             clearable: true,
-            style: { width: '220px' }
+            style: { width: '220px', minWidth: '220px' }
         }
     },
     {
@@ -228,7 +229,7 @@ const searchSchema = reactive<FormSchema[]>([
             clearable: true,
             filterable: true,
             options: [],
-            style: { width: '220px' }
+            style: { width: '220px', minWidth: '220px' }
         }
     },
     {
@@ -263,24 +264,12 @@ const searchSchema = reactive<FormSchema[]>([
         }
     },
     {
-        field: 'minEnterPublicSeaCount',
-        label: '回流次数起',
-        component: 'InputNumber',
-        value: null,
+        field: 'enterPublicSeaCountRange',
+        label: '回流次数',
+        component: 'AmountRangeInput',
         componentProps: {
-            min: 0,
-            controlsPosition: 'right',
-            style: { width: '220px' }
-        }
-    },
-    {
-        field: 'maxEnterPublicSeaCount',
-        label: '回流次数止',
-        component: 'InputNumber',
-        value: null,
-        componentProps: {
-            min: 0,
-            controlsPosition: 'right',
+            startPlaceholder: '回流次数起',
+            endPlaceholder: '回流次数止',
             style: { width: '220px' }
         }
     },
@@ -354,7 +343,15 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'tagNames',
         label: '标签',
         minWidth: '150px',
-        slots: { default: (data) => <span>{(data.row.tagNames as string[])?.length ? (data.row.tagNames as string[]).join('、') : '-'}</span> }
+        slots: {
+            default: (data) => (
+                <span>
+                    {(data.row.tagNames as string[])?.length
+                        ? (data.row.tagNames as string[]).join('、')
+                        : '-'}
+                </span>
+            )
+        }
     },
     {
         field: 'complaintTagNames',
@@ -408,10 +405,16 @@ const tableColumns = computed<TableColumn[]>(() => [
 const getSeaType = () => Number(activeTab.value)
 
 const buildSearchParams = (params: PublicSeaSearchParams) => {
-    const { enterPublicSeaTimeRange, ...rest } = params
+    const { enterPublicSeaTimeRange, enterPublicSeaCountRange, ...rest } = params
     return {
         ...rest,
         seaType: getSeaType(),
+        minEnterPublicSeaCount: enterPublicSeaCountRange?.[0]
+            ? Number(enterPublicSeaCountRange[0])
+            : undefined,
+        maxEnterPublicSeaCount: enterPublicSeaCountRange?.[1]
+            ? Number(enterPublicSeaCountRange[1])
+            : undefined,
         beginEnterPublicSeaTime: enterPublicSeaTimeRange?.[0],
         endEnterPublicSeaTime: enterPublicSeaTimeRange?.[1]
     }
