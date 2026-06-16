@@ -253,7 +253,7 @@ import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'
 import ClueMergeDialog from './components/ClueMergeDialog.vue'
 import ExportTaskDialog from './components/ExportTaskDialog.vue'
 import { renderCopyMobileCell } from './mobileCopy'
-import { FEEDBACK_STATUS_OPTIONS } from './listShared'
+import { buildAreaLabel, FEEDBACK_STATUS_OPTIONS } from './listShared'
 
 interface SearchParams {
     customer?: string
@@ -613,11 +613,6 @@ const {
     defaultParams: buildPageParams(searchForm)
 })
 
-const buildRegionText = (row: ClueApi.ClueVO) => {
-    const regions = [row.province, row.city, row.district].filter(Boolean)
-    return regions.length ? regions.join(' / ') : row.areaName || '--'
-}
-
 const buildTagText = (row: ClueApi.ClueVO) => (row.tagNames?.length ? row.tagNames.join('、') : '-')
 const buildComplaintTagText = (row: ClueApi.ClueVO) =>
     row.complaintTagNames?.length ? row.complaintTagNames.join('、') : '-'
@@ -688,7 +683,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'region',
         label: '地区',
         minWidth: '160px',
-        slots: { default: (data) => <span>{buildRegionText(data.row)}</span> }
+        slots: { default: (data) => <span>{buildAreaLabel(data.row)}</span> }
     },
     { field: 'educationName', label: '学历', width: '100px' },
     { field: 'statusName', label: '客户状态', width: '110px' },

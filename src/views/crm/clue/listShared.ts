@@ -75,8 +75,45 @@ export const buildAreaLabel = (row: {
   district?: string
   areaName?: string
 }) => {
-  const regions = [row.province, row.city, row.district].filter(Boolean)
-  return regions.length ? regions.join(' / ') : row.areaName || '--'
+  const normalize = (value?: string) => {
+    const text = (value || '').trim()
+    return text && text !== '全球' && text !== '中国' ? text : ''
+  }
+  const province = normalize(row.province)
+  const city = normalize(row.city)
+  const district = normalize(row.district)
+  if (province && city) {
+    if (province === city) {
+      return province
+    }
+    return `${province} / ${city}`
+  }
+  if (city && district) {
+    if (city === district) {
+      return city
+    }
+    return `${city} / ${district}`
+  }
+  if (province) {
+    return province
+  }
+  if (city) {
+    return city
+  }
+  if (district) {
+    return district
+  }
+  const areaParts = (row.areaName || '')
+    .split('/')
+    .map((item) => item.trim())
+    .filter((item) => item && item !== '全球' && item !== '中国')
+  if (areaParts.length >= 2) {
+    if (areaParts[0] === areaParts[1]) {
+      return areaParts[0]
+    }
+    return `${areaParts[0]} / ${areaParts[1]}`
+  }
+  return areaParts[0] || '--'
 }
 
 interface LoadClueListOptionsArgs {

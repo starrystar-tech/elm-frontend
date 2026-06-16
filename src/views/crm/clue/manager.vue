@@ -435,7 +435,11 @@ const tableColumns = computed<TableColumn[]>(() => [
                             >
                                 {{
                                     default: () => (
-                                        <BaseButton link type="primary" class="clue-manager-more-btn">
+                                        <BaseButton
+                                            link
+                                            type="primary"
+                                            class="clue-manager-more-btn"
+                                        >
                                             更多
                                         </BaseButton>
                                     ),
@@ -553,7 +557,9 @@ const getMoreActions = (rowId: number) =>
             label: '释放',
             type: 'danger' as const
         }
-    ].filter((item): item is { command: string; label: string; type?: 'danger' } => Boolean(item && rowId))
+    ].filter((item): item is { command: string; label: string; type?: 'danger' } =>
+        Boolean(item && rowId)
+    )
 
 const handleMoreCommand = async (command: string, rowId: number) => {
     switch (command) {
