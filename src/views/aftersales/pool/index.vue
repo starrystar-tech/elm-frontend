@@ -152,7 +152,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                         >
                             查看
                         </BaseButton>
-                        <BaseButton link type="warning" onClick={() => claim(row)}>
+                        <BaseButton link type="primary" onClick={() => claim(row)}>
                             领取
                         </BaseButton>
                     </>

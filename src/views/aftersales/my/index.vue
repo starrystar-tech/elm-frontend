@@ -164,7 +164,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                             查看
                         </BaseButton>
                         {row.status !== 20 && row.status !== 30 ? (
-                            <BaseButton link type="warning" onClick={() => openProcess(row)}>
+                            <BaseButton link type="primary" onClick={() => openProcess(row)}>
                                 处理
                             </BaseButton>
                         ) : null}
