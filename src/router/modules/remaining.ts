@@ -895,49 +895,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
             }
         ]
     },
-    {
-        path: '/iot',
-        component: Layout,
-        name: 'IOT',
-        meta: {
-            hidden: true
-        },
-        children: [
-            {
-                path: 'product/product/detail/:id',
-                name: 'IoTProductDetail',
-                meta: {
-                    title: '产品详情',
-                    noCache: true,
-                    hidden: true,
-                    activeMenu: '/iot/device/product'
-                },
-                component: () => import('@/views/iot/product/product/detail/index.vue')
-            },
-            {
-                path: 'device/detail/:id',
-                name: 'IoTDeviceDetail',
-                meta: {
-                    title: '设备详情',
-                    noCache: true,
-                    hidden: true,
-                    activeMenu: '/iot/device/device'
-                },
-                component: () => import('@/views/iot/device/device/detail/index.vue')
-            },
-            {
-                path: 'ota/operation/firmware/detail/:id',
-                name: 'IoTOtaFirmwareDetail',
-                meta: {
-                    title: '固件详情',
-                    noCache: true,
-                    hidden: true,
-                    activeMenu: '/iot/operation/ota/firmware'
-                },
-                component: () => import('@/views/iot/ota/firmware/detail/index.vue')
-            }
-        ]
-    },
+
     {
         path: '/:pathMatch(.*)*',
         component: () => import('@/views/Error/404.vue'),
