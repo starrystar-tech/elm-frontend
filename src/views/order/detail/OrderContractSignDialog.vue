@@ -1,5 +1,5 @@
 <template>
-    <Dialog v-model="dialogVisible" title="签署合同" width="980px">
+    <Dialog v-model="dialogVisible" title="签署合同" width="780px">
         <div v-loading="loading" class="order-contract-sign">
             <div v-if="shouldShowProductSelector" class="order-contract-sign__section">
                 <div class="order-contract-sign__title">商品信息</div>
@@ -144,9 +144,11 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
+import * as ClueApi from '@/api/crm/clue'
 import * as OrderApi from '@/api/crm/order'
 import * as ContractApi from '@/api/system/contract'
 import * as TemplateApi from '@/api/system/contract/template'
+import { buildAreaLabel } from '@/views/crm/clue/listShared'
 
 defineOptions({ name: 'OrderContractSignDialog' })
 
@@ -162,6 +164,7 @@ const orderDetail = ref<OrderApi.OrderDetailRespVO>({
     payRecords: [],
     refunds: []
 } as any)
+const clueDetail = ref<ClueApi.ClueVO | null>(null)
 const selectedOrderItemId = ref<number>()
 const selectedTemplateId = ref<number>()
 const contractList = ref<ContractApi.ContractOrderProductRespVO[]>([])
@@ -181,35 +184,135 @@ const activeContract = computed(() =>
 const canContinueContract = (status?: number) => status === 1
 const canCancelContract = (status?: number) => status === 1
 
+const normalizeVariableName = (value?: string) =>
+    String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_:/\\\-()（）【】\[\]{}，,。．、]/g, '')
+
+const matchVariableAlias = (variableName: string, aliases: string[]) => {
+    const normalized = normalizeVariableName(variableName)
+    if (!normalized) return false
+    return aliases.some((alias) => {
+        const normalizedAlias = normalizeVariableName(alias)
+        if (!normalizedAlias) return false
+        return normalized === normalizedAlias || normalized.includes(normalizedAlias)
+    })
+}
+
+const formatValue = (value: unknown) => {
+    if (value === null || value === undefined) return ''
+    return String(value).trim()
+}
+
 const buildDefaultVariableValue = (variableName: string) => {
     const item = selectedOrderItem.value
     const detail = orderDetail.value
-    const lowerName = variableName.toLowerCase()
-    const areaText = [detail.province, detail.city, detail.district].filter(Boolean).join('/')
-    const sourceMap: Record<string, string | number | undefined> = {
-        studentname: detail.customerName,
-        customername: detail.customerName,
-        mobile: detail.customerMobile,
-        customermobile: detail.customerMobile,
-        wechat: detail.wechat,
-        wechat2: detail.wechat2,
-        qq: detail.qq,
-        orderno: detail.orderNo,
-        customerid: detail.customerId,
-        idcardno: detail.idCardNo,
-        certificatetype: detail.certificateType,
-        campusname: detail.campusName,
-        projectname: item?.projectName || detail.projectName,
-        productname: item?.productName || detail.mainProductName,
-        productcode: item?.productCode || detail.mainProductCode,
-        productcategory: item?.productCategoryPath || detail.mainProductCategoryPath,
-        payableamount: item?.payableAmount,
-        productprice: item?.productPrice,
-        enrolltime: detail.enrollTime,
-        expiretime: item?.expireTime,
-        area: areaText || undefined
-    }
-    return String(sourceMap[lowerName] ?? '')
+    const clue = clueDetail.value
+    const areaText = buildAreaLabel(clue || detail || {})
+    const detailAddress = clue?.detailAddress || ''
+    const fullAddress =
+        [areaText !== '--' ? areaText : '', detailAddress].filter(Boolean).join(' ') || ''
+    const educationText = clue?.educationName || ''
+    const genderText = clue?.genderName || ''
+    const semanticFields: Array<{ aliases: string[]; value: unknown }> = [
+        { aliases: ['当前学历', '学历', 'education', 'educationname'], value: educationText },
+        {
+            aliases: ['姓名', '学员姓名', '学生姓名', '客户姓名', 'studentname', 'customername'],
+            value: clue?.name || detail.customerName
+        },
+        {
+            aliases: [
+                '手机号',
+                '手机号码',
+                '联系电话',
+                '客户手机号',
+                'mobile',
+                'customermobile',
+                'phone'
+            ],
+            value: clue?.mobile || detail.customerMobile
+        },
+        {
+            aliases: [
+                '备用电话',
+                '备用手机号',
+                '第二手机号',
+                'mobile2',
+                'customermobile2',
+                'phone2'
+            ],
+            value: clue?.mobile2 || detail.customerMobile2
+        },
+        { aliases: ['微信', 'wechat'], value: clue?.wechat || detail.wechat },
+        { aliases: ['微信2', '第二微信', 'wechat2'], value: clue?.wechat2 || detail.wechat2 },
+        { aliases: ['微信备注名', 'wechatremark'], value: clue?.wechatRemark },
+        { aliases: ['qq'], value: clue?.qq || detail.qq },
+        { aliases: ['订单编号', '报名编号', 'orderno'], value: detail.orderNo },
+        {
+            aliases: ['客户编号', '学员编号', 'customerid'],
+            value: clue?.customerId || detail.customerId
+        },
+        {
+            aliases: ['证件号码', '身份证号', '证件号', 'idcard', 'idcardno'],
+            value: clue?.idCardNo || detail.idCardNo
+        },
+        {
+            aliases: ['证件类型', 'certificatetype'],
+            value: clue?.certificateType || detail.certificateType
+        },
+        { aliases: ['性别', 'gender', 'gendername'], value: genderText },
+        { aliases: ['出生日期', '生日', 'birthday'], value: clue?.birthday || detail.birthday },
+        { aliases: ['职业', 'occupation'], value: clue?.occupation || detail.occupation },
+        {
+            aliases: ['紧急联系人', 'emergencycontact'],
+            value: clue?.emergencyContact || detail.emergencyContact
+        },
+        {
+            aliases: ['紧急联系人电话', '紧急联系电话', 'emergencymobile'],
+            value: clue?.emergencyMobile || detail.emergencyMobile
+        },
+        { aliases: ['地区', '区域', 'area', 'areaname'], value: areaText !== '--' ? areaText : '' },
+        {
+            aliases: ['详细地址', '联系地址', 'detailaddress', 'address'],
+            value: detailAddress || fullAddress
+        },
+        { aliases: ['完整地址', 'fulladdress'], value: fullAddress },
+        { aliases: ['省份', 'province'], value: clue?.province || detail.province },
+        { aliases: ['城市', 'city'], value: clue?.city || detail.city },
+        { aliases: ['区县', '地区区县', 'district'], value: clue?.district || detail.district },
+        { aliases: ['报名分校', '校区', 'campusname'], value: detail.campusName },
+        {
+            aliases: ['咨询项目', '项目名称', 'projectname'],
+            value: clue?.consultProjectName || item?.projectName || detail.projectName
+        },
+        {
+            aliases: ['商品名称', '产品名称', '课程名称', 'productname'],
+            value: item?.productName || detail.mainProductName
+        },
+        {
+            aliases: ['商品编码', '产品编码', 'productcode'],
+            value: item?.productCode || detail.mainProductCode
+        },
+        {
+            aliases: ['商品分类', '产品分类', 'productcategory'],
+            value: item?.productCategoryPath || detail.mainProductCategoryPath
+        },
+        { aliases: ['应付金额', '合同金额', 'payableamount'], value: item?.payableAmount },
+        { aliases: ['商品价格', '课程价格', 'productprice'], value: item?.productPrice },
+        { aliases: ['报名时间', '报读时间', 'enrolltime'], value: detail.enrollTime },
+        { aliases: ['到期时间', '截止时间', 'expiretime'], value: item?.expireTime },
+        {
+            aliases: ['归属人', '顾问', 'ownername'],
+            value: clue?.currentOwnerName || detail.ownerUserName
+        },
+        { aliases: ['班主任', 'headteacher'], value: clue?.headteacherName }
+    ]
+
+    const matchedField = semanticFields.find((field) =>
+        matchVariableAlias(variableName, field.aliases)
+    )
+    return formatValue(matchedField?.value)
 }
 
 const resetVariableForm = (fields: ContractApi.ContractVariableVO[]) => {
@@ -313,11 +416,16 @@ const open = async (
     dialogVisible.value = true
     loading.value = true
     try {
+        selectedTemplateId.value = undefined
+        variableFields.value = []
+        clueDetail.value = null
+        Object.keys(variableForm).forEach((key) => delete variableForm[key])
         let detail = payload as OrderApi.OrderDetailRespVO
         if (!detail.items) {
             detail = await OrderApi.getOrder(Number(payload.id))
         }
         orderDetail.value = detail
+        clueDetail.value = detail.clueId ? await ClueApi.getClue(Number(detail.clueId)) : null
         const items = detail.items || []
         activeTab.value = 'order'
         selectedOrderItemId.value =
