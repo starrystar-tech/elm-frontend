@@ -694,6 +694,7 @@ import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
 import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 import ClueIntentLevel from '@/components/ClueIntentLevel'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
+import { buildAreaLabel } from '@/views/crm/clue/listShared'
 import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
 
 const props = defineProps<{
@@ -740,8 +741,7 @@ const consultResultOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_CONSULT_RESULT
 const consultTypeOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_CONSULT_TYPE)
 
 const regionText = computed(() => {
-    const names = [props.clue.province, props.clue.city, props.clue.district].filter(Boolean)
-    return names.length ? names.join(' / ') : props.clue.areaName || '--'
+    return buildAreaLabel(props.clue)
 })
 
 const weworkCustomerCard = computed(() => props.weworkContacts?.[0])

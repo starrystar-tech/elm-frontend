@@ -36,6 +36,7 @@
 import * as ClueApi from '@/api/crm/clue'
 import { formatDate } from '@/utils/formatTime'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
+import { buildAreaLabel } from '@/views/crm/clue/listShared'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
@@ -43,10 +44,6 @@ const props = defineProps<{
 }>()
 
 const regionText = computed(() => {
-    const names = [props.clue.province, props.clue.city, props.clue.district].filter(Boolean)
-    if (names.length) {
-        return names.join(' / ')
-    }
-    return props.clue.areaName || '--'
+    return buildAreaLabel(props.clue)
 })
 </script>
