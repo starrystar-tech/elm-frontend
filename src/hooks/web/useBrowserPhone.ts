@@ -60,7 +60,7 @@ const browserForm = reactive({
     wsServer: 'wss://sip.bgwa.cn:7443',
     domain: '60.205.112.131',
     username: '',
-    password: '123456',
+    password: '',
     target: ''
 })
 const logs = ref<BrowserPhoneLogItem[]>([])
@@ -88,6 +88,9 @@ const appendLog = (
 const syncCallerFromProfile = () => {
     if (!browserForm.username) {
         browserForm.username = profile.callExt || profile.callNo || ''
+    }
+    if (!browserForm.password) {
+        browserForm.password = profile.callPassword || ''
     }
 }
 

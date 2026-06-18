@@ -64,6 +64,15 @@
                         placeholder="请输入外显号码"
                     />
                 </el-form-item>
+                <el-form-item label="坐席密码" prop="callPassword">
+                    <el-input
+                        v-model="formData.callPassword"
+                        type="password"
+                        maxlength="64"
+                        clearable
+                        placeholder="请输入坐席密码"
+                    />
+                </el-form-item>
             </el-form>
             <template #footer>
                 <el-button @click="dialogVisible = false">取消</el-button>
@@ -112,6 +121,7 @@ const formData = reactive({
     deptName: '',
     callNo: '',
     callExt: '',
+    callPassword: '',
     callerDisplayNumber: ''
 })
 
@@ -234,6 +244,7 @@ const resetDialog = () => {
     formData.deptName = ''
     formData.callNo = ''
     formData.callExt = ''
+    formData.callPassword = ''
     formData.callerDisplayNumber = ''
     formRef.value?.resetFields?.()
 }
@@ -252,6 +263,7 @@ const openBindDialog = async (row: UserApi.UserVO) => {
         formData.deptName = detail.deptName || ''
         formData.callNo = detail.callNo || ''
         formData.callExt = detail.callExt || ''
+        formData.callPassword = detail.callPassword || ''
         formData.callerDisplayNumber = detail.callerDisplayNumber || ''
     } finally {
         dialogLoading.value = false
@@ -264,6 +276,7 @@ const handleClearSeat = async (row: UserApi.UserVO) => {
     await UserApi.updateUser({
         ...detail,
         callExt: '',
+        callPassword: '',
         callerDisplayNumber: ''
     })
     message.success('已清空坐席')
@@ -279,6 +292,7 @@ const handleSubmit = async () => {
         await UserApi.updateUser({
             ...currentUserDetail.value,
             callExt: formData.callExt.trim(),
+            callPassword: formData.callPassword.trim(),
             callerDisplayNumber: formData.callerDisplayNumber.trim()
         })
         message.success('坐席绑定已保存')

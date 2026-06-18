@@ -399,6 +399,7 @@ const formData = ref({
     expireTime: undefined as string | undefined,
     callNo: '',
     callExt: '',
+    callPassword: '',
     callerDisplayNumber: '',
     mobileCopyLimitTimes: undefined as number | undefined,
     manageCompanyIds: [] as number[],
@@ -526,6 +527,7 @@ const open = async (type: string, id?: number) => {
                 expireTime: normalizeDateTimeValue(detail.expireTime),
                 callNo: detail.callNo || '',
                 callExt: detail.callExt || '',
+                callPassword: detail.callPassword || '',
                 callerDisplayNumber: detail.callerDisplayNumber || '',
                 mobileCopyLimitTimes: detail.mobileCopyLimitTimes
             }
@@ -592,6 +594,7 @@ const resetForm = () => {
         expireTime: undefined,
         callNo: '',
         callExt: '',
+        callPassword: '',
         callerDisplayNumber: '',
         mobileCopyLimitTimes: undefined,
         manageCompanyIds: [],

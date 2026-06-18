@@ -98,7 +98,7 @@ export default defineComponent({
             }
             applyBrowserPhoneCredentials({
                 username: seat,
-                password: '123456'
+                password: String(profile.callPassword || '').trim()
             })
             return seat
         }
@@ -181,7 +181,7 @@ export default defineComponent({
                 const seat = resolveSeatExtension()
                 applyBrowserPhoneCredentials({
                     username: seat,
-                    password: '123456'
+                    password: String(profile.callPassword || '').trim()
                 })
                 if (
                     outboundStatus.value === 1 &&

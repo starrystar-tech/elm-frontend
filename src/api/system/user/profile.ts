@@ -22,6 +22,7 @@ export interface ProfileVO {
   avatar: string
   callNo?: string
   callExt?: string
+  callPassword?: string
   callerDisplayNumber?: string
   outboundStatus?: number
   status: number
