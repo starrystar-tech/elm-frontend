@@ -1,9 +1,9 @@
 <template>
-    <div class="mb-8px">
+    <!-- <div class="mb-8px">
         <BaseButton :loading="syncLoading" @click="handleSyncArchive">
             同步企微会话存档
         </BaseButton>
-    </div>
+    </div> -->
     <ContentWrap style="border-top: 1px solid #e5e5e5" body-style="padding: 0px">
         <ChatQualityTab v-if="activeTab === 'quality'" class="chat-page-body" />
         <ChatAuditTab v-else-if="activeTab === 'audit'" />
