@@ -340,7 +340,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     },
     {
         field: 'callerDisplayNumber',
-        label: '名显号码',
+        label: '外显号码',
         minWidth: 140,
         formatter: (_, __, value) => textCell(value)
     },
