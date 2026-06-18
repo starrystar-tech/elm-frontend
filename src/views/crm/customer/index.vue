@@ -69,6 +69,7 @@ import type { FormSchema } from '@/types/form'
 import BatchHeadteacherForm from './BatchHeadteacherForm.vue'
 import CustomerDetailDrawer from './detail/CustomerDetailDrawer.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import { buildAreaLabel } from '@/views/crm/clue/listShared'
 
 interface StudentSearchParams {
     mobile?: string
@@ -146,14 +147,6 @@ const {
 } = useTable<ClueApi.ClueVO>({
     getListApi: async (params) => await ClueApi.getCluePage(params)
 })
-
-const buildAreaLabel = (row: ClueApi.ClueVO) => {
-    const names = [row.province, row.city, row.district].filter(Boolean)
-    if (names.length > 0) {
-        return names.join(' / ')
-    }
-    return row.areaName || '--'
-}
 
 const buildEnrollStatus = (row: ClueApi.ClueVO) =>
     Number(row.orderCount || 0) > 0 ? '已报名' : '未报名'
