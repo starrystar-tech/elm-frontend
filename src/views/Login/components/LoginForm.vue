@@ -30,6 +30,10 @@
                 />
             </el-form-item>
 
+            <el-form-item class="form-item-custom">
+                <SliderVerify ref="sliderVerifyRef" v-model="sliderVerified" />
+            </el-form-item>
+
             <div class="flex items-center justify-between mt-4 mb-6">
                 <el-checkbox v-model="loginData.loginForm.rememberMe" class="checkbox-custom">
                     记住我
@@ -74,6 +78,7 @@ import { useIcon } from '@/hooks/web/useIcon'
 import * as authUtil from '@/utils/auth'
 import { usePermissionStore } from '@/store/modules/permission'
 import * as LoginApi from '@/api/login'
+import SliderVerify from './SliderVerify.vue'
 import { LoginStateEnum, useFormValid, useLoginState } from './useLogin'
 
 defineOptions({ name: 'LoginForm' })
@@ -91,6 +96,8 @@ const permissionStore = usePermissionStore()
 const redirect = ref<string>('')
 const loginLoading = ref(false)
 const verify = ref()
+const sliderVerifyRef = ref<InstanceType<typeof SliderVerify>>()
+const sliderVerified = ref(false)
 const captchaType = ref('blockPuzzle') // blockPuzzle 滑块 clickWord 点击文字 pictureWord 文字验证码
 
 const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN)
@@ -115,6 +122,14 @@ const loginData = reactive({
 
 // 获取验证码
 const getCode = async () => {
+    const data = await validForm()
+    if (!data) {
+        return
+    }
+    if (!sliderVerified.value) {
+        message.warning('请先完成滑块验证')
+        return
+    }
     // 情况一，未开启：则直接登录
     if (loginData.captchaEnable === 'false') {
         await handleLogin({})
@@ -153,10 +168,6 @@ const loading = ref() // ElLoading.service 返回的实例
 const handleLogin = async (params: any) => {
     loginLoading.value = true
     try {
-        const data = await validForm()
-        if (!data) {
-            return
-        }
         const loginDataLoginForm = { ...loginData.loginForm }
         loginDataLoginForm.captchaVerification = params.captchaVerification
         const res = await LoginApi.login(loginDataLoginForm)
@@ -184,11 +195,22 @@ const handleLogin = async (params: any) => {
         } else {
             await push({ path: redirect.value || permissionStore.addRouters[0].path })
         }
+    } catch (error) {
+        sliderVerifyRef.value?.reset()
     } finally {
         loginLoading.value = false
-        loading.value.close()
+        loading.value?.close?.()
     }
 }
+
+watch(
+    () => [loginData.loginForm.username, loginData.loginForm.password],
+    () => {
+        if (sliderVerified.value) {
+            sliderVerifyRef.value?.reset()
+        }
+    }
+)
 
 watch(
     () => currentRoute.value,
