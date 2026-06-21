@@ -188,7 +188,7 @@ defineExpose({
   position: absolute;
   inset: 0 auto 0 0;
   width: 68px;
-  background: linear-gradient(90deg, rgb(255 255 255 / 92%), rgb(255 255 255 / 18%));
+  background: linear-gradient(90deg, #dff9e8 0%, #def8e7 72%, #ebfbf1 100%);
   transition: width 0.2s ease;
 }
 
