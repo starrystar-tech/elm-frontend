@@ -14,7 +14,12 @@
                 <el-row :gutter="18">
                     <el-col :span="12">
                         <el-form-item label="商品名称" prop="name">
-                            <el-input v-model="formData.name" placeholder="请输入商品名称" />
+                            <el-input
+                                v-model="formData.name"
+                                maxlength="30"
+                                show-word-limit
+                                placeholder="请输入商品名称"
+                            />
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -46,7 +51,7 @@
                             <el-input-number
                                 v-model="formData.servicePeriodDays"
                                 :min="0"
-                                :step="30"
+                                :step="1"
                                 class="w-full"
                             >
                                 <template #suffix>天</template>
@@ -99,6 +104,8 @@
                                 v-model="formData.remark"
                                 type="textarea"
                                 :rows="3"
+                                maxlength="500"
+                                show-word-limit
                                 placeholder="请输入备注"
                             />
                         </el-form-item>
@@ -131,7 +138,7 @@
                             <el-date-picker
                                 v-model="formData.promotionEndTime"
                                 type="datetime"
-                                value-format="YYYY-MM-DD HH:mm:ss"
+                                format="YYYY-MM-DD HH:mm:ss"
                                 class="w-full"
                                 placeholder="请选择促销截止时间"
                             />
@@ -203,7 +210,7 @@
                             <el-date-picker
                                 v-model="formData.scheduledShelfTime"
                                 type="datetime"
-                                value-format="YYYY-MM-DD HH:mm:ss"
+                                format="YYYY-MM-DD HH:mm:ss"
                                 class="w-full"
                                 placeholder="请选择定时上架时间"
                             />
@@ -221,8 +228,10 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
+import dayjs from 'dayjs'
 import type { FormRules } from 'element-plus'
 import { defaultProps, handleTree } from '@/utils/tree'
+import { CommonStatusEnum } from '@/utils/constants'
 import { fenToYuan, yuanToFen } from '@/utils'
 import * as ProductApi from '@/api/crm/product'
 import * as ProductCategoryApi from '@/api/crm/product/category'
@@ -246,12 +255,12 @@ type ProductFormData = {
     costPriceYuan?: number
     promotionEnabled: boolean
     promotionPriceYuan?: number
-    promotionEndTime?: string
+    promotionEndTime?: Date
     settlementType: number
     settlementValueInput?: number
     channelCodes: string[]
     shelfType: number
-    scheduledShelfTime?: string
+    scheduledShelfTime?: Date
     remark: string
 }
 
@@ -292,7 +301,10 @@ const settlementValueLabel = computed(() =>
 )
 
 const formRules = reactive<FormRules>({
-    name: [{ required: true, message: '商品名称不能为空', trigger: 'blur' }],
+    name: [
+        { required: true, message: '商品名称不能为空', trigger: 'blur' },
+        { max: 30, message: '商品名称不能超过30个字符', trigger: 'blur' }
+    ],
     categoryId: [{ required: true, message: '商品分类不能为空', trigger: 'change' }],
     servicePeriodDays: [{ required: true, message: '服务期不能为空', trigger: 'change' }],
     priceYuan: [{ required: true, message: '售价不能为空', trigger: 'change' }],
@@ -330,16 +342,48 @@ const formRules = reactive<FormRules>({
             },
             trigger: 'change'
         }
-    ]
+    ],
+    remark: [{ max: 500, message: '备注不能超过500个字符', trigger: 'blur' }]
 })
 
 const loadCategories = async () => {
     const resp = await ProductCategoryApi.getProductCategoryList({})
     const rawList = resp?.list || resp || []
-    categoryOptions.value =
+    const tree =
         Array.isArray(rawList) && rawList.some((item: any) => item.children)
             ? rawList
             : handleTree(rawList, 'id', 'parentId')
+    categoryOptions.value = filterEnabledCategories(tree)
+}
+
+const filterEnabledCategories = (list: any[] = []): any[] => {
+    return list
+        .filter((item) => Number(item.status) === CommonStatusEnum.ENABLE)
+        .map((item) => ({
+            ...item,
+            children: filterEnabledCategories(item.children || [])
+        }))
+}
+
+const normalizeDateTimeValue = (value?: string | number | Date | null) => {
+    if (value === null || value === undefined || value === '') return undefined
+    if (typeof value === 'number' && value <= 0) return undefined
+    if (typeof value === 'string') {
+        const trimmed = value.trim()
+        if (!trimmed) return undefined
+        if (/^\d+$/.test(trimmed) && Number(trimmed) <= 0) return undefined
+    }
+    const parsed = dayjs(value)
+    if (parsed.isValid()) {
+        return parsed.toDate()
+    }
+    return undefined
+}
+
+const formatDateTimeValue = (value?: Date) => {
+    if (!value) return null
+    const parsed = dayjs(value)
+    return parsed.isValid() ? parsed.format('YYYY-MM-DD HH:mm:ss') : null
 }
 
 const mapRespToFormData = (data: ProductApi.ProductRespVO): ProductFormData => ({
@@ -363,7 +407,7 @@ const mapRespToFormData = (data: ProductApi.ProductRespVO): ProductFormData => (
         data.promotionPrice !== undefined && data.promotionPrice !== null
             ? Number(fenToYuan(data.promotionPrice))
             : undefined,
-    promotionEndTime: data.promotionEndTime || undefined,
+    promotionEndTime: normalizeDateTimeValue(data.promotionEndTime),
     settlementType: data.settlementType || 1,
     settlementValueInput:
         data.settlementValue !== undefined && data.settlementValue !== null
@@ -373,7 +417,7 @@ const mapRespToFormData = (data: ProductApi.ProductRespVO): ProductFormData => (
             : undefined,
     channelCodes: data.channelCodeList || [],
     shelfType: data.shelfType || 1,
-    scheduledShelfTime: data.scheduledShelfTime || undefined,
+    scheduledShelfTime: normalizeDateTimeValue(data.scheduledShelfTime),
     remark: data.remark || ''
 })
 
@@ -384,7 +428,7 @@ const resetForm = () => {
 
 const open = async (type: 'create' | 'update', id?: number) => {
     dialogVisible.value = true
-    dialogTitle.value = t('action.' + type)
+    dialogTitle.value = t('action.' + type) + '商品'
     formType.value = type
     resetForm()
     await loadCategories()
@@ -442,7 +486,7 @@ const submitForm = async () => {
                 ? yuanToFen(formData.value.promotionPriceYuan)
                 : null,
         promotionEndTime: formData.value.promotionEnabled
-            ? formData.value.promotionEndTime || null
+            ? formatDateTimeValue(formData.value.promotionEndTime)
             : null,
         settlementType: formData.value.settlementType,
         settlementValue:
@@ -452,7 +496,9 @@ const submitForm = async () => {
         channelCodes: formData.value.channelCodes,
         shelfType: formData.value.shelfType,
         scheduledShelfTime:
-            formData.value.shelfType === 3 ? formData.value.scheduledShelfTime || null : null,
+            formData.value.shelfType === 3
+                ? formatDateTimeValue(formData.value.scheduledShelfTime)
+                : null,
         remark: formData.value.remark || undefined
     }
 

@@ -12,10 +12,9 @@
                         <div>
                             <div class="mb-8px flex items-center gap-10px">
                                 <span class="text-20px font-700">{{ product.name || '-' }}</span>
-                                <DictTag
-                                    :type="DICT_TYPE.CRM_PRODUCT_STATUS"
-                                    :value="product.status"
-                                />
+                                <el-tag :type="productStatusTagType">
+                                    {{ productStatusLabel }}
+                                </el-tag>
                             </div>
                             <div
                                 class="grid grid-cols-1 gap-y-6px text-[13px] text-[var(--el-text-color-secondary)] md:grid-cols-2 md:gap-x-24px"
@@ -28,7 +27,7 @@
                                 <span>服务期：{{ product.servicePeriodDays || 0 }} 天</span>
                                 <span>上架方式：{{ getShelfTypeLabel(product.shelfType) }}</span>
                                 <span>创建人：{{ product.creator || '-' }}</span>
-                                <span>创建时间：{{ product.createTime || '-' }}</span>
+                                <span>创建时间：{{ formatDateTimeText(product.createTime) }}</span>
                             </div>
                         </div>
                     </div>
@@ -64,10 +63,9 @@
                                     >{{ product.servicePeriodDays || 0 }} 天</el-descriptions-item
                                 >
                                 <el-descriptions-item label="上架状态">
-                                    <DictTag
-                                        :type="DICT_TYPE.CRM_PRODUCT_STATUS"
-                                        :value="product.status"
-                                    />
+                                    <el-tag :type="productStatusTagType">
+                                        {{ productStatusLabel }}
+                                    </el-tag>
                                 </el-descriptions-item>
                                 <el-descriptions-item label="上架方式">{{
                                     getShelfTypeLabel(product.shelfType)
@@ -97,7 +95,7 @@
                                     nullablePriceText(product.promotionPrice)
                                 }}</el-descriptions-item>
                                 <el-descriptions-item label="促销截止时间">{{
-                                    product.promotionEndTime || '-'
+                                    formatDateTimeText(product.promotionEndTime)
                                 }}</el-descriptions-item>
                                 <el-descriptions-item label="结算方式">{{
                                     product.settlementTypeName ||
@@ -110,10 +108,10 @@
                                     )
                                 }}</el-descriptions-item>
                                 <el-descriptions-item label="定时上架时间">{{
-                                    product.scheduledShelfTime || '-'
+                                    formatDateTimeText(product.scheduledShelfTime)
                                 }}</el-descriptions-item>
                                 <el-descriptions-item label="实际上架时间">{{
-                                    product.actualShelfTime || '-'
+                                    formatDateTimeText(product.actualShelfTime)
                                 }}</el-descriptions-item>
                                 <el-descriptions-item label="备注" :span="2">{{
                                     product.remark || '-'
@@ -133,6 +131,7 @@
 import { ref } from 'vue'
 import { fenToYuan } from '@/utils'
 import { DICT_TYPE } from '@/utils/dict'
+import { resolveTimestamp } from '@/utils/formatTime'
 import { ContentWrap } from '@/components/ContentWrap'
 import { DictTag } from '@/components/DictTag'
 import * as ProductApi from '@/api/crm/product'
@@ -140,6 +139,7 @@ import ProductForm from '../ProductForm.vue'
 import {
     CRM_PRODUCT_CHANNEL_DICT,
     formatSettlementValue,
+    getProductStatusLabel,
     getSettlementTypeLabel,
     getShelfTypeLabel
 } from '../constants'
@@ -154,9 +154,32 @@ const formRef = ref<InstanceType<typeof ProductForm>>()
 const defaultCover =
     'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="100%" height="100%" rx="12" fill="%23f3f4f6"/><text x="50%" y="54%" font-size="14" text-anchor="middle" fill="%239ca3af">Product</text></svg>'
 
+const productStatusLabel = computed(() =>
+    getProductStatusLabel(product.value.status, product.value.statusName)
+)
+const productStatusTagType = computed(() => {
+    const status = Number(product.value.status)
+    if (status === 1) return 'success'
+    if (status === 2) return 'danger'
+    return 'info'
+})
+
 const priceText = (value?: number | null) =>
     value !== undefined && value !== null ? `${fenToYuan(value)} 元` : '-'
 const nullablePriceText = (value?: number | null) => priceText(value)
+const formatDateTimeText = (value?: string | number | null) => {
+    if (
+        value === undefined ||
+        value === null ||
+        value === '' ||
+        value === 0 ||
+        value === '0'
+    ) {
+        return '-'
+    }
+
+    return resolveTimestamp(value)?.format('YYYY-MM-DD HH:mm:ss') || String(value)
+}
 
 const loadDetail = async (id: number) => {
     loading.value = true

@@ -23,7 +23,7 @@
 
 <script setup lang="tsx">
 import { computed, onMounted, ref } from 'vue'
-import { ElImage, ElLink, ElMessageBox } from 'element-plus'
+import { ElImage, ElLink, ElMessageBox, ElTag } from 'element-plus'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
@@ -32,7 +32,6 @@ import { DictTag } from '@/components/DictTag'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
-import { DICT_TYPE } from '@/utils/dict'
 import { defaultProps, handleTree } from '@/utils/tree'
 import { dateFormatter } from '@/utils/formatTime'
 import { fenToYuan } from '@/utils'
@@ -40,7 +39,12 @@ import * as ProductApi from '@/api/crm/product'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import ProductForm from './ProductForm.vue'
 import ProductDetailDrawer from './detail/ProductDetailDrawer.vue'
-import { CRM_PRODUCT_CHANNEL_DICT, formatSettlementValue, getShelfTypeLabel } from './constants'
+import {
+    CRM_PRODUCT_CHANNEL_DICT,
+    formatSettlementValue,
+    getProductStatusLabel,
+    getShelfTypeLabel
+} from './constants'
 
 defineOptions({ name: 'OrderProduct' })
 
@@ -182,9 +186,15 @@ const tableColumns = computed<TableColumn[]>(() => [
         label: '上架状态',
         width: '110px',
         slots: {
-            default: (data) => (
-                <DictTag type={DICT_TYPE.CRM_PRODUCT_STATUS} value={data.row.status} />
-            )
+            default: (data) => {
+                const status = Number(data.row.status)
+                const type = status === 1 ? 'success' : status === 2 ? 'danger' : 'info'
+                return (
+                    <ElTag type={type}>
+                        {getProductStatusLabel(data.row.status, data.row.statusName)}
+                    </ElTag>
+                )
+            }
         }
     },
     {

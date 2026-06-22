@@ -48,12 +48,12 @@
                 @selection-change="handleSelectionChange"
             >
                 <el-table-column type="selection" width="54" reserve-selection />
+                <el-table-column prop="name" label="商品" min-width="160" />
                 <el-table-column label="商品分类" min-width="150">
                     <template #default="{ row }">
                         {{ row.categoryName || categoryNameMap[row.categoryId] || '--' }}
                     </template>
                 </el-table-column>
-                <el-table-column prop="name" label="商品" min-width="160" />
                 <el-table-column label="商品编号" min-width="140">
                     <template #default="{ row }">
                         {{ row.productNo || row.id || '--' }}
@@ -96,6 +96,7 @@ import * as ProductApi from '@/api/crm/product'
 import type { ProductVO } from '@/api/crm/product'
 import type { ProductCategoryVO } from '@/api/crm/product/category'
 import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
+import { fenToYuan } from '@/utils'
 
 defineOptions({ name: 'ProductSelectDialog' })
 
@@ -174,7 +175,8 @@ const loadProductOptions = async () => {
             pageNo: pageNo.value,
             pageSize: pageSize.value,
             name: filterForm.value.keyword || undefined,
-            categoryId: filterForm.value.productCategoryId
+            categoryId: filterForm.value.productCategoryId,
+            status: 1
         })
         const products = ((productPage as any)?.list || []) as ProductVO[]
         productOptions.value = products
@@ -282,7 +284,8 @@ const handleConfirm = () => {
     dialogVisible.value = false
 }
 
-const formatAmount = (value?: number) => Number(value || 0).toFixed(0)
+const formatAmount = (value?: number | null) =>
+    value !== undefined && value !== null ? fenToYuan(value) : '--'
 
 watch([pageNo, pageSize], ([currentPage, currentSize], [previousPage, previousSize]) => {
     if (!dialogVisible.value) return

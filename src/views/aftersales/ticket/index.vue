@@ -128,6 +128,12 @@ const openProcess = (row: AftersalesApi.AftersalesRespVO) => {
     processRef.value.open(row)
 }
 
+const claim = async (row: AftersalesApi.AftersalesRespVO) => {
+    await AftersalesApi.claimAftersales(row.id)
+    message.success('领取成功')
+    await tableMethods.getList()
+}
+
 const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'ticketNo',
@@ -203,6 +209,11 @@ const tableColumns = computed<TableColumn[]>(() => [
                         >
                             查看
                         </BaseButton>
+                        {!row.handlerUserId && row.status !== 20 && row.status !== 30 ? (
+                            <BaseButton link type="primary" onClick={() => claim(row)}>
+                                领取
+                            </BaseButton>
+                        ) : null}
                         {row.handlerUserId && row.status !== 20 && row.status !== 30 ? (
                             <BaseButton link type="primary" onClick={() => openProcess(row)}>
                                 处理

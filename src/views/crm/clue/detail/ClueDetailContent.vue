@@ -98,6 +98,7 @@
                                 <ProductTypeSelect
                                     v-model="editForm.consultProjectId"
                                     placeholder="请选择"
+                                    missing-label="所选商品已下架"
                                 />
                             </el-form-item>
                             <el-form-item label="手机号2">
@@ -508,6 +509,7 @@
                                     <ProductTypeSelect
                                         v-model="consultForm.projectId"
                                         placeholder="请选择咨询项目"
+                                        missing-label="所选商品已下架"
                                         @update:model-value="handleConsultProjectChange"
                                     />
                                 </el-form-item>
@@ -519,6 +521,7 @@
                                     <ProductTypeSelect
                                         v-model="consultForm.productCategoryId"
                                         :parent-id="consultForm.projectId"
+                                        missing-label="所选商品已下架"
                                         @update:model-value="handleConsultCategoryChange"
                                     />
                                 </el-form-item>
@@ -755,7 +758,15 @@ const weworkStaffCards = computed(() =>
     )
 )
 
-const selectedConsultProductName = computed(() => consultForm.productName || '')
+const selectedConsultProductName = computed(() => {
+    if (consultForm.productName) {
+        return consultForm.productName
+    }
+    if (consultForm.productId) {
+        return '所选商品已下架'
+    }
+    return ''
+})
 
 const editForm = reactive({
     id: undefined as number | undefined,

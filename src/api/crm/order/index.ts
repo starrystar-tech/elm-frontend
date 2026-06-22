@@ -24,7 +24,7 @@ export interface OrderPageReqVO extends PageParam {
 export interface OrderPageRespVO {
   id: number
   orderNo: string
-  enrollTime: string
+  enrollTime?: string
   customerName: string
   customerId: string
   customerMobile: string
@@ -167,7 +167,7 @@ export interface OrderCreateReqVO {
   ownerUserName?: string
   cardOwnerUserId?: number
   cardOwnerUserName?: string
-  enrollTime: string
+  enrollTime?: string
   payableAmount: number
   remark?: string
   items: OrderCreateItemReqVO[]

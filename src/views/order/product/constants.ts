@@ -32,3 +32,14 @@ export const getShelfTypeLabel = (value?: number) => {
 export const getSettlementTypeLabel = (value?: number) => {
     return PRODUCT_SETTLEMENT_TYPE_OPTIONS.find((item) => item.value === value)?.label || '-'
 }
+
+export const PRODUCT_STATUS_OPTIONS = [
+    { label: '待上架', value: 0 },
+    { label: '已上架', value: 1 },
+    { label: '已下架', value: 2 }
+]
+
+export const getProductStatusLabel = (value?: number, statusName?: string) => {
+    if (statusName) return statusName
+    return PRODUCT_STATUS_OPTIONS.find((item) => item.value === value)?.label || '-'
+}

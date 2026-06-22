@@ -22,6 +22,7 @@ const props = defineProps<{
     multiple?: boolean
     parentId?: number
     placeholder?: string
+    missingLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -45,10 +46,37 @@ const loadOptions = async () => {
     const list =
         ((await ProductCategoryApi.getProductCategorySimpleList()) ||
             []) as ProductCategoryApi.ProductCategoryVO[]
-    options.value =
+    const filteredOptions =
         props.parentId !== undefined
             ? list.filter((item) => Number(item.parentId) === Number(props.parentId))
             : list.filter((item) => Number(item.parentId) === 0)
+    options.value = appendMissingOptions(filteredOptions)
+}
+
+const appendMissingOptions = (list: ProductCategoryApi.ProductCategoryVO[]) => {
+    const result = [...list]
+    const values = Array.isArray(innerValue.value)
+        ? innerValue.value
+        : innerValue.value !== undefined
+          ? [innerValue.value]
+          : []
+
+    values.forEach((value) => {
+        const numericValue = Number(value)
+        if (!numericValue || result.some((item) => Number(item.id) === numericValue)) {
+            return
+        }
+        result.push({
+            id: numericValue,
+            name: props.missingLabel || '所选商品已下架',
+            parentId: Number(props.parentId ?? 0),
+            code: '',
+            sort: 0,
+            status: 0
+        })
+    })
+
+    return result
 }
 
 const handleChange = (value: number | number[] | undefined) => {

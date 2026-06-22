@@ -1,3 +1,5 @@
+import { fenToYuan } from '@/utils'
+
 export const ORDER_STATUS_OPTIONS = [
   { label: '待支付', value: 0 },
   { label: '部分支付', value: 10 },
@@ -54,7 +56,7 @@ export const formatAmount = (value?: number | null) => {
   if (value === undefined || value === null) {
     return '-'
   }
-  return Number(value).toFixed(2)
+  return fenToYuan(value)
 }
 
 export const getRemainingAmount = (payableAmount?: number, paidAmount?: number) => {

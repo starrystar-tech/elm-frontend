@@ -99,7 +99,7 @@
                             <strong>{{ totalPayableText }}</strong>
                         </div>
                         <el-button
-                            type="success"
+                            type="primary"
                             class="enroll-plan__choose"
                             @click="openProductPicker"
                         >
@@ -121,24 +121,27 @@
                             </el-table-column>
                             <el-table-column label="商品价格" min-width="120">
                                 <template #default="{ row }">
-                                    {{ formatAmount(row.price) }}
+                                    ¥{{ formatAmount(row.price) }}
                                 </template>
                             </el-table-column>
                             <el-table-column label="最低价" min-width="120">
                                 <template #default="{ row }">
-                                    {{ formatAmount(row.minPrice) }}
+                                    ¥{{ formatAmount(row.minPrice) }}
                                 </template>
                             </el-table-column>
-                            <el-table-column label="应付金额" min-width="140">
+                            <el-table-column label="应付金额(元)" min-width="140">
                                 <template #default="{ row }">
-                                    <el-input-number
-                                        :model-value="row.payableAmount"
-                                        :min="0"
-                                        :precision="2"
-                                        controls-position="right"
-                                        class="!w-full"
-                                        @update:model-value="updateRowPayable(row.id, $event)"
-                                    />
+                                    <div class="enroll-plan__amount-input">
+                                        <span class="enroll-plan__amount-prefix">¥</span>
+                                        <el-input-number
+                                            :model-value="row.payableAmount"
+                                            :min="0"
+                                            :precision="2"
+                                            controls-position="right"
+                                            class="!w-full"
+                                            @update:model-value="updateRowPayable(row.id, $event)"
+                                        />
+                                    </div>
                                 </template>
                             </el-table-column>
                             <el-table-column label="操作" width="90" align="center">
@@ -189,11 +192,7 @@
                         >
                             <div class="enroll-payment__record-title">
                                 <span>第 {{ index + 1 }} 条</span>
-                                <el-button
-                                    link
-                                    type="danger"
-                                    @click="removePayRecord(record.key)"
-                                >
+                                <el-button link type="danger" @click="removePayRecord(record.key)">
                                     删除
                                 </el-button>
                             </div>
@@ -219,10 +218,7 @@
                                     />
                                 </el-form-item>
                                 <el-form-item label="备注" class="enroll-payment__detail-full">
-                                    <el-input
-                                        v-model="record.payRemark"
-                                        placeholder="请输入备注"
-                                    />
+                                    <el-input v-model="record.payRemark" placeholder="请输入备注" />
                                 </el-form-item>
                             </div>
                         </div>
@@ -259,6 +255,7 @@ import type { ProductCategoryVO } from '@/api/crm/product/category'
 import type { CampusVO } from '@/api/system/campus'
 import CampusSelect from '@/components/CampusSelect.vue'
 import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
+import { fenToYuan, yuanToFen } from '@/utils'
 
 defineOptions({ name: 'ClueEnrollDialog' })
 
@@ -330,6 +327,11 @@ const categoryOptions = ref<ProductCategoryVO[]>([])
 const productPickerVisible = ref(false)
 const selectedProducts = ref<EnrollProductItem[]>([])
 const payRecords = ref<EnrollPayRecordItem[]>([])
+const originalOptionalFields = ref({
+    occupation: '',
+    emergencyMobile: '',
+    emergencyContact: ''
+})
 
 const createDefaultPayRecord = (): EnrollPayRecordItem => ({
     key: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -379,7 +381,6 @@ const formRules = reactive({
     areaId: [{ required: true, message: '请选择地区', trigger: 'change' }],
     certificateType: [{ required: true, message: '请选择证件类型', trigger: 'change' }],
     idCardNo: [{ required: true, message: '请输入证件号码', trigger: 'blur' }],
-    enrollTime: [{ required: true, message: '请选择报名时间', trigger: 'change' }],
     campusId: [{ required: true, message: '请选择报名分校', trigger: 'change' }],
     payableAmount: [{ required: true, message: '应付金额不能为空', trigger: 'change' }]
 })
@@ -397,11 +398,11 @@ const totalPayableAmount = computed(() =>
     selectedProducts.value.reduce((sum, item) => sum + Number(item.payableAmount || 0), 0)
 )
 
-const totalPayableText = computed(() => `¥${formatAmount(totalPayableAmount.value)}`)
+const totalPayableText = computed(() => `¥${formatYuanAmount(totalPayableAmount.value)}`)
 const totalPaidAmount = computed(() =>
     payRecords.value.reduce((sum, item) => sum + Number(item.paidAmount || 0), 0)
 )
-const paidAmountText = computed(() => `¥${formatAmount(totalPaidAmount.value)}`)
+const paidAmountText = computed(() => `¥${formatYuanAmount(totalPaidAmount.value)}`)
 
 const handleCampusChange = (item?: CampusVO) => {
     formData.value.campusName = item?.name || ''
@@ -428,7 +429,7 @@ const appendProducts = (products: ProductVO[]) => {
             productName: product.name,
             price: Number(product.price || 0),
             minPrice: Number(product.minPrice || 0),
-            payableAmount: Number(product.price || 0),
+            payableAmount: Number(fenToYuan(product.price || 0)),
             productCode: product.productNo,
             categoryPath: product.categoryPath,
             projectName: product.categoryName || category?.name || ''
@@ -466,47 +467,66 @@ const removePayRecord = (recordKey: string) => {
 }
 
 const formatAmount = (value?: number) => {
-    return Number(value || 0).toFixed(0)
+    return fenToYuan(value || 0)
+}
+
+const formatYuanAmount = (value?: number) => {
+    return Number(value || 0).toFixed(2)
 }
 
 const open = async (clue?: ClueApi.ClueVO) => {
     await loadOptions()
     dialogVisible.value = true
     currentStep.value = 0
+    loading.value = true
     selectedProducts.value = []
     payRecords.value = [createDefaultPayRecord()]
+    let fullClue = clue
+    if (clue?.id) {
+        try {
+            fullClue = await ClueApi.getClue(clue.id)
+        } catch (error) {
+            console.warn('Failed to load full clue detail for enroll dialog, fallback to current clue', error)
+        }
+    }
     formData.value = {
         ...createDefaultFormData(),
-        clueId: clue?.id,
-        customerId: clue?.customerId || '',
-        clueName: clue?.name || '',
-        mobile: clue?.mobile || '',
-        mobile2: clue?.mobile2 || '',
-        areaId: clue?.areaId,
-        wechat: clue?.wechat || '',
-        wechat2: clue?.wechat2 || '',
-        qq: clue?.qq || '',
-        sourceName: clue?.clueSourceName || '2505成考不限',
-        ownerUserId: clue?.currentOwnerId,
-        ownerName: clue?.currentOwnerName || '',
-        departmentName: clue?.currentDepartmentName || '',
-        consultProjectId: clue?.consultProjectId,
-        clueSourceId: clue?.clueSourceId,
-        remark: clue?.remark || '',
-        tagIds: clue?.tagIds || [],
-        gender: clue?.gender,
-        birthday: clue?.birthday ? clue.birthday.replace(/-/g, '/') : '',
-        certificateType: clue?.certificateType || '身份证',
-        occupation: clue?.occupation || '',
-        emergencyMobile: clue?.emergencyMobile || '',
-        emergencyContact: clue?.emergencyContact || '',
-        idCardNo: clue?.idCardNo || '',
+        clueId: fullClue?.id,
+        customerId: fullClue?.customerId || '',
+        clueName: fullClue?.name || '',
+        mobile: fullClue?.mobile || '',
+        mobile2: fullClue?.mobile2 || '',
+        areaId: fullClue?.areaId,
+        wechat: fullClue?.wechat || '',
+        wechat2: fullClue?.wechat2 || '',
+        qq: fullClue?.qq || '',
+        sourceName: fullClue?.clueSourceName || '2505成考不限',
+        ownerUserId: fullClue?.currentOwnerId,
+        ownerName: fullClue?.currentOwnerName || '',
+        departmentName: fullClue?.currentDepartmentName || '',
+        consultProjectId: fullClue?.consultProjectId,
+        clueSourceId: fullClue?.clueSourceId,
+        remark: fullClue?.remark || '',
+        tagIds: fullClue?.tagIds || [],
+        gender: fullClue?.gender,
+        birthday: fullClue?.birthday ? fullClue.birthday.replace(/-/g, '/') : '',
+        certificateType: fullClue?.certificateType || '身份证',
+        occupation: fullClue?.occupation || '',
+        emergencyMobile: fullClue?.emergencyMobile || '',
+        emergencyContact: fullClue?.emergencyContact || '',
+        idCardNo: fullClue?.idCardNo || '',
         campusId: undefined,
         campusName: '',
         enrollTime: '',
         payStatus: 'unpaid',
         payableAmount: 0
     }
+    originalOptionalFields.value = {
+        occupation: fullClue?.occupation || '',
+        emergencyMobile: fullClue?.emergencyMobile || '',
+        emergencyContact: fullClue?.emergencyContact || ''
+    }
+    loading.value = false
     nextTick(() => formRef.value?.clearValidate())
 }
 
@@ -527,7 +547,7 @@ const nextStep = async () => {
         return
     }
     if (currentStep.value === 1) {
-        await validateFields(['enrollTime', 'campusId'])
+        await validateFields(['campusId'])
         if (!selectedProducts.value.length) {
             message.warning('请先选择商品')
             return
@@ -582,9 +602,12 @@ const submitForm = async () => {
                 tagIds: formData.value.tagIds,
                 idCardNo: formData.value.idCardNo,
                 certificateType: formData.value.certificateType,
-                occupation: formData.value.occupation,
-                emergencyMobile: formData.value.emergencyMobile,
-                emergencyContact: formData.value.emergencyContact
+                occupation: formData.value.occupation || originalOptionalFields.value.occupation,
+                emergencyMobile:
+                    formData.value.emergencyMobile || originalOptionalFields.value.emergencyMobile,
+                emergencyContact:
+                    formData.value.emergencyContact ||
+                    originalOptionalFields.value.emergencyContact
             })
         }
         const orderId = await OrderApi.createOrder({
@@ -604,8 +627,8 @@ const submitForm = async () => {
             ownerUserName: formData.value.ownerName,
             cardOwnerUserId: formData.value.ownerUserId,
             cardOwnerUserName: formData.value.ownerName,
-            enrollTime: formData.value.enrollTime,
-            payableAmount: totalPayableAmount.value,
+            enrollTime: undefined,
+            payableAmount: yuanToFen(totalPayableAmount.value),
             remark: formData.value.enrollRemark,
             items: selectedProducts.value.map((item, index) => ({
                 sort: index + 1,
@@ -615,14 +638,14 @@ const submitForm = async () => {
                 productName: item.productName,
                 productCategoryPath: item.categoryPath || '',
                 productPrice: Number(item.price || 0),
-                payableAmount: Number(item.payableAmount || 0),
+                payableAmount: yuanToFen(item.payableAmount || 0),
                 remark: ''
             }))
         })
         for (const item of payRecords.value) {
             await OrderApi.payOrder({
                 orderId,
-                payAmount: Number(item.paidAmount || 0),
+                payAmount: yuanToFen(item.paidAmount || 0),
                 payMethod: item.payMethod
             })
         }
@@ -684,6 +707,26 @@ defineExpose({ open })
     align-items: center;
     color: #303133;
     font-size: 14px;
+}
+
+.enroll-plan__amount-input {
+    position: relative;
+}
+
+
+.enroll-plan__amount-prefix {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    color: #606266;
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.enroll-plan__amount-input :deep(.el-input-number .el-input__wrapper) {
+    padding-left: 28px;
 }
 
 .enroll-plan {

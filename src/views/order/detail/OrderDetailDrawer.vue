@@ -16,17 +16,6 @@
                         :title="detail.customerName || detail.orderNo || '--'"
                         class="mb-16px"
                     >
-                        <template #contact>
-                            <div class="flex flex-wrap items-center gap-8px text-14px">
-                                <template v-if="detail.customerMobile2">
-                                    <span>/</span>
-                                    <MobileCopyInline
-                                        :mobile="detail.customerMobile2"
-                                        direct-copy
-                                    />
-                                </template>
-                            </div>
-                        </template>
                         <template #subline>
                             <span>订单编号：{{ detail.orderNo || '-' }}</span>
                             <span>客户ID：{{ detail.customerId || '-' }}</span>
@@ -39,7 +28,6 @@
                             <el-button plain @click="handleRefund">退款</el-button>
                             <el-button plain @click="handleVoid">作废</el-button>
                             <el-button plain @click="handleRepurchase">订单复购</el-button>
-                            <el-button @click="drawerVisible = false">关闭</el-button>
                         </template>
                     </DetailHeroCard>
                     <ContentWrap class="mb-16px">
@@ -86,7 +74,7 @@
                                         formatCurrencyText(firstProduct.payableAmount)
                                     }}</el-descriptions-item>
                                     <el-descriptions-item label="商品到期时间">{{
-                                        formatDateTimeText(firstProduct.expireTime)
+                                        formatExpireTimeText(firstProduct.expireTime, detail.expireTime)
                                     }}</el-descriptions-item>
                                     <el-descriptions-item label="备注" :span="2">{{
                                         detail.remark || '-'
@@ -131,9 +119,6 @@
                                         <el-descriptions-item label="QQ">{{
                                             detail.qq || '-'
                                         }}</el-descriptions-item>
-                                        <el-descriptions-item label="出生日期">{{
-                                            detail.birthday || '-'
-                                        }}</el-descriptions-item>
                                         <el-descriptions-item label="证件类型">{{
                                             detail.certificateType || '-'
                                         }}</el-descriptions-item>
@@ -153,9 +138,6 @@
                                             detail.emergencyContact || '-'
                                         }}</el-descriptions-item>
                                         <el-descriptions-item label="客户ID">{{
-                                            detail.customerId || '-'
-                                        }}</el-descriptions-item>
-                                        <el-descriptions-item label="信息ID">{{
                                             detail.customerId || '-'
                                         }}</el-descriptions-item>
                                         <el-descriptions-item label="客户状态">{{
@@ -286,7 +268,11 @@
                                         prop="expireTime"
                                         label="到期时间"
                                         min-width="120"
-                                    />
+                                    >
+                                        <template #default="{ row }">{{
+                                            formatDateTimeText(row.expireTime)
+                                        }}</template>
+                                    </el-table-column>
                                     <el-table-column label="操作" min-width="120" fixed="right">
                                         <template #default="{ row }">
                                             <el-button
@@ -485,11 +471,56 @@ const consultTagText = computed(() => {
     const tags = consultBasicInfo.value?.tags || []
     return tags.length ? tags.map((item) => item.name).join('、') : '-'
 })
-const formatDateTimeText = (value?: string | number | null) => {
-    if (value === null || value === undefined || value === '' || Number(value) === 0) {
+const formatDateTimeText = (value?: unknown) => {
+    if (value === null || value === undefined || value === '') {
         return '-'
     }
-    return resolveTimestamp(value)?.format('YYYY-MM-DD HH:mm:ss') || String(value)
+
+    if (Array.isArray(value)) {
+        const [year, month, day] = value
+        if (
+            typeof year === 'number' &&
+            typeof month === 'number' &&
+            typeof day === 'number' &&
+            year >= 2000
+        ) {
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} 00:00:00`
+        }
+        return '-'
+    }
+
+    if (typeof value === 'number') {
+        if (!Number.isFinite(value) || value <= 0 || Math.abs(value) < 1000000000) {
+            return '-'
+        }
+        return resolveTimestamp(value)?.format('YYYY-MM-DD HH:mm:ss') || '-'
+    }
+
+    if (typeof value === 'string') {
+        const trimmed = value.trim()
+        if (!trimmed || trimmed === '0') {
+            return '-'
+        }
+        if (trimmed.includes('-') || trimmed.includes('/') || trimmed.includes('T')) {
+            return resolveTimestamp(trimmed)?.format('YYYY-MM-DD HH:mm:ss') || trimmed
+        }
+        const numericValue = Number(trimmed)
+        if (!Number.isFinite(numericValue) || numericValue <= 0 || Math.abs(numericValue) < 1000000000) {
+            return '-'
+        }
+        return resolveTimestamp(numericValue)?.format('YYYY-MM-DD HH:mm:ss') || '-'
+    }
+
+    return String(value)
+}
+const formatExpireTimeText = (...values: unknown[]) => {
+    for (const value of values) {
+        const text = formatDateTimeText(value)
+        if (text !== '-') {
+            return text
+        }
+    }
+    return '-'
 }
 const formatCurrencyText = (value?: number | null) =>
     value === null || value === undefined ? '-' : `￥${formatAmount(value)}`
