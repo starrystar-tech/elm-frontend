@@ -250,7 +250,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         minWidth: '120px',
         formatter: (_r, _c, v) => getShelfTypeLabel(v)
     },
-    { field: 'creator', label: '创建人', width: '110px' },
+    { field: 'creatorName', label: '创建人', width: '110px' },
     { field: 'createTime', label: '创建时间', width: '180px', formatter: dateFormatter },
     {
         field: 'action',
