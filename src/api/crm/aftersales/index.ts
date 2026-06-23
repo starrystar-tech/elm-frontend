@@ -85,6 +85,10 @@ export const getTodayAftersalesPage = async (params: AftersalesPageReqVO) => {
   return await request.get({ url: '/crm/aftersales/today-page', params })
 }
 
+export const getPoolAftersalesPage = async (params: AftersalesPageReqVO) => {
+  return await request.get({ url: '/crm/aftersales/pool-page', params })
+}
+
 export const getAftersalesPage = async (params: AftersalesPageReqVO) => {
   return await request.get({ url: '/crm/aftersales/page', params })
 }

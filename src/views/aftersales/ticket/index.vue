@@ -209,11 +209,6 @@ const tableColumns = computed<TableColumn[]>(() => [
                         >
                             查看
                         </BaseButton>
-                        {!row.handlerUserId && row.status !== 20 && row.status !== 30 ? (
-                            <BaseButton link type="primary" onClick={() => claim(row)}>
-                                领取
-                            </BaseButton>
-                        ) : null}
                         {row.handlerUserId && row.status !== 20 && row.status !== 30 ? (
                             <BaseButton link type="primary" onClick={() => openProcess(row)}>
                                 处理

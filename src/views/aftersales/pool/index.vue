@@ -57,7 +57,7 @@ const {
     tableMethods,
     register: tableRegister
 } = useTable<AftersalesApi.AftersalesRespVO>({
-    getListApi: async (params) => await AftersalesApi.getTodayAftersalesPage(params)
+    getListApi: async (params) => await AftersalesApi.getPoolAftersalesPage(params)
 })
 
 const setSearchParams = (params: Recordable) => {
