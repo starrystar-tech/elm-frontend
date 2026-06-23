@@ -1,6 +1,82 @@
 <template>
     <ContentWrap>
-        <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
+        <Search :model="searchForm" @reset="resetSearchParams" @search="setSearchParams">
+            <el-form-item label="主叫" prop="userId">
+                <el-input
+                    v-model="selectedUserName"
+                    readonly
+                    clearable
+                    placeholder="请选择主叫"
+                    style="width: 220px"
+                    @click="openUserSelect"
+                    @clear="clearSelectedUser"
+                >
+                    <template #suffix>
+                        <Icon icon="ep:search" />
+                    </template>
+                </el-input>
+            </el-form-item>
+            <el-form-item label="线路" prop="outboundRouteId">
+                <el-select
+                    v-model="searchForm.outboundRouteId"
+                    clearable
+                    filterable
+                    placeholder="请选择线路"
+                    style="width: 220px"
+                >
+                    <el-option
+                        v-for="item in outboundRouteOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                    />
+                </el-select>
+            </el-form-item>
+            <el-form-item label="手机号" prop="calleeMobile">
+                <el-input
+                    v-model="searchForm.calleeMobile"
+                    clearable
+                    placeholder="请输入被叫手机号"
+                    style="width: 220px"
+                />
+            </el-form-item>
+            <el-form-item label="状态" prop="status">
+                <el-select
+                    v-model="searchForm.status"
+                    clearable
+                    placeholder="请选择状态"
+                    style="width: 220px"
+                >
+                    <el-option
+                        v-for="item in statusOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                    />
+                </el-select>
+            </el-form-item>
+            <el-form-item label="发起时间" prop="createTime">
+                <el-date-picker
+                    v-model="searchForm.createTime"
+                    type="daterange"
+                    value-format="YYYY-MM-DD HH:mm:ss"
+                    start-placeholder="开始时间"
+                    end-placeholder="结束时间"
+                    :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
+                    style="width: 220px"
+                />
+            </el-form-item>
+            <el-form-item label-width="0">
+                <el-button type="primary" @click="setSearchParams(searchForm)">
+                    <Icon class="mr-5px" icon="ep:search" />
+                    查询
+                </el-button>
+                <el-button @click="resetSearchParams">
+                    <Icon class="mr-5px" icon="ep:refresh" />
+                    重置
+                </el-button>
+            </el-form-item>
+        </Search>
         <Table
             v-model:currentPage="tableObject.currentPage"
             v-model:pageSize="tableObject.pageSize"
@@ -11,18 +87,21 @@
             @register="tableRegister"
         />
     </ContentWrap>
+    <UserSelectForm ref="userSelectFormRef" @confirm="handleUserSelectConfirm" />
 </template>
 
 <script setup lang="tsx">
-import { onMounted, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { ElTooltip } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { useTable } from '@/hooks/web/useTable'
-import type { FormSchema } from '@/types/form'
 import * as OutboundCallRecordApi from '@/api/system/call/record'
+import * as OutboundRouteApi from '@/api/system/call/router'
+import type { UserVO } from '@/api/system/user'
+import UserSelectForm from '@/components/UserSelectForm/index.vue'
 
 defineOptions({ name: 'CrmCallRecord' })
 
@@ -37,88 +116,87 @@ const formatDuration = (durationSeconds?: number) => {
 }
 
 const buildCallResultText = (row: Recordable) => {
-    return row.hangupCause || row.originateDisposition || row.failReason || '-'
+    return row.failReason || row.hangupCause || row.originateDisposition || row.statusDesc || '-'
 }
 
-const searchSchema = reactive<FormSchema[]>([
-    {
-        field: 'calleeMobile',
-        label: '手机号',
-        component: 'Input',
-        componentProps: {
-            placeholder: '请输入被叫手机号',
-            clearable: true,
-            style: { width: '220px' }
-        }
-    },
-    // {
-    //     field: 'callType',
-    //     label: '通话类型',
-    //     component: 'Select',
-    //     componentProps: {
-    //         placeholder: '请选择通话类型',
-    //         clearable: true,
-    //         options: [
-    //             { label: '公网外呼', value: 1 },
-    //             { label: '内部通话', value: 2 }
-    //         ],
-    //         style: { width: '180px' }
-    //     }
-    // },
-    {
-        field: 'status',
-        label: '状态',
-        component: 'Select',
-        componentProps: {
-            placeholder: '请选择状态',
-            clearable: true,
-            options: [
-                { label: '发起中', value: 10 },
-                { label: '已提交', value: 20 },
-                { label: '已接通', value: 30 },
-                { label: '失败', value: 40 },
-                { label: '无人接听', value: 50 },
-                { label: '忙线', value: 60 },
-                { label: '已挂断', value: 70 }
-            ],
-            style: { width: '220px' }
-        }
-    },
-    {
-        field: 'createTime',
-        label: '发起时间',
-        component: 'DatePicker',
-        componentProps: {
-            type: 'daterange',
-            valueFormat: 'YYYY-MM-DD HH:mm:ss',
-            startPlaceholder: '开始时间',
-            endPlaceholder: '结束时间',
-            defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
-            style: { width: '220px' }
-        }
-    }
-])
+const outboundRouteOptions = ref<{ label: string; value: number }[]>([])
+const selectedUserName = ref('')
+const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
+const searchForm = reactive<OutboundCallRecordApi.OutboundCallRecordPageReqVO>({
+    userId: undefined,
+    outboundRouteId: undefined,
+    calleeMobile: undefined,
+    status: undefined,
+    createTime: undefined
+})
+const statusOptions = [
+    { label: '发起中', value: 10 },
+    { label: '已提交', value: 20 },
+    { label: '已接通', value: 30 },
+    { label: '失败', value: 40 },
+    { label: '无人接听', value: 50 },
+    { label: '忙线', value: 60 },
+    { label: '已挂断', value: 70 }
+]
 
 const {
     tableObject,
     tableMethods,
     register: tableRegister
 } = useTable<OutboundCallRecordApi.OutboundCallRecordVO>({
-    getListApi: async (params) => await OutboundCallRecordApi.getOutboundCallRecordPage(params)
+    getListApi: async (params) =>
+        await OutboundCallRecordApi.getOutboundCallRecordPage(
+            params as OutboundCallRecordApi.OutboundCallRecordPageReqVO
+        )
 })
 
 const setSearchParams = (params: Recordable) => {
     tableMethods.setSearchParams(params)
 }
 
+const resetSearchParams = () => {
+    clearSelectedUser()
+    searchForm.outboundRouteId = undefined
+    searchForm.calleeMobile = undefined
+    searchForm.status = undefined
+    searchForm.createTime = undefined
+    tableMethods.setSearchParams({})
+}
+
+const loadOutboundRouteOptions = async () => {
+    const routes = (await OutboundRouteApi.getOutboundRouteSimpleList()) || []
+    outboundRouteOptions.value = routes.map((item) => ({
+        label: `${item.name}（${item.numberPrefix}）`,
+        value: item.id as number
+    }))
+}
+
+const openUserSelect = () => {
+    const selectedList = searchForm.userId
+        ? [{ id: searchForm.userId, nickname: selectedUserName.value }]
+        : []
+    userSelectFormRef.value?.open(0, selectedList, { title: '选择呼叫人', multiple: false })
+}
+
+const handleUserSelectConfirm = (_id: any, userList: UserVO[]) => {
+    const user = userList?.[0]
+    searchForm.userId = user?.id
+    selectedUserName.value = user?.nickname || user?.username || ''
+}
+
+const clearSelectedUser = () => {
+    searchForm.userId = undefined
+    selectedUserName.value = ''
+}
+
 const tableColumns = reactive<TableColumn[]>([
     { field: 'recordNo', label: '记录编号', width: '190px' },
-    { field: 'outboundRouteName', label: '线路名称', width: '110px' },
-    { field: 'callerDisplayNumber', label: '主叫号码', width: '150px' },
+    { field: 'userNickname', label: '主叫', width: '120px' },
     { field: 'calleeMobile', label: '被叫号码', width: '130px' },
     { field: 'createTime', label: '发起时间', formatter: dateFormatter, width: '180px' },
     { field: 'answerTime', label: '接通时间', formatter: dateFormatter, width: '180px' },
     { field: 'endTime', label: '结束时间', formatter: dateFormatter, width: '180px' },
+    { field: 'statusDesc', label: '状态', width: '110px' },
     {
         field: 'recordingFileUrl',
         label: '通话录音',
@@ -146,6 +224,7 @@ const tableColumns = reactive<TableColumn[]>([
             }
         }
     },
+    { field: 'outboundRouteName', label: '线路名称', width: '110px' },
     // {
     //     field: 'recordingSyncStatusDesc',
     //     label: '语音同步',
@@ -177,7 +256,6 @@ const tableColumns = reactive<TableColumn[]>([
     },
     // { field: 'jobUuid', label: '任务号', width: '240px' },
     { field: 'statusDesc', label: '状态', width: '110px' },
-    { field: 'userNickname', label: '发起人', width: '120px' },
     // { field: 'gatewayName', label: '网关', width: '170px' },
     // { field: 'backupGatewayName', label: '备网关', width: '170px' },
     { field: 'durationSeconds', label: '通话时长(秒)', width: '120px' }
@@ -186,7 +264,8 @@ const tableColumns = reactive<TableColumn[]>([
     // { field: 'hangupCause', label: '挂断原因原值', width: '160px' }
 ])
 
-onMounted(() => {
-    tableMethods.getList()
+onMounted(async () => {
+    await loadOutboundRouteOptions()
+    await tableMethods.getList()
 })
 </script>

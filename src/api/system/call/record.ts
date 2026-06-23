@@ -33,6 +33,15 @@ export interface OutboundCallRecordVO {
   createTime: string
 }
 
+export interface OutboundCallRecordPageReqVO extends PageParam {
+  userId?: number
+  calleeMobile?: string
+  outboundRouteId?: number
+  status?: number
+  callType?: number
+  createTime?: string[]
+}
+
 export interface CallMonitorPageReqVO extends PageParam {
   deptId?: number
   userId?: number
@@ -56,7 +65,7 @@ export interface CallMonitorVO {
   averageAnsweredDurationSeconds: number
 }
 
-export const getOutboundCallRecordPage = (params: PageParam) => {
+export const getOutboundCallRecordPage = (params: OutboundCallRecordPageReqVO) => {
   return request.get({ url: '/crm/call/outbound-record/page', params })
 }
 

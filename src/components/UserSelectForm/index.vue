@@ -70,11 +70,7 @@
             </div>
         </div>
         <template #footer>
-            <el-button
-                :disabled="formLoading"
-                type="primary"
-                @click="submitForm"
-            >
+            <el-button :disabled="formLoading" type="primary" @click="submitForm">
                 确 定
             </el-button>
             <el-button @click="dialogVisible = false">取 消</el-button>
