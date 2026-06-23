@@ -17,7 +17,10 @@
                     </div>
                     <div class="refund-audit-section__item">
                         <span class="label">手机号：</span>
-                        <span>{{ refund.customerMobile || '-' }}</span>
+                        <MobileCopyInline
+                            :clue-id="orderDetail?.clueId"
+                            :mobile="refund.customerMobile"
+                        />
                     </div>
                     <div class="refund-audit-section__item">
                         <span class="label">退款订单：</span>
@@ -122,7 +125,7 @@
                     </div>
                     <div class="refund-audit-section__item">
                         <span class="label">处理时间：</span>
-                        <span>{{ refund.auditTime || refund.refundTime || '-' }}</span>
+                        <span>{{ processTimeText }}</span>
                     </div>
                     <div class="refund-audit-section__item">
                         <span class="label">处理状态：</span>
@@ -157,6 +160,8 @@
 import type { FormInstance, FormRules } from 'element-plus'
 import { nextTick } from 'vue'
 import * as OrderApi from '@/api/crm/order'
+import { formatDate } from '@/utils/formatTime'
+import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import {
     REFUND_STATUS_OPTIONS,
     REFUND_TYPE_OPTIONS,
@@ -195,6 +200,11 @@ const processStatusText = computed(() => {
     if (refund.value.refundStatus === 20) return '已处理'
     if (refund.value.refundStatus === 30) return '已驳回'
     return '待处理'
+})
+
+const processTimeText = computed(() => {
+    const processTime = refund.value.auditTime || refund.value.refundTime
+    return processTime ? formatDate(processTime as any) : '-'
 })
 
 const refundTypeLabel = (value?: number) => getOptionLabel(REFUND_TYPE_OPTIONS, value)
