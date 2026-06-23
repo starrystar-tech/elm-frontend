@@ -255,7 +255,6 @@ const tableColumns = reactive<TableColumn[]>([
         }
     },
     // { field: 'jobUuid', label: '任务号', width: '240px' },
-    { field: 'statusDesc', label: '状态', width: '110px' },
     // { field: 'gatewayName', label: '网关', width: '170px' },
     // { field: 'backupGatewayName', label: '备网关', width: '170px' },
     { field: 'durationSeconds', label: '通话时长(秒)', width: '120px' }
