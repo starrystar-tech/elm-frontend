@@ -1,5 +1,6 @@
 export function buildDefaultOtherSettingConfig() {
   return {
+    outboundRouteId: undefined,
     general: {
       mobileCopyLimitEnabled: false,
       mobileCopyLimitTimes: 20,

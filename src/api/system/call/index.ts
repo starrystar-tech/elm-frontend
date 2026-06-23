@@ -26,6 +26,7 @@ export interface BrowserCallRecordSyncReqVO {
   event: 'start' | 'answered' | 'hangup' | 'failed'
   caller?: string
   callee?: string
+  outboundRouteId?: number
   durationSeconds?: number
   failReason?: string
 }

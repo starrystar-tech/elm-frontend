@@ -13,6 +13,7 @@ export interface ThresholdReceiverSettingVO extends ReceiverSettingVO {
 
 export interface OtherSettingConfigVO {
   id?: number
+  outboundRouteId?: number
   general: {
     mobileCopyLimitEnabled: boolean
     mobileCopyLimitTimes: number

@@ -5,6 +5,8 @@ export interface OutboundCallRecordVO {
   recordNo: string
   userId?: number
   userNickname?: string
+  outboundRouteId?: number
+  outboundRouteName?: string
   callerDisplayNumber: string
   calleeMobile: string
   gatewayName: string

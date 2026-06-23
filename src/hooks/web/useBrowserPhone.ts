@@ -950,7 +950,11 @@ const disconnectBrowserPhone = async (silent = false) => {
     traceBrowserStep('DISCONNECT_DONE', `silent=${silent}`)
 }
 
-const makeBrowserCall = async () => {
+const makeBrowserCall = async (options?: {
+    dialTarget?: string
+    displayTarget?: string
+    outboundRouteId?: number
+}) => {
     if (!browserRegistered.value || !browserClient.value) {
         traceBrowserStep('CALL_BLOCKED', '浏览器分机未注册或客户端未初始化', 'danger')
         message.error('请先注册浏览器分机')
@@ -967,7 +971,8 @@ const makeBrowserCall = async () => {
         message.warning('通话刚结束，请稍后再拨')
         return
     }
-    const target = browserForm.target.trim()
+    const target = (options?.dialTarget || browserForm.target).trim()
+    const displayTarget = (options?.displayTarget || target).trim()
     if (!/^\d+$/.test(target)) {
         traceBrowserStep('CALL_BLOCKED', '目标分机格式不合法', 'danger')
         message.error('请输入合法的目标分机')
@@ -976,7 +981,7 @@ const makeBrowserCall = async () => {
     try {
         browserCallStarting.value = true
         await ensureBrowserSessionReadyForCall()
-        setBrowserCallParties(browserForm.username.trim(), target)
+        setBrowserCallParties(browserForm.username.trim(), displayTarget)
         currentSessionDirection.value = 'outgoing'
         activeCall.value = true
         updateBrowserStatus('呼叫中')
@@ -987,7 +992,8 @@ const makeBrowserCall = async () => {
         await syncBrowserRecord({
             event: 'start',
             caller: browserForm.username.trim(),
-            callee: target
+            callee: displayTarget,
+            outboundRouteId: options?.outboundRouteId
         })
         await browserClient.value.call(`sip:${target}@${browserForm.domain.trim()}`, {
             extraHeaders: browserRecordId.value
@@ -1005,7 +1011,7 @@ const makeBrowserCall = async () => {
             recordId: browserRecordId.value,
             event: 'failed',
             caller: currentBrowserCaller.value || browserForm.username.trim(),
-            callee: currentBrowserCallee.value || target,
+            callee: currentBrowserCallee.value || displayTarget,
             failReason: errorMessage
         })
         browserRecordId.value = undefined

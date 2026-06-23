@@ -16,6 +16,8 @@ import { checkPermi } from '@/utils/permission'
 import { getExportTaskReminderSummary, markExportTaskCenterViewed } from '@/api/system/exportTask'
 import { updateUserOutboundStatus } from '@/api/system/user/profile'
 import { useBrowserPhone } from '@/hooks/web/useBrowserPhone'
+import { getOtherSettingConfig } from '@/api/crm/otherSettingConfig'
+import { getOutboundRouteSimpleList } from '@/api/system/call/router'
 import ToolHeaderDialer from './ToolHeaderDialer.vue'
 
 const { getPrefixCls, variables } = useDesign()
@@ -231,8 +233,32 @@ export default defineComponent({
                 messageApi.warning('请输入正确的号码')
                 return
             }
-            browserForm.target = targetMobile
-            await makeBrowserCall()
+            try {
+                const config = await getOtherSettingConfig()
+                if (!config?.outboundRouteId) {
+                    messageApi.warning('当前商户未绑定线路，请联系管理员配置线路')
+                    return
+                }
+                const routeList = await getOutboundRouteSimpleList()
+                const currentRoute = routeList.find((item) => item.id === config.outboundRouteId)
+                const routePrefix = String(currentRoute?.numberPrefix || '').trim()
+                if (!currentRoute?.id || !routePrefix) {
+                    messageApi.warning('当前商户未绑定线路，请联系管理员配置线路')
+                    return
+                }
+                if (currentRoute.status === 1) {
+                    messageApi.warning('当前商户绑定线路已禁用，请联系管理员配置线路')
+                    return
+                }
+                browserForm.target = targetMobile
+                await makeBrowserCall({
+                    dialTarget: `${routePrefix}${targetMobile}`,
+                    displayTarget: targetMobile,
+                    outboundRouteId: currentRoute.id
+                })
+            } catch (error: any) {
+                messageApi.error(error?.message || '加载线路配置失败')
+            }
         }
 
         const handleBrowserHangup = async () => {
