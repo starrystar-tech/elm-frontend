@@ -23,6 +23,7 @@ export interface OutboundCallRecordVO {
   originateDisposition?: string
   answerTime?: string
   endTime?: string
+  ringDurationSeconds?: number
   durationSeconds?: number
   recordingFileName?: string
   recordingFileUrl?: string

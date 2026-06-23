@@ -37,8 +37,9 @@
                         <el-input
                             v-model="employeeFilters.user"
                             placeholder="请选择用户"
-                            readonly
+                            clearable
                             @click="openUserSelect"
+                            @clear="handleUserClear"
                             class="search-field-unified"
                         />
                     </template>
@@ -299,7 +300,7 @@ const employeeSearchSchema = computed<FormSchema[]>(() => [
         label: '所属部门',
         component: 'Input',
         componentProps: {
-            style: { width: '240px' }
+            style: { width: '220px' }
         }
     },
     {
@@ -312,7 +313,7 @@ const employeeSearchSchema = computed<FormSchema[]>(() => [
             startPlaceholder: '开始时间',
             endPlaceholder: '结束时间',
             defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
-            style: { width: '240px' }
+            style: { width: '240px', minWidth: '240px' }
         }
     },
     {
@@ -424,6 +425,12 @@ const handleUserSelectConfirm = (_activityId: string, userList: UserVO[]) => {
     saveAuditState()
 }
 
+const handleUserClear = () => {
+    employeeFilters.user = ''
+    employeeFilters.userList = []
+    saveAuditState()
+}
+
 const resetEmployeeFilters = () => {
     employeeFilters.user = ''
     employeeFilters.userList = []
@@ -532,12 +539,20 @@ const resolveWeworkDisplay = (value?: string) => {
     }
 }
 
-const resolveRangeStartUnix = (value?: string) => {
-    return value ? dayjs(value).startOf('minute').unix() : undefined
+const resolveRangeStartTimestamp = (value?: string) => {
+    return value ? dayjs(value).startOf('minute').valueOf() : undefined
 }
 
-const resolveRangeEndUnix = (value?: string) => {
-    return value ? dayjs(value).endOf('minute').unix() : undefined
+const resolveRangeEndTimestamp = (value?: string) => {
+    return value ? dayjs(value).endOf('minute').valueOf() : undefined
+}
+
+const formatChatTime = (value?: number) => {
+    if (!value) {
+        return '-'
+    }
+    const timestamp = value < 100000000000 ? value * 1000 : value
+    return dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss')
 }
 
 const loadAuditPage = async () => {
@@ -557,10 +572,10 @@ const loadAuditPage = async () => {
             fromUserList: isEmployee ? selectedStaffUserIds : undefined,
             deptId: isEmployee ? employeeFilters.deptId : undefined,
             beginLastActiveTime: isEmployee
-                ? resolveRangeStartUnix(employeeFilters.lastActiveTimeRange[0])
+                ? resolveRangeStartTimestamp(employeeFilters.lastActiveTimeRange[0])
                 : undefined,
             endLastActiveTime: isEmployee
-                ? resolveRangeEndUnix(employeeFilters.lastActiveTimeRange[1])
+                ? resolveRangeEndTimestamp(employeeFilters.lastActiveTimeRange[1])
                 : undefined,
             minFriendCount: isEmployee ? employeeFilters.friendCountMin : undefined,
             maxFriendCount: isEmployee ? employeeFilters.friendCountMax : undefined,
@@ -570,19 +585,17 @@ const loadAuditPage = async () => {
             maxGroupChatCount: isEmployee ? employeeFilters.groupChatCountMax : undefined,
             senderType: !isEmployee ? contentFilters.senderType || undefined : undefined,
             beginMsgTime: !isEmployee
-                ? resolveRangeStartUnix(contentFilters.timeRange[0])
+                ? resolveRangeStartTimestamp(contentFilters.timeRange[0])
                 : undefined,
-            endMsgTime: !isEmployee ? resolveRangeEndUnix(contentFilters.timeRange[1]) : undefined
+            endMsgTime: !isEmployee
+                ? resolveRangeEndTimestamp(contentFilters.timeRange[1])
+                : undefined
         }
         const resp = await WeworkChatApi.getWeworkChatAuditPage(params)
         const rows = (resp.list || []).map((item) => ({
             ...item,
-            lastActiveTimeText: item.lastActiveTime
-                ? dayjs.unix(item.lastActiveTime).format('YYYY-MM-DD HH:mm:ss')
-                : '-',
-            chatTimeText: item.chatTime
-                ? dayjs.unix(item.chatTime).format('YYYY-MM-DD HH:mm:ss')
-                : '-'
+            lastActiveTimeText: formatChatTime(item.lastActiveTime),
+            chatTimeText: formatChatTime(item.chatTime)
         }))
         if (isEmployee) {
             employeeRows.value = rows
@@ -695,7 +708,7 @@ onActivated(async () => {
     width: 100%;
 }
 .search-range-group {
-    width: 220px;
+    width: 240px;
     display: flex;
     align-items: center;
     gap: 6px;

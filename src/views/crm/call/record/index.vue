@@ -4,17 +4,12 @@
             <el-form-item label="主叫" prop="userId">
                 <el-input
                     v-model="selectedUserName"
-                    readonly
                     clearable
                     placeholder="请选择主叫"
                     style="width: 220px"
                     @click="openUserSelect"
                     @clear="clearSelectedUser"
-                >
-                    <template #suffix>
-                        <Icon icon="ep:search" />
-                    </template>
-                </el-input>
+                />
             </el-form-item>
             <el-form-item label="线路" prop="outboundRouteId">
                 <el-select
@@ -196,6 +191,7 @@ const tableColumns = reactive<TableColumn[]>([
     { field: 'createTime', label: '发起时间', formatter: dateFormatter, width: '180px' },
     { field: 'answerTime', label: '接通时间', formatter: dateFormatter, width: '180px' },
     { field: 'endTime', label: '结束时间', formatter: dateFormatter, width: '180px' },
+    { field: 'ringDurationSeconds', label: '振铃时长(秒)', width: '120px' },
     { field: 'statusDesc', label: '状态', width: '110px' },
     {
         field: 'recordingFileUrl',

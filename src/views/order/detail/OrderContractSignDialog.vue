@@ -1,5 +1,10 @@
 <template>
-    <Dialog v-model="dialogVisible" title="签署合同" width="780px">
+    <Dialog
+        v-model="dialogVisible"
+        title="签署合同"
+        class="order-contract-sign-dialog"
+        width="780px"
+    >
         <div v-loading="loading" class="order-contract-sign">
             <div v-if="shouldShowProductSelector" class="order-contract-sign__section">
                 <div class="order-contract-sign__title">商品信息</div>
@@ -32,7 +37,10 @@
                             </div>
                             <div class="order-contract-sign__item">
                                 <span class="label">手机号：</span>
-                                <span>{{ orderDetail.customerMobile || '-' }}</span>
+                                <MobileCopyInline
+                                    :clue-id="orderDetail.clueId"
+                                    :mobile="orderDetail.customerMobile"
+                                />
                             </div>
                             <div class="order-contract-sign__item">
                                 <span class="label">报名分校：</span>
@@ -47,14 +55,14 @@
                             >
                                 合同记录
                             </div>
-                            <el-button
+                            <!-- <el-button
                                 v-if="activeContract"
                                 plain
                                 type="primary"
                                 @click="handleOpenSignUrl(activeContract.id)"
                             >
                                 继续签署
-                            </el-button>
+                            </el-button> -->
                         </div>
                         <el-table :data="contractList" border>
                             <el-table-column prop="contractNo" label="合同编号" min-width="160" />
@@ -149,6 +157,7 @@ import * as OrderApi from '@/api/crm/order'
 import * as ContractApi from '@/api/system/contract'
 import * as TemplateApi from '@/api/system/contract/template'
 import { buildAreaLabel } from '@/views/crm/clue/listShared'
+import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 
 defineOptions({ name: 'OrderContractSignDialog' })
 
@@ -439,7 +448,10 @@ const open = async (
 defineExpose({ open })
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
+.order-contract-sign-dialog .el-dialog__body {
+    padding: 0 15px !important;
+}
 .order-contract-sign {
     padding: 8px 4px 0;
 }
