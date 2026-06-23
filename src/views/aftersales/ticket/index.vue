@@ -6,8 +6,15 @@
             @search="setSearchParams"
             @reset="handleResetSearch"
         />
-        <div class="action-btn-wrap">
+        <div class="action-btn-wrap flex items-center gap-2">
             <BaseButton type="primary" @click="openAssign">分配处理人</BaseButton>
+            <BaseButton
+                v-hasPermi="['crm:aftersales:export']"
+                plain
+                @click="openExportDialog"
+            >
+                导出
+            </BaseButton>
         </div>
         <Table
             selection
@@ -22,6 +29,7 @@
         <AftersalesAssignDialog ref="assignRef" @success="tableMethods.getList()" />
         <AftersalesProcessDialog ref="processRef" @success="tableMethods.getList()" />
         <AftersalesDetailDialog ref="detailRef" />
+        <ExportTaskDialog ref="exportDialogRef" @success="handleExportSuccess" />
     </ContentWrap>
 </template>
 
@@ -49,6 +57,7 @@ import AftersalesAssignDialog from '../components/AftersalesAssignDialog.vue'
 import AftersalesProcessDialog from '../components/AftersalesProcessDialog.vue'
 import AftersalesDetailDialog from '../components/AftersalesDetailDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import ExportTaskDialog from '@/views/crm/clue/components/ExportTaskDialog.vue'
 
 defineOptions({ name: 'AftersalesTicket' })
 
@@ -57,9 +66,11 @@ const route = useRoute()
 const assignRef = ref()
 const processRef = ref()
 const detailRef = ref()
+const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
 const handlerOptions = ref<{ label: string; value: number }[]>([])
 const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 const searchForm = reactive<Recordable>({})
+const currentSearchParams = ref<Recordable>({})
 
 const searchSchema = computed<FormSchema[]>(() =>
     buildBaseSearchSchema(handlerOptions.value, complaintTagOptions.value)
@@ -74,7 +85,9 @@ const {
 })
 
 const setSearchParams = (params: Recordable) => {
-    tableMethods.setSearchParams(buildPageParams(params))
+    const pageParams = buildPageParams(params)
+    currentSearchParams.value = pageParams
+    tableMethods.setSearchParams(pageParams)
 }
 
 const clearSearchForm = () => {
@@ -122,6 +135,23 @@ const openAssign = async () => {
         return
     }
     assignRef.value.open(selections.map((item) => item.id))
+}
+
+const openExportDialog = () => {
+    exportDialogRef.value?.open({
+        title: '导出售后工单',
+        bizType: 'crm_aftersales_ticket_export',
+        submit: async (payload) => {
+            await AftersalesApi.createAftersalesExportTask({
+                ...currentSearchParams.value,
+                ...payload
+            })
+        }
+    })
+}
+
+const handleExportSuccess = () => {
+    message.success('导出任务已创建，请到下载中心查看')
 }
 
 const openProcess = (row: AftersalesApi.AftersalesRespVO) => {

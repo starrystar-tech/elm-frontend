@@ -20,6 +20,11 @@ export interface AftersalesPageReqVO extends PageParam {
   endProcessTime?: string
 }
 
+export interface AftersalesExportReqVO extends AftersalesPageReqVO {
+  authCode?: string
+  exportPlainMobile?: boolean
+}
+
 export interface AftersalesRespVO {
   id: number
   ticketNo: string
@@ -91,6 +96,10 @@ export const getPoolAftersalesPage = async (params: AftersalesPageReqVO) => {
 
 export const getAftersalesPage = async (params: AftersalesPageReqVO) => {
   return await request.get({ url: '/crm/aftersales/page', params })
+}
+
+export const createAftersalesExportTask = async (data: AftersalesExportReqVO) => {
+  return await request.post<number>({ url: '/crm/aftersales/export-task', data })
 }
 
 export const getAftersales = async (id: number) => {
