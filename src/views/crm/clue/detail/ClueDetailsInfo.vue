@@ -13,7 +13,7 @@
                         <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile" />
                     </el-descriptions-item>
                     <el-descriptions-item label="备用电话">
-                        <MobileCopyInline :mobile="clue.mobile2" direct-copy />
+                        <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile2" mobile-field="mobile2" />
                     </el-descriptions-item>
                     <el-descriptions-item label="性别">{{
                         clue.genderName || '--'

@@ -10,7 +10,7 @@
                     <MobileCopyInline :clue-id="detail.clueId" :mobile="detail.customerMobile" />
                     <template v-if="detail.customerMobile2">
                         <span>/</span>
-                        <MobileCopyInline :mobile="detail.customerMobile2" direct-copy />
+                        <MobileCopyInline :clue-id="detail.clueId" :mobile="detail.customerMobile2" mobile-field="mobile2" />
                     </template>
                 </div>
             </template>
@@ -98,7 +98,7 @@
                                 />
                             </el-descriptions-item>
                             <el-descriptions-item label="手机号2">
-                                <MobileCopyInline :mobile="detail.customerMobile2" direct-copy />
+                                <MobileCopyInline :clue-id="detail.clueId" :mobile="detail.customerMobile2" mobile-field="mobile2" />
                             </el-descriptions-item>
                             <el-descriptions-item label="地区" :span="2">{{
                                 areaText

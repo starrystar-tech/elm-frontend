@@ -564,10 +564,10 @@ export const updateClueIntentLevel = async (data: ClueUpdateIntentLevelReqVO) =>
     return await request.put({ url: '/crm/clue/update-intent-level', data })
 }
 
-export const copyClueMobile = async (clueId: number) => {
+export const copyClueMobile = async (clueId: number, mobileField: string = 'mobile') => {
     return await request.post<ClueCopyMobileRespVO>({
         url: '/crm/clue/copy-mobile',
-        data: { clueId }
+        data: { clueId, mobileField }
     })
 }
 

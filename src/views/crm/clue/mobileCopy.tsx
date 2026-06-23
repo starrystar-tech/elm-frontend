@@ -19,6 +19,7 @@ type RenderCopyMobileOptions<T extends CopyRow> = CopyFeedback & {
     clueId?: number
     getDetail?: (id: number) => Promise<{ clueId?: number } | undefined>
     directCopyWhenMissingClueId?: boolean
+    mobileField?: string
 }
 
 export const renderCopyMobileCell = <T extends CopyRow>({
@@ -28,7 +29,8 @@ export const renderCopyMobileCell = <T extends CopyRow>({
     getDetail,
     directCopyWhenMissingClueId = false,
     success,
-    warning
+    warning,
+    mobileField = 'mobile'
 }: RenderCopyMobileOptions<T>) => {
     const text = mobile || '--'
     const handleCopy = async () => {
@@ -44,7 +46,8 @@ export const renderCopyMobileCell = <T extends CopyRow>({
             onSuccess: success,
             onWarning: warning,
             copyApi: ClueApi.copyClueMobile,
-            writeClipboard: (text) => navigator.clipboard.writeText(text)
+            writeClipboard: (text) => navigator.clipboard.writeText(text),
+            mobileField
         })
     }
 

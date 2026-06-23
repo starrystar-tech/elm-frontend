@@ -103,8 +103,9 @@
                                         </el-descriptions-item>
                                         <el-descriptions-item label="手机号2">
                                             <MobileCopyInline
+                                                :clue-id="detail.clueId"
                                                 :mobile="detail.customerMobile2"
-                                                direct-copy
+                                                mobile-field="mobile2"
                                             />
                                         </el-descriptions-item>
                                         <el-descriptions-item label="地区" :span="2">{{

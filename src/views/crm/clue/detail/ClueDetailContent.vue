@@ -234,7 +234,7 @@
                                 <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile" />
                             </div>
                             <div v-else-if="item.label === '手机号2'">
-                                <MobileCopyInline :mobile="clue.mobile2" direct-copy />
+                                <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile2" mobile-field="mobile2" />
                             </div>
                             <div v-else>{{ item.value }}</div>
                         </div>

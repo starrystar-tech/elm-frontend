@@ -14,13 +14,14 @@ export const copyMobileByClueId = async ({
     copyApi,
     writeClipboard,
     onSuccess,
-    onWarning
+    onWarning,
+    mobileField = 'mobile'
 }) => {
     if (!clueId) {
         onWarning?.('未找到线索，无法复制手机号')
         return undefined
     }
-    const result = await copyApi(clueId)
+    const result = await copyApi(clueId, mobileField)
     await writeClipboard(result.mobile)
     onSuccess?.('复制成功')
     return result

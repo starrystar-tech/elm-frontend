@@ -113,7 +113,7 @@ const setSearchParams = (params: Recordable) => {
 
 const tableColumns = reactive<TableColumn[]>([
     { field: 'recordNo', label: '记录编号', width: '190px' },
-    { field: 'outboundRouteName', label: '线路名称', width: '140px' },
+    { field: 'outboundRouteName', label: '线路名称', width: '110px' },
     { field: 'callerDisplayNumber', label: '主叫号码', width: '150px' },
     { field: 'calleeMobile', label: '被叫号码', width: '130px' },
     { field: 'createTime', label: '发起时间', formatter: dateFormatter, width: '180px' },
@@ -146,25 +146,25 @@ const tableColumns = reactive<TableColumn[]>([
             }
         }
     },
-    {
-        field: 'recordingSyncStatusDesc',
-        label: '语音同步',
-        minWidth: '180px',
-        slots: {
-            default: (data) => {
-                const statusText = data.row.recordingSyncStatusDesc || '-'
-                const message = data.row.recordingSyncMessage
-                if (!message) {
-                    return <span>{statusText}</span>
-                }
-                return (
-                    <ElTooltip content={message} placement="top">
-                        <span>{statusText}</span>
-                    </ElTooltip>
-                )
-            }
-        }
-    },
+    // {
+    //     field: 'recordingSyncStatusDesc',
+    //     label: '语音同步',
+    //     minWidth: '180px',
+    //     slots: {
+    //         default: (data) => {
+    //             const statusText = data.row.recordingSyncStatusDesc || '-'
+    //             const message = data.row.recordingSyncMessage
+    //             if (!message) {
+    //                 return <span>{statusText}</span>
+    //             }
+    //             return (
+    //                 <ElTooltip content={message} placement="top">
+    //                     <span>{statusText}</span>
+    //                 </ElTooltip>
+    //             )
+    //         }
+    //     }
+    // },
     // { field: 'callTypeDesc', label: '通话类型', width: '110px' },
     { field: 'submitMessage', label: '提交日志', minWidth: '160px' },
     {
@@ -175,15 +175,15 @@ const tableColumns = reactive<TableColumn[]>([
             default: (data) => <span>{buildCallResultText(data.row)}</span>
         }
     },
-    { field: 'jobUuid', label: '任务号', width: '240px' },
+    // { field: 'jobUuid', label: '任务号', width: '240px' },
     { field: 'statusDesc', label: '状态', width: '110px' },
     { field: 'userNickname', label: '发起人', width: '120px' },
-    { field: 'gatewayName', label: '网关', width: '170px' },
+    // { field: 'gatewayName', label: '网关', width: '170px' },
     // { field: 'backupGatewayName', label: '备网关', width: '170px' },
-    { field: 'durationSeconds', label: '通话时长(秒)', width: '120px' },
-    { field: 'failReason', label: '失败原因', minWidth: '220px' },
-    { field: 'originateDisposition', label: '外呼结果原值', width: '160px' },
-    { field: 'hangupCause', label: '挂断原因原值', width: '160px' }
+    { field: 'durationSeconds', label: '通话时长(秒)', width: '120px' }
+    // { field: 'failReason', label: '失败原因', minWidth: '220px' }
+    // { field: 'originateDisposition', label: '外呼结果原值', width: '160px' },
+    // { field: 'hangupCause', label: '挂断原因原值', width: '160px' }
 ])
 
 onMounted(() => {

@@ -22,6 +22,7 @@ const props = defineProps<{
     mobile?: string
     clueId?: number
     directCopy?: boolean
+    mobileField?: string
 }>()
 
 const message = useMessage()
@@ -40,7 +41,8 @@ const handleCopy = async () => {
         onSuccess: message.success,
         onWarning: message.warning,
         copyApi: ClueApi.copyClueMobile,
-        writeClipboard: (text) => navigator.clipboard.writeText(text)
+        writeClipboard: (text) => navigator.clipboard.writeText(text),
+        mobileField: props.mobileField || 'mobile'
     })
 }
 </script>
