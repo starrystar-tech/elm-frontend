@@ -236,13 +236,13 @@ const handlePay = async (row: OrderApi.OrderPageRespVO) => {
         return
     }
     const result = await ElMessageBox.prompt('请输入支付金额（元）', '订单支付', {
-        inputValue: String(remain),
+        inputValue: formatAmount(remain),
         inputPattern: /^(0|[1-9]\d*)(\.\d{1,2})?$/,
         inputErrorMessage: '请输入正确金额'
     })
     await OrderApi.payOrder({
         orderId: row.id,
-        payAmount: Number(result.value),
+        payAmount: Math.round(Number(result.value) * 100),
         payMethod: '微信支付'
     })
     message.success('支付记录已生成，待财务确认')

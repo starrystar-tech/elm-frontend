@@ -242,6 +242,7 @@ export default defineComponent({
                     await updateUserOutboundStatus({ outboundStatus: nextStatus })
                 }
                 outboundStatus.value = nextStatus
+                profile.outboundStatus = nextStatus
                 messageApi.success(nextStatus === 1 ? '已签入外呼' : '已签出外呼')
             } catch (error: any) {
                 messageApi.error(error?.message || '更新外呼状态失败')

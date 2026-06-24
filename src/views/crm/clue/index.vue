@@ -646,7 +646,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'name',
         label: '姓名',
-        width: '170px',
+        width: '160px',
         fixed: 'left',
         slots: {
             default: (data) => (
@@ -655,7 +655,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                         {(data.row.name || '线').slice(0, 1)}
                     </el-avatar>
                     <el-link
-                        class="min-w-0 flex-1 overflow-hidden whitespace-nowrap text-ellipsis"
+                        class="min-w-0 flex-1 text-ellipsis"
                         title={data.row.name || '-'}
                         underline={false}
                         type="primary"
@@ -1012,5 +1012,11 @@ onMounted(async () => {
 .clue-more-btn:focus-visible {
     outline: none;
     box-shadow: none;
+}
+
+.text-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>

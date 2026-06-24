@@ -571,13 +571,13 @@ const handlePay = async () => {
         return
     }
     const amountResult = await ElMessageBox.prompt('请输入支付金额（元）', '订单支付', {
-        inputValue: String(remain),
+        inputValue: formatAmount(remain),
         inputPattern: /^(0|[1-9]\d*)(\.\d{1,2})?$/,
         inputErrorMessage: '请输入正确金额'
     })
     await OrderApi.payOrder({
         orderId: detail.value.id,
-        payAmount: Number(amountResult.value),
+        payAmount: Math.round(Number(amountResult.value) * 100),
         payMethod: '微信支付'
     })
     message.success('支付记录已生成，待财务确认')

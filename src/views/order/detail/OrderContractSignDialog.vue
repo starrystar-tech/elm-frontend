@@ -208,6 +208,7 @@ const contractList = ref<ContractApi.ContractOrderProductRespVO[]>([])
 const templateOptions = ref<TemplateApi.ContractTemplateSimpleVO[]>([])
 const variableFields = ref<ContractApi.ContractVariableVO[]>([])
 const variableForm = reactive<Record<string, string>>({})
+const plainMobileCache = reactive<Record<string, string>>({})
 
 const selectedOrderItem = computed(() =>
     (orderDetail.value.items || []).find((item) => item.id === selectedOrderItemId.value)
@@ -242,6 +243,28 @@ const formatValue = (value: unknown) => {
     return String(value).trim()
 }
 
+const mobileAliases = [
+    '手机号',
+    '手机号码',
+    '联系电话',
+    '客户手机号',
+    'mobile',
+    'customermobile',
+    'phone'
+]
+
+const mobile2Aliases = [
+    '备用电话',
+    '备用手机号',
+    '第二手机号',
+    '手机号2',
+    '手机号码2',
+    '联系电话2',
+    'mobile2',
+    'customermobile2',
+    'phone2'
+]
+
 const buildDefaultVariableValue = (variableName: string) => {
     const item = selectedOrderItem.value
     const detail = orderDetail.value
@@ -267,26 +290,11 @@ const buildDefaultVariableValue = (variableName: string) => {
             value: clue?.name || detail.customerName
         },
         {
-            aliases: [
-                '手机号',
-                '手机号码',
-                '联系电话',
-                '客户手机号',
-                'mobile',
-                'customermobile',
-                'phone'
-            ],
+            aliases: mobileAliases,
             value: clue?.mobile || detail.customerMobile
         },
         {
-            aliases: [
-                '备用电话',
-                '备用手机号',
-                '第二手机号',
-                'mobile2',
-                'customermobile2',
-                'phone2'
-            ],
+            aliases: mobile2Aliases,
             value: clue?.mobile2 || detail.customerMobile2
         },
         { aliases: ['微信', 'wechat'], value: clue?.wechat || detail.wechat },
@@ -367,6 +375,51 @@ const resetVariableForm = (fields: ContractApi.ContractVariableVO[]) => {
     })
 }
 
+const resolvePlainMobile = async (mobileField: 'mobile' | 'mobile2') => {
+    const clueId = orderDetail.value.clueId || clueDetail.value?.id
+    if (!clueId) return ''
+    const cacheKey = `${clueId}:${mobileField}`
+    if (plainMobileCache[cacheKey]) {
+        return plainMobileCache[cacheKey]
+    }
+    const result = await ClueApi.copyClueMobile(Number(clueId), mobileField)
+    plainMobileCache[cacheKey] = result?.mobile || ''
+    return plainMobileCache[cacheKey]
+}
+
+const fillPlainMobileVariables = async (fields: ContractApi.ContractVariableVO[]) => {
+    if (!fields.length || !orderDetail.value.clueId) return
+    const mobileFields = fields.filter((field) =>
+        matchVariableAlias(field.variableName, mobileAliases) &&
+        !matchVariableAlias(field.variableName, mobile2Aliases)
+    )
+    const mobile2Fields = fields.filter((field) =>
+        matchVariableAlias(field.variableName, mobile2Aliases)
+    )
+    if (!mobileFields.length && !mobile2Fields.length) return
+
+    try {
+        if (mobileFields.length) {
+            const mobile = await resolvePlainMobile('mobile')
+            if (mobile) {
+                mobileFields.forEach((field) => {
+                    variableForm[field.variableName] = mobile
+                })
+            }
+        }
+        if (mobile2Fields.length) {
+            const mobile2 = await resolvePlainMobile('mobile2')
+            if (mobile2) {
+                mobile2Fields.forEach((field) => {
+                    variableForm[field.variableName] = mobile2
+                })
+            }
+        }
+    } catch (error) {
+        console.warn('[OrderContractSignDialog] load plain mobile failed', error)
+    }
+}
+
 const loadContractList = async () => {
     if (!orderDetail.value.orderNo || !selectedOrderItem.value?.productId) {
         contractList.value = []
@@ -396,6 +449,7 @@ const handleTemplateChange = async (templateId?: number) => {
     const variables = await ContractApi.getContractTemplateVariables(templateId)
     variableFields.value = variables || []
     resetVariableForm(variableFields.value)
+    await fillPlainMobileVariables(variableFields.value)
 }
 
 const handleOrderItemChange = async () => {
@@ -498,6 +552,7 @@ const open = async (
         signUrlDialogVisible.value = false
         signUrl.value = ''
         clueDetail.value = null
+        Object.keys(plainMobileCache).forEach((key) => delete plainMobileCache[key])
         Object.keys(variableForm).forEach((key) => delete variableForm[key])
         let detail = payload as OrderApi.OrderDetailRespVO
         if (!detail.items) {
