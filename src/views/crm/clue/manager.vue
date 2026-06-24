@@ -147,6 +147,7 @@ import ClueSmsDialog from './ClueSmsDialog.vue'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'
 import ExportTaskDialog from './components/ExportTaskDialog.vue'
+import MobileCopyInline from './MobileCopyInline.vue'
 import {
     ALLOCATION_TYPE_OPTIONS,
     buildAreaLabel,
@@ -359,7 +360,16 @@ const selectedDeptName = computed(() => {
 
 const tableColumns = computed<TableColumn[]>(() => [
     { field: 'customerId', label: '客户编号', minWidth: '120px' },
-    { field: 'mobile', label: '联系电话', width: '140px' },
+    {
+        field: 'mobile',
+        label: '联系电话',
+        minWidth: '170px',
+        slots: {
+            default: (data) => (
+                <MobileCopyInline clueId={Number(data.row.id)} mobile={data.row.mobile} />
+            )
+        }
+    },
     { field: 'name', label: '姓名', width: '120px' },
     {
         field: 'areaName',

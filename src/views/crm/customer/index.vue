@@ -68,7 +68,7 @@ import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import BatchHeadteacherForm from './BatchHeadteacherForm.vue'
 import CustomerDetailDrawer from './detail/CustomerDetailDrawer.vue'
-import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import { buildAreaLabel } from '@/views/crm/clue/listShared'
 
 interface StudentSearchParams {
@@ -81,7 +81,6 @@ interface StudentSearchParams {
 
 defineOptions({ name: 'CrmCustomer' })
 
-const message = useMessage()
 const batchHeadteacherFormRef = ref<InstanceType<typeof BatchHeadteacherForm>>()
 const detailRef = ref<InstanceType<typeof CustomerDetailDrawer>>()
 const searchForm = reactive<StudentSearchParams>({})
@@ -224,17 +223,12 @@ const tableColumns = computed<TableColumn[]>(() => [
     },
     {
         field: 'mobile',
-        label: '手机号',
+        label: '联系电话',
         minWidth: '170px',
         slots: {
-            default: (data) =>
-                renderCopyMobileCell({
-                    row: data.row,
-                    clueId: Number(data.row.id),
-                    mobile: data.row.mobile,
-                    success: message.success,
-                    warning: message.warning
-                })
+            default: (data) => (
+                <MobileCopyInline clueId={Number(data.row.id)} mobile={data.row.mobile} />
+            )
         }
     },
     {
