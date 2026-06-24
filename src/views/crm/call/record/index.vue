@@ -97,8 +97,11 @@ import * as OutboundCallRecordApi from '@/api/system/call/record'
 import * as OutboundRouteApi from '@/api/system/call/router'
 import type { UserVO } from '@/api/system/user'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
+import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'CrmCallRecord' })
+
+const message = useMessage()
 
 const formatDuration = (durationSeconds?: number) => {
     if (!durationSeconds || durationSeconds < 0) {
@@ -187,7 +190,21 @@ const clearSelectedUser = () => {
 const tableColumns = reactive<TableColumn[]>([
     { field: 'recordNo', label: '记录编号', width: '190px' },
     { field: 'userNickname', label: '主叫', width: '120px' },
-    { field: 'calleeMobile', label: '被叫号码', width: '130px' },
+    {
+        field: 'calleeMobile',
+        label: '被叫号码',
+        width: '160px',
+        slots: {
+            default: (data) =>
+                renderCopyMobileCell({
+                    row: data.row,
+                    mobile: data.row.calleeMobile,
+                    directCopyWhenMissingClueId: true,
+                    success: message.success,
+                    warning: message.warning
+                })
+        }
+    },
     { field: 'createTime', label: '发起时间', formatter: dateFormatter, width: '180px' },
     { field: 'answerTime', label: '接通时间', formatter: dateFormatter, width: '180px' },
     { field: 'endTime', label: '结束时间', formatter: dateFormatter, width: '180px' },
