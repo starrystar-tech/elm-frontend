@@ -271,15 +271,15 @@ const tableColumns = reactive<TableColumn[]>([
     //     }
     // },
     // { field: 'callTypeDesc', label: '通话类型', width: '110px' },
-    { field: 'submitMessage', label: '提交日志', minWidth: '160px' },
-    {
-        field: 'callResult',
-        label: '呼叫结果',
-        width: '180px',
-        slots: {
-            default: (data) => <span>{buildCallResultText(data.row)}</span>
-        }
-    },
+    // { field: 'submitMessage', label: '提交日志', minWidth: '160px' },
+    // {
+    //     field: 'callResult',
+    //     label: '呼叫结果',
+    //     width: '180px',
+    //     slots: {
+    //         default: (data) => <span>{buildCallResultText(data.row)}</span>
+    //     }
+    // },
     // { field: 'jobUuid', label: '任务号', width: '240px' },
     // { field: 'gatewayName', label: '网关', width: '170px' },
     // { field: 'backupGatewayName', label: '备网关', width: '170px' },
