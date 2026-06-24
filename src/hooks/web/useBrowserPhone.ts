@@ -201,6 +201,11 @@ const formatBrowserError = (error: any) => {
     return parts[0] || '未知错误'
 }
 
+const isBrowserPeerClosedError = (error: any) => {
+    const errorText = formatBrowserError(error).toLowerCase()
+    return errorText.includes('peer connection closed')
+}
+
 const describeBrowserError = (error: any) => {
     if (!error) return 'error=<empty>'
     if (typeof error === 'string') return `error=${error}`
@@ -1171,6 +1176,13 @@ const hangupBrowserCall = async () => {
             handleBrowserCallEnded('hangup-fallback', caller, callee)
         }, 2500)
     } catch (error: any) {
+        if (isBrowserPeerClosedError(error)) {
+            const caller = currentBrowserCaller.value || resolveCurrentBrowserExtension()
+            const callee = currentBrowserCallee.value || normalizeExtension(browserForm.target)
+            traceBrowserStep('HANGUP_PEER_CLOSED_IGNORED', describeBrowserError(error))
+            handleBrowserCallEnded('hangup-peer-closed', caller, callee)
+            return
+        }
         browserHangupPending.value = false
         clearHangupFallbackTimer()
         const errorMessage = formatBrowserError(error) || '挂断失败'
