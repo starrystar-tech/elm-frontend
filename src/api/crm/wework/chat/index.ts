@@ -64,6 +64,7 @@ export interface WeworkChatQualityRespVO {
     }[]
     sessionList: {
         msgId: string
+        staffUserIds?: string[]
         title: string
         subtitle: string
         preview: string
@@ -74,6 +75,7 @@ export interface WeworkChatQualityRespVO {
     }[]
     messageList: {
         msgId: string
+        senderUserId?: string
         sender: string
         receiver: string
         direction: string

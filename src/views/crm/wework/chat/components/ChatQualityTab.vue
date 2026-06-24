@@ -3,8 +3,12 @@
         <aside class="member-panel panel">
             <div class="panel-toolbar">
                 <WeworkCorpSelect v-model="selectedCorpId" />
-                <WeworkStaffSelect v-model="selectedMemberId" :corp-id="selectedCorpId" />
-                <el-input v-model="memberKeyword" placeholder="搜索成员" size="small" clearable />
+                <WeworkStaffSelect
+                    :model-value="staffFilterUserId"
+                    :corp-id="selectedCorpId"
+                    @update:model-value="handleStaffSelectChange"
+                />
+                <!-- <el-input v-model="memberKeyword" placeholder="搜索成员" size="small" clearable /> -->
             </div>
             <div class="member-list">
                 <button
@@ -12,7 +16,7 @@
                     :key="member.id"
                     class="member-item"
                     :class="{ active: member.id === selectedMemberId }"
-                    @click="selectedMemberId = member.id"
+                    @click="handleMemberClick(member.id)"
                 >
                     <el-avatar v-if="member.avatar" :size="30" :src="member.avatar" />
                     <div v-else class="member-avatar" :style="{ background: member.color }">{{
@@ -90,7 +94,11 @@
                         }}</template>
                     </div>
                     <div>
-                        <div class="chat-name">{{ selectedSession?.title || '企微会话' }}</div>
+                        <div
+                            class="chat-name text-ellipsis overflow-hidden max-w-50"
+                            :title="selectedSession?.title || '企微会话'"
+                            >{{ selectedSession?.title || '企微会话' }}</div
+                        >
                         <div class="chat-subtitle">{{
                             selectedSession?.subtitle || '选择左侧会话查看聊天记录'
                         }}</div>
@@ -119,6 +127,8 @@
                         style="width: 150px"
                         unlink-panels
                         range-separator="-"
+                        clearable
+                        @clear="dateRange = []"
                         start-placeholder="开始日期"
                         end-placeholder="结束日期"
                         size="small"
@@ -156,8 +166,13 @@
                                     <span class="bubble-sender">{{ message.sender }}</span>
                                     <span class="bubble-time">{{ message.timeLabel }}</span>
                                 </div>
-                                <div class="bubble" :class="[message.direction, `bubble-${message.msgType}`]">
-                                    <template v-if="message.msgType === 'image' && message.media?.url">
+                                <div
+                                    class="bubble"
+                                    :class="[message.direction, `bubble-${message.msgType}`]"
+                                >
+                                    <template
+                                        v-if="message.msgType === 'image' && message.media?.url"
+                                    >
                                         <el-image
                                             :src="message.media.url"
                                             :preview-src-list="[message.media.url]"
@@ -168,7 +183,9 @@
                                     </template>
                                     <template v-else-if="message.msgType === 'image'">
                                         <div class="media-image-fallback">
-                                            <div class="media-image-fallback-title">图片消息未成功加载</div>
+                                            <div class="media-image-fallback-title"
+                                                >图片消息未成功加载</div
+                                            >
                                             <div class="media-image-fallback-desc">
                                                 {{ message.media?.debugMessage || message.content }}
                                             </div>
@@ -176,8 +193,7 @@
                                     </template>
                                     <template
                                         v-else-if="
-                                            message.msgType === 'video' &&
-                                            message.media?.url
+                                            message.msgType === 'video' && message.media?.url
                                         "
                                     >
                                         <video
@@ -185,7 +201,7 @@
                                             controls
                                             preload="metadata"
                                             class="media-video"
-                                        />
+                                        ></video>
                                     </template>
                                     <template
                                         v-else-if="
@@ -269,7 +285,9 @@ const route = useRoute()
 const loading = ref(false)
 const selectedCorpId = ref('')
 const selectedMemberId = ref('')
+const staffFilterUserId = ref('')
 const selectedSessionId = ref('')
+const initialized = ref(false)
 const memberKeyword = ref('')
 const sessionKeyword = ref('')
 const messageKeyword = ref('')
@@ -302,6 +320,9 @@ const filteredMembers = computed(() =>
 
 const filteredSessions = computed(() =>
     qualityData.value.sessionList
+        .filter(
+            (item) => !selectedMemberId.value || item.staffUserIds?.includes(selectedMemberId.value)
+        )
         .filter((item) =>
             activeSessionTab.value === 'all' ? true : item.sessionType === activeSessionTab.value
         )
@@ -323,6 +344,7 @@ const selectedSession = computed(
 
 const displayMessages = computed(() =>
     qualityData.value.messageList
+        .filter((item) => !selectedMemberId.value || item.senderUserId === selectedMemberId.value)
         .filter((item) => !messageTypeFilter.value || item.msgType === messageTypeFilter.value)
         .filter(
             (item) =>
@@ -357,12 +379,39 @@ const scrollChatToBottom = async () => {
     container.scrollTop = container.scrollHeight
 }
 
+const parseQueryTimestamp = (value: unknown) => {
+    const timestamp = Number(Array.isArray(value) ? value[0] : value)
+    return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : undefined
+}
+
+const findFirstSessionIdByMember = (memberId: string) =>
+    qualityData.value.sessionList
+        .filter((item) => item.staffUserIds?.includes(memberId))
+        .filter((item) =>
+            activeSessionTab.value === 'all' ? true : item.sessionType === activeSessionTab.value
+        )
+        .filter((item) => `${item.title}${item.preview}`.includes(sessionKeyword.value.trim()))
+        .map((item) => item.msgId)[0]
+
+const handleMemberClick = (memberId: string) => {
+    selectedMemberId.value = memberId
+    const firstSessionId = findFirstSessionIdByMember(memberId)
+    if (firstSessionId && firstSessionId !== selectedSessionId.value) {
+        selectedSessionId.value = firstSessionId
+    }
+}
+
+const handleStaffSelectChange = (memberId: string) => {
+    staffFilterUserId.value = memberId || ''
+    selectedMemberId.value = ''
+}
+
 const loadQualityView = async () => {
     loading.value = true
     try {
         const params: WeworkChatApi.WeworkChatQualityReqVO = {
             corpId: selectedCorpId.value || undefined,
-            fromUser: selectedMemberId.value || undefined,
+            fromUser: staffFilterUserId.value || undefined,
             msgId: selectedSessionId.value || undefined,
             sessionType: activeSessionTab.value === 'all' ? undefined : activeSessionTab.value,
             keyword: sessionKeyword.value || undefined,
@@ -387,31 +436,47 @@ const loadQualityView = async () => {
 }
 
 watch(selectedCorpId, () => {
+    if (!initialized.value) return
+    staffFilterUserId.value = ''
+    selectedMemberId.value = ''
     selectedSessionId.value = ''
 })
 watch(selectedSessionId, () => {
     scrollChatToBottom()
 })
-watch(
-    [selectedCorpId, selectedMemberId, selectedSessionId, activeSessionTab, dateRange],
-    loadQualityView
-)
+watch([staffFilterUserId, activeSessionTab, dateRange], () => {
+    if (!initialized.value) return
+    selectedSessionId.value = ''
+})
+watch([selectedCorpId, staffFilterUserId, selectedSessionId, activeSessionTab, dateRange], () => {
+    if (!initialized.value) return
+    loadQualityView()
+})
 watch(displayMessages, () => {
     scrollChatToBottom()
 })
 onMounted(() => {
     const queryCorpId = String(route.query.corpId || '')
     const queryFromUser = String(route.query.fromUser || '')
+    const queryMsgId = String(route.query.msgId || '')
+    const beginMsgTime = parseQueryTimestamp(route.query.beginMsgTime)
+    const endMsgTime = parseQueryTimestamp(route.query.endMsgTime)
     if (queryCorpId) selectedCorpId.value = queryCorpId
-    if (queryFromUser) selectedMemberId.value = queryFromUser
+    if (queryFromUser) {
+        staffFilterUserId.value = queryFromUser
+    }
+    if (queryMsgId) selectedSessionId.value = queryMsgId
+    if (beginMsgTime && endMsgTime) {
+        dateRange.value = [
+            dayjs.unix(beginMsgTime).format('YYYY-MM-DD'),
+            dayjs.unix(endMsgTime).format('YYYY-MM-DD')
+        ]
+    }
+    initialized.value = true
     loadQualityView()
 })
 
-const formatFileMeta = (media?: {
-    size?: number
-    duration?: number
-    mimeType?: string
-}) => {
+const formatFileMeta = (media?: { size?: number; duration?: number; mimeType?: string }) => {
     const parts: string[] = []
     if (media?.size) {
         if (media.size >= 1024 * 1024) {
