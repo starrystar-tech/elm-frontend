@@ -130,6 +130,7 @@ import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ClueMergeDialog from './components/ClueMergeDialog.vue'
+import ClueNameCell from './components/ClueNameCell.vue'
 
 defineOptions({ name: 'CrmClueAllocation' })
 
@@ -260,6 +261,21 @@ const openDetail = (id?: number) => {
 
 const tableColumns = computed<TableColumn[]>(() => [
     {
+        field: 'name',
+        label: '姓名',
+        width: '150px',
+        fixed: 'left',
+        slots: {
+            default: (data) => (
+                <ClueNameCell
+                    avatar={data.row.avatar}
+                    name={data.row.name}
+                    onClick={() => openDetail(data.row.id)}
+                />
+            )
+        }
+    },
+    {
         field: 'mobile',
         label: '联系电话',
         width: '170px',
@@ -274,7 +290,6 @@ const tableColumns = computed<TableColumn[]>(() => [
                 })
         }
     },
-    { field: 'name', label: '姓名', width: '120px' },
     { field: 'currentOwnerName', label: '当前归属人', width: '120px' },
     { field: 'currentDepartmentName', label: '当前归属部门', width: '140px' },
     { field: 'firstAllocationOwnerName', label: '首次分配人', width: '120px' },

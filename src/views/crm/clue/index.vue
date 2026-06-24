@@ -261,6 +261,7 @@ import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'
 import ClueMergeDialog from './components/ClueMergeDialog.vue'
 import ExportTaskDialog from './components/ExportTaskDialog.vue'
+import ClueNameCell from './components/ClueNameCell.vue'
 import { renderCopyMobileCell } from './mobileCopy'
 import { buildAreaLabel, FEEDBACK_STATUS_OPTIONS } from './listShared'
 
@@ -646,24 +647,15 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'name',
         label: '姓名',
-        width: '160px',
+        width: '150px',
         fixed: 'left',
         slots: {
             default: (data) => (
-                <div class="flex items-center gap-8px min-w-0">
-                    <el-avatar size={32} src={data.row.avatar} class="shrink-0">
-                        {(data.row.name || '线').slice(0, 1)}
-                    </el-avatar>
-                    <el-link
-                        class="min-w-0 flex-1 text-ellipsis"
-                        title={data.row.name || '-'}
-                        underline={false}
-                        type="primary"
-                        onClick={() => openDetail(data.row.id!)}
-                    >
-                        {data.row.name || '-'}
-                    </el-link>
-                </div>
+                <ClueNameCell
+                    avatar={data.row.avatar}
+                    name={data.row.name}
+                    onClick={() => openDetail(data.row.id!)}
+                />
             )
         }
     },

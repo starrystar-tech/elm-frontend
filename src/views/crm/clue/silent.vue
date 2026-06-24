@@ -79,6 +79,7 @@ import * as DeptApi from '@/api/system/dept'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ExportTaskDialog from './components/ExportTaskDialog.vue'
+import ClueNameCell from './components/ClueNameCell.vue'
 
 defineOptions({ name: 'CrmClueSilent' })
 
@@ -181,6 +182,21 @@ const openDetail = (id?: number) => {
 
 const tableColumns = computed<TableColumn[]>(() => [
     {
+        field: 'name',
+        label: '姓名',
+        width: '150px',
+        fixed: 'left',
+        slots: {
+            default: (data) => (
+                <ClueNameCell
+                    avatar={data.row.avatar}
+                    name={data.row.name}
+                    onClick={() => openDetail(data.row.id)}
+                />
+            )
+        }
+    },
+    {
         field: 'mobile',
         label: '联系电话',
         width: '170px',
@@ -195,7 +211,6 @@ const tableColumns = computed<TableColumn[]>(() => [
                 })
         }
     },
-    { field: 'name', label: '姓名', width: '120px' },
     { field: 'currentOwnerName', label: '归属人', width: '120px' },
     { field: 'currentDepartmentName', label: '所属部门', width: '140px' },
     { field: 'consultProjectName', label: '咨询项目', minWidth: '160px' },
