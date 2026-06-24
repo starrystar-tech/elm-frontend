@@ -255,7 +255,15 @@ const buildDefaultVariableValue = (variableName: string) => {
     const semanticFields: Array<{ aliases: string[]; value: unknown }> = [
         { aliases: ['当前学历', '学历', 'education', 'educationname'], value: educationText },
         {
-            aliases: ['姓名', '学员姓名', '学生姓名', '客户姓名', 'studentname', 'customername'],
+            aliases: [
+                '姓名',
+                '学员姓名',
+                '学生姓名',
+                '客户姓名',
+                '乙方',
+                'studentname',
+                'customername'
+            ],
             value: clue?.name || detail.customerName
         },
         {
