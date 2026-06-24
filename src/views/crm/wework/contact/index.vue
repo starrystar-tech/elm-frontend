@@ -49,6 +49,7 @@ import * as WeworkContactApi from '@/api/crm/wework/contact'
 import * as WeappApi from '@/api/system/weapp'
 import ClueDetailDrawer from '@/views/crm/clue/detail/ClueDetailDrawer.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import ClueNameCell from '@/views/crm/clue/components/ClueNameCell.vue'
 
 defineOptions({ name: 'CrmWeworkContact' })
 
@@ -310,26 +311,19 @@ const tableColumns = reactive<TableColumn[]>([
     {
         field: 'customerName',
         label: '客户',
-        width: '260px',
+        fixed: 'left',
+        width: '210px',
         slots: {
             default: (data) => {
                 const row = data.row as WeworkContactApi.WeworkContactVO
                 return (
-                    <div class="flex items-center gap-8px">
-                        <el-avatar size={32} src={row.avatar}>
-                            {(row.customerName || '客').slice(0, 1)}
-                        </el-avatar>
-                        <div>
-                            <div>
-                                {row.customerName || '-'}@
-                                {row.corpName ? (
-                                    <span class="text-[#fa8c16]">{row.corpName}</span>
-                                ) : (
-                                    <span class="text-[#52c41a]">个微</span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                    <ClueNameCell
+                        name={row.customerName}
+                        avatar={row.avatar}
+                        suffix={row.corpName ? row.corpName : '个微'}
+                        suffixColor={row.corpName ? '#fa8c16' : '#52c41a'}
+                        onClick={() => handleViewDetail(row)}
+                    />
                 )
             }
         }
@@ -352,22 +346,17 @@ const tableColumns = reactive<TableColumn[]>([
     {
         field: 'staffName',
         label: '添加成员',
-        width: '180px',
+        width: '200px',
         slots: {
             default: (data) => {
                 const row = data.row as WeworkContactApi.WeworkContactVO
                 return (
-                    <div class="flex items-center gap-8px">
-                        <el-avatar size={28} src={row.staffAvatar}>
-                            {(row.staffName || '员').slice(0, 1)}
-                        </el-avatar>
-                        <span>
-                            {row.staffName || '-'}{' '}
-                            <span class="text-[#fa8c16]">
-                                @{corpCompanyMap.value[row.corpId] || row.corpName || '个微'}
-                            </span>
-                        </span>
-                    </div>
+                    <ClueNameCell
+                        name={row.staffName}
+                        avatar={row.staffAvatar}
+                        suffix={corpCompanyMap.value[row.corpId] || row.corpName || '个微'}
+                        suffixColor="#fa8c16"
+                    />
                 )
             }
         }
@@ -408,7 +397,7 @@ const tableColumns = reactive<TableColumn[]>([
         slots: {
             default: (data) => {
                 const row = data.row as WeworkContactApi.WeworkContactVO
-                const actions = []
+                const actions: any[] = []
                 if (row.clueId) {
                     actions.push(
                         <BaseButton
