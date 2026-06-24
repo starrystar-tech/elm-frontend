@@ -147,6 +147,31 @@
             </el-button>
         </template>
     </Dialog>
+
+    <Dialog
+        v-model="signUrlDialogVisible"
+        title="签署链接"
+        width="560px"
+        :fullscreen="false"
+        append-to-body
+    >
+        <div v-loading="signUrlLoading" class="order-contract-sign-url">
+            <div class="order-contract-sign-url__tip">
+                请复制签署链接发送给学员，由学员打开链接完成合同签署。
+            </div>
+            <el-input v-model="signUrl" readonly>
+                <template #append>
+                    <el-button :disabled="!signUrl" @click="handleCopySignUrl">复制链接</el-button>
+                </template>
+            </el-input>
+        </div>
+        <template #footer>
+            <el-button @click="signUrlDialogVisible = false">关闭</el-button>
+            <el-button :disabled="!signUrl" type="primary" @click="handleCopySignUrl">
+                复制链接
+            </el-button>
+        </template>
+    </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -167,6 +192,9 @@ const message = useMessage()
 const dialogVisible = ref(false)
 const loading = ref(false)
 const submitting = ref(false)
+const signUrlDialogVisible = ref(false)
+const signUrlLoading = ref(false)
+const signUrl = ref('')
 const activeTab = ref('order')
 const orderDetail = ref<OrderApi.OrderDetailRespVO>({
     items: [],
@@ -369,13 +397,45 @@ const handleOrderItemChange = async () => {
     await loadContractList()
 }
 
+const openSignUrlDialog = async (id: number) => {
+    signUrl.value = ''
+    signUrlDialogVisible.value = true
+    signUrlLoading.value = true
+    try {
+        const url = await ContractApi.getContractSignUrl(id)
+        if (!url) {
+            message.warning('未获取到签署链接')
+            signUrlDialogVisible.value = false
+            return
+        }
+        signUrl.value = url
+    } finally {
+        signUrlLoading.value = false
+    }
+}
+
 const handleOpenSignUrl = async (id: number) => {
-    const url = await ContractApi.getContractSignUrl(id)
-    if (!url) {
+    await openSignUrlDialog(id)
+}
+
+const handleCopySignUrl = async () => {
+    if (!signUrl.value) {
         message.warning('未获取到签署链接')
         return
     }
-    window.open(url, '_blank')
+    if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(signUrl.value)
+    } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = signUrl.value
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+    }
+    message.success('复制成功')
 }
 
 const handlePreview = async (id: number) => {
@@ -408,8 +468,8 @@ const handleCreateSignTask = async () => {
             parameterJson: JSON.stringify(variableForm)
         })
         message.success('签署任务已创建')
-        if (resp?.signUrl) {
-            window.open(resp.signUrl, '_blank')
+        if (resp?.id) {
+            await openSignUrlDialog(Number(resp.id))
         }
         await loadContractList()
         emit('success')
@@ -427,6 +487,8 @@ const open = async (
     try {
         selectedTemplateId.value = undefined
         variableFields.value = []
+        signUrlDialogVisible.value = false
+        signUrl.value = ''
         clueDetail.value = null
         Object.keys(variableForm).forEach((key) => delete variableForm[key])
         let detail = payload as OrderApi.OrderDetailRespVO
@@ -502,5 +564,10 @@ defineExpose({ open })
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+}
+
+.order-contract-sign-url__tip {
+    margin-bottom: 12px;
+    color: var(--el-text-color-regular);
 }
 </style>

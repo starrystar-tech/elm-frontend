@@ -34,13 +34,14 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, onMounted, reactive } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive } from 'vue'
 import { ElLink } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
+import { useEmitt } from '@/hooks/web/useEmitt'
 import type { FormSchema } from '@/types/form'
 import { dateFormatter } from '@/utils/formatTime'
 import * as AftersalesApi from '@/api/crm/aftersales'
@@ -67,10 +68,12 @@ const assignRef = ref()
 const processRef = ref()
 const detailRef = ref()
 const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
+const { emitter } = useEmitt()
 const handlerOptions = ref<{ label: string; value: number }[]>([])
 const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 const searchForm = reactive<Recordable>({})
 const currentSearchParams = ref<Recordable>({})
+let exportReminderTimer: number | undefined
 
 const searchSchema = computed<FormSchema[]>(() =>
     buildBaseSearchSchema(handlerOptions.value, complaintTagOptions.value)
@@ -152,7 +155,20 @@ const openExportDialog = () => {
 
 const handleExportSuccess = () => {
     message.success('导出任务已创建，请到下载中心查看')
+    if (exportReminderTimer) {
+        window.clearTimeout(exportReminderTimer)
+    }
+    exportReminderTimer = window.setTimeout(() => {
+        emitter.emit('refresh-export-task-reminder')
+        exportReminderTimer = undefined
+    }, 4000)
 }
+
+onBeforeUnmount(() => {
+    if (exportReminderTimer) {
+        window.clearTimeout(exportReminderTimer)
+    }
+})
 
 const openProcess = (row: AftersalesApi.AftersalesRespVO) => {
     processRef.value.open(row)

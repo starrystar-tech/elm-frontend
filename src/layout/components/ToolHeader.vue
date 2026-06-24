@@ -16,6 +16,7 @@ import { checkPermi } from '@/utils/permission'
 import { getExportTaskReminderSummary, markExportTaskCenterViewed } from '@/api/system/exportTask'
 import { updateUserOutboundStatus } from '@/api/system/user/profile'
 import { useBrowserPhone } from '@/hooks/web/useBrowserPhone'
+import { useEmitt } from '@/hooks/web/useEmitt'
 import { getOtherSettingConfig } from '@/api/crm/otherSettingConfig'
 import { getOutboundRouteSimpleList } from '@/api/system/call/router'
 import ToolHeaderDialer from './ToolHeaderDialer.vue'
@@ -169,6 +170,11 @@ export default defineComponent({
                 newExportTaskCount.value = 0
             }
         }
+
+        useEmitt({
+            name: 'refresh-export-task-reminder',
+            callback: checkExportTaskBadge
+        })
 
         const openExportTaskCenter = async () => {
             await markExportTaskCenterViewed()
