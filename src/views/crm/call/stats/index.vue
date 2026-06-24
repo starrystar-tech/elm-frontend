@@ -1,10 +1,60 @@
 <template>
     <div class="call-stats-page">
         <ContentWrap>
-            <Search :schema="searchSchema" @search="setSearchParams" @reset="resetSearchParams" />
+            <Search :model="searchParams" @search="setSearchParams" @reset="resetSearchParams">
+                <el-form-item label="部门" prop="deptId">
+                    <DeptSelector
+                        v-model="searchParams.deptId"
+                        placeholder="请选择部门"
+                        style="width: 220px"
+                    />
+                </el-form-item>
+                <el-form-item label="员工" prop="userId">
+                    <el-input
+                        v-model="selectedUserName"
+                        clearable
+                        placeholder="请选择员工"
+                        style="width: 220px"
+                        @click="openUserSelect"
+                        @clear="clearSelectedUser"
+                    />
+                </el-form-item>
+                <el-form-item label="日期" prop="dateRange">
+                    <el-date-picker
+                        v-model="searchParams.dateRange"
+                        type="daterange"
+                        value-format="YYYY-MM-DD HH:mm:ss"
+                        start-placeholder="开始时间"
+                        end-placeholder="结束时间"
+                        :default-time="dateRangeDefaultTime"
+                        style="width: 240px"
+                    />
+                </el-form-item>
+                <el-form-item label="通话类型" prop="callType">
+                    <el-select
+                        v-model="searchParams.callType"
+                        clearable
+                        placeholder="请选择通话类型"
+                        style="width: 220px"
+                    >
+                        <el-option label="公网外呼" :value="1" />
+                        <el-option label="内部通话" :value="2" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label-width="0">
+                    <el-button type="primary" @click="setSearchParams(searchParams)">
+                        <Icon class="mr-5px" icon="ep:search" />
+                        查询
+                    </el-button>
+                    <el-button @click="resetSearchParams">
+                        <Icon class="mr-5px" icon="ep:refresh" />
+                        重置
+                    </el-button>
+                </el-form-item>
+            </Search>
         </ContentWrap>
 
-        <ContentWrap class="mt-16px">
+        <ContentWrap class="mt-16px" v-loading="loading">
             <div class="call-stats-overview p-16px">
                 <div class="call-stats-overview__chart">
                     <div class="call-stats-overview__title">通话概览</div>
@@ -25,8 +75,17 @@
                                 <span class="call-stats-overview__legend-name">{{
                                     item.name
                                 }}</span>
+                                <div class="call-stats-overview__legend-bar-wrap">
+                                    <div
+                                        class="call-stats-overview__legend-bar"
+                                        :style="{
+                                            width: item.percentage + '%',
+                                            backgroundColor: item.color
+                                        }"
+                                    ></div>
+                                </div>
                                 <span class="call-stats-overview__legend-value">
-                                    {{ item.value }}，占比{{ item.percentage }}%
+                                    {{ item.value }} ({{ item.percentage }}%)
                                 </span>
                             </div>
                         </div>
@@ -52,104 +111,125 @@
             </div>
         </ContentWrap>
 
-        <ContentWrap class="mt-16px">
+        <ContentWrap class="mt-16px" v-loading="loading">
             <div class="call-stats-trend p-16px">
                 <div class="call-stats-trend__title">通话量/通话时长趋势</div>
                 <Echart :height="360" :options="trendChartOptions" />
             </div>
         </ContentWrap>
+        <UserSelectForm ref="userSelectFormRef" @confirm="handleUserSelectConfirm" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import type { EChartsOption } from 'echarts'
 import { Search } from '@/components/Search'
 import { ContentWrap } from '@/components/ContentWrap'
-import type { FormSchema } from '@/types/form'
-import {
-    CALL_STATUS_COLORS,
-    callDeptUserOptions,
-    callRecordMocks,
-    formatDurationText,
-    toDateOnly
-} from '../mock'
+import * as OutboundCallRecordApi from '@/api/system/call/record'
+import type { UserVO } from '@/api/system/user'
+import UserSelectForm from '@/components/UserSelectForm/index.vue'
+import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
 
 defineOptions({ name: 'CrmCallStats' })
 
 const defaultSearchParams = {
-    deptUserKeyword: undefined as string | undefined,
-    callType: undefined as string | undefined,
+    deptId: undefined as number | undefined,
+    userId: undefined as number | undefined,
+    callType: undefined as number | undefined,
     dateRange: undefined as string[] | undefined
 }
 
-const searchParams = ref({ ...defaultSearchParams })
+const searchParams = reactive({ ...defaultSearchParams })
+const recordList = ref<OutboundCallRecordApi.OutboundCallRecordVO[]>([])
+const loading = ref(false)
+const selectedUserName = ref('')
+const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
+const dateRangeDefaultTime = [new Date(2000, 0, 1, 0, 0, 0), new Date(2000, 0, 1, 23, 59, 59)]
 
-const searchSchema = reactive<FormSchema[]>([
-    {
-        field: 'deptUserKeyword',
-        label: '部门/用户',
-        component: 'Select',
-        componentProps: {
-            placeholder: '请选择部门或用户',
-            clearable: true,
-            options: callDeptUserOptions,
-            style: { width: '220px' }
-        }
-    },
-    {
-        field: 'dateRange',
-        label: '日期',
-        component: 'DatePicker',
-        componentProps: {
-            type: 'daterange',
-            valueFormat: 'YYYY-MM-DD',
-            startPlaceholder: '开始日期',
-            endPlaceholder: '结束日期',
-            style: { width: '240px' }
-        }
-    },
-    {
-        field: 'callType',
-        label: '通话类型',
-        component: 'Select',
-        componentProps: {
-            placeholder: '请选择通话类型',
-            clearable: true,
-            options: [
-                { label: '呼出', value: '呼出' },
-                { label: '接听', value: '接听' }
-            ],
-            style: { width: '180px' }
-        }
+const CALL_STATUS_COLORS: Record<string, string> = {
+    已接通: '#52c41a',
+    发起中: '#13c2c2',
+    已提交: '#1890ff',
+    失败: '#eb2f96',
+    无人接听: '#fa8c16',
+    忙线: '#722ed1',
+    已挂断: '#f5222d'
+}
+
+const formatDurationText = (durationSeconds?: number) => {
+    const totalSeconds = Math.max(0, Math.floor(durationSeconds || 0))
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${minutes}分${String(seconds).padStart(2, '0')}秒`
+}
+
+const toDateOnly = (value?: string | number | number[] | Date) => {
+    if (!value) return ''
+    if (Array.isArray(value)) {
+        const [year, month, day] = value
+        if (!year || !month || !day) return ''
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
     }
-])
+    if (value instanceof Date) {
+        const year = value.getFullYear()
+        const month = String(value.getMonth() + 1).padStart(2, '0')
+        const day = String(value.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+    }
+    if (typeof value === 'number') {
+        const strValue = String(value)
+        const multiplier = strValue.length === 10 ? 1000 : 1
+        const date = new Date(value * multiplier)
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+    }
+    const strValue = String(value)
+    if (/^\d{10,13}$/.test(strValue)) {
+        const timestamp = parseInt(strValue, 10)
+        const multiplier = strValue.length === 10 ? 1000 : 1
+        const date = new Date(timestamp * multiplier)
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+    }
+    return strValue.slice(0, 10)
+}
+
+const loadRecordList = async () => {
+    loading.value = true
+    try {
+        const data = await OutboundCallRecordApi.getOutboundCallRecordList({
+            deptId: searchParams.deptId,
+            userId: searchParams.userId,
+            callType: searchParams.callType,
+            createTime: searchParams.dateRange
+        })
+        recordList.value = data || []
+    } finally {
+        loading.value = false
+    }
+}
 
 const filteredRecords = computed(() => {
-    return callRecordMocks.filter((item) => {
-        const deptUserKeyword = searchParams.value.deptUserKeyword
-        const callType = searchParams.value.callType
-        const dateRange = searchParams.value.dateRange
-        const dateOnly = toDateOnly(item.date)
-        const matchesDeptOrUser =
-            !deptUserKeyword ||
-            item.userName === deptUserKeyword ||
-            item.departmentName === deptUserKeyword
-        const matchesCallType = !callType || item.callType === callType
-        const matchesDate =
-            !dateRange?.length || (dateOnly >= dateRange[0] && dateOnly <= dateRange[1])
-        return matchesDeptOrUser && matchesCallType && matchesDate
-    })
+    return recordList.value
 })
 
 const pieLegendItems = computed(() => {
     const total = filteredRecords.value.length || 1
-    return Object.entries(CALL_STATUS_COLORS)
-        .map(([name, color]) => {
-            const value = filteredRecords.value.filter((item) => item.status === name).length
+    const grouped = filteredRecords.value.reduce<Record<string, number>>((result, item) => {
+        const statusName = item.statusDesc || '未知'
+        result[statusName] = (result[statusName] || 0) + 1
+        return result
+    }, {})
+    return Object.entries(grouped)
+        .map(([name, value]) => {
             return {
                 name,
-                color,
+                color: CALL_STATUS_COLORS[name] || '#8c8c8c',
                 value,
                 percentage: value ? Math.round((value / total) * 100) : 0
             }
@@ -158,11 +238,11 @@ const pieLegendItems = computed(() => {
 })
 
 const summaryCards = computed(() => {
-    const answeredRecords = filteredRecords.value.filter((item) => item.status === '已接通')
+    const answeredRecords = filteredRecords.value.filter((item) => item.status === 30)
     const unansweredCount = filteredRecords.value.length - answeredRecords.length
-    const connectedMobiles = new Set(answeredRecords.map((item) => item.mobile))
+    const connectedMobiles = new Set(answeredRecords.map((item) => item.calleeMobile))
     const totalDurationSeconds = answeredRecords.reduce(
-        (sum, item) => sum + item.durationSeconds,
+        (sum, item) => sum + (item.durationSeconds || 0),
         0
     )
     return [
@@ -224,7 +304,8 @@ const trendChartOptions = computed<EChartsOption>(() => {
         }
     >()
     filteredRecords.value.forEach((item) => {
-        const date = toDateOnly(item.date)
+        const date = toDateOnly(item.createTime)
+        if (!date) return
         if (!grouped.has(date)) {
             grouped.set(date, {
                 answeredCount: 0,
@@ -234,10 +315,10 @@ const trendChartOptions = computed<EChartsOption>(() => {
             })
         }
         const target = grouped.get(date)!
-        if (item.status === '已接通') {
+        if (item.status === 30) {
             target.answeredCount += 1
-            target.customerSet.add(item.mobile)
-            target.durationSeconds += item.durationSeconds
+            target.customerSet.add(item.calleeMobile)
+            target.durationSeconds += item.durationSeconds || 0
         } else {
             target.unansweredCount += 1
         }
@@ -251,35 +332,129 @@ const trendChartOptions = computed<EChartsOption>(() => {
         Number(((grouped.get(date)?.durationSeconds || 0) / 60).toFixed(1))
     )
 
+    const xAxisFormatter = (value: string) => {
+        if (!value) return ''
+        const parts = value.split('-')
+        if (parts.length === 3) {
+            return `${parts[1]}-${parts[2]}`
+        }
+        return value
+    }
+
     return {
         color: ['#52c41a', '#fa8c16', '#1890ff', '#722ed1'],
         tooltip: {
-            trigger: 'axis'
+            trigger: 'axis',
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: 12,
+            padding: [12, 16],
+            textStyle: {
+                color: '#f8fafc',
+                fontSize: 13
+            },
+            axisPointer: {
+                type: 'cross',
+                lineStyle: {
+                    color: 'rgba(148, 163, 184, 0.4)'
+                }
+            },
+            formatter: (params: any) => {
+                if (!Array.isArray(params)) return ''
+                let result = `<div style="font-weight: 600; margin-bottom: 8px;">${params[0]?.axisValue || ''}</div>`
+                params.forEach((item: any) => {
+                    const marker = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${item.color};margin-right:8px;"></span>`
+                    const unit = item.seriesName === '通话时长' ? '分' : '次'
+                    result += `<div style="display:flex;align-items:center;margin:4px 0;">${marker}${item.seriesName}：<span style="font-weight:600;margin-left:4px;">${item.value}${unit}</span></div>`
+                })
+                return result
+            }
         },
         legend: {
             top: 0,
-            right: 0
+            right: 0,
+            itemWidth: 14,
+            itemHeight: 14,
+            itemGap: 24,
+            textStyle: {
+                color: '#4b5563',
+                fontSize: 13
+            }
         },
         grid: {
-            left: 24,
-            right: 32,
+            left: 56,
+            right: 56,
             top: 48,
-            bottom: 24,
+            bottom: dates.length > 15 ? 72 : 56,
             containLabel: true
         },
         xAxis: {
             type: 'category',
-            data: dates
+            data: dates,
+            axisLine: {
+                lineStyle: {
+                    color: '#e5e7eb'
+                }
+            },
+            axisTick: {
+                show: false
+            },
+            axisLabel: {
+                color: '#6b7280',
+                fontSize: dates.length > 20 ? 10 : 12,
+                rotate: dates.length > 15 ? 45 : dates.length > 7 ? 30 : 0,
+                interval: dates.length > 30 ? 3 : dates.length > 20 ? 2 : dates.length > 10 ? 1 : 0,
+                formatter: xAxisFormatter
+            }
         },
         yAxis: [
             {
                 type: 'value',
                 name: '数量',
-                minInterval: 1
+                nameTextStyle: {
+                    color: '#6b7280',
+                    fontSize: 12,
+                    padding: [0, 0, 0, 40]
+                },
+                minInterval: 1,
+                axisLine: {
+                    show: false
+                },
+                axisTick: {
+                    show: false
+                },
+                axisLabel: {
+                    color: '#6b7280',
+                    fontSize: 12
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: '#f3f4f6',
+                        type: 'dashed'
+                    }
+                }
             },
             {
                 type: 'value',
-                name: '时长(分)'
+                name: '时长(分)',
+                nameTextStyle: {
+                    color: '#6b7280',
+                    fontSize: 12,
+                    padding: [0, 40, 0, 0]
+                },
+                axisLine: {
+                    show: false
+                },
+                axisTick: {
+                    show: false
+                },
+                axisLabel: {
+                    color: '#6b7280',
+                    fontSize: 12
+                },
+                splitLine: {
+                    show: false
+                }
             }
         ],
         series: [
@@ -287,18 +462,45 @@ const trendChartOptions = computed<EChartsOption>(() => {
                 name: '已接通',
                 type: 'bar',
                 barMaxWidth: 18,
+                itemStyle: {
+                    borderRadius: [4, 4, 0, 0]
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 8,
+                        shadowColor: 'rgba(82, 196, 26, 0.3)'
+                    }
+                },
                 data: answeredCounts
             },
             {
                 name: '未接通',
                 type: 'bar',
                 barMaxWidth: 18,
+                itemStyle: {
+                    borderRadius: [4, 4, 0, 0]
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 8,
+                        shadowColor: 'rgba(250, 140, 22, 0.3)'
+                    }
+                },
                 data: unansweredCounts
             },
             {
                 name: '已通话客户',
                 type: 'bar',
                 barMaxWidth: 18,
+                itemStyle: {
+                    borderRadius: [4, 4, 0, 0]
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 8,
+                        shadowColor: 'rgba(24, 144, 255, 0.3)'
+                    }
+                },
                 data: customerCounts
             },
             {
@@ -306,6 +508,35 @@ const trendChartOptions = computed<EChartsOption>(() => {
                 type: 'line',
                 yAxisIndex: 1,
                 smooth: true,
+                symbol: 'circle',
+                symbolSize: 6,
+                lineStyle: {
+                    width: 3
+                },
+                itemStyle: {
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                },
+                areaStyle: {
+                    color: {
+                        type: 'linear',
+                        x: 0,
+                        y: 0,
+                        x2: 0,
+                        y2: 1,
+                        colorStops: [
+                            { offset: 0, color: 'rgba(114, 46, 209, 0.25)' },
+                            { offset: 1, color: 'rgba(114, 46, 209, 0.02)' }
+                        ]
+                    }
+                },
+                emphasis: {
+                    scale: true,
+                    itemStyle: {
+                        shadowBlur: 12,
+                        shadowColor: 'rgba(114, 46, 209, 0.4)'
+                    }
+                },
                 data: durationMinutes
             }
         ]
@@ -313,16 +544,40 @@ const trendChartOptions = computed<EChartsOption>(() => {
 })
 
 const setSearchParams = (params: Recordable) => {
-    searchParams.value = {
-        deptUserKeyword: params.deptUserKeyword || undefined,
-        callType: params.callType || undefined,
-        dateRange: params.dateRange?.length ? params.dateRange : undefined
-    }
+    searchParams.deptId = params.deptId || undefined
+    searchParams.userId = params.userId || undefined
+    searchParams.callType = params.callType || undefined
+    searchParams.dateRange = params.dateRange?.length ? params.dateRange : undefined
+    void loadRecordList()
 }
 
 const resetSearchParams = () => {
-    searchParams.value = { ...defaultSearchParams }
+    clearSelectedUser()
+    searchParams.deptId = undefined
+    searchParams.callType = undefined
+    searchParams.dateRange = undefined
+    void loadRecordList()
 }
+
+const openUserSelect = () => {
+    const selectedList = searchParams.userId
+        ? [{ id: searchParams.userId, nickname: selectedUserName.value }]
+        : []
+    userSelectFormRef.value?.open(0, selectedList, { title: '选择员工', multiple: false })
+}
+
+const handleUserSelectConfirm = (_id: any, userList: UserVO[]) => {
+    const user = userList?.[0]
+    searchParams.userId = user?.id
+    selectedUserName.value = user?.nickname || user?.username || ''
+}
+
+const clearSelectedUser = () => {
+    searchParams.userId = undefined
+    selectedUserName.value = ''
+}
+
+onMounted(loadRecordList)
 </script>
 
 <style scoped lang="scss">
@@ -372,14 +627,31 @@ const resetSearchParams = () => {
 }
 
 .call-stats-overview__legend-name {
-    min-width: 84px;
+    min-width: 60px;
     font-weight: 500;
     color: #374151;
+    font-size: 13px;
+}
+
+.call-stats-overview__legend-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.call-stats-overview__legend-bar {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.3s ease;
 }
 
 .call-stats-overview__legend-value {
+    min-width: 80px;
     color: #6b7280;
-    font-size: 13px;
+    font-size: 12px;
+    text-align: right;
 }
 
 .call-stats-overview__metrics {

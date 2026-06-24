@@ -12,6 +12,11 @@ export const getOptionLabel = (options: { label: string; value: number }[], valu
     return options.find((item) => item.value === value)?.label || '--'
 }
 
+export const dateRangeDefaultTime = [
+    new Date(2000, 0, 1, 0, 0, 0),
+    new Date(2000, 0, 1, 23, 59, 59)
+]
+
 export const getAftersalesTypeLabel = (value?: number) =>
     value === undefined ? '--' : getDictLabel(DICT_TYPE.CRM_AFTERSALES_TYPE, value) || '--'
 
@@ -73,6 +78,7 @@ export const buildBaseSearchSchema = (
         componentProps: {
             type: 'daterange',
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
+            defaultTime: dateRangeDefaultTime,
             style: { width: '220px' }
         }
     },
@@ -119,6 +125,7 @@ export const buildBaseSearchSchema = (
         componentProps: {
             type: 'daterange',
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
+            defaultTime: dateRangeDefaultTime,
             style: { width: '220px' }
         }
     },
@@ -129,6 +136,7 @@ export const buildBaseSearchSchema = (
         componentProps: {
             type: 'daterange',
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
+            defaultTime: dateRangeDefaultTime,
             style: { width: '220px' }
         }
     }

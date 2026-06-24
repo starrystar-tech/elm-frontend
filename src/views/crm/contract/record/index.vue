@@ -22,7 +22,7 @@ import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
-import { floatToFixed2 } from '@/utils'
+import { liToYuan } from '@/utils/formatter'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import * as ContractApi from '@/api/system/contract'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
@@ -158,7 +158,7 @@ const getContractStatusMeta = (value?: number) => {
     }
 }
 
-const formatPayFee = (value?: number) => `￥${floatToFixed2(value)}`
+const formatPayFee = (value?: number) => `￥${liToYuan(value)}`
 
 const handlePreview = async (id: number) => {
     const url = await ContractApi.getContractPreviewUrl(id)

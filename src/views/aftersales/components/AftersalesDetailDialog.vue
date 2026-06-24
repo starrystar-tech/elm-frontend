@@ -10,7 +10,7 @@
             <el-descriptions-item label="工单号">{{
                 detail?.ticketNo || '--'
             }}</el-descriptions-item>
-            <el-descriptions-item label="线索ID">{{
+            <el-descriptions-item label="客户编号">{{
                 detail?.customerId || '--'
             }}</el-descriptions-item>
             <el-descriptions-item label="订单编号">{{

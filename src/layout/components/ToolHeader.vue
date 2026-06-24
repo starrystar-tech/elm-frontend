@@ -16,9 +16,8 @@ import { checkPermi } from '@/utils/permission'
 import { getExportTaskReminderSummary, markExportTaskCenterViewed } from '@/api/system/exportTask'
 import { updateUserOutboundStatus } from '@/api/system/user/profile'
 import { useBrowserPhone } from '@/hooks/web/useBrowserPhone'
+import { useOutboundDial } from '@/hooks/web/useOutboundDial'
 import { useEmitt } from '@/hooks/web/useEmitt'
-import { getOtherSettingConfig } from '@/api/crm/otherSettingConfig'
-import { getOutboundRouteSimpleList } from '@/api/system/call/router'
 import ToolHeaderDialer from './ToolHeaderDialer.vue'
 
 const { getPrefixCls, variables } = useDesign()
@@ -79,14 +78,13 @@ export default defineComponent({
             browserHangupPending,
             browserCallStarting,
             formattedCallDuration,
-            browserForm,
             connectBrowserPhone,
             disconnectBrowserPhone,
-            makeBrowserCall,
             hangupBrowserCall,
             applyBrowserPhoneCredentials,
             reloadProfile
         } = useBrowserPhone()
+        const { dialing: outboundDialing, dialOutboundMobile } = useOutboundDial()
 
         const resolveSeatExtension = () => {
             const seat = String(profile.callExt || profile.callNo || '').trim()
@@ -253,41 +251,7 @@ export default defineComponent({
         }
 
         const handleBrowserDial = async () => {
-            if (!outboundSignedIn.value) {
-                messageApi.warning('当前未签入，请先签入浏览器分机')
-                return
-            }
-            const targetMobile = dialerMobile.value.trim()
-            if (!/^\d{3,20}$/.test(targetMobile)) {
-                messageApi.warning('请输入正确的号码')
-                return
-            }
-            try {
-                const config = await getOtherSettingConfig()
-                if (!config?.outboundRouteId) {
-                    messageApi.warning('当前商户未绑定线路，请联系管理员配置线路')
-                    return
-                }
-                const routeList = await getOutboundRouteSimpleList()
-                const currentRoute = routeList.find((item) => item.id === config.outboundRouteId)
-                const routePrefix = String(currentRoute?.numberPrefix || '').trim()
-                if (!currentRoute?.id || !routePrefix) {
-                    messageApi.warning('当前商户未绑定线路，请联系管理员配置线路')
-                    return
-                }
-                if (currentRoute.status === 1) {
-                    messageApi.warning('当前商户绑定线路已禁用，请联系管理员配置线路')
-                    return
-                }
-                browserForm.target = targetMobile
-                await makeBrowserCall({
-                    dialTarget: `${routePrefix}${targetMobile}`,
-                    displayTarget: targetMobile,
-                    outboundRouteId: currentRoute.id
-                })
-            } catch (error: any) {
-                messageApi.error(error?.message || '加载线路配置失败')
-            }
+            await dialOutboundMobile(dialerMobile.value)
         }
 
         const handleBrowserHangup = async () => {
@@ -410,8 +374,12 @@ export default defineComponent({
                                 <ElButton
                                     type="primary"
                                     class="outbound-toolbar__button"
-                                    disabled={!outboundSignedIn.value || browserCallStarting.value}
-                                    loading={browserLoading.value}
+                                    disabled={
+                                        !outboundSignedIn.value ||
+                                        browserCallStarting.value ||
+                                        outboundDialing.value
+                                    }
+                                    loading={browserLoading.value || outboundDialing.value}
                                     onMousedown={(event: MouseEvent) => {
                                         event.stopPropagation()
                                         dialerRef.value?.holdOpen?.(1200)

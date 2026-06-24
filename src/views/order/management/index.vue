@@ -349,17 +349,27 @@ const handleContractSign = (row: OrderApi.OrderPageRespVO) => {
     contractSignRef.value?.open(row)
 }
 
+const isPendingPayOrder = (row: OrderApi.OrderPageRespVO) => [0, 10].includes(row.orderStatus)
+const isClosedOrder = (row: OrderApi.OrderPageRespVO) => row.orderStatus === 30
+const isRefundedOrder = (row: OrderApi.OrderPageRespVO) => row.orderStatus === 40
+const canSignContract = (row: OrderApi.OrderPageRespVO) =>
+    !isPendingPayOrder(row) && !isClosedOrder(row) && !isRefundedOrder(row)
+const canPayOrder = (row: OrderApi.OrderPageRespVO) =>
+    !isClosedOrder(row) &&
+    !isRefundedOrder(row) &&
+    getRemainingAmount(row.payableAmount, row.paidAmount) > 0
+
 const getMoreActions = (row: OrderApi.OrderPageRespVO) =>
     [
         {
             command: 'contractSign',
             label: '签署合同',
-            show: true
+            show: canSignContract(row)
         },
         {
             command: 'pay',
             label: '支付',
-            show: getRemainingAmount(row.payableAmount, row.paidAmount) > 0
+            show: canPayOrder(row)
         },
         {
             command: 'refund',

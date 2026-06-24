@@ -20,6 +20,9 @@
                 <span>名片编号：{{ clue.customerId || clue.id || '--' }}</span>
             </template>
             <template #actions>
+                <el-button plain :loading="outboundDialing" @click="dialOutboundMobile(clue.mobile)">
+                    外呼
+                </el-button>
                 <el-button plain @click="emit('sms')">短信</el-button>
                 <el-button plain @click="emit('enroll')">报名</el-button>
                 <el-button plain @click="emit('release')">释放</el-button>
@@ -703,6 +706,7 @@ import ClueIntentLevel from '@/components/ClueIntentLevel'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import { buildAreaLabel } from '@/views/crm/clue/listShared'
 import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
+import { useOutboundDial } from '@/hooks/web/useOutboundDial'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
@@ -738,6 +742,7 @@ const emit = defineEmits<{
 }>()
 
 const avatarText = computed(() => (props.clue.name || '线').slice(0, 1))
+const { dialing: outboundDialing, dialOutboundMobile } = useOutboundDial()
 const editFormRef = ref()
 const consultFormRef = ref()
 const recordTab = ref('appointments')

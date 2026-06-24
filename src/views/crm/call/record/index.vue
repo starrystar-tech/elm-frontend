@@ -1,6 +1,13 @@
 <template>
     <ContentWrap>
         <Search :model="searchForm" @reset="resetSearchParams" @search="setSearchParams">
+            <el-form-item label="部门" prop="deptId">
+                <DeptSelector
+                    v-model="searchForm.deptId"
+                    placeholder="请选择部门"
+                    style="width: 220px"
+                />
+            </el-form-item>
             <el-form-item label="主叫" prop="userId">
                 <el-input
                     v-model="selectedUserName"
@@ -97,6 +104,7 @@ import * as OutboundCallRecordApi from '@/api/system/call/record'
 import * as OutboundRouteApi from '@/api/system/call/router'
 import type { UserVO } from '@/api/system/user'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
+import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'CrmCallRecord' })
@@ -121,6 +129,7 @@ const outboundRouteOptions = ref<{ label: string; value: number }[]>([])
 const selectedUserName = ref('')
 const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
 const searchForm = reactive<OutboundCallRecordApi.OutboundCallRecordPageReqVO>({
+    deptId: undefined,
     userId: undefined,
     outboundRouteId: undefined,
     calleeMobile: undefined,
@@ -149,11 +158,15 @@ const {
 })
 
 const setSearchParams = (params: Recordable) => {
-    tableMethods.setSearchParams(params)
+    tableMethods.setSearchParams({
+        ...params,
+        deptId: params.deptId || undefined
+    })
 }
 
 const resetSearchParams = () => {
     clearSelectedUser()
+    searchForm.deptId = undefined
     searchForm.outboundRouteId = undefined
     searchForm.calleeMobile = undefined
     searchForm.status = undefined

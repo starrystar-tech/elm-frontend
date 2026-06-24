@@ -1,7 +1,45 @@
 <template>
     <div class="call-monitor-page">
         <ContentWrap>
-            <Search :schema="searchSchema" @search="setSearchParams" @reset="resetSearchParams" />
+            <Search :model="searchParams" @search="setSearchParams" @reset="resetSearchParams">
+                <el-form-item label="部门" prop="deptId">
+                    <DeptSelector
+                        v-model="searchParams.deptId"
+                        placeholder="请选择部门"
+                        style="width: 220px"
+                    />
+                </el-form-item>
+                <el-form-item label="员工" prop="userId">
+                    <el-input
+                        v-model="selectedUserName"
+                        clearable
+                        placeholder="请选择员工"
+                        style="width: 220px"
+                        @click="openUserSelect"
+                        @clear="clearSelectedUser"
+                    />
+                </el-form-item>
+                <el-form-item label="通话日期" prop="dateRange">
+                    <el-date-picker
+                        v-model="searchParams.dateRange"
+                        type="daterange"
+                        value-format="YYYY-MM-DD"
+                        start-placeholder="开始日期"
+                        end-placeholder="结束日期"
+                        style="width: 240px"
+                    />
+                </el-form-item>
+                <el-form-item label-width="0">
+                    <el-button type="primary" @click="setSearchParams(searchParams)">
+                        <Icon class="mr-5px" icon="ep:search" />
+                        查询
+                    </el-button>
+                    <el-button @click="resetSearchParams">
+                        <Icon class="mr-5px" icon="ep:refresh" />
+                        重置
+                    </el-button>
+                </el-form-item>
+            </Search>
             <div class="action-btn-wrap">
                 <BaseButton plain @click="handleExport">导出</BaseButton>
             </div>
@@ -15,6 +53,7 @@
                 @register="tableRegister"
             />
         </ContentWrap>
+        <UserSelectForm ref="userSelectFormRef" @confirm="handleUserSelectConfirm" />
     </div>
 </template>
 
@@ -25,48 +64,24 @@ import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import { Table, type TableColumn } from '@/components/Table'
 import { useTable } from '@/hooks/web/useTable'
-import type { FormSchema } from '@/types/form'
-import * as UserApi from '@/api/system/user'
-import * as DeptApi from '@/api/system/dept'
+import type { UserVO } from '@/api/system/user'
 import * as OutboundCallRecordApi from '@/api/system/call/record'
+import UserSelectForm from '@/components/UserSelectForm/index.vue'
+import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
 
 defineOptions({ name: 'CrmCallMonitor' })
 
 const message = useMessage()
-const deptUserOptions = ref<{ label: string; value: string }[]>([])
+const selectedUserName = ref('')
+const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
 
 const defaultSearchParams = {
-    deptUserKeyword: undefined as string | undefined,
+    deptId: undefined as number | undefined,
+    userId: undefined as number | undefined,
     dateRange: undefined as string[] | undefined
 }
 
-const searchParams = ref({ ...defaultSearchParams })
-
-const searchSchema = reactive<FormSchema[]>([
-    {
-        field: 'dateRange',
-        label: '通话日期',
-        component: 'DatePicker',
-        componentProps: {
-            type: 'daterange',
-            valueFormat: 'YYYY-MM-DD',
-            startPlaceholder: '开始日期',
-            endPlaceholder: '结束日期',
-            style: { width: '240px' }
-        }
-    },
-    {
-        field: 'deptUserKeyword',
-        label: '部门/用户',
-        component: 'Select',
-        componentProps: {
-            placeholder: '请选择部门或用户',
-            clearable: true,
-            options: deptUserOptions.value,
-            style: { width: '220px' }
-        }
-    }
-])
+const searchParams = reactive({ ...defaultSearchParams })
 
 const formatDurationClock = (durationSeconds?: number) => {
     const totalSeconds = Math.max(0, Math.floor(durationSeconds || 0))
@@ -124,25 +139,23 @@ const tableColumns = reactive<TableColumn[]>([
 ])
 
 const setSearchParams = (params: Recordable) => {
-    searchParams.value = {
-        deptUserKeyword: params.deptUserKeyword || undefined,
-        dateRange: params.dateRange?.length ? params.dateRange : undefined
-    }
-    tableMethods.setSearchParams(buildPageParams(searchParams.value))
+    searchParams.deptId = params.deptId || undefined
+    searchParams.userId = params.userId || undefined
+    searchParams.dateRange = params.dateRange?.length ? params.dateRange : undefined
+    tableMethods.setSearchParams(buildPageParams(searchParams))
 }
 
 const resetSearchParams = () => {
-    searchParams.value = { ...defaultSearchParams }
+    clearSelectedUser()
+    searchParams.deptId = undefined
+    searchParams.dateRange = undefined
     tableMethods.setSearchParams(buildPageParams({}))
 }
 
 const buildPageParams = (params: typeof defaultSearchParams) => {
-    const deptUserKeyword = params.deptUserKeyword
-    const result: OutboundCallRecordApi.CallMonitorPageReqVO = {}
-    if (deptUserKeyword?.startsWith('dept:')) {
-        result.deptId = Number(deptUserKeyword.slice(5))
-    } else if (deptUserKeyword?.startsWith('user:')) {
-        result.userId = Number(deptUserKeyword.slice(5))
+    const result: OutboundCallRecordApi.CallMonitorPageReqVO = {
+        deptId: params.deptId,
+        userId: params.userId
     }
     if (params.dateRange?.length) {
         result.beginCreateTime = `${params.dateRange[0]} 00:00:00`
@@ -151,32 +164,32 @@ const buildPageParams = (params: typeof defaultSearchParams) => {
     return result
 }
 
-const loadDeptUserOptions = async () => {
-    const [users, depts] = await Promise.all([UserApi.getSimpleUserList(), DeptApi.getSimpleDeptList()])
-    const deptEntries = (depts || []).map((item) => ({
-        label: `部门 / ${item.name}`,
-        value: `dept:${item.id}`
-    }))
-    const userEntries = (users || []).map((item) => ({
-        label: `用户 / ${item.nickname || item.username}`,
-        value: `user:${item.id}`
-    }))
-    deptUserOptions.value = [...deptEntries, ...userEntries]
-    const target = searchSchema.find((item) => item.field === 'deptUserKeyword')
-    if (target?.componentProps) {
-        target.componentProps.options = deptUserOptions.value
-    }
+const openUserSelect = () => {
+    const selectedList = searchParams.userId
+        ? [{ id: searchParams.userId, nickname: selectedUserName.value }]
+        : []
+    userSelectFormRef.value?.open(0, selectedList, { title: '选择员工', multiple: false })
+}
+
+const handleUserSelectConfirm = (_id: any, userList: UserVO[]) => {
+    const user = userList?.[0]
+    searchParams.userId = user?.id
+    selectedUserName.value = user?.nickname || user?.username || ''
+}
+
+const clearSelectedUser = () => {
+    searchParams.userId = undefined
+    selectedUserName.value = ''
 }
 
 const handleExport = async () => {
     await OutboundCallRecordApi.createCallMonitorExportTask({
-        ...buildPageParams(searchParams.value)
+        ...buildPageParams(searchParams)
     })
     message.success('导出任务已创建，请到下载中心查看')
 }
 
 onMounted(async () => {
-    await loadDeptUserOptions()
     await tableMethods.getList()
 })
 </script>

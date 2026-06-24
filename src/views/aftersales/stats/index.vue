@@ -24,7 +24,7 @@ import * as AftersalesApi from '@/api/crm/aftersales'
 import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
 import * as ComplaintTagApi from '@/api/system/complaintTag'
-import { getAftersalesPriorityOptions, getAftersalesTypeOptions } from '../config'
+import { dateRangeDefaultTime, getAftersalesPriorityOptions, getAftersalesTypeOptions } from '../config'
 
 defineOptions({ name: 'AftersalesStats' })
 
@@ -63,6 +63,7 @@ const searchSchema = computed<FormSchema[]>(() => [
         componentProps: {
             type: 'daterange',
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
+            defaultTime: dateRangeDefaultTime,
             style: { width: '220px' }
         }
     },
@@ -73,6 +74,7 @@ const searchSchema = computed<FormSchema[]>(() => [
         componentProps: {
             type: 'daterange',
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
+            defaultTime: dateRangeDefaultTime,
             style: { width: '220px' }
         }
     },

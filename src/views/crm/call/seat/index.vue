@@ -16,7 +16,46 @@
         </div>
 
         <ContentWrap>
-            <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
+            <Search :model="searchParams" @search="setSearchParams" @reset="resetSearchParams">
+                <el-form-item label="员工" prop="userId">
+                    <el-input
+                        v-model="selectedUserName"
+                        clearable
+                        placeholder="请选择员工"
+                        style="width: 220px"
+                        @click="openUserSelect"
+                        @clear="clearSelectedUser"
+                    />
+                </el-form-item>
+                <el-form-item label="所属部门" prop="deptId">
+                    <DeptSelector
+                        v-model="searchParams.deptId"
+                        placeholder="请选择所属部门"
+                        style="width: 220px"
+                    />
+                </el-form-item>
+                <el-form-item label="绑定状态" prop="bindStatus">
+                    <el-select
+                        v-model="searchParams.bindStatus"
+                        clearable
+                        placeholder="请选择绑定状态"
+                        style="width: 220px"
+                    >
+                        <el-option label="已绑定" value="bound" />
+                        <el-option label="未绑定" value="unbound" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label-width="0">
+                    <el-button type="primary" @click="setSearchParams(searchParams)">
+                        <Icon class="mr-5px" icon="ep:search" />
+                        查询
+                    </el-button>
+                    <el-button @click="resetSearchParams">
+                        <Icon class="mr-5px" icon="ep:refresh" />
+                        重置
+                    </el-button>
+                </el-form-item>
+            </Search>
             <Table
                 v-model:currentPage="tableObject.currentPage"
                 v-model:pageSize="tableObject.pageSize"
@@ -81,6 +120,7 @@
                 </el-button>
             </template>
         </Dialog>
+        <UserSelectForm ref="userSelectFormRef" @confirm="handleUserSelectConfirm" />
     </div>
 </template>
 
@@ -89,18 +129,19 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import type { FormRules } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import * as UserApi from '@/api/system/user'
-import * as DeptApi from '@/api/system/dept'
+import type { UserVO } from '@/api/system/user'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
-import type { FormSchema } from '@/types/form'
+import UserSelectForm from '@/components/UserSelectForm/index.vue'
+import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
 
 defineOptions({ name: 'CrmCallSeat' })
 
 interface SeatSearchParams {
-    keyword?: string
+    userId?: number
     deptId?: number
     bindStatus?: 'bound' | 'unbound'
 }
@@ -111,8 +152,10 @@ const dialogVisible = ref(false)
 const dialogLoading = ref(false)
 const dialogSaving = ref(false)
 const dialogTitle = ref('绑定坐席')
+const selectedUserName = ref('')
+const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
 
-const deptOptions = ref<{ label: string; value: number }[]>([])
+const searchParams = reactive<SeatSearchParams>({})
 const currentUserDetail = ref<UserApi.UserVO | null>(null)
 const formData = reactive({
     id: undefined as number | undefined,
@@ -135,50 +178,10 @@ const formRules = reactive<FormRules>({
     ]
 })
 
-const searchSchema = reactive<FormSchema[]>([
-    {
-        field: 'keyword',
-        label: '员工',
-        component: 'Input',
-        componentProps: {
-            placeholder: '请输入姓名或登录账号',
-            clearable: true,
-            style: { width: '220px' }
-        }
-    },
-    {
-        field: 'deptId',
-        label: '所属部门',
-        component: 'Select',
-        componentProps: {
-            placeholder: '请选择所属部门',
-            clearable: true,
-            filterable: true,
-            options: [],
-            style: { width: '220px' }
-        }
-    },
-    {
-        field: 'bindStatus',
-        label: '绑定状态',
-        component: 'Select',
-        componentProps: {
-            placeholder: '请选择绑定状态',
-            clearable: true,
-            options: [
-                { label: '已绑定', value: 'bound' },
-                { label: '未绑定', value: 'unbound' }
-            ],
-            style: { width: '220px' }
-        }
-    }
-])
-
 const buildPageParams = (params: SeatSearchParams = {}) => {
-    const keyword = params.keyword?.trim()
     const nextParams: Record<string, any> = {
         deptId: params.deptId,
-        keyword: keyword || undefined
+        userId: params.userId
     }
     if (params.bindStatus === 'bound') {
         nextParams.hasCallExt = true
@@ -211,7 +214,17 @@ const loadGlobalStats = async () => {
 }
 
 const setSearchParams = (params: SeatSearchParams) => {
+    searchParams.userId = params.userId
+    searchParams.deptId = params.deptId
+    searchParams.bindStatus = params.bindStatus
     tableMethods.setSearchParams(buildPageParams(params))
+}
+
+const resetSearchParams = () => {
+    clearSelectedUser()
+    searchParams.deptId = undefined
+    searchParams.bindStatus = undefined
+    tableMethods.setSearchParams(buildPageParams({}))
 }
 
 const textCell = (value?: string | number) => {
@@ -220,20 +233,22 @@ const textCell = (value?: string | number) => {
     return text || '--'
 }
 
-const updateSchemaOptions = (field: string, options: { label: string; value: number }[]) => {
-    const target = searchSchema.find((item) => item.field === field)
-    if (target?.componentProps) {
-        target.componentProps.options = options
-    }
+const openUserSelect = () => {
+    const selectedList = searchParams.userId
+        ? [{ id: searchParams.userId, nickname: selectedUserName.value }]
+        : []
+    userSelectFormRef.value?.open(0, selectedList, { title: '选择员工', multiple: false })
 }
 
-const loadDeptOptions = async () => {
-    const list = await DeptApi.getSimpleDeptList()
-    deptOptions.value = (list || []).map((item) => ({
-        label: item.name,
-        value: item.id
-    }))
-    updateSchemaOptions('deptId', deptOptions.value)
+const handleUserSelectConfirm = (_id: any, userList: UserVO[]) => {
+    const user = userList?.[0]
+    searchParams.userId = user?.id
+    selectedUserName.value = user?.nickname || user?.username || ''
+}
+
+const clearSelectedUser = () => {
+    searchParams.userId = undefined
+    selectedUserName.value = ''
 }
 
 const resetDialog = () => {
@@ -368,7 +383,6 @@ const tableColumns = computed<TableColumn[]>(() => [
 ])
 
 onMounted(async () => {
-    await loadDeptOptions()
     await Promise.all([tableMethods.getList(), loadGlobalStats()])
 })
 </script>

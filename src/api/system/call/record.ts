@@ -36,6 +36,7 @@ export interface OutboundCallRecordVO {
 
 export interface OutboundCallRecordPageReqVO extends PageParam {
   userId?: number
+  deptId?: number
   calleeMobile?: string
   outboundRouteId?: number
   status?: number
@@ -68,6 +69,10 @@ export interface CallMonitorVO {
 
 export const getOutboundCallRecordPage = (params: OutboundCallRecordPageReqVO) => {
   return request.get({ url: '/crm/call/outbound-record/page', params })
+}
+
+export const getOutboundCallRecordList = (params: Omit<OutboundCallRecordPageReqVO, 'pageNo' | 'pageSize'>) => {
+  return request.get<OutboundCallRecordVO[]>({ url: '/crm/call/outbound-record/list', params })
 }
 
 export const getCallMonitorPage = (params: CallMonitorPageReqVO) => {

@@ -759,7 +759,7 @@ const ensureBrowserPrerequisites = async () => {
     if (!browserForm.username.trim()) throw new Error('请输入浏览器分机账号')
     if (!browserForm.password.trim()) throw new Error('请输入浏览器分机密码')
     if (!remoteAudioRef.value || !localAudioRef.value) {
-        throw new Error('音频节点尚未准备好，请刷新页面后重试')
+        throw new Error('请先登录系统，等待页面完全加载后再尝试连接浏览器分机')
     }
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
     stream.getTracks().forEach((track) => track.stop())
