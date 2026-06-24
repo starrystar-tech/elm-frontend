@@ -19,6 +19,7 @@ export interface ContractPageRespVO {
   id: number
   contractNo: string
   orderNo?: string
+  clueId?: number
   customerId?: string
   customerName?: string
   customerMobile?: string

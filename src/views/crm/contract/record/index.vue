@@ -189,9 +189,8 @@ const tableColumns = reactive<TableColumn[]>([
         slots: {
             default: (data) =>
                 renderCopyMobileCell({
-                    row: { id: data.row.id },
+                    row: data.row,
                     mobile: data.row.customerMobile,
-                    directCopyWhenMissingClueId: true,
                     success: message.success,
                     warning: message.warning
                 })

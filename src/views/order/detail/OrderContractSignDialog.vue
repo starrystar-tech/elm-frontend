@@ -434,7 +434,6 @@ const loadContractList = async () => {
 const loadTemplateList = async () => {
     templateOptions.value = await TemplateApi.getContractTemplateList({
         campusId: orderDetail.value.campusId,
-        templateType: 1,
         templateStatus: 0
     })
 }
