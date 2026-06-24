@@ -349,30 +349,31 @@ const handleContractSign = (row: OrderApi.OrderPageRespVO) => {
     contractSignRef.value?.open(row)
 }
 
-const getMoreActions = (row: OrderApi.OrderPageRespVO) => [
-    {
-        command: 'contractSign',
-        label: '签署合同',
-        show: true
-    },
-    {
-        command: 'pay',
-        label: '支付',
-        show: getRemainingAmount(row.payableAmount, row.paidAmount) > 0
-    },
-    {
-        command: 'refund',
-        label: '退款',
-        show: getRefundableAmount(row.paidAmount, row.refundAmount) > 0,
-        type: 'danger' as const
-    },
-    {
-        command: 'void',
-        label: '作废',
-        show: row.orderStatus !== 30,
-        type: 'danger' as const
-    }
-].filter((item) => item.show)
+const getMoreActions = (row: OrderApi.OrderPageRespVO) =>
+    [
+        {
+            command: 'contractSign',
+            label: '签署合同',
+            show: true
+        },
+        {
+            command: 'pay',
+            label: '支付',
+            show: getRemainingAmount(row.payableAmount, row.paidAmount) > 0
+        },
+        {
+            command: 'refund',
+            label: '退款',
+            show: getRefundableAmount(row.paidAmount, row.refundAmount) > 0,
+            type: 'danger' as const
+        },
+        {
+            command: 'void',
+            label: '作废',
+            show: row.orderStatus !== 30,
+            type: 'danger' as const
+        }
+    ].filter((item) => item.show)
 
 const handleMoreCommand = async (command: string, row: OrderApi.OrderPageRespVO) => {
     switch (command) {
@@ -414,7 +415,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     },
     { field: 'enrollTime', label: '报名时间', minWidth: '170px', formatter: dateFormatter },
     { field: 'customerName', label: '姓名', minWidth: '100px' },
-    { field: 'customerId', label: '客户ID', minWidth: '110px' },
+    { field: 'customerId', label: '客户编号', minWidth: '110px' },
     {
         field: 'customerMobile',
         label: '手机号',

@@ -156,7 +156,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     // { field: 'confirmResult', label: '确认结果', minWidth: '160px' },
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
     { field: 'customerName', label: '姓名', minWidth: '100px' },
-    { field: 'customerId', label: '客户ID', minWidth: '100px' },
+    { field: 'customerId', label: '客户编号', minWidth: '100px' },
     {
         field: 'customerMobile',
         label: '手机号',

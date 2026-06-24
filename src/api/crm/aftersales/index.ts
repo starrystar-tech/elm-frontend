@@ -5,7 +5,9 @@ export interface AftersalesPageReqVO extends PageParam {
   customer?: string
   ticketNo?: string
   clueId?: number
+  customerId?: string
   orderId?: number
+  orderNo?: string
   complaintTagId?: number
   ticketType?: number
   priority?: number

@@ -114,6 +114,13 @@ export default defineComponent({
             if (browserStatus.value === '呼叫中') return '呼叫中'
             if (browserStatus.value === '来电响铃') return '来电响铃'
             if (browserStatus.value === '挂断中') return '挂断中'
+            if (
+                browserStatus.value === '已挂断' ||
+                browserStatus.value === '对方已挂断' ||
+                browserStatus.value === '来电已取消'
+            ) {
+                return browserStatus.value
+            }
             return outboundSignedIn.value ? '外呼已签入' : '外呼已签出'
         })
         const outboundStatusActionLabel = computed(() => (outboundSignedIn.value ? '签出' : '签入'))
@@ -122,6 +129,13 @@ export default defineComponent({
             if (browserStatus.value === '呼叫中' || browserStatus.value === '来电响铃')
                 return 'ringing'
             if (browserStatus.value === '挂断中') return 'dialing'
+            if (
+                browserStatus.value === '已挂断' ||
+                browserStatus.value === '对方已挂断' ||
+                browserStatus.value === '来电已取消'
+            ) {
+                return 'hungup'
+            }
             if (browserStatus.value === '已注册') return 'registered'
             if (browserStatus.value === '连接失败') return 'failed'
             return 'idle'
@@ -138,6 +152,15 @@ export default defineComponent({
             }
             if (browserStatus.value === '挂断中') {
                 return '挂断请求已发送，等待对端确认'
+            }
+            if (browserStatus.value === '已挂断') {
+                return '通话已挂断'
+            }
+            if (browserStatus.value === '对方已挂断') {
+                return '手机端已挂断，通话已结束'
+            }
+            if (browserStatus.value === '来电已取消') {
+                return '对方已取消来电'
             }
             if (outboundSignedIn.value) {
                 return '浏览器分机已注册，支持电脑端通话'

@@ -106,6 +106,13 @@ export interface OrderRefundRespVO {
   auditTime?: string
   auditRemark?: string
   refundTime?: string
+  aftersalesTicketId?: number
+  aftersalesPriority?: number
+  aftersalesStatus?: number
+  aftersalesHandlerUserId?: number
+  aftersalesHandlerUserName?: string
+  aftersalesProcessTime?: string
+  aftersalesProcessResult?: string
   creator: string
   creatorName?: string
   createTime: string

@@ -117,7 +117,7 @@ const getOrderClueDetail = async (id: number) => {
 const tableColumns = computed<TableColumn[]>(() => [
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
     { field: 'customerName', label: '姓名', minWidth: '100px' },
-    { field: 'customerId', label: '客户ID', minWidth: '100px' },
+    { field: 'customerId', label: '客户编号', minWidth: '100px' },
     {
         field: 'customerMobile',
         label: '手机号',

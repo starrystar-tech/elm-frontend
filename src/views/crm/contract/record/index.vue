@@ -60,7 +60,7 @@ const searchSchema = reactive<FormSchema[]>([
         label: '客户',
         component: 'Input',
         componentProps: {
-            placeholder: '请输入客户ID/名称',
+            placeholder: '请输入客户编号/名称',
             clearable: true,
             style: { width: '220px' }
         }

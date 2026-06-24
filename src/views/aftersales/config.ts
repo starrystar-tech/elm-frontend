@@ -44,14 +44,14 @@ export const buildBaseSearchSchema = (
         componentProps: { clearable: true, style: { width: '220px' } }
     },
     {
-        field: 'clueId',
-        label: '线索ID',
+        field: 'customerId',
+        label: '客户编号',
         component: 'Input',
         componentProps: { clearable: true, style: { width: '220px' } }
     },
     {
-        field: 'orderId',
-        label: '订单ID',
+        field: 'orderNo',
+        label: '订单编号',
         component: 'Input',
         componentProps: { clearable: true, style: { width: '220px' } }
     },

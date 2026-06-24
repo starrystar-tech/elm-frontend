@@ -18,7 +18,7 @@
                     >
                         <template #subline>
                             <span>订单编号：{{ detail.orderNo || '-' }}</span>
-                            <span>客户ID：{{ detail.customerId || '-' }}</span>
+                            <span>客户编号：{{ detail.customerId || '-' }}</span>
                             <span>订单状态：{{ orderStatusLabel(detail.orderStatus) }}</span>
                             <span>订单归属：{{ orderOwnerText }}</span>
                         </template>
@@ -74,7 +74,10 @@
                                         formatCurrencyText(firstProduct.payableAmount)
                                     }}</el-descriptions-item>
                                     <el-descriptions-item label="商品到期时间">{{
-                                        formatExpireTimeText(firstProduct.expireTime, detail.expireTime)
+                                        formatExpireTimeText(
+                                            firstProduct.expireTime,
+                                            detail.expireTime
+                                        )
                                     }}</el-descriptions-item>
                                     <el-descriptions-item label="备注" :span="2">{{
                                         detail.remark || '-'
@@ -138,7 +141,7 @@
                                         <el-descriptions-item label="紧急联系人">{{
                                             detail.emergencyContact || '-'
                                         }}</el-descriptions-item>
-                                        <el-descriptions-item label="客户ID">{{
+                                        <el-descriptions-item label="客户编号">{{
                                             detail.customerId || '-'
                                         }}</el-descriptions-item>
                                         <el-descriptions-item label="客户状态">{{
@@ -506,7 +509,11 @@ const formatDateTimeText = (value?: unknown) => {
             return resolveTimestamp(trimmed)?.format('YYYY-MM-DD HH:mm:ss') || trimmed
         }
         const numericValue = Number(trimmed)
-        if (!Number.isFinite(numericValue) || numericValue <= 0 || Math.abs(numericValue) < 1000000000) {
+        if (
+            !Number.isFinite(numericValue) ||
+            numericValue <= 0 ||
+            Math.abs(numericValue) < 1000000000
+        ) {
             return '-'
         }
         return resolveTimestamp(numericValue)?.format('YYYY-MM-DD HH:mm:ss') || '-'

@@ -117,23 +117,23 @@
                     </div>
                     <div class="refund-audit-section__item">
                         <span class="label">优先级：</span>
-                        <span>-</span>
+                        <span>{{ aftersalesPriorityText }}</span>
                     </div>
                     <div class="refund-audit-section__item">
                         <span class="label">处理人：</span>
-                        <span>{{ refund.auditUserName || '-' }}</span>
+                        <span>{{ refund.aftersalesHandlerUserName || refund.auditUserName || '-' }}</span>
                     </div>
                     <div class="refund-audit-section__item">
                         <span class="label">处理时间：</span>
-                        <span>{{ processTimeText }}</span>
+                        <span>{{ aftersalesProcessTimeText }}</span>
                     </div>
                     <div class="refund-audit-section__item">
                         <span class="label">处理状态：</span>
-                        <span>{{ processStatusText }}</span>
+                        <span>{{ aftersalesStatusText }}</span>
                     </div>
                     <div class="refund-audit-section__item">
                         <span class="label">处理结果：</span>
-                        <span>{{ refund.auditRemark || '-' }}</span>
+                        <span>{{ refund.aftersalesProcessResult || refund.auditRemark || '-' }}</span>
                     </div>
                 </div>
             </div>
@@ -160,6 +160,7 @@
 import type { FormInstance, FormRules } from 'element-plus'
 import { nextTick } from 'vue'
 import * as OrderApi from '@/api/crm/order'
+import { DICT_TYPE, getDictLabel } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import {
@@ -204,6 +205,24 @@ const processStatusText = computed(() => {
 
 const processTimeText = computed(() => {
     const processTime = refund.value.auditTime || refund.value.refundTime
+    return processTime ? formatDate(processTime as any) : '-'
+})
+
+const aftersalesPriorityText = computed(() =>
+    refund.value.aftersalesPriority === undefined
+        ? '-'
+        : getDictLabel(DICT_TYPE.CRM_AFTERSALES_PRIORITY, refund.value.aftersalesPriority) || '-'
+)
+
+const aftersalesStatusText = computed(() =>
+    refund.value.aftersalesStatus === undefined
+        ? processStatusText.value
+        : getDictLabel(DICT_TYPE.CRM_AFTERSALES_STATUS, refund.value.aftersalesStatus) ||
+          processStatusText.value
+)
+
+const aftersalesProcessTimeText = computed(() => {
+    const processTime = refund.value.aftersalesProcessTime || refund.value.auditTime || refund.value.refundTime
     return processTime ? formatDate(processTime as any) : '-'
 })
 

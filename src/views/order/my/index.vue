@@ -380,7 +380,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     },
     // { field: 'enrollTime', label: '报名时间', minWidth: '170px', formatter: dateFormatter },
     { field: 'customerName', label: '姓名', minWidth: '100px' },
-    { field: 'customerId', label: '客户ID', minWidth: '110px' },
+    { field: 'customerId', label: '客户编号', minWidth: '110px' },
     {
         field: 'customerMobile',
         label: '手机号',

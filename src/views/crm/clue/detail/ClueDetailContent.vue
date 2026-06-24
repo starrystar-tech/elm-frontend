@@ -234,7 +234,11 @@
                                 <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile" />
                             </div>
                             <div v-else-if="item.label === '手机号2'">
-                                <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile2" mobile-field="mobile2" />
+                                <MobileCopyInline
+                                    :clue-id="clue.id"
+                                    :mobile="clue.mobile2"
+                                    mobile-field="mobile2"
+                                />
                             </div>
                             <div v-else>{{ item.value }}</div>
                         </div>
@@ -991,7 +995,7 @@ const parsedTrackList = computed(() =>
 )
 
 const basicInfoItems = computed(() => [
-    { label: '客户ID', value: props.clue.customerId || '--' },
+    { label: '客户编号', value: props.clue.customerId || '--' },
     { label: '手机号', value: props.clue.mobile || '--' },
     { label: '姓名', value: props.clue.name || '--' },
     { label: '来源', value: props.clue.clueSourceName || '--' },

@@ -8,11 +8,7 @@
         />
         <div class="action-btn-wrap flex items-center gap-2">
             <BaseButton type="primary" @click="openAssign">分配处理人</BaseButton>
-            <BaseButton
-                v-hasPermi="['crm:aftersales:export']"
-                plain
-                @click="openExportDialog"
-            >
+            <BaseButton v-hasPermi="['crm:aftersales:export']" plain @click="openExportDialog">
                 导出
             </BaseButton>
         </div>
@@ -198,7 +194,7 @@ const tableColumns = computed<TableColumn[]>(() => [
             )
         }
     },
-    { field: 'customerId', label: '客户ID', minWidth: '120px' },
+    { field: 'customerId', label: '客户编号', minWidth: '120px' },
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
     { field: 'customerName', label: '客户', minWidth: '100px' },
     {

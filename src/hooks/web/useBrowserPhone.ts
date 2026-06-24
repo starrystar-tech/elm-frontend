@@ -48,6 +48,7 @@ let lastBrowserCallFinishedAt = 0
 let callDurationTimer: ReturnType<typeof setInterval> | undefined
 let hangupFallbackTimer: ReturnType<typeof setTimeout> | undefined
 let hangupStatusResetTimer: ReturnType<typeof setTimeout> | undefined
+let callEndedStatusResetTimer: ReturnType<typeof setTimeout> | undefined
 let currentCallTerminationHandled = false
 let browserRegisterWaiter:
     | {
@@ -121,6 +122,10 @@ const reloadProfile = async () => {
 
 const updateBrowserStatus = (status: string) => {
     browserStatus.value = status
+    if (callEndedStatusResetTimer) {
+        clearTimeout(callEndedStatusResetTimer)
+        callEndedStatusResetTimer = undefined
+    }
     if (hangupStatusResetTimer) {
         clearTimeout(hangupStatusResetTimer)
         hangupStatusResetTimer = undefined
@@ -306,7 +311,32 @@ const clearHangupStatusResetTimer = () => {
     hangupStatusResetTimer = undefined
 }
 
+const clearCallEndedStatusResetTimer = () => {
+    if (!callEndedStatusResetTimer) return
+    clearTimeout(callEndedStatusResetTimer)
+    callEndedStatusResetTimer = undefined
+}
+
+const resolveCallEndedStatus = (reason: string) => {
+    if (browserHangupPending.value || reason.includes('fallback') || reason.includes('stuck')) {
+        return '已挂断'
+    }
+    if (currentSessionDirection.value === 'incoming' && incomingCall.value) {
+        return '来电已取消'
+    }
+    return '对方已挂断'
+}
+
+const showCallEndedStatus = (status: string) => {
+    updateBrowserStatus(status)
+    callEndedStatusResetTimer = setTimeout(() => {
+        if (browserStatus.value !== status) return
+        updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
+    }, 1800)
+}
+
 const finalizeBrowserCall = (reason: string, caller?: string, callee?: string) => {
+    const endedStatus = resolveCallEndedStatus(reason)
     clearHangupFallbackTimer()
     clearHangupStatusResetTimer()
     stopOutgoingWaitingTone()
@@ -332,7 +362,7 @@ const finalizeBrowserCall = (reason: string, caller?: string, callee?: string) =
             )
         }
     }
-    updateBrowserStatus(browserRegistered.value ? '已注册' : '未连接')
+    showCallEndedStatus(endedStatus)
     traceBrowserStep('CALL_FINALIZED', `reason=${reason}, caller=${caller || '-'}, callee=${callee || '-'}`)
 }
 
@@ -421,7 +451,7 @@ const handleBrowserCallEnded = (reason: string, caller: string, callee: string) 
         durationSeconds: callDurationSeconds.value
     })
     traceBrowserStep('CALL_HANGUP', `reason=${reason}, caller=${caller}, callee=${callee}`)
-    addBrowserLog('通话已结束', '已挂断')
+    addBrowserLog(browserHangupPending.value ? '通话已挂断' : '对方已挂断，通话已结束', '已挂断')
     finalizeBrowserCall(reason, caller, callee)
 }
 
@@ -960,6 +990,7 @@ const disconnectBrowserPhone = async (silent = false) => {
     browserHangupPending.value = false
     resetCurrentCallTerminationHandled()
     clearHangupFallbackTimer()
+    clearCallEndedStatusResetTimer()
     incomingCall.value = false
     activeCall.value = false
     currentSessionDirection.value = null
@@ -1118,15 +1149,15 @@ const hangupBrowserCall = async () => {
             'HANGUP_START',
             `direction=${currentSessionDirection.value}, state=${session.state}`
         )
+        updateBrowserStatus('挂断中')
+        hideIncomingToast()
+        stopIncomingRing()
+        stopOutgoingWaitingTone()
         if (currentSessionDirection.value === 'incoming' && session.state === 'Initial') {
             await browserClient.value.decline()
         } else {
             await browserClient.value.hangup()
         }
-        updateBrowserStatus('挂断中')
-        hideIncomingToast()
-        stopIncomingRing()
-        stopOutgoingWaitingTone()
         clearHangupFallbackTimer()
         hangupFallbackTimer = setTimeout(() => {
             if (!browserHangupPending.value) {

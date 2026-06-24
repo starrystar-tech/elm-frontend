@@ -37,9 +37,9 @@
             <el-descriptions-item label="处理时间">{{
                 formatDate(detail?.processTime as any) || '--'
             }}</el-descriptions-item>
-            <el-descriptions-item label="退款金额">{{
-                detail?.refundAmount ?? '--'
-            }}</el-descriptions-item>
+            <el-descriptions-item label="退款金额">
+                ￥{{ (detail?.refundAmount / 100.0).toFixed(2) }}
+            </el-descriptions-item>
             <el-descriptions-item label="申请原因" :span="2">{{
                 detail?.reason || '--'
             }}</el-descriptions-item>

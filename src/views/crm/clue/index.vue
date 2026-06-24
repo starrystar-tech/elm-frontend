@@ -380,7 +380,7 @@ const searchSchema = reactive<FormSchema[]>([
         label: '客户',
         component: 'Input',
         componentProps: {
-            placeholder: '请输入客户ID/名称',
+            placeholder: '请输入客户编号/名称',
             clearable: true,
             style: { width: '220px' }
         }
@@ -611,7 +611,7 @@ const buildComplaintTagText = (row: ClueApi.ClueVO) =>
     row.complaintTagNames?.length ? row.complaintTagNames.join('、') : '-'
 
 const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'customerId', label: '客户ID', width: '130px' },
+    { field: 'customerId', label: '客户编号', width: '130px' },
     {
         field: 'mobile',
         label: '联系电话',

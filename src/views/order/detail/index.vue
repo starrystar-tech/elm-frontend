@@ -10,13 +10,17 @@
                     <MobileCopyInline :clue-id="detail.clueId" :mobile="detail.customerMobile" />
                     <template v-if="detail.customerMobile2">
                         <span>/</span>
-                        <MobileCopyInline :clue-id="detail.clueId" :mobile="detail.customerMobile2" mobile-field="mobile2" />
+                        <MobileCopyInline
+                            :clue-id="detail.clueId"
+                            :mobile="detail.customerMobile2"
+                            mobile-field="mobile2"
+                        />
                     </template>
                 </div>
             </template>
             <template #subline>
                 <span>订单编号：{{ detail.orderNo || '-' }}</span>
-                <span>客户ID：{{ detail.customerId || '-' }}</span>
+                <span>客户编号：{{ detail.customerId || '-' }}</span>
                 <span>订单状态：{{ orderStatusLabel(detail.orderStatus) }}</span>
                 <span>订单归属：{{ orderOwnerText }}</span>
             </template>
@@ -98,7 +102,11 @@
                                 />
                             </el-descriptions-item>
                             <el-descriptions-item label="手机号2">
-                                <MobileCopyInline :clue-id="detail.clueId" :mobile="detail.customerMobile2" mobile-field="mobile2" />
+                                <MobileCopyInline
+                                    :clue-id="detail.clueId"
+                                    :mobile="detail.customerMobile2"
+                                    mobile-field="mobile2"
+                                />
                             </el-descriptions-item>
                             <el-descriptions-item label="地区" :span="2">{{
                                 areaText
@@ -133,7 +141,7 @@
                             <el-descriptions-item label="紧急联系人">{{
                                 detail.emergencyContact || '-'
                             }}</el-descriptions-item>
-                            <el-descriptions-item label="客户ID">{{
+                            <el-descriptions-item label="客户编号">{{
                                 detail.customerId || '-'
                             }}</el-descriptions-item>
                             <el-descriptions-item label="信息ID">{{
@@ -414,7 +422,11 @@ const formatDateTimeText = (value?: unknown) => {
             return resolveTimestamp(trimmed)?.format('YYYY-MM-DD HH:mm:ss') || trimmed
         }
         const numericValue = Number(trimmed)
-        if (!Number.isFinite(numericValue) || numericValue <= 0 || Math.abs(numericValue) < 1000000000) {
+        if (
+            !Number.isFinite(numericValue) ||
+            numericValue <= 0 ||
+            Math.abs(numericValue) < 1000000000
+        ) {
             return '-'
         }
         return resolveTimestamp(numericValue)?.format('YYYY-MM-DD HH:mm:ss') || '-'
