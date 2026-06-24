@@ -20,7 +20,7 @@
                 <span>名片编号：{{ clue.customerId || clue.id || '--' }}</span>
             </template>
             <template #actions>
-                <el-button plain :loading="outboundDialing" @click="dialOutboundMobile(clue.mobile)">
+                <el-button plain :loading="outboundDialing" @click="handleOutboundCall">
                     外呼
                 </el-button>
                 <el-button plain @click="emit('sms')">短信</el-button>
@@ -766,6 +766,11 @@ const weworkStaffCards = computed(() =>
         }))
     )
 )
+
+const handleOutboundCall = async () => {
+    const result = await ClueApi.copyClueMobile(props.clueId, 'mobile')
+    await dialOutboundMobile(result?.mobile)
+}
 
 const selectedConsultProductName = computed(() => {
     if (consultForm.productName) {

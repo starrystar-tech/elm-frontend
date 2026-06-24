@@ -171,11 +171,12 @@ const handleDownload = async (id: number) => {
 }
 
 const tableColumns = reactive<TableColumn[]>([
-    { field: 'contractNo', label: '合同编号', minWidth: '180px' },
+    { field: 'contractNo', label: '合同编号', minWidth: '180px', fixed: 'left' },
     { field: 'orderNo', label: '关联订单', minWidth: '160px' },
     {
         field: 'customerName',
         label: '客户',
+
         minWidth: '140px',
         slots: {
             default: (data) => data.row.customerName || data.row.customerId || '-'
