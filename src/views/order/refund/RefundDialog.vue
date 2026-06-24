@@ -68,9 +68,9 @@
                             <el-input-number
                                 v-model="formData.refundAmount"
                                 :min="0"
-                                :max="refundableAmount"
+                                :max="refundableAmountYuan"
                                 :precision="2"
-                                :step="100"
+                                :step="1"
                                 controls-position="right"
                                 style="width: 100%"
                             />
@@ -142,6 +142,7 @@ const refundReasonOptions = [
 const refundableAmount = computed(() =>
     getRefundableAmount(Number(order.value.paidAmount || 0), Number(order.value.refundAmount || 0))
 )
+const refundableAmountYuan = computed(() => Number((refundableAmount.value / 100).toFixed(2)))
 
 const formRules = reactive<FormRules>({
     refundMethod: [{ required: true, message: '请选择退款方式', trigger: 'change' }],
@@ -155,7 +156,7 @@ const formRules = reactive<FormRules>({
                     callback(new Error('退款金额必须大于 0'))
                     return
                 }
-                if (Number(value) > refundableAmount.value) {
+                if (Number(value) > refundableAmountYuan.value) {
                     callback(new Error('退款金额不能大于可退金额'))
                     return
                 }
@@ -170,7 +171,7 @@ const resetForm = async () => {
     formData.refundMethod = '原路返回'
     formData.refundType = 2
     formData.refundReason = ''
-    formData.refundAmount = refundableAmount.value
+    formData.refundAmount = refundableAmountYuan.value
     formData.refundRemark = ''
     await nextTick()
     formRef.value?.clearValidate()
@@ -199,7 +200,7 @@ const handleSubmit = async () => {
             orderId: Number(order.value.id),
             refundMethod: formData.refundMethod,
             refundType: Number(formData.refundType),
-            refundAmount: Number(formData.refundAmount),
+            refundAmount: Math.round(Number(formData.refundAmount) * 100),
             refundReason: formData.refundReason,
             refundRemark: formData.refundRemark || undefined
         })

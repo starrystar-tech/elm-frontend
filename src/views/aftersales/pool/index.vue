@@ -14,13 +14,11 @@
             :pagination="{ total: tableObject.total }"
             @register="tableRegister"
         />
-        <AftersalesDetailDialog ref="detailRef" />
     </ContentWrap>
 </template>
 
 <script setup lang="tsx">
 import { computed, onMounted } from 'vue'
-import { ElLink } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -37,13 +35,11 @@ import {
     getAftersalesStatusLabel,
     getAftersalesTypeLabel
 } from '../config'
-import AftersalesDetailDialog from '../components/AftersalesDetailDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'AftersalesPool' })
 
 const message = useMessage()
-const detailRef = ref()
 const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 
 const searchSchema = computed<FormSchema[]>(() =>
@@ -86,18 +82,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'ticketNo',
         label: '工单号',
         minWidth: '190px',
-        fixed: 'left',
-        slots: {
-            default: (data) => (
-                <ElLink
-                    type="primary"
-                    underline={false}
-                    onClick={() => detailRef.value.open(data.row.id)}
-                >
-                    {data.row.ticketNo}
-                </ElLink>
-            )
-        }
+        fixed: 'left'
     },
     { field: 'customerId', label: '客户编号', minWidth: '120px' },
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
@@ -138,24 +123,15 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'action',
         label: '操作',
-        width: '140px',
+        width: '80px',
         fixed: 'right',
         slots: {
             default: (data) => {
                 const row = data.row as AftersalesApi.AftersalesRespVO
                 return (
-                    <>
-                        <BaseButton
-                            link
-                            type="primary"
-                            onClick={() => detailRef.value.open(row.id)}
-                        >
-                            查看
-                        </BaseButton>
-                        <BaseButton link type="primary" onClick={() => claim(row)}>
-                            领取
-                        </BaseButton>
-                    </>
+                    <BaseButton link type="primary" onClick={() => claim(row)}>
+                        领取
+                    </BaseButton>
                 )
             }
         }

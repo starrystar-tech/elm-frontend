@@ -7,6 +7,7 @@ import { findIndex } from '@/utils'
 import { cloneDeep, set } from 'lodash-es'
 import { FormSchema } from '@/types/form'
 import { initModel } from '@/components/Form/src/helper'
+import { normalizeSearchDateRangeParams } from '@/utils/formatTime'
 
 defineOptions({ name: 'Search', inheritAttrs: false })
 
@@ -116,9 +117,9 @@ const filterModel = async () => {
   const { getFormData } = methods
   const model = await getFormData()
   if (!props.removeNoValueItem) {
-    return model
+    return normalizeSearchDateRangeParams(model, schemaRef.value)
   }
-  return Object.keys(model || {}).reduce((prev, next) => {
+  const filteredModel = Object.keys(model || {}).reduce((prev, next) => {
     const value = model[next]
     if (value !== '' && value !== undefined && value !== null) {
       if (typeof value === 'object' && !Array.isArray(value)) {
@@ -131,6 +132,7 @@ const filterModel = async () => {
     }
     return prev
   }, {} as Recordable)
+  return normalizeSearchDateRangeParams(filteredModel, schemaRef.value)
 }
 
 const search = async () => {

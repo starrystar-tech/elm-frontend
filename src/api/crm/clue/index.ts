@@ -161,6 +161,24 @@ export interface ClueUpdateBasicInfoReqVO {
     remark?: string
 }
 
+export interface ClueUpdateEnrollInfoReqVO {
+    id: number
+    name?: string
+    mobile?: string
+    mobile2?: string
+    wechat?: string
+    wechat2?: string
+    qq?: string
+    idCardNo?: string
+    certificateType?: string
+    occupation?: string
+    emergencyMobile?: string
+    emergencyContact?: string
+    gender?: number
+    areaId?: number
+    remark?: string
+}
+
 export interface ClueBatchAppendTagsReqVO {
     clueIds: number[]
     tagIds: number[]
@@ -506,6 +524,10 @@ export const createClue = async (data: ClueCreateReqVO) => {
 
 export const updateClueBasicInfo = async (data: ClueUpdateBasicInfoReqVO) => {
     return await request.put({ url: '/crm/clue/update-basic-info', data })
+}
+
+export const updateClueEnrollInfo = async (data: ClueUpdateEnrollInfoReqVO) => {
+    return await request.put({ url: '/crm/clue/update-enroll-info', data })
 }
 
 export const batchUpdateHeadteacher = async (data: ClueBatchUpdateHeadteacherReqVO) => {

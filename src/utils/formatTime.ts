@@ -1,5 +1,6 @@
 import dayjs from 'dayjs'
 import type { TableColumnCtx } from 'element-plus'
+import type { FormSchema } from '@/types/form'
 
 /**
  * 日期快捷选项适用于 el-date-picker
@@ -376,4 +377,38 @@ export function getDateRange(
     dayjs(beginDate).startOf('d').format('YYYY-MM-DD HH:mm:ss'),
     dayjs(endDate).endOf('d').format('YYYY-MM-DD HH:mm:ss')
   ]
+}
+
+/**
+ * 统一修正搜索表单里的日期范围结束时间。
+ *
+ * Element Plus 的 daterange 在 valueFormat 为 YYYY-MM-DD HH:mm:ss 时，结束日期默认会是
+ * 00:00:00，传给后端会漏掉结束当天的数据；这里统一调整为 23:59:59。
+ */
+export function normalizeSearchDateRangeParams<T extends Recordable>(
+  params: T,
+  schema: FormSchema[] = []
+): T {
+  if (!params || !schema.length) {
+    return params
+  }
+
+  const nextParams = { ...params }
+  schema.forEach((item) => {
+    if (item.component !== 'DatePicker' || item.componentProps?.type !== 'daterange') {
+      return
+    }
+
+    const value = nextParams[item.field]
+    if (!Array.isArray(value) || value.length < 2 || !value[1]) {
+      return
+    }
+
+    nextParams[item.field] = [
+      value[0],
+      dayjs(value[1]).endOf('day').format(item.componentProps?.valueFormat || 'YYYY-MM-DD HH:mm:ss')
+    ]
+  })
+
+  return nextParams as T
 }

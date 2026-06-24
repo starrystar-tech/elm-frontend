@@ -206,6 +206,18 @@ const isBrowserPeerClosedError = (error: any) => {
     return errorText.includes('peer connection closed')
 }
 
+const isBrowserWebSocketClosedError = (error: any) => {
+    const errorText = formatBrowserError(error).toLowerCase()
+    return errorText.includes('websocket closed')
+}
+
+const formatBrowserUserError = (error: any, fallback: string) => {
+    if (isBrowserWebSocketClosedError(error)) {
+        return '浏览器分机连接断开，请稍后重试或重新签入'
+    }
+    return formatBrowserError(error) || fallback
+}
+
 const describeBrowserError = (error: any) => {
     if (!error) return 'error=<empty>'
     if (typeof error === 'string') return `error=${error}`
@@ -828,7 +840,9 @@ const createBrowserClient = async () => {
                 activeCall.value = false
                 stopCallTimer()
                 updateBrowserStatus(browserDisconnecting.value ? '未连接' : '连接断开')
-                const reason = error?.message || 'WSS 连接已断开'
+                const reason = error
+                    ? formatBrowserUserError(error, 'WSS 连接已断开')
+                    : 'WSS 连接已断开'
                 failPendingBrowserRegistration(reason)
                 traceBrowserStep(
                     'WS_DISCONNECTED',
@@ -836,7 +850,7 @@ const createBrowserClient = async () => {
                     error?.message ? 'danger' : 'success'
                 )
                 if (!browserDisconnecting.value && error?.message) {
-                    addBrowserLog(`WSS 连接断开：${error.message}`, '失败', 'danger')
+                    addBrowserLog(reason, '失败', 'danger')
                 }
             }
         }
@@ -954,7 +968,7 @@ const connectBrowserPhone = async () => {
         await registrationPromise
         // message.success('浏览器分机已连接')
     } catch (error: any) {
-        const errorMessage = formatBrowserError(error) || '浏览器分机连接失败'
+        const errorMessage = formatBrowserUserError(error, '浏览器分机连接失败')
         updateBrowserStatus('连接失败')
         traceBrowserStep(
             'CONNECT_FAILED',

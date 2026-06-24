@@ -586,7 +586,7 @@ const submitForm = async () => {
     try {
         formData.value.payStatus = totalPaidAmount.value > 0 ? 'paid' : 'unpaid'
         if (formData.value.clueId) {
-            await ClueApi.updateClueBasicInfo({
+            await ClueApi.updateClueEnrollInfo({
                 id: formData.value.clueId,
                 name: formData.value.clueName,
                 mobile: formData.value.mobile,
@@ -596,10 +596,7 @@ const submitForm = async () => {
                 qq: formData.value.qq,
                 gender: formData.value.gender,
                 areaId: formData.value.areaId!,
-                consultProjectId: formData.value.consultProjectId || 0,
-                clueSourceId: formData.value.clueSourceId || 0,
                 remark: formData.value.remark,
-                tagIds: formData.value.tagIds,
                 idCardNo: formData.value.idCardNo,
                 certificateType: formData.value.certificateType,
                 occupation: formData.value.occupation || originalOptionalFields.value.occupation,
