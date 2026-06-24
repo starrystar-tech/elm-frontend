@@ -226,7 +226,7 @@ const tableColumns = reactive<TableColumn[]>([
                 }
                 return (
                     <div style="display: flex; align-items: center; gap: 8px">
-                        <audio controls preload="none" style="width: 220px">
+                        <audio controls preload="metadata" style="width: 220px">
                             <source src={data.row.recordingFileUrl} />
                         </audio>
                         <span style="color: var(--el-text-color-secondary); font-size: 12px">
