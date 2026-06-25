@@ -212,7 +212,7 @@ const tableColumns = reactive<TableColumn[]>([
                 renderCopyMobileCell({
                     row: data.row,
                     mobile: data.row.calleeMobile,
-                    directCopyWhenMissingClueId: true,
+                    clueId: data.row.clueId,
                     success: message.success,
                     warning: message.warning
                 })

@@ -5,6 +5,7 @@ export interface OutboundCallRecordVO {
   recordNo: string
   userId?: number
   userNickname?: string
+  clueId?: number
   outboundRouteId?: number
   outboundRouteName?: string
   callerDisplayNumber: string
