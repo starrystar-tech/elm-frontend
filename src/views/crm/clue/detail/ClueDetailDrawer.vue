@@ -31,6 +31,8 @@
                     :order-records="orderRecords"
                     :ticket-records="ticketRecords"
                     :track-list="trackList"
+                    :sms-records="smsRecords"
+                    :outbound-call-records="outboundCallRecords"
                     @edit="openForm"
                     @cancel-edit="cancelEdit"
                     @save="handleSave"
@@ -81,10 +83,12 @@ import * as CustomerDetailApi from '@/api/crm/customerDetail'
 import * as OrderApi from '@/api/crm/order'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import { getOperateLogPage } from '@/api/crm/operateLog'
+import * as OutboundCallRecordApi from '@/api/system/call/record'
 import type { OperateLogVO } from '@/api/system/operatelog'
 import * as CampusApi from '@/api/system/campus'
 import * as ComplaintTagApi from '@/api/system/complaintTag'
 import * as ClueSourceApi from '@/api/system/clueSource'
+import * as SmsLogApi from '@/api/system/sms/smsLog'
 import * as TagGroupApi from '@/api/system/tag-group'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import ClueSmsDialog from '../ClueSmsDialog.vue'
@@ -122,6 +126,8 @@ const appointments = ref<CustomerDetailApi.CustomerAppointmentRespVO[]>([])
 const orderRecords = ref<OrderApi.OrderPageRespVO[]>([])
 const ticketRecords = ref<AftersalesApi.AftersalesRespVO[]>([])
 const trackList = ref<CustomerDetailApi.CustomerTrackRespVO[]>([])
+const smsRecords = ref<SmsLogApi.SmsLogVO[]>([])
+const outboundCallRecords = ref<OutboundCallRecordApi.OutboundCallRecordVO[]>([])
 const tagDialogVisible = ref(false)
 const tagForm = reactive({ tagIds: [] as number[] })
 
@@ -182,6 +188,8 @@ const getClue = async () => {
         trackList.value = tracksResp || []
         orderRecords.value = await loadOrderRecords(clueResp)
         ticketRecords.value = await loadTicketRecords()
+        smsRecords.value = await loadSmsRecords(clueResp)
+        outboundCallRecords.value = await loadOutboundCallRecords(clueResp)
         await getOperateLog()
     } finally {
         loading.value = false
@@ -214,6 +222,62 @@ const loadTicketRecords = async () => {
         clueId: clueId.value
     })
     return pageResp?.list || []
+}
+
+const buildMobileList = (clueResp: ClueApi.ClueVO) =>
+    Array.from(new Set([clueResp.mobile, clueResp.mobile2].filter(Boolean) as string[]))
+
+const sortByCreateTimeDesc = <T extends { createTime?: string | Date | null }>(list: T[]) =>
+    [...list].sort((a, b) => {
+        const timeA = a.createTime ? new Date(a.createTime).getTime() : 0
+        const timeB = b.createTime ? new Date(b.createTime).getTime() : 0
+        return timeB - timeA
+    })
+
+const loadSmsRecords = async (clueResp: ClueApi.ClueVO) => {
+    const mobileList = buildMobileList(clueResp)
+    if (!mobileList.length) return []
+    const pageList = await Promise.all(
+        mobileList.map((mobile) =>
+            SmsLogApi.getSmsLogPage({
+                pageNo: 1,
+                pageSize: 50,
+                mobile
+            })
+        )
+    )
+    const recordMap = new Map<number, SmsLogApi.SmsLogVO>()
+    pageList.forEach((pageResp) => {
+        ;(pageResp?.list || []).forEach((item) => {
+            if (item?.id != null) {
+                recordMap.set(Number(item.id), item)
+            }
+        })
+    })
+    return sortByCreateTimeDesc(Array.from(recordMap.values()))
+}
+
+const loadOutboundCallRecords = async (clueResp: ClueApi.ClueVO) => {
+    const mobileList = buildMobileList(clueResp)
+    if (!mobileList.length) return []
+    const pageList = await Promise.all(
+        mobileList.map((calleeMobile) =>
+            OutboundCallRecordApi.getOutboundCallRecordPage({
+                pageNo: 1,
+                pageSize: 50,
+                calleeMobile
+            })
+        )
+    )
+    const recordMap = new Map<number, OutboundCallRecordApi.OutboundCallRecordVO>()
+    pageList.forEach((pageResp) => {
+        ;(pageResp?.list || []).forEach((item) => {
+            if (item?.id != null) {
+                recordMap.set(Number(item.id), item)
+            }
+        })
+    })
+    return sortByCreateTimeDesc(Array.from(recordMap.values()))
 }
 
 const openForm = () => {

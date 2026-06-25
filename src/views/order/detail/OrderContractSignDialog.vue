@@ -181,6 +181,7 @@ import * as ClueApi from '@/api/crm/clue'
 import * as OrderApi from '@/api/crm/order'
 import * as ContractApi from '@/api/system/contract'
 import * as TemplateApi from '@/api/system/contract/template'
+import { fenToYuan } from '@/utils'
 import { buildAreaLabel } from '@/views/crm/clue/listShared'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 
@@ -241,6 +242,13 @@ const matchVariableAlias = (variableName: string, aliases: string[]) => {
 const formatValue = (value: unknown) => {
     if (value === null || value === undefined) return ''
     return String(value).trim()
+}
+
+const formatFenAmount = (value: unknown) => {
+    if (value === null || value === undefined || value === '') return ''
+    const numericValue = Number(value)
+    if (!Number.isFinite(numericValue)) return formatValue(value)
+    return fenToYuan(numericValue)
 }
 
 const mobileAliases = [
@@ -351,8 +359,14 @@ const buildDefaultVariableValue = (variableName: string) => {
             aliases: ['商品分类', '产品分类', 'productcategory'],
             value: item?.productCategoryPath || detail.mainProductCategoryPath
         },
-        { aliases: ['应付金额', '合同金额', 'payableamount'], value: item?.payableAmount },
-        { aliases: ['商品价格', '课程价格', 'productprice'], value: item?.productPrice },
+        {
+            aliases: ['应付金额', '合同金额', 'payableamount'],
+            value: formatFenAmount(item?.payableAmount)
+        },
+        {
+            aliases: ['商品价格', '课程价格', 'productprice'],
+            value: formatFenAmount(item?.productPrice)
+        },
         { aliases: ['报名时间', '报读时间', 'enrolltime'], value: detail.enrollTime },
         { aliases: ['到期时间', '截止时间', 'expiretime'], value: item?.expireTime },
         {

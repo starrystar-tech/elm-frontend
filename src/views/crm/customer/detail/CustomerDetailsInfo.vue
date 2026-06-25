@@ -16,7 +16,7 @@
                         clue.genderName || '--'
                     }}</el-descriptions-item>
                     <el-descriptions-item label="出生日期">{{
-                        clue.birthday || '--'
+                        birthdayText
                     }}</el-descriptions-item>
                     <el-descriptions-item label="年龄">{{ ageText }}</el-descriptions-item>
                     <el-descriptions-item label="证件类型">{{
@@ -55,12 +55,14 @@
                     <span class="text-base font-bold">系统信息</span>
                 </template>
                 <el-descriptions :column="4">
-                    <el-descriptions-item label="班主任">{{ headteacherText }}</el-descriptions-item>
+                    <el-descriptions-item label="归属人">{{
+                        clue.currentOwnerName || '--'
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="班主任">{{
+                        clue.headteacherName || '--'
+                    }}</el-descriptions-item>
                     <el-descriptions-item label="所属部门">{{
                         clue.currentDepartmentName || '--'
-                    }}</el-descriptions-item>
-                    <el-descriptions-item label="报名状态">{{
-                        clue.customerId ? '已报名' : '未报名'
                     }}</el-descriptions-item>
                     <el-descriptions-item label="创建时间">{{
                         formatDate(clue.createTime) || '--'
@@ -83,19 +85,46 @@ const props = defineProps<{
 
 const activeNames = ref(['basicInfo', 'systemInfo'])
 
-const headteacherText = computed(() => props.clue.headteacherName || props.clue.currentOwnerName || '--')
-
 const addressText = computed(() => {
     const region = buildAreaLabel(props.clue)
     const regionText = region === '--' ? '' : region
     return [regionText, props.clue.detailAddress].filter(Boolean).join(' ') || '--'
 })
 
-const ageText = computed(() => {
+const parseBirthday = (birthday: unknown) => {
+    if (!birthday) return null
+    if (Array.isArray(birthday)) {
+        const [year, month, day] = birthday
+        const parsedYear = Number(year)
+        const parsedMonth = Number(month)
+        const parsedDay = Number(day)
+        if (!parsedYear || !parsedMonth || !parsedDay) return null
+        const birthDate = new Date(parsedYear, parsedMonth - 1, parsedDay)
+        return Number.isNaN(birthDate.getTime()) ? null : birthDate
+    }
+    const text = String(birthday).trim()
+    if (!text) return null
+    const normalizedText = text.replace(/[\[\]]/g, '').replace(/,\s*/g, '/').replace(/-/g, '/')
+    const birthDate = new Date(normalizedText)
+    return Number.isNaN(birthDate.getTime()) ? null : birthDate
+}
+
+const birthdayText = computed(() => {
     const birthday = props.clue.birthday
     if (!birthday) return '--'
-    const birthDate = new Date(birthday)
-    if (Number.isNaN(birthDate.getTime())) return '--'
+    if (Array.isArray(birthday)) {
+        return birthday.join('/')
+    }
+    const text = String(birthday).trim()
+    if (text.startsWith('[') && text.endsWith(']')) {
+        return text.replace(/[\[\]\s]/g, '').replace(/,/g, '/')
+    }
+    return text
+})
+
+const ageText = computed(() => {
+    const birthDate = parseBirthday(props.clue.birthday)
+    if (!birthDate) return '--'
     const today = new Date()
     let age = today.getFullYear() - birthDate.getFullYear()
     const monthDiff = today.getMonth() - birthDate.getMonth()

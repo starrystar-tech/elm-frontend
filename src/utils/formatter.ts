@@ -18,7 +18,7 @@ export const liToYuan = (value?: number | string): string => {
   if (typeof value === 'undefined') return '0.00'
   const parsedNumber = typeof value === 'string' ? parseFloat(value) : value
   if (!Number.isFinite(parsedNumber)) return '0.00'
-  return (parsedNumber / 1000.0).toFixed(2)
+  return (parsedNumber / 100.0).toFixed(2)
 }
 
 /**

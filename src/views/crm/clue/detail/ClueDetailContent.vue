@@ -428,6 +428,100 @@
                                 :image-size="60"
                             />
                         </el-tab-pane>
+                        <el-tab-pane label="短信记录" name="sms">
+                            <el-table :data="smsRecords || []" border v-if="smsRecords.length > 0">
+                                <el-table-column prop="createTime" label="创建时间" min-width="160">
+                                    <template #default="{ row }">
+                                        {{ formatDateTime(row.createTime) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="mobile" label="手机号" min-width="140" />
+                                <el-table-column label="发送状态" min-width="120">
+                                    <template #default="{ row }">
+                                        {{ getSmsSendStatusLabel(row.sendStatus) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="接收状态" min-width="120">
+                                    <template #default="{ row }">
+                                        {{ getSmsReceiveStatusLabel(row.receiveStatus) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="短信渠道" min-width="140">
+                                    <template #default="{ row }">
+                                        {{ getSmsChannelLabel(row.channelCode) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="templateId" label="模板编号" min-width="100" />
+                                <el-table-column
+                                    prop="templateContent"
+                                    label="短信内容"
+                                    min-width="260"
+                                    show-overflow-tooltip
+                                />
+                            </el-table>
+                            <el-empty
+                                v-if="!smsRecords?.length"
+                                description="暂无短信记录"
+                                :image-size="60"
+                            />
+                        </el-tab-pane>
+                        <el-tab-pane label="外呼记录" name="calls">
+                            <el-table
+                                :data="outboundCallRecords || []"
+                                border
+                                v-if="outboundCallRecords.length > 0"
+                            >
+                                <el-table-column prop="recordNo" label="记录编号" min-width="180" />
+                                <el-table-column
+                                    prop="calleeMobile"
+                                    label="被叫号码"
+                                    min-width="140"
+                                />
+                                <el-table-column
+                                    prop="userNickname"
+                                    label="主叫"
+                                    min-width="120"
+                                />
+                                <el-table-column prop="createTime" label="发起时间" min-width="160">
+                                    <template #default="{ row }">
+                                        {{ formatDateTime(row.createTime) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="状态" min-width="100">
+                                    <template #default="{ row }">
+                                        {{ row.statusDesc || '--' }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="外呼结果" min-width="180">
+                                    <template #default="{ row }">
+                                        {{ getCallResultText(row) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="通话时长" min-width="100">
+                                    <template #default="{ row }">
+                                        {{ formatCallDuration(row.durationSeconds) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="录音" min-width="220">
+                                    <template #default="{ row }">
+                                        <template v-if="row.recordingFileUrl">
+                                            <audio
+                                                controls
+                                                preload="metadata"
+                                                :src="row.recordingFileUrl"
+                                                style="width: 200px"
+                                            />
+                                        </template>
+                                        <template v-else>--</template>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            <el-empty
+                                v-if="!outboundCallRecords?.length"
+                                description="暂无外呼记录"
+                                :image-size="60"
+                            />
+                        </el-tab-pane>
                     </el-tabs>
                 </section>
             </div>
@@ -697,7 +791,11 @@ import type * as CustomerDetailApi from '@/api/crm/customerDetail'
 import type * as OrderApi from '@/api/crm/order'
 import type { ProductVO } from '@/api/crm/product'
 import type { ProductCategoryVO } from '@/api/crm/product/category'
+import type * as OutboundCallRecordApi from '@/api/system/call/record'
 import type * as CampusApi from '@/api/system/campus'
+import * as DeptApi from '@/api/system/dept'
+import type * as SmsLogApi from '@/api/system/sms/smsLog'
+import * as UserApi from '@/api/system/user'
 import { DICT_TYPE, getDictLabel, getIntDictOptions } from '@/utils/dict'
 import { resolveTimestamp } from '@/utils/formatTime'
 import { getAftersalesStatusLabel } from '@/views/aftersales/config'
@@ -729,6 +827,8 @@ const props = defineProps<{
     orderRecords?: OrderApi.OrderPageRespVO[]
     ticketRecords?: AftersalesApi.AftersalesRespVO[]
     trackList?: CustomerDetailApi.CustomerTrackRespVO[]
+    smsRecords?: SmsLogApi.SmsLogVO[]
+    outboundCallRecords?: OutboundCallRecordApi.OutboundCallRecordVO[]
 }>()
 
 const emit = defineEmits<{
@@ -875,6 +975,65 @@ const formatConsultValue = (value: unknown) => {
     return String(value)
 }
 
+const deptNameMap = ref<Record<number, string>>({})
+const userNameMap = ref<Record<number, string>>({})
+
+const CLAIM_SOURCE_LABELS: Record<number, string> = {
+    3: '复购激活'
+}
+
+const getSmsSendStatusLabel = (value?: number | null) => {
+    if (value === null || value === undefined) return '--'
+    return getDictLabel(DICT_TYPE.SYSTEM_SMS_SEND_STATUS, Number(value)) || '--'
+}
+
+const getSmsReceiveStatusLabel = (value?: number | null) => {
+    if (value === null || value === undefined) return '--'
+    return getDictLabel(DICT_TYPE.SYSTEM_SMS_RECEIVE_STATUS, Number(value)) || '--'
+}
+
+const getSmsChannelLabel = (value?: string) =>
+    value ? getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, value) || value : '--'
+
+const getCallResultText = (row: OutboundCallRecordApi.OutboundCallRecordVO) =>
+    row.failReason || row.hangupCause || row.originateDisposition || row.statusDesc || '--'
+
+const formatCallDuration = (durationSeconds?: number) => {
+    if (!durationSeconds || durationSeconds < 0) {
+        return '--'
+    }
+    const totalSeconds = Math.floor(durationSeconds)
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+const TRACK_FIELD_LABELS: Record<string, string> = {
+    claimSource: '领取来源',
+    action: '操作',
+    orderNo: '订单编号',
+    departmentId: '归属部门',
+    allocationType: '分配类型',
+    ownerUserName: '归属人'
+}
+
+const TRACK_FIELD_ORDER = [
+    'orderNo',
+    'ownerUserName',
+    'allocationType',
+    'claimSource',
+    'action',
+    'departmentId',
+    'ownerUserId',
+    'orderId'
+]
+
+const TRACK_ACTION_LABELS: Record<string, string> = {
+    repurchase_activate: '复购激活'
+}
+
+const TRACK_HIDDEN_FIELDS = new Set(['ownerUserId', 'orderId'])
+
 const buildConsultTrackLines = (content?: string) => {
     if (!content || !content.trim().startsWith('{')) {
         return content ? [content] : []
@@ -915,6 +1074,134 @@ const buildConsultTrackLines = (content?: string) => {
     } catch {
         return [content]
     }
+}
+
+const formatTrackFieldValue = (key: string, value: unknown) => {
+    if (value === null || value === undefined || value === '') return ''
+    if (key === 'claimSource') {
+        return CLAIM_SOURCE_LABELS[Number(value)] || String(value)
+    }
+    if (key === 'allocationType') {
+        return getDictLabel(DICT_TYPE.CRM_CLUE_ALLOCATION_TYPE, Number(value)) || String(value)
+    }
+    if (key === 'action') {
+        return TRACK_ACTION_LABELS[String(value)] || String(value)
+    }
+    if (key === 'departmentId') {
+        return (
+            deptNameMap.value[Number(value)] ||
+            (Number(props.clue.currentDepartmentId) === Number(value)
+                ? props.clue.currentDepartmentName
+                : '') ||
+            String(value)
+        )
+    }
+    if (key === 'ownerUserName') {
+        return String(value)
+    }
+    if (key === 'ownerUserId') {
+        return (
+            userNameMap.value[Number(value)] ||
+            (Number(props.clue.currentOwnerId) === Number(value) ? props.clue.currentOwnerName : '') ||
+            String(value)
+        )
+    }
+    if (typeof value === 'boolean') {
+        return value ? '是' : '否'
+    }
+    if (typeof value === 'string' && /time|date/i.test(key)) {
+        return formatDateTime(value)
+    }
+    return String(value)
+}
+
+const buildJsonTrackLines = (content?: string) => {
+    if (!content || !content.trim().startsWith('{')) {
+        return content ? [content] : []
+    }
+    try {
+        const parsed = JSON.parse(content)
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            return [content]
+        }
+        const normalizedParsed = { ...(parsed as Record<string, unknown>) }
+        if (
+            !normalizedParsed.ownerUserName &&
+            normalizedParsed.ownerUserId !== null &&
+            normalizedParsed.ownerUserId !== undefined
+        ) {
+            normalizedParsed.ownerUserName = formatTrackFieldValue(
+                'ownerUserId',
+                normalizedParsed.ownerUserId
+            )
+        }
+        if (
+            !normalizedParsed.departmentName &&
+            normalizedParsed.departmentId !== null &&
+            normalizedParsed.departmentId !== undefined
+        ) {
+            normalizedParsed.departmentName = formatTrackFieldValue(
+                'departmentId',
+                normalizedParsed.departmentId
+            )
+        }
+        const entries = Object.entries(normalizedParsed)
+        const orderedKeys = [
+            ...TRACK_FIELD_ORDER.filter((key) => key in normalizedParsed),
+            ...entries.map(([key]) => key).filter((key) => !TRACK_FIELD_ORDER.includes(key))
+        ]
+        const lines = orderedKeys
+            .map((key) => {
+                if (TRACK_HIDDEN_FIELDS.has(key)) return ''
+                if (key === 'departmentName') return ''
+                const formattedValue = formatTrackFieldValue(
+                    key,
+                    normalizedParsed[key]
+                )
+                if (!formattedValue) return ''
+                return `${TRACK_FIELD_LABELS[key] || key}：${formattedValue}`
+            })
+            .filter(Boolean)
+        return lines.length ? lines : [content]
+    } catch {
+        return [content]
+    }
+}
+
+const loadTrackOptionMaps = async () => {
+    try {
+        const [depts, users] = await Promise.all([
+            DeptApi.getSimpleDeptList(),
+            UserApi.getSimpleUserList()
+        ])
+        deptNameMap.value = Object.fromEntries(
+            (depts || []).map((item) => [Number(item.id), item.name || String(item.id)])
+        )
+        userNameMap.value = Object.fromEntries(
+            (users || []).map((item) => [Number(item.id), item.nickname || item.username || String(item.id)])
+        )
+    } catch {
+        deptNameMap.value = {}
+        userNameMap.value = {}
+    }
+}
+
+const normalizeTrackLines = (item: CustomerDetailApi.CustomerTrackRespVO) => {
+    const rawContentLines = (item.contentLines || []).filter(Boolean)
+    if (rawContentLines.length) {
+        if (rawContentLines.length === 1) {
+            const [singleLine] = rawContentLines
+            if (singleLine?.trim().startsWith('{')) {
+                return item.type === 4 || item.typeName === '咨询信息'
+                    ? buildConsultTrackLines(singleLine)
+                    : buildJsonTrackLines(singleLine)
+            }
+        }
+        return rawContentLines
+    }
+    return item.type === 4 || item.typeName === '咨询信息'
+        ? buildConsultTrackLines(item.content)
+        : buildJsonTrackLines(item.content)
 }
 
 const syncEditForm = () => {
@@ -974,6 +1261,10 @@ watch(
     }
 )
 
+onMounted(() => {
+    loadTrackOptionMaps()
+})
+
 const tagText = computed(() => {
     if (props.clue.tagNames?.length) return props.clue.tagNames.join('、')
     if (!props.clue.tagIds?.length || !props.tagOptions.length) return '--'
@@ -996,13 +1287,7 @@ const complaintTagText = computed(() => {
 const parsedTrackList = computed(() =>
     (props.trackList || []).map((item) => ({
         ...item,
-        lines: item.contentLines?.length
-            ? item.contentLines
-            : item.type === 4 || item.typeName === '咨询信息'
-              ? buildConsultTrackLines(item.content)
-              : item.content
-                ? [item.content]
-                : []
+        lines: normalizeTrackLines(item)
     }))
 )
 

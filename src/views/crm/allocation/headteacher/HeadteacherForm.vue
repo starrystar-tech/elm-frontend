@@ -8,7 +8,11 @@
             v-loading="formLoading"
         >
             <el-form-item label="项目" prop="projectId">
-                <ProductCategorySelect v-model="formData.projectId" />
+                <ProductTypeSelect
+                    v-model="formData.projectId"
+                    placeholder="请选择项目"
+                    missing-label="所选项目已下架"
+                />
             </el-form-item>
             <el-form-item label="班主任" prop="headteacherUserId">
                 <HeadteacherSelect v-model="formData.headteacherUserId" />
@@ -51,7 +55,7 @@
 import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
 import AreaSelector from '@/components/AreaSelector.vue'
 import HeadteacherSelect from '@/components/HeadteacherSelect.vue'
-import ProductCategorySelect from '@/components/ProductCategorySelect.vue'
+import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
 
 defineOptions({ name: 'CrmHeadteacherAllocationForm' })

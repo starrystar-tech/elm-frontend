@@ -104,6 +104,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         formatter: (_r, _c, v) => getAftersalesStatusLabel(v)
     },
     { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter },
+    { field: 'handlerUserName', label: '处理人', minWidth: '100px' },
     {
         field: 'action',
         label: '操作',
@@ -112,7 +113,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         slots: {
             default: (data) => {
                 const row = data.row as AftersalesApi.AftersalesRespVO
-                return (
+                return !row.handlerUserId && !row.handlerUserName ? (
                     <BaseButton
                         v-hasPermi={['crm:aftersales:claim']}
                         link
@@ -121,7 +122,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                     >
                         领取
                     </BaseButton>
-                )
+                ) : null
             }
         }
     }

@@ -55,7 +55,15 @@ const collapsedMaxHeight = ref(0)
 const formModel = ref<Recordable>(props.model)
 
 const mergedButtonPosition = computed(() => props.buttonPosition || props.buttomPosition)
-const expandEnabled = computed(() => props.showExpand || props.expand || !!props.expandField)
+const expandEnabled = computed(() => {
+  return (
+    props.showExpand ||
+    props.expand ||
+    !!props.expandField ||
+    searchOverflow.value ||
+    (props.schema.length > 5 && props.layout === 'inline')
+  )
+})
 const fieldExpandEnabled = computed(() => unref(expandEnabled) && !!props.expandField)
 const useExternalActionBar = computed(
   () => props.layout === 'inline' && !slotMode.value && searchOverflow.value

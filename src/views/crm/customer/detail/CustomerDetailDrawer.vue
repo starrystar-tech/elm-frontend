@@ -13,7 +13,7 @@
                 编辑
             </el-button>
         </CustomerDetailsHeader>
-        <el-col class="px-16px">
+        <el-col class="px-16px mt-16px">
             <el-tabs v-model="activeTabName">
                 <el-tab-pane label="基本信息" name="basicInfo">
                     <CustomerDetailsInfo :clue="clue" />
