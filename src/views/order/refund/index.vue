@@ -9,7 +9,7 @@
         >
             <template #creator>
                 <el-input
-                    v-model="searchForm.creator"
+                    v-model="creatorDisplayName"
                     readonly
                     placeholder="请选择创建人"
                     style="width: 220px"
@@ -17,7 +17,7 @@
                 >
                     <template #suffix>
                         <el-icon
-                            v-if="searchForm.creator"
+                            v-if="creatorDisplayName"
                             class="cursor-pointer"
                             @click.stop="clearSelectedUser"
                         >
@@ -79,6 +79,7 @@ const defaultSearchForm = {
     createTimeRange: []
 }
 const searchForm = reactive<Recordable>({ ...defaultSearchForm })
+const creatorDisplayName = ref('')
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
@@ -188,15 +189,18 @@ const openUserSelect = () => {
 const handleUserSelectConfirm = (_id: any, userList: UserVO[]) => {
     const user = userList?.[0]
     const userName = user?.nickname || user?.username || ''
-    syncSearchField(userName)
+    creatorDisplayName.value = userName
+    syncSearchField(user?.id ? String(user.id) : '')
 }
 
 const clearSelectedUser = () => {
+    creatorDisplayName.value = ''
     syncSearchField('')
 }
 
 const handleReset = async (params: Recordable) => {
     Object.assign(searchForm, defaultSearchForm)
+    creatorDisplayName.value = ''
     await searchRef.value?.setValues({ ...defaultSearchForm })
     setSearchParams(params)
 }

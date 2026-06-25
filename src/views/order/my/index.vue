@@ -28,7 +28,7 @@
             </template>
             <template #creator>
                 <el-input
-                    v-model="searchForm.creator"
+                    v-model="creatorDisplayName"
                     readonly
                     placeholder="请选择创建人"
                     style="width: 220px"
@@ -36,7 +36,7 @@
                 >
                     <template #suffix>
                         <el-icon
-                            v-if="searchForm.creator"
+                            v-if="creatorDisplayName"
                             class="cursor-pointer"
                             @click.stop="clearSelectedUser('creator')"
                         >
@@ -130,6 +130,7 @@ const defaultSearchForm = {
     createTimeRange: []
 }
 const searchForm = reactive<Recordable>({ ...defaultSearchForm })
+const creatorDisplayName = ref('')
 const activeUserField = ref<'cardOwner' | 'creator'>('creator')
 
 const searchSchema = computed<FormSchema[]>(() => [
@@ -267,7 +268,8 @@ const handleUserSelectConfirm = (_id: any, userList: UserVO[]) => {
         syncSearchField('cardOwnerUserName', userName)
         return
     }
-    syncSearchField('creator', userName)
+    creatorDisplayName.value = userName
+    syncSearchField('creator', user?.id ? String(user.id) : '')
 }
 
 const clearSelectedUser = (field: 'cardOwner' | 'creator') => {
@@ -275,11 +277,13 @@ const clearSelectedUser = (field: 'cardOwner' | 'creator') => {
         syncSearchField('cardOwnerUserName', '')
         return
     }
+    creatorDisplayName.value = ''
     syncSearchField('creator', '')
 }
 
 const handleReset = async (params: Recordable) => {
     Object.assign(searchForm, defaultSearchForm)
+    creatorDisplayName.value = ''
     await searchRef.value?.setValues({ ...defaultSearchForm })
     setSearchParams(params)
 }

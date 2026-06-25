@@ -121,7 +121,9 @@
                     </div>
                     <div class="refund-audit-section__item">
                         <span class="label">处理人：</span>
-                        <span>{{ refund.aftersalesHandlerUserName || refund.auditUserName || '-' }}</span>
+                        <span>{{
+                            refund.aftersalesHandlerUserName || refund.auditUserName || '-'
+                        }}</span>
                     </div>
                     <div class="refund-audit-section__item">
                         <span class="label">处理时间：</span>
@@ -133,12 +135,14 @@
                     </div>
                     <div class="refund-audit-section__item">
                         <span class="label">处理结果：</span>
-                        <span>{{ refund.aftersalesProcessResult || refund.auditRemark || '-' }}</span>
+                        <span>{{
+                            refund.aftersalesProcessResult || refund.auditRemark || '-'
+                        }}</span>
                     </div>
                 </div>
             </div>
         </div>
-        <template #footer>
+        <!-- <template #footer>
             <div class="refund-audit-drawer__footer">
                 <el-button @click="dialogVisible = false">
                     {{ readonly ? '关闭' : '取消' }}
@@ -152,7 +156,7 @@
                     提交
                 </el-button>
             </div>
-        </template>
+        </template> -->
     </el-drawer>
 </template>
 
@@ -222,7 +226,8 @@ const aftersalesStatusText = computed(() =>
 )
 
 const aftersalesProcessTimeText = computed(() => {
-    const processTime = refund.value.aftersalesProcessTime || refund.value.auditTime || refund.value.refundTime
+    const processTime =
+        refund.value.aftersalesProcessTime || refund.value.auditTime || refund.value.refundTime
     return processTime ? formatDate(processTime as any) : '-'
 })
 

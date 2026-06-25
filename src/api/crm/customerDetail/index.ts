@@ -1,4 +1,5 @@
 import request from '@/config/axios'
+import type { OutboundCallRecordVO } from '@/api/system/call/record'
 
 export interface CustomerTagItem {
     id: number
@@ -130,6 +131,13 @@ export const getCustomerTracks = async (id: number) => {
 
 export const getCustomerAppointments = async (id: number) => {
     return await request.get<CustomerAppointmentRespVO[]>({ url: '/crm/customer-detail/appointments', params: { id } })
+}
+
+export const getCustomerOutboundCallRecords = async (id: number) => {
+    return await request.get<OutboundCallRecordVO[]>({
+        url: '/crm/customer-detail/outbound-call-records',
+        params: { id }
+    })
 }
 
 export const createCustomerConsultRecord = async (data: CustomerConsultRecordCreateReqVO) => {
