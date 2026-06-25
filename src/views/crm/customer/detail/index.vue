@@ -12,32 +12,14 @@
                 <el-tab-pane label="基本信息" name="basicInfo">
                     <CustomerDetailsInfo :clue="clue" />
                 </el-tab-pane>
-                <el-tab-pane label="预约记录" name="reservations">
-                    <ContentWrap>
-                        <el-empty description="预约记录暂未接入，当前仅展示学员基础资料。" />
-                    </ContentWrap>
-                </el-tab-pane>
-                <el-tab-pane label="订单列表" name="orders">
-                    <ContentWrap>
-                        <el-empty description="订单列表暂未接入，后续可按报名链路继续补充。" />
-                    </ContentWrap>
-                </el-tab-pane>
-                <el-tab-pane label="工单记录" name="tickets">
-                    <ContentWrap>
-                        <el-empty description="工单记录暂未接入。" />
-                    </ContentWrap>
-                </el-tab-pane>
-                <el-tab-pane label="通话记录" name="calls">
-                    <ContentWrap>
-                        <el-empty description="通话记录暂未接入。" />
-                    </ContentWrap>
-                </el-tab-pane>
-                <el-tab-pane label="短信记录" name="sms">
-                    <ContentWrap>
-                        <el-empty description="短信记录暂未接入。" />
-                    </ContentWrap>
-                </el-tab-pane>
             </el-tabs>
+            <CustomerDetailRecords
+                :appointments="appointments"
+                :order-records="orderRecords"
+                :ticket-records="ticketRecords"
+                :outbound-call-records="outboundCallRecords"
+                :sms-records="smsRecords"
+            />
         </el-col>
 
         <CustomerForm ref="formRef" @success="getClue" />
@@ -45,12 +27,17 @@
 </template>
 
 <script lang="ts" setup>
+import * as AftersalesApi from '@/api/crm/aftersales'
 import * as ClueApi from '@/api/crm/clue'
+import * as CustomerDetailApi from '@/api/crm/customerDetail'
+import * as OrderApi from '@/api/crm/order'
+import type { OutboundCallRecordVO } from '@/api/system/call/record'
+import * as SmsLogApi from '@/api/system/sms/smsLog'
 import CustomerForm from '@/views/crm/customer/CustomerForm.vue'
 import CustomerDetailsInfo from './CustomerDetailsInfo.vue'
 import CustomerDetailsHeader from './CustomerDetailsHeader.vue'
+import CustomerDetailRecords from './CustomerDetailRecords.vue'
 import { useTagsViewStore } from '@/store/modules/tagsView'
-import { ContentWrap } from '@/components/ContentWrap'
 
 defineOptions({ name: 'CrmCustomerDetail' })
 
@@ -63,14 +50,89 @@ const message = useMessage()
 const { delView } = useTagsViewStore()
 const { push, currentRoute } = useRouter()
 const { params } = useRoute()
+const appointments = ref<CustomerDetailApi.CustomerAppointmentRespVO[]>([])
+const orderRecords = ref<OrderApi.OrderPageRespVO[]>([])
+const ticketRecords = ref<AftersalesApi.AftersalesRespVO[]>([])
+const smsRecords = ref<SmsLogApi.SmsLogVO[]>([])
+const outboundCallRecords = ref<OutboundCallRecordVO[]>([])
 
 const getClue = async () => {
     loading.value = true
     try {
-        clue.value = await ClueApi.getClue(clueId.value)
+        const [clueResp, appointmentsResp, callRecordsResp] = await Promise.all([
+            ClueApi.getClue(clueId.value),
+            CustomerDetailApi.getCustomerAppointments(clueId.value),
+            CustomerDetailApi.getCustomerOutboundCallRecords(clueId.value)
+        ])
+        clue.value = clueResp
+        appointments.value = appointmentsResp || []
+        outboundCallRecords.value = callRecordsResp || []
+        orderRecords.value = await loadOrderRecords(clueResp)
+        ticketRecords.value = await loadTicketRecords()
+        smsRecords.value = await loadSmsRecords(clueResp)
     } finally {
         loading.value = false
     }
+}
+
+const loadOrderRecords = async (clueResp: ClueApi.ClueVO) => {
+    const params: OrderApi.OrderPageReqVO = {
+        pageNo: 1,
+        pageSize: 20
+    }
+    if (clueResp.mobile) {
+        params.mobile = clueResp.mobile
+    }
+    if (!params.mobile && clueResp.name) {
+        params.customer = clueResp.name
+    }
+    if (!params.mobile && !params.customer) {
+        return []
+    }
+    const pageResp = await OrderApi.getOrderPage(params)
+    return pageResp?.list || []
+}
+
+const loadTicketRecords = async () => {
+    const pageResp = await AftersalesApi.getAftersalesPage({
+        pageNo: 1,
+        pageSize: 20,
+        clueId: clueId.value
+    })
+    return pageResp?.list || []
+}
+
+const buildMobileList = (clueResp: ClueApi.ClueVO) =>
+    Array.from(new Set([clueResp.mobile, clueResp.mobile2].filter(Boolean) as string[]))
+
+const sortByCreateTimeDesc = <T extends { createTime?: string | Date | null }>(list: T[]) =>
+    [...list].sort((a, b) => {
+        const timeA = a.createTime ? new Date(a.createTime).getTime() : 0
+        const timeB = b.createTime ? new Date(b.createTime).getTime() : 0
+        return timeB - timeA
+    })
+
+const loadSmsRecords = async (clueResp: ClueApi.ClueVO) => {
+    const mobileList = buildMobileList(clueResp)
+    if (!mobileList.length) return []
+    const pageList = await Promise.all(
+        mobileList.map((mobile) =>
+            SmsLogApi.getSmsLogPage({
+                pageNo: 1,
+                pageSize: 50,
+                mobile
+            })
+        )
+    )
+    const recordMap = new Map<number, SmsLogApi.SmsLogVO>()
+    pageList.forEach((pageResp) => {
+        ;(pageResp?.list || []).forEach((item) => {
+            if (item?.id != null) {
+                recordMap.set(Number(item.id), item)
+            }
+        })
+    })
+    return sortByCreateTimeDesc(Array.from(recordMap.values()))
 }
 
 const openForm = () => {

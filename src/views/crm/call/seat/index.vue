@@ -45,6 +45,14 @@
                         <el-option label="未绑定" value="unbound" />
                     </el-select>
                 </el-form-item>
+                <el-form-item label="线路" prop="outboundRouteId">
+                    <OutboundRouteSelect
+                        v-model="searchParams.outboundRouteId"
+                        placeholder="请选择线路"
+                        style="width: 220px"
+                        @change="handleRouteChange"
+                    />
+                </el-form-item>
                 <el-form-item label-width="0">
                     <el-button type="primary" @click="setSearchParams(searchParams)">
                         <Icon class="mr-5px" icon="ep:search" />
@@ -60,9 +68,9 @@
                 v-model:currentPage="tableObject.currentPage"
                 v-model:pageSize="tableObject.pageSize"
                 :columns="tableColumns"
-                :data="tableObject.tableList"
+                :data="filteredTableList"
                 :loading="tableObject.loading"
-                :pagination="{ total: tableObject.total }"
+                :pagination="{ total: filteredTableTotal }"
                 @register="tableRegister"
             />
         </ContentWrap>
@@ -134,9 +142,11 @@ import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import OutboundRouteSelect from '@/components/OutboundRouteSelect.vue'
 import { useTable } from '@/hooks/web/useTable'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
+import type { OutboundRouteVO } from '@/api/system/call/router'
 
 defineOptions({ name: 'CrmCallSeat' })
 
@@ -144,6 +154,7 @@ interface SeatSearchParams {
     userId?: number
     deptId?: number
     bindStatus?: 'bound' | 'unbound'
+    outboundRouteId?: number
 }
 
 const message = useMessage()
@@ -154,6 +165,7 @@ const dialogSaving = ref(false)
 const dialogTitle = ref('绑定坐席')
 const selectedUserName = ref('')
 const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
+const selectedRoute = ref<OutboundRouteVO>()
 
 const searchParams = reactive<SeatSearchParams>({})
 const currentUserDetail = ref<UserApi.UserVO | null>(null)
@@ -206,6 +218,20 @@ const stats = reactive({
     unbound: 0
 })
 
+const filteredTableList = computed(() => {
+    const prefix = String(selectedRoute.value?.numberPrefix || '').trim()
+    if (!prefix) return tableObject.tableList
+    return tableObject.tableList.filter((item) => {
+        const displayNumber = String(item.callerDisplayNumber || '').trim()
+        return displayNumber.startsWith(prefix)
+    })
+})
+
+const filteredTableTotal = computed(() => {
+    const prefix = String(selectedRoute.value?.numberPrefix || '').trim()
+    return prefix ? filteredTableList.value.length : tableObject.total
+})
+
 const loadGlobalStats = async () => {
     const result = await UserApi.getUserCallSeatStats()
     stats.total = Number(result?.total || 0)
@@ -217,6 +243,7 @@ const setSearchParams = (params: SeatSearchParams) => {
     searchParams.userId = params.userId
     searchParams.deptId = params.deptId
     searchParams.bindStatus = params.bindStatus
+    searchParams.outboundRouteId = params.outboundRouteId
     tableMethods.setSearchParams(buildPageParams(params))
 }
 
@@ -224,6 +251,8 @@ const resetSearchParams = () => {
     clearSelectedUser()
     searchParams.deptId = undefined
     searchParams.bindStatus = undefined
+    searchParams.outboundRouteId = undefined
+    selectedRoute.value = undefined
     tableMethods.setSearchParams(buildPageParams({}))
 }
 
@@ -249,6 +278,10 @@ const handleUserSelectConfirm = (_id: any, userList: UserVO[]) => {
 const clearSelectedUser = () => {
     searchParams.userId = undefined
     selectedUserName.value = ''
+}
+
+const handleRouteChange = (_value: number | undefined, route?: OutboundRouteVO) => {
+    selectedRoute.value = route
 }
 
 const resetDialog = () => {

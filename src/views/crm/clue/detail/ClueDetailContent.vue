@@ -271,12 +271,12 @@
                                     </template>
                                 </el-table-column>
                                 <el-table-column prop="campusName" label="校区" min-width="120" />
-                                <el-table-column label="咨询项目" min-width="180">
+                                <el-table-column label="商品名称" min-width="180">
                                     <template #default="{ row }">
                                         {{
-                                            row.projectName ||
-                                            row.productCategoryName ||
                                             row.productName ||
+                                            row.productCategoryName ||
+                                            row.projectName ||
                                             '--'
                                         }}
                                     </template>
@@ -1009,10 +1009,23 @@ const formatCallDuration = (durationSeconds?: number) => {
 }
 
 const TRACK_FIELD_LABELS: Record<string, string> = {
+    clueId: '客户编号',
+    clueIds: '客户编号',
+    silentReason: '静默原因',
+    ownerId: '归属人',
     claimSource: '领取来源',
     action: '操作',
     orderNo: '订单编号',
     departmentId: '归属部门',
+    seaType: '公海类型',
+    externalUserId: '企微客户编号',
+    staffUserId: '添加成员',
+    source: '客户来源',
+    consultProjectId: '咨询项目编号',
+    projectId: '咨询项目编号',
+    productCategoryId: '商品分类编号',
+    productId: '商品编号',
+    campusId: '校区编号',
     allocationType: '分配类型',
     ownerUserName: '归属人'
 }
@@ -1032,7 +1045,7 @@ const TRACK_ACTION_LABELS: Record<string, string> = {
     repurchase_activate: '复购激活'
 }
 
-const TRACK_HIDDEN_FIELDS = new Set(['ownerUserId', 'orderId'])
+const TRACK_HIDDEN_FIELDS = new Set(['ownerUserId', 'ownerId', 'orderId'])
 
 const buildConsultTrackLines = (content?: string) => {
     if (!content || !content.trim().startsWith('{')) {
@@ -1055,11 +1068,11 @@ const buildConsultTrackLines = (content?: string) => {
             consultResultLabel ? `是否有效：${consultResultLabel}` : '',
             consultTypeLabel ? `操作类型：${consultTypeLabel}` : '',
             campusName ? `校区：${campusName}` : '',
-            formatConsultValue(parsed.projectId) ? `咨询项目ID：${parsed.projectId}` : '',
+            formatConsultValue(parsed.projectId) ? `咨询项目编号：${parsed.projectId}` : '',
             formatConsultValue(parsed.productCategoryId)
-                ? `商品分类ID：${parsed.productCategoryId}`
+                ? `商品分类编号：${parsed.productCategoryId}`
                 : '',
-            formatConsultValue(parsed.productId) ? `商品ID：${parsed.productId}` : '',
+            formatConsultValue(parsed.productId) ? `商品编号：${parsed.productId}` : '',
             formatConsultValue(parsed.appointmentPrice)
                 ? `预约价格：${parsed.appointmentPrice}`
                 : '',
@@ -1078,6 +1091,15 @@ const buildConsultTrackLines = (content?: string) => {
 
 const formatTrackFieldValue = (key: string, value: unknown) => {
     if (value === null || value === undefined || value === '') return ''
+    if (key === 'clueId' || key === 'clueIds') {
+        return props.clue.customerId || String(value)
+    }
+    if (Array.isArray(value)) {
+        return value.filter((item) => item !== null && item !== undefined && item !== '').join('、')
+    }
+    if (key === 'seaType') {
+        return Number(value) === 1 ? '首咨公海' : Number(value) === 2 ? '复购公海' : String(value)
+    }
     if (key === 'claimSource') {
         return CLAIM_SOURCE_LABELS[Number(value)] || String(value)
     }
@@ -1100,6 +1122,13 @@ const formatTrackFieldValue = (key: string, value: unknown) => {
         return String(value)
     }
     if (key === 'ownerUserId') {
+        return (
+            userNameMap.value[Number(value)] ||
+            (Number(props.clue.currentOwnerId) === Number(value) ? props.clue.currentOwnerName : '') ||
+            String(value)
+        )
+    }
+    if (key === 'ownerId') {
         return (
             userNameMap.value[Number(value)] ||
             (Number(props.clue.currentOwnerId) === Number(value) ? props.clue.currentOwnerName : '') ||
@@ -1136,6 +1165,13 @@ const buildJsonTrackLines = (content?: string) => {
             )
         }
         if (
+            !normalizedParsed.ownerUserName &&
+            normalizedParsed.ownerId !== null &&
+            normalizedParsed.ownerId !== undefined
+        ) {
+            normalizedParsed.ownerUserName = formatTrackFieldValue('ownerId', normalizedParsed.ownerId)
+        }
+        if (
             !normalizedParsed.departmentName &&
             normalizedParsed.departmentId !== null &&
             normalizedParsed.departmentId !== undefined
@@ -1146,10 +1182,13 @@ const buildJsonTrackLines = (content?: string) => {
             )
         }
         const entries = Object.entries(normalizedParsed)
-        const orderedKeys = [
-            ...TRACK_FIELD_ORDER.filter((key) => key in normalizedParsed),
-            ...entries.map(([key]) => key).filter((key) => !TRACK_FIELD_ORDER.includes(key))
-        ]
+        const orderedKeys = Array.from(
+            new Set([
+                ...['clueId', 'clueIds', 'silentReason'].filter((key) => key in normalizedParsed),
+                ...TRACK_FIELD_ORDER.filter((key) => key in normalizedParsed),
+                ...entries.map(([key]) => key).filter((key) => !TRACK_FIELD_ORDER.includes(key))
+            ])
+        )
         const lines = orderedKeys
             .map((key) => {
                 if (TRACK_HIDDEN_FIELDS.has(key)) return ''

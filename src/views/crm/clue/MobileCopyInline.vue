@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import * as ClueApi from '@/api/crm/clue'
 import { Icon } from '@/components/Icon'
-import { copyMobileByClueId } from './mobileCopyCore.mjs'
+import { copyMobileByClueId, showCopyMobileSuccessMessage } from './mobileCopyCore.mjs'
 
 const props = defineProps<{
     mobile?: string
@@ -33,12 +33,12 @@ const handleCopy = async () => {
     }
     if (props.directCopy || !props.clueId) {
         await navigator.clipboard.writeText(props.mobile)
-        message.success('复制成功')
+        showCopyMobileSuccessMessage('复制成功')
         return
     }
     await copyMobileByClueId({
         clueId: Number(props.clueId),
-        onSuccess: message.success,
+        onSuccess: showCopyMobileSuccessMessage,
         onWarning: message.warning,
         copyApi: ClueApi.copyClueMobile,
         writeClipboard: (text) => navigator.clipboard.writeText(text),

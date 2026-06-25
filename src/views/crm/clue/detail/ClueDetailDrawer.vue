@@ -83,7 +83,7 @@ import * as CustomerDetailApi from '@/api/crm/customerDetail'
 import * as OrderApi from '@/api/crm/order'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import { getOperateLogPage } from '@/api/crm/operateLog'
-import * as OutboundCallRecordApi from '@/api/system/call/record'
+import type { OutboundCallRecordVO } from '@/api/system/call/record'
 import type { OperateLogVO } from '@/api/system/operatelog'
 import * as CampusApi from '@/api/system/campus'
 import * as ComplaintTagApi from '@/api/system/complaintTag'
@@ -127,7 +127,7 @@ const orderRecords = ref<OrderApi.OrderPageRespVO[]>([])
 const ticketRecords = ref<AftersalesApi.AftersalesRespVO[]>([])
 const trackList = ref<CustomerDetailApi.CustomerTrackRespVO[]>([])
 const smsRecords = ref<SmsLogApi.SmsLogVO[]>([])
-const outboundCallRecords = ref<OutboundCallRecordApi.OutboundCallRecordVO[]>([])
+const outboundCallRecords = ref<OutboundCallRecordVO[]>([])
 const tagDialogVisible = ref(false)
 const tagForm = reactive({ tagIds: [] as number[] })
 
@@ -189,7 +189,8 @@ const getClue = async () => {
         orderRecords.value = await loadOrderRecords(clueResp)
         ticketRecords.value = await loadTicketRecords()
         smsRecords.value = await loadSmsRecords(clueResp)
-        outboundCallRecords.value = await loadOutboundCallRecords(clueResp)
+        outboundCallRecords.value =
+            (await CustomerDetailApi.getCustomerOutboundCallRecords(clueId.value)) || []
         await getOperateLog()
     } finally {
         loading.value = false
@@ -249,28 +250,6 @@ const loadSmsRecords = async (clueResp: ClueApi.ClueVO) => {
     const recordMap = new Map<number, SmsLogApi.SmsLogVO>()
     pageList.forEach((pageResp) => {
         ;(pageResp?.list || []).forEach((item) => {
-            if (item?.id != null) {
-                recordMap.set(Number(item.id), item)
-            }
-        })
-    })
-    return sortByCreateTimeDesc(Array.from(recordMap.values()))
-}
-
-const loadOutboundCallRecords = async (clueResp: ClueApi.ClueVO) => {
-    const mobileList = buildMobileList(clueResp)
-    if (!mobileList.length) return []
-    const recordList = await Promise.all(
-        mobileList.map((calleeMobile) =>
-            OutboundCallRecordApi.getOutboundCallRecordList({
-                calleeMobile,
-                callType: 1
-            })
-        )
-    )
-    const recordMap = new Map<number, OutboundCallRecordApi.OutboundCallRecordVO>()
-    recordList.forEach((list) => {
-        ;(list || []).forEach((item) => {
             if (item?.id != null) {
                 recordMap.set(Number(item.id), item)
             }

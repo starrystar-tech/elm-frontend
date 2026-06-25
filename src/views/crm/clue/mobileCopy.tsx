@@ -1,7 +1,11 @@
 import { ElButton, ElTooltip } from 'element-plus'
 import { Icon } from '@/components/Icon'
 import * as ClueApi from '@/api/crm/clue'
-import { copyMobileByClueId, resolveClueIdForCopy } from './mobileCopyCore.mjs'
+import {
+    copyMobileByClueId,
+    resolveClueIdForCopy,
+    showCopyMobileSuccessMessage
+} from './mobileCopyCore.mjs'
 
 type CopyFeedback = {
     success: (message: string) => void
@@ -28,7 +32,6 @@ export const renderCopyMobileCell = <T extends CopyRow>({
     clueId,
     getDetail,
     directCopyWhenMissingClueId = false,
-    success,
     warning,
     mobileField = 'mobile'
 }: RenderCopyMobileOptions<T>) => {
@@ -38,12 +41,12 @@ export const renderCopyMobileCell = <T extends CopyRow>({
             clueId !== undefined ? Number(clueId) : await resolveClueIdForCopy({ row, getDetail })
         if (!resolvedClueId && directCopyWhenMissingClueId && mobile) {
             await navigator.clipboard.writeText(mobile)
-            success('复制成功')
+            showCopyMobileSuccessMessage('复制成功')
             return
         }
         await copyMobileByClueId({
             clueId: resolvedClueId,
-            onSuccess: success,
+            onSuccess: showCopyMobileSuccessMessage,
             onWarning: warning,
             copyApi: ClueApi.copyClueMobile,
             writeClipboard: (text) => navigator.clipboard.writeText(text),

@@ -47,6 +47,7 @@ export interface OutboundCallRecordPageReqVO extends PageParam {
 export interface CallMonitorPageReqVO extends PageParam {
   deptId?: number
   userId?: number
+  outboundRouteId?: number
   beginCreateTime?: string
   endCreateTime?: string
   authCode?: string

@@ -41,6 +41,13 @@
                         <el-option label="内部通话" :value="2" />
                     </el-select>
                 </el-form-item>
+                <el-form-item label="线路" prop="outboundRouteId">
+                    <OutboundRouteSelect
+                        v-model="searchParams.outboundRouteId"
+                        placeholder="请选择线路"
+                        style="width: 220px"
+                    />
+                </el-form-item>
                 <el-form-item label-width="0">
                     <el-button type="primary" @click="setSearchParams(searchParams)">
                         <Icon class="mr-5px" icon="ep:search" />
@@ -126,6 +133,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import type { EChartsOption } from 'echarts'
 import { Search } from '@/components/Search'
 import { ContentWrap } from '@/components/ContentWrap'
+import OutboundRouteSelect from '@/components/OutboundRouteSelect.vue'
 import * as OutboundCallRecordApi from '@/api/system/call/record'
 import type { UserVO } from '@/api/system/user'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
@@ -136,6 +144,7 @@ defineOptions({ name: 'CrmCallStats' })
 const defaultSearchParams = {
     deptId: undefined as number | undefined,
     userId: undefined as number | undefined,
+    outboundRouteId: undefined as number | undefined,
     callType: undefined as number | undefined,
     dateRange: undefined as string[] | undefined
 }
@@ -205,6 +214,7 @@ const loadRecordList = async () => {
         const data = await OutboundCallRecordApi.getOutboundCallRecordList({
             deptId: searchParams.deptId,
             userId: searchParams.userId,
+            outboundRouteId: searchParams.outboundRouteId,
             callType: searchParams.callType,
             createTime: searchParams.dateRange
         })
@@ -546,6 +556,7 @@ const trendChartOptions = computed<EChartsOption>(() => {
 const setSearchParams = (params: Recordable) => {
     searchParams.deptId = params.deptId || undefined
     searchParams.userId = params.userId || undefined
+    searchParams.outboundRouteId = params.outboundRouteId || undefined
     searchParams.callType = params.callType || undefined
     searchParams.dateRange = params.dateRange?.length ? params.dateRange : undefined
     void loadRecordList()
@@ -554,6 +565,7 @@ const setSearchParams = (params: Recordable) => {
 const resetSearchParams = () => {
     clearSelectedUser()
     searchParams.deptId = undefined
+    searchParams.outboundRouteId = undefined
     searchParams.callType = undefined
     searchParams.dateRange = undefined
     void loadRecordList()

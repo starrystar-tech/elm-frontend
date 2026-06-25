@@ -29,6 +29,13 @@
                         style="width: 240px"
                     />
                 </el-form-item>
+                <el-form-item label="线路" prop="outboundRouteId">
+                    <OutboundRouteSelect
+                        v-model="searchParams.outboundRouteId"
+                        placeholder="请选择线路"
+                        style="width: 220px"
+                    />
+                </el-form-item>
                 <el-form-item label-width="0">
                     <el-button type="primary" @click="setSearchParams(searchParams)">
                         <Icon class="mr-5px" icon="ep:search" />
@@ -62,6 +69,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { Search } from '@/components/Search'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import OutboundRouteSelect from '@/components/OutboundRouteSelect.vue'
 import { Table, type TableColumn } from '@/components/Table'
 import { useTable } from '@/hooks/web/useTable'
 import type { UserVO } from '@/api/system/user'
@@ -78,6 +86,7 @@ const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
 const defaultSearchParams = {
     deptId: undefined as number | undefined,
     userId: undefined as number | undefined,
+    outboundRouteId: undefined as number | undefined,
     dateRange: undefined as string[] | undefined
 }
 
@@ -141,6 +150,7 @@ const tableColumns = reactive<TableColumn[]>([
 const setSearchParams = (params: Recordable) => {
     searchParams.deptId = params.deptId || undefined
     searchParams.userId = params.userId || undefined
+    searchParams.outboundRouteId = params.outboundRouteId || undefined
     searchParams.dateRange = params.dateRange?.length ? params.dateRange : undefined
     tableMethods.setSearchParams(buildPageParams(searchParams))
 }
@@ -148,6 +158,7 @@ const setSearchParams = (params: Recordable) => {
 const resetSearchParams = () => {
     clearSelectedUser()
     searchParams.deptId = undefined
+    searchParams.outboundRouteId = undefined
     searchParams.dateRange = undefined
     tableMethods.setSearchParams(buildPageParams({}))
 }
@@ -155,7 +166,8 @@ const resetSearchParams = () => {
 const buildPageParams = (params: typeof defaultSearchParams) => {
     const result: OutboundCallRecordApi.CallMonitorPageReqVO = {
         deptId: params.deptId,
-        userId: params.userId
+        userId: params.userId,
+        outboundRouteId: params.outboundRouteId
     }
     if (params.dateRange?.length) {
         result.beginCreateTime = `${params.dateRange[0]} 00:00:00`
