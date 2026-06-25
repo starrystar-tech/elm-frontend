@@ -1,6 +1,32 @@
 <template>
     <ContentWrap>
-        <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
+        <Search
+            ref="searchRef"
+            :schema="searchSchema"
+            :model="searchForm"
+            @search="setSearchParams"
+            @reset="handleReset"
+        >
+            <template #creator>
+                <el-input
+                    v-model="searchForm.creator"
+                    readonly
+                    placeholder="请选择创建人"
+                    style="width: 220px"
+                    @click="openUserSelect"
+                >
+                    <template #suffix>
+                        <el-icon
+                            v-if="searchForm.creator"
+                            class="cursor-pointer"
+                            @click.stop="clearSelectedUser"
+                        >
+                            <CircleClose />
+                        </el-icon>
+                    </template>
+                </el-input>
+            </template>
+        </Search>
         <Table
             v-model:currentPage="tableObject.currentPage"
             v-model:pageSize="tableObject.pageSize"
@@ -13,12 +39,15 @@
     </ContentWrap>
 
     <RefundAuditDialog ref="auditRef" @success="tableMethods.getList" />
+    <UserSelectForm ref="userSelectFormRef" @confirm="handleUserSelectConfirm" />
 </template>
 
 <script setup lang="tsx">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { CircleClose } from '@element-plus/icons-vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { Search } from '@/components/Search'
+import type { SearchExpose } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
@@ -28,30 +57,55 @@ import * as OrderApi from '@/api/crm/order'
 import { REFUND_STATUS_OPTIONS, REFUND_TYPE_OPTIONS, formatAmount, getOptionLabel } from '../utils'
 import RefundAuditDialog from './RefundAuditDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import UserSelectForm from '@/components/UserSelectForm/index.vue'
+import type { UserVO } from '@/api/system/user'
 
 defineOptions({ name: 'OrderRefund' })
 
 const message = useMessage()
 const auditRef = ref<InstanceType<typeof RefundAuditDialog>>()
+const searchRef = ref<SearchExpose>()
+const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
+const defaultSearchForm = {
+    mobile: '',
+    customer: '',
+    orderNo: '',
+    refundStatus: undefined,
+    refundNo: '',
+    refundType: undefined,
+    refundTimeRange: [],
+    refundAmountRange: [],
+    creator: '',
+    createTimeRange: []
+}
+const searchForm = reactive<Recordable>({ ...defaultSearchForm })
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
         field: 'mobile',
         label: '联系电话',
         component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        componentProps: { placeholder: '请输入手机号', clearable: true, style: { width: '220px' } }
     },
     {
         field: 'customer',
         label: '客户',
         component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        componentProps: {
+            placeholder: '请输入客户编号',
+            clearable: true,
+            style: { width: '220px' }
+        }
     },
     {
         field: 'orderNo',
         label: '订单编号',
         component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        componentProps: {
+            placeholder: '请输入订单编号',
+            clearable: true,
+            style: { width: '220px' }
+        }
     },
     {
         field: 'refundStatus',
@@ -59,6 +113,7 @@ const searchSchema = computed<FormSchema[]>(() => [
         component: 'Select',
         componentProps: {
             options: REFUND_STATUS_OPTIONS,
+            placeholder: '请选择',
             clearable: true,
             style: { width: '220px' }
         }
@@ -67,13 +122,22 @@ const searchSchema = computed<FormSchema[]>(() => [
         field: 'refundNo',
         label: '退款单号',
         component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        componentProps: {
+            placeholder: '请输入退款单号',
+            clearable: true,
+            style: { width: '220px' }
+        }
     },
     {
         field: 'refundType',
         label: '退款类型',
         component: 'Select',
-        componentProps: { options: REFUND_TYPE_OPTIONS, clearable: true, style: { width: '220px' } }
+        componentProps: {
+            options: REFUND_TYPE_OPTIONS,
+            placeholder: '请选择',
+            clearable: true,
+            style: { width: '220px' }
+        }
     },
     {
         field: 'refundTimeRange',
@@ -98,8 +162,7 @@ const searchSchema = computed<FormSchema[]>(() => [
     {
         field: 'creator',
         label: '创建人',
-        component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        component: 'Input'
     },
     {
         field: 'createTimeRange',
@@ -112,6 +175,31 @@ const searchSchema = computed<FormSchema[]>(() => [
         }
     }
 ])
+
+const syncSearchField = async (value: string) => {
+    searchForm.creator = value
+    await searchRef.value?.setValues({ creator: value })
+}
+
+const openUserSelect = () => {
+    userSelectFormRef.value?.open(0, [], { title: '选择创建人', multiple: false })
+}
+
+const handleUserSelectConfirm = (_id: any, userList: UserVO[]) => {
+    const user = userList?.[0]
+    const userName = user?.nickname || user?.username || ''
+    syncSearchField(userName)
+}
+
+const clearSelectedUser = () => {
+    syncSearchField('')
+}
+
+const handleReset = async (params: Recordable) => {
+    Object.assign(searchForm, defaultSearchForm)
+    await searchRef.value?.setValues({ ...defaultSearchForm })
+    setSearchParams(params)
+}
 
 const {
     tableObject,

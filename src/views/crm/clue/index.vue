@@ -782,7 +782,8 @@ const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
 const mergeSearchParams = (params: SearchParams = {}): SearchParams => ({
     ...params,
     areaId: searchForm.areaId,
-    consultProjectId: searchForm.consultProjectId
+    consultProjectId: searchForm.consultProjectId,
+    allocationType: searchForm.allocationType
 })
 
 const handleSearch = (params: SearchParams) => {
@@ -794,6 +795,7 @@ const handleSearch = (params: SearchParams) => {
 const handleResetSearch = (params: SearchParams) => {
     searchForm.areaId = undefined
     searchForm.consultProjectId = undefined
+    searchForm.allocationType = undefined
     const nextParams = mergeSearchParams(params)
     currentSearchParams.value = { ...nextParams }
     tableMethods.setSearchParams(buildPageParams(nextParams))

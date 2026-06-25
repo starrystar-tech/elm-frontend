@@ -260,18 +260,17 @@ const loadSmsRecords = async (clueResp: ClueApi.ClueVO) => {
 const loadOutboundCallRecords = async (clueResp: ClueApi.ClueVO) => {
     const mobileList = buildMobileList(clueResp)
     if (!mobileList.length) return []
-    const pageList = await Promise.all(
+    const recordList = await Promise.all(
         mobileList.map((calleeMobile) =>
-            OutboundCallRecordApi.getOutboundCallRecordPage({
-                pageNo: 1,
-                pageSize: 50,
-                calleeMobile
+            OutboundCallRecordApi.getOutboundCallRecordList({
+                calleeMobile,
+                callType: 1
             })
         )
     )
     const recordMap = new Map<number, OutboundCallRecordApi.OutboundCallRecordVO>()
-    pageList.forEach((pageResp) => {
-        ;(pageResp?.list || []).forEach((item) => {
+    recordList.forEach((list) => {
+        ;(list || []).forEach((item) => {
             if (item?.id != null) {
                 recordMap.set(Number(item.id), item)
             }

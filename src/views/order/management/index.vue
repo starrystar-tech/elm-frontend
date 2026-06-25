@@ -1,11 +1,70 @@
 <template>
     <ContentWrap>
         <Search
+            ref="searchRef"
             :schema="searchSchema"
             :model="searchForm"
             @search="setSearchParams"
-            @reset="setSearchParams"
-        />
+            @reset="handleReset"
+        >
+            <template #ownerUserName>
+                <el-input
+                    v-model="searchForm.ownerUserName"
+                    readonly
+                    placeholder="请选择订单归属人"
+                    style="width: 220px"
+                    @click="openUserSelect('owner')"
+                >
+                    <template #suffix>
+                        <el-icon
+                            v-if="searchForm.ownerUserName"
+                            class="cursor-pointer"
+                            @click.stop="clearSelectedUser('owner')"
+                        >
+                            <CircleClose />
+                        </el-icon>
+                    </template>
+                </el-input>
+            </template>
+            <template #cardOwnerUserName>
+                <el-input
+                    v-model="searchForm.cardOwnerUserName"
+                    readonly
+                    placeholder="请选择名片归属人"
+                    style="width: 220px"
+                    @click="openUserSelect('cardOwner')"
+                >
+                    <template #suffix>
+                        <el-icon
+                            v-if="searchForm.cardOwnerUserName"
+                            class="cursor-pointer"
+                            @click.stop="clearSelectedUser('cardOwner')"
+                        >
+                            <CircleClose />
+                        </el-icon>
+                    </template>
+                </el-input>
+            </template>
+            <template #creator>
+                <el-input
+                    v-model="searchForm.creator"
+                    readonly
+                    placeholder="请选择创建人"
+                    style="width: 220px"
+                    @click="openUserSelect('creator')"
+                >
+                    <template #suffix>
+                        <el-icon
+                            v-if="searchForm.creator"
+                            class="cursor-pointer"
+                            @click.stop="clearSelectedUser('creator')"
+                        >
+                            <CircleClose />
+                        </el-icon>
+                    </template>
+                </el-input>
+            </template>
+        </Search>
         <div class="action-btn-wrap flex items-center gap-2">
             <BaseButton
                 v-hasPermi="['crm:order:batch-update-owner']"
@@ -41,13 +100,16 @@
     <RefundDialog ref="refundRef" @success="tableMethods.getList" />
     <BatchUpdateOwnerDialog ref="batchUpdateOwnerDialogRef" @confirm="submitBatchUpdateOwner" />
     <ExportTaskDialog ref="exportDialogRef" @success="handleExportSuccess" />
+    <UserSelectForm ref="userSelectFormRef" @confirm="handleUserSelectConfirm" />
 </template>
 
 <script setup lang="tsx">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { CircleClose } from '@element-plus/icons-vue'
 import { ElLink, ElMessageBox } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
 import { Search } from '@/components/Search'
+import type { SearchExpose } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
@@ -68,37 +130,65 @@ import RefundDialog from '../refund/RefundDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 import BatchUpdateOwnerDialog from './BatchUpdateOwnerDialog.vue'
 import ExportTaskDialog from '@/views/crm/clue/components/ExportTaskDialog.vue'
+import UserSelectForm from '@/components/UserSelectForm/index.vue'
+import type { UserVO } from '@/api/system/user'
 
 defineOptions({ name: 'OrderManagement' })
 
 const message = useMessage()
 const route = useRoute()
 const detailRef = ref<InstanceType<typeof OrderDetailDrawer>>()
+const searchRef = ref<SearchExpose>()
 const contractSignRef = ref<InstanceType<typeof OrderContractSignDialog>>()
 const refundRef = ref<InstanceType<typeof RefundDialog>>()
 const batchUpdateOwnerDialogRef = ref<InstanceType<typeof BatchUpdateOwnerDialog>>()
 const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
+const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
 const currentSearchParams = ref<Recordable>({})
-const searchForm = reactive<Recordable>({})
+const defaultSearchForm = {
+    mobile: '',
+    customer: '',
+    orderNo: '',
+    orderStatus: undefined,
+    enrollTimeRange: [],
+    contractStatus: undefined,
+    productCategory: '',
+    productKeyword: '',
+    paidAmountRange: [],
+    ownerUserName: '',
+    cardOwnerUserName: '',
+    creator: '',
+    createTimeRange: []
+}
+const searchForm = reactive<Recordable>({ ...defaultSearchForm })
+const activeUserField = ref<'owner' | 'cardOwner' | 'creator'>('owner')
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
         field: 'mobile',
         label: '联系电话',
         component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        componentProps: { placeholder: '请输入手机号', clearable: true, style: { width: '220px' } }
     },
     {
         field: 'customer',
         label: '客户',
         component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        componentProps: {
+            placeholder: '请输入客户编号',
+            clearable: true,
+            style: { width: '220px' }
+        }
     },
     {
         field: 'orderNo',
         label: '订单编号',
         component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        componentProps: {
+            placeholder: '请输入订单编号',
+            clearable: true,
+            style: { width: '220px' }
+        }
     },
     {
         field: 'orderStatus',
@@ -106,6 +196,7 @@ const searchSchema = computed<FormSchema[]>(() => [
         component: 'Select',
         componentProps: {
             options: ORDER_STATUS_OPTIONS,
+            placeholder: '请选择',
             clearable: true,
             style: { width: '220px' }
         }
@@ -126,6 +217,7 @@ const searchSchema = computed<FormSchema[]>(() => [
         component: 'Select',
         componentProps: {
             options: CONTRACT_STATUS_OPTIONS,
+            placeholder: '请选择',
             clearable: true,
             style: { width: '220px' }
         }
@@ -134,13 +226,17 @@ const searchSchema = computed<FormSchema[]>(() => [
         field: 'productCategory',
         label: '商品分类',
         component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        componentProps: {
+            placeholder: '请输入商品分类',
+            clearable: true,
+            style: { width: '220px' }
+        }
     },
     {
         field: 'productKeyword',
         label: '商品',
         component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        componentProps: { placeholder: '请输入商品', clearable: true, style: { width: '220px' } }
     },
     {
         field: 'paidAmountRange',
@@ -155,26 +251,17 @@ const searchSchema = computed<FormSchema[]>(() => [
     {
         field: 'ownerUserName',
         label: '订单归属人',
-        component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        component: 'Input'
     },
     {
         field: 'cardOwnerUserName',
         label: '名片归属',
-        component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        component: 'Input'
     },
-    // {
-    //     field: 'expireTimeRange',
-    //     label: '到期时间',
-    //     component: 'DatePicker',
-    //     componentProps: { type: 'daterange', valueFormat: 'YYYY-MM-DD', style: { width: '220px' } }
-    // },
     {
         field: 'creator',
         label: '创建人',
-        component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        component: 'Input'
     },
     {
         field: 'createTimeRange',
@@ -197,6 +284,57 @@ const {
 })
 
 const orderStatusLabel = (value?: number) => getOptionLabel(ORDER_STATUS_OPTIONS, value)
+
+const syncSearchField = async (
+    field: 'ownerUserName' | 'cardOwnerUserName' | 'creator',
+    value: string
+) => {
+    searchForm[field] = value
+    await searchRef.value?.setValues({ [field]: value })
+}
+
+const openUserSelect = (field: 'owner' | 'cardOwner' | 'creator') => {
+    activeUserField.value = field
+    const fieldMap = {
+        owner: { title: '选择订单归属人' },
+        cardOwner: { title: '选择名片归属人' },
+        creator: { title: '选择创建人' }
+    }
+    const current = fieldMap[field]
+    userSelectFormRef.value?.open(0, [], { title: current.title, multiple: false })
+}
+
+const handleUserSelectConfirm = (_id: any, userList: UserVO[]) => {
+    const user = userList?.[0]
+    const userName = user?.nickname || user?.username || ''
+    if (activeUserField.value === 'owner') {
+        syncSearchField('ownerUserName', userName)
+        return
+    }
+    if (activeUserField.value === 'cardOwner') {
+        syncSearchField('cardOwnerUserName', userName)
+        return
+    }
+    syncSearchField('creator', userName)
+}
+
+const clearSelectedUser = (field: 'owner' | 'cardOwner' | 'creator') => {
+    if (field === 'owner') {
+        syncSearchField('ownerUserName', '')
+        return
+    }
+    if (field === 'cardOwner') {
+        syncSearchField('cardOwnerUserName', '')
+        return
+    }
+    syncSearchField('creator', '')
+}
+
+const handleReset = async (params: Recordable) => {
+    Object.assign(searchForm, defaultSearchForm)
+    await searchRef.value?.setValues({ ...defaultSearchForm })
+    setSearchParams(params)
+}
 
 const setSearchParams = (params: Recordable) => {
     currentSearchParams.value = { ...params }

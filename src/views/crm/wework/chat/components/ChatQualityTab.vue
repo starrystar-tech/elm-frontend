@@ -124,7 +124,7 @@
                     <el-date-picker
                         v-model="dateRange"
                         type="daterange"
-                        style="width: 150px"
+                        style="width: 170px"
                         unlink-panels
                         range-separator="-"
                         clearable
@@ -415,13 +415,7 @@ const loadQualityView = async () => {
             msgId: selectedSessionId.value || undefined,
             sessionType: activeSessionTab.value === 'all' ? undefined : activeSessionTab.value,
             keyword: sessionKeyword.value || undefined,
-            msgType: messageTypeFilter.value || undefined,
-            beginMsgTime: dateRange.value[0]
-                ? dayjs(dateRange.value[0]).startOf('day').unix()
-                : undefined,
-            endMsgTime: dateRange.value[1]
-                ? dayjs(dateRange.value[1]).endOf('day').unix()
-                : undefined
+            msgType: messageTypeFilter.value || undefined
         }
         const resp = await WeworkChatApi.getWeworkChatQualityView(params)
         qualityData.value = resp
@@ -444,11 +438,11 @@ watch(selectedCorpId, () => {
 watch(selectedSessionId, () => {
     scrollChatToBottom()
 })
-watch([staffFilterUserId, activeSessionTab, dateRange], () => {
+watch([staffFilterUserId, activeSessionTab], () => {
     if (!initialized.value) return
     selectedSessionId.value = ''
 })
-watch([selectedCorpId, staffFilterUserId, selectedSessionId, activeSessionTab, dateRange], () => {
+watch([selectedCorpId, staffFilterUserId, selectedSessionId, activeSessionTab], () => {
     if (!initialized.value) return
     loadQualityView()
 })
