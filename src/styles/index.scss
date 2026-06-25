@@ -4,16 +4,21 @@
 @use 'element-plus/theme-chalk/dark/css-vars.css';
 
 .el-message.el-message--success {
-    --el-message-bg-color: rgba(103, 194, 58, 0.45);
-    --el-message-border-color: rgba(103, 194, 58, 0.6);
-    --el-message-text-color: #2d7a1a;
+    --el-message-bg-color: #eef9e9;
+    --el-message-border-color: rgba(139, 207, 106, 0.45);
+    --el-message-text-color: #1f5f18;
+    box-shadow: 0 10px 24px rgba(68, 145, 37, 0.14);
 
     .el-message__icon {
-        color: #2d7a1a;
+        color: #2f7d20;
     }
 
     .el-message__closeBtn {
-        color: #2d7a1a;
+        color: #2f7d20;
+    }
+
+    .el-message__content {
+        font-weight: 500;
     }
 }
 
