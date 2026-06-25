@@ -4,16 +4,16 @@
 @use 'element-plus/theme-chalk/dark/css-vars.css';
 
 .el-message.el-message--success {
-    --el-message-bg-color: #67c23a;
-    --el-message-border-color: #67c23a;
-    --el-message-text-color: #ffffff;
+    --el-message-bg-color: rgba(103, 194, 58, 0.45);
+    --el-message-border-color: rgba(103, 194, 58, 0.6);
+    --el-message-text-color: #2d7a1a;
 
     .el-message__icon {
-        color: #ffffff;
+        color: #2d7a1a;
     }
 
     .el-message__closeBtn {
-        color: #ffffff;
+        color: #2d7a1a;
     }
 }
 
