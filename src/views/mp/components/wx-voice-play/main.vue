@@ -10,24 +10,24 @@
   ② 代码优化：将 props 中的 reply 调成为 data 中对应的属性，并补充相关注释
 -->
 <template>
-  <div class="wx-voice-div">
-    <template v-if="playbackMode === 'native'">
-      <audio class="native-audio" :src="url" controls preload="metadata" />
-    </template>
-    <template v-else>
-      <div class="amr-player-trigger" @click="playVoice">
-        <el-icon>
-          <Icon v-if="playing !== true" icon="ep:video-play" :size="32" />
-          <Icon v-else icon="ep:video-pause" :size="32" />
-        </el-icon>
-        <span class="amr-duration" v-if="duration">{{ duration }} 秒</span>
-      </div>
-    </template>
-    <div v-if="content" class="voice-content">
-      <el-tag type="success" size="small">语音识别</el-tag>
-      {{ content }}
+    <div class="wx-voice-div">
+        <template v-if="playbackMode === 'native'">
+            <audio class="native-audio" :src="url" controls preload="metadata" />
+        </template>
+        <template v-else>
+            <div class="amr-player-trigger" @click="playVoice">
+                <el-icon>
+                    <Icon v-if="playing !== true" icon="ep:video-play" :size="32" />
+                    <Icon v-else icon="ep:video-pause" :size="32" />
+                </el-icon>
+                <span class="amr-duration" v-if="duration">{{ duration }} 秒</span>
+            </div>
+        </template>
+        <div v-if="content" class="voice-content">
+            <el-tag type="success" size="small">语音识别</el-tag>
+            {{ content }}
+        </div>
     </div>
-  </div>
 </template>
 
 <script lang="ts" setup>
@@ -39,14 +39,14 @@ import { resolveAudioPlaybackMode } from './audioSource.mjs'
 defineOptions({ name: 'WxVoicePlayer' })
 
 const props = defineProps({
-  url: {
-    type: String, // 语音地址，例如说：https://www.iocoder.cn/xxx.amr
-    required: true
-  },
-  content: {
-    type: String, // 语音文本
-    required: false
-  }
+    url: {
+        type: String, // 语音地址，例如说：https://www.bgwa.cn/xxx.amr
+        required: true
+    },
+    content: {
+        type: String, // 语音文本
+        required: false
+    }
 })
 
 const amr = ref()
@@ -56,81 +56,81 @@ const playbackMode = computed(() => resolveAudioPlaybackMode(props.url))
 
 /** 处理点击，播放或暂停 */
 const playVoice = () => {
-  // 情况一：未初始化，则创建 BenzAMRRecorder
-  if (amr.value === undefined) {
-    amrInit()
-    return
-  }
-  // 情况二：已经初始化，则根据情况播放或暂时
-  if (amr.value.isPlaying()) {
-    amrStop()
-  } else {
-    amrPlay()
-  }
+    // 情况一：未初始化，则创建 BenzAMRRecorder
+    if (amr.value === undefined) {
+        amrInit()
+        return
+    }
+    // 情况二：已经初始化，则根据情况播放或暂时
+    if (amr.value.isPlaying()) {
+        amrStop()
+    } else {
+        amrPlay()
+    }
 }
 
 /** 音频初始化 */
 const amrInit = () => {
-  amr.value = new BenzAMRRecorder()
-  // 设置播放
-  amr.value.initWithUrl(props.url).then(function () {
-    amrPlay()
-    duration.value = amr.value.getDuration()
-  })
-  // 监听暂停
-  amr.value.onEnded(function () {
-    playing.value = false
-  })
+    amr.value = new BenzAMRRecorder()
+    // 设置播放
+    amr.value.initWithUrl(props.url).then(function () {
+        amrPlay()
+        duration.value = amr.value.getDuration()
+    })
+    // 监听暂停
+    amr.value.onEnded(function () {
+        playing.value = false
+    })
 }
 
 /** 音频播放 */
 const amrPlay = () => {
-  playing.value = true
-  amr.value.play()
+    playing.value = true
+    amr.value.play()
 }
 
 /** 音频暂停 */
 const amrStop = () => {
-  playing.value = false
-  amr.value.stop()
+    playing.value = false
+    amr.value.stop()
 }
 
 onBeforeUnmount(() => {
-  if (amr.value?.isPlaying?.()) {
-    amrStop()
-  }
+    if (amr.value?.isPlaying?.()) {
+        amrStop()
+    }
 })
 </script>
 <style lang="scss" scoped>
 .wx-voice-div {
-  display: flex;
-  min-width: 120px;
-  min-height: 50px;
-  padding: 5px;
-  background-color: #eaeaea;
-  border-radius: 10px;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
+    display: flex;
+    min-width: 120px;
+    min-height: 50px;
+    padding: 5px;
+    background-color: #eaeaea;
+    border-radius: 10px;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
 }
 
 .amr-player-trigger {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
 }
 
 .native-audio {
-  width: 220px;
-  max-width: 100%;
+    width: 220px;
+    max-width: 100%;
 }
 
 .amr-duration {
-  margin-left: 5px;
-  font-size: 11px;
+    margin-left: 5px;
+    font-size: 11px;
 }
 
 .voice-content {
-  line-height: 1.5;
+    line-height: 1.5;
 }
 </style>

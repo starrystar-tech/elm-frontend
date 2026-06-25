@@ -7,7 +7,9 @@
             @reset="setSearchParams"
         />
         <div class="action-btn-wrap">
-            <BaseButton type="primary" @click="openCreate">新增工单</BaseButton>
+            <BaseButton v-hasPermi="['crm:aftersales:create']" type="primary" @click="openCreate">
+                新增工单
+            </BaseButton>
         </div>
         <Table
             v-model:currentPage="tableObject.currentPage"
@@ -100,7 +102,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'ticketNo',
         label: '工单号',
-        minWidth: '170px',
+        minWidth: '200px',
         fixed: 'left',
         slots: {
             default: (data) => (

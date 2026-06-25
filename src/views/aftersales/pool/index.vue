@@ -2,7 +2,9 @@
     <ContentWrap>
         <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
         <div class="action-btn-wrap">
-            <BaseButton type="primary" @click="batchClaim">批量领取</BaseButton>
+            <BaseButton v-hasPermi="['crm:aftersales:claim']" type="primary" @click="batchClaim">
+                批量领取
+            </BaseButton>
         </div>
         <Table
             selection
@@ -81,7 +83,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'ticketNo',
         label: '工单号',
-        minWidth: '190px',
+        minWidth: '200px',
         fixed: 'left'
     },
     { field: 'customerId', label: '客户编号', minWidth: '120px' },
@@ -129,7 +131,12 @@ const tableColumns = computed<TableColumn[]>(() => [
             default: (data) => {
                 const row = data.row as AftersalesApi.AftersalesRespVO
                 return (
-                    <BaseButton link type="primary" onClick={() => claim(row)}>
+                    <BaseButton
+                        v-hasPermi={['crm:aftersales:claim']}
+                        link
+                        type="primary"
+                        onClick={() => claim(row)}
+                    >
                         领取
                     </BaseButton>
                 )

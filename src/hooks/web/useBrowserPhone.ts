@@ -771,13 +771,32 @@ const syncBrowserRecord = async (
     }
 }
 
+const waitForBrowserAudioRefs = async (timeoutMs = 3000) => {
+    if (remoteAudioRef.value && localAudioRef.value) {
+        return
+    }
+    const start = Date.now()
+    await new Promise<void>((resolve, reject) => {
+        const check = () => {
+            if (remoteAudioRef.value && localAudioRef.value) {
+                resolve()
+                return
+            }
+            if (Date.now() - start >= timeoutMs) {
+                reject(new Error('浏览器分机音频节点初始化超时，请刷新页面后重试'))
+                return
+            }
+            window.setTimeout(check, 50)
+        }
+        check()
+    })
+}
+
 const ensureBrowserPrerequisites = async () => {
     traceBrowserStep('PREREQ_START')
     if (!browserForm.username.trim()) throw new Error('请输入浏览器分机账号')
     if (!browserForm.password.trim()) throw new Error('请输入浏览器分机密码')
-    if (!remoteAudioRef.value || !localAudioRef.value) {
-        throw new Error('请先登录系统，等待页面完全加载后再尝试连接浏览器分机')
-    }
+    await waitForBrowserAudioRefs()
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
     stream.getTracks().forEach((track) => track.stop())
     traceBrowserStep('PREREQ_OK')

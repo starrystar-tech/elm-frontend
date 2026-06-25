@@ -9,6 +9,7 @@ export type SearchProps = {
   showSearch?: boolean
   showReset?: boolean
   showExpand?: boolean
+  expand?: boolean
   expandField?: string
   inline?: boolean
   removeNoValueItem?: boolean

@@ -31,27 +31,9 @@ const emit = defineEmits<{
 }>()
 
 const innerValue = ref<number | number[] | undefined>(props.modelValue)
+const allOptions = ref<ProductCategoryApi.ProductCategoryVO[]>([])
 const options = ref<ProductCategoryApi.ProductCategoryVO[]>([])
 const multiple = computed(() => props.multiple ?? false)
-
-watch(
-    () => props.modelValue,
-    (value) => {
-        innerValue.value = value
-    },
-    { immediate: true }
-)
-
-const loadOptions = async () => {
-    const list =
-        ((await ProductCategoryApi.getProductCategorySimpleList()) ||
-            []) as ProductCategoryApi.ProductCategoryVO[]
-    const filteredOptions =
-        props.parentId !== undefined
-            ? list.filter((item) => Number(item.parentId) === Number(props.parentId))
-            : list.filter((item) => Number(item.parentId) === 0)
-    options.value = appendMissingOptions(filteredOptions)
-}
 
 const appendMissingOptions = (list: ProductCategoryApi.ProductCategoryVO[]) => {
     const result = [...list]
@@ -79,6 +61,30 @@ const appendMissingOptions = (list: ProductCategoryApi.ProductCategoryVO[]) => {
     return result
 }
 
+const rebuildOptions = () => {
+    const filteredOptions =
+        props.parentId !== undefined
+            ? allOptions.value.filter((item) => Number(item.parentId) === Number(props.parentId))
+            : allOptions.value.filter((item) => Number(item.parentId) === 0)
+    options.value = appendMissingOptions(filteredOptions)
+}
+
+watch(
+    () => props.modelValue,
+    (value) => {
+        innerValue.value = value
+        rebuildOptions()
+    },
+    { immediate: true }
+)
+
+const loadOptions = async () => {
+    allOptions.value =
+        ((await ProductCategoryApi.getProductCategorySimpleList()) ||
+            []) as ProductCategoryApi.ProductCategoryVO[]
+    rebuildOptions()
+}
+
 const handleChange = (value: number | number[] | undefined) => {
     emit('update:modelValue', value)
     if (Array.isArray(value)) {
@@ -98,7 +104,7 @@ onMounted(() => {
 watch(
     () => props.parentId,
     () => {
-        loadOptions()
+        rebuildOptions()
     }
 )
 

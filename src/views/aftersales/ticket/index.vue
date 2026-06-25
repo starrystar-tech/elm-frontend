@@ -7,7 +7,12 @@
             @reset="handleResetSearch"
         />
         <div class="action-btn-wrap flex items-center gap-2">
-            <BaseButton type="primary" @click="openAssign">分配处理人</BaseButton>
+            <BaseButton v-hasPermi="['crm:aftersales:create']" type="primary" @click="openCreate">
+                新增工单
+            </BaseButton>
+            <BaseButton v-hasPermi="['crm:aftersales:assign']" @click="openAssign">
+                分配处理人
+            </BaseButton>
             <BaseButton v-hasPermi="['crm:aftersales:export']" plain @click="openExportDialog">
                 导出
             </BaseButton>
@@ -22,6 +27,7 @@
             :pagination="{ total: tableObject.total }"
             @register="tableRegister"
         />
+        <AftersalesForm ref="formRef" @success="tableMethods.getList()" />
         <AftersalesAssignDialog ref="assignRef" @success="tableMethods.getList()" />
         <AftersalesProcessDialog ref="processRef" @success="tableMethods.getList()" />
         <AftersalesDetailDialog ref="detailRef" />
@@ -50,6 +56,7 @@ import {
     getAftersalesStatusLabel,
     getAftersalesTypeLabel
 } from '../config'
+import AftersalesForm from '../components/AftersalesForm.vue'
 import AftersalesAssignDialog from '../components/AftersalesAssignDialog.vue'
 import AftersalesProcessDialog from '../components/AftersalesProcessDialog.vue'
 import AftersalesDetailDialog from '../components/AftersalesDetailDialog.vue'
@@ -60,6 +67,7 @@ defineOptions({ name: 'AftersalesTicket' })
 
 const message = useMessage()
 const route = useRoute()
+const formRef = ref()
 const assignRef = ref()
 const processRef = ref()
 const detailRef = ref()
@@ -127,6 +135,8 @@ const initSearchFormFromRoute = () => {
     }
 }
 
+const openCreate = () => formRef.value.open()
+
 const openAssign = async () => {
     const selections = await tableMethods.getSelections()
     if (!selections.length) {
@@ -180,7 +190,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'ticketNo',
         label: '工单号',
-        minWidth: '170px',
+        minWidth: '200px',
         fixed: 'left',
         slots: {
             default: (data) => (

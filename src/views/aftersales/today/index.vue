@@ -65,7 +65,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'ticketNo',
         label: '工单号',
-        minWidth: '170px',
+        minWidth: '195px',
         fixed: 'left'
     },
     { field: 'customerId', label: '客户编号', minWidth: '120px' },
@@ -113,7 +113,12 @@ const tableColumns = computed<TableColumn[]>(() => [
             default: (data) => {
                 const row = data.row as AftersalesApi.AftersalesRespVO
                 return (
-                    <BaseButton link type="primary" onClick={() => claim(row)}>
+                    <BaseButton
+                        v-hasPermi={['crm:aftersales:claim']}
+                        link
+                        type="primary"
+                        onClick={() => claim(row)}
+                    >
                         领取
                     </BaseButton>
                 )

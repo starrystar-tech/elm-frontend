@@ -696,6 +696,7 @@ import * as ClueApi from '@/api/crm/clue'
 import type * as CustomerDetailApi from '@/api/crm/customerDetail'
 import type * as OrderApi from '@/api/crm/order'
 import type { ProductVO } from '@/api/crm/product'
+import type { ProductCategoryVO } from '@/api/crm/product/category'
 import type * as CampusApi from '@/api/system/campus'
 import { DICT_TYPE, getDictLabel, getIntDictOptions } from '@/utils/dict'
 import { resolveTimestamp } from '@/utils/formatTime'
@@ -718,6 +719,7 @@ const props = defineProps<{
     saving: boolean
     consultSaving: boolean
     campusOptions: CampusApi.CampusVO[]
+    productCategoryOptions?: ProductCategoryVO[]
     clueSourceOptions: { label: string; value: number }[]
     tagOptions: { label: string; value: number }[]
     complaintTagOptions: { label: string; value: number }[]
@@ -833,7 +835,7 @@ const consultRules = reactive({
     consultResult: [
         {
             validator: (_rule: any, value: number | undefined, callback: any) => {
-                if (consultForm.consultType === 1 && !value) {
+                if (!value) {
                     callback(new Error('请选择是否有效'))
                     return
                 }
@@ -1033,7 +1035,7 @@ const submitConsult = async () => {
     if (!valid) return
     emit('save-consult', {
         clueId: Number(props.clue.id),
-        consultResult: consultForm.consultType === 1 ? consultForm.consultResult : undefined,
+        consultResult: consultForm.consultResult,
         consultType: consultForm.consultType,
         campusId: consultForm.consultType === 2 ? consultForm.campusId : undefined,
         projectId: consultForm.consultType === 2 ? consultForm.projectId : consultForm.projectId,
@@ -1062,9 +1064,16 @@ const handleConsultProjectChange = () => {
 const handleConsultProductSelect = (products: ProductVO[]) => {
     const product = products?.[0]
     if (!product) return
+    const selectedCategory = (props.productCategoryOptions || []).find(
+        (item) => Number(item.id) === Number(product.categoryId)
+    )
+    if (selectedCategory?.parentId !== undefined && selectedCategory?.parentId !== null) {
+        consultForm.projectId = Number(selectedCategory.parentId) || consultForm.projectId
+    }
+    consultForm.productCategoryId =
+        Number(selectedCategory?.id || product.categoryId) || consultForm.productCategoryId
     consultForm.productId = Number(product.id)
     consultForm.productName = product.name || ''
-    consultForm.productCategoryId = Number(product.categoryId) || consultForm.productCategoryId
 }
 </script>
 

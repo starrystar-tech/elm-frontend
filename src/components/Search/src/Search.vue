@@ -46,7 +46,7 @@ const props = defineProps({
 
 const emit = defineEmits(['search', 'reset', 'register', 'validate'])
 
-const visible = ref(true)
+const visible = ref(!props.expandField)
 const slotMode = computed(() => props.schema.length === 0 && !!slots.default)
 const searchBodyRef = ref<HTMLDivElement>()
 const searchOverflow = ref(false)
@@ -55,9 +55,8 @@ const collapsedMaxHeight = ref(0)
 const formModel = ref<Recordable>(props.model)
 
 const mergedButtonPosition = computed(() => props.buttonPosition || props.buttomPosition)
-const manualExpandEnabled = computed(
-  () => (props.showExpand || props.expand) && !!props.expandField
-)
+const expandEnabled = computed(() => props.showExpand || props.expand || !!props.expandField)
+const fieldExpandEnabled = computed(() => unref(expandEnabled) && !!props.expandField)
 const useExternalActionBar = computed(
   () => props.layout === 'inline' && !slotMode.value && searchOverflow.value
 )
@@ -75,7 +74,7 @@ const newSchema = computed(() => {
     }
     return item
   })
-  if ((props.showExpand || props.expand) && props.expandField && !unref(visible)) {
+  if (unref(fieldExpandEnabled) && !unref(visible)) {
     const index = findIndex(schema, (v: FormSchema) => v.field === props.expandField)
     schema = schema.map((item, currentIndex) => ({
       ...item,
@@ -204,7 +203,9 @@ const measureSearchRows = async () => {
     }
     searchOverflow.value = false
     collapsedMaxHeight.value = 0
-    visible.value = true
+    if (!unref(fieldExpandEnabled)) {
+      visible.value = true
+    }
     return
   }
 
@@ -219,7 +220,7 @@ const measureSearchRows = async () => {
 
   collapsedMaxHeight.value = Math.ceil(secondRowBottom + 4)
   searchOverflow.value = true
-  if (!unref(manualExpandEnabled)) {
+  if (!unref(fieldExpandEnabled)) {
     visible.value = false
   }
 }
@@ -375,7 +376,7 @@ defineExpose(defaultExpose)
                 {{ t('common.reset') }}
               </ElButton>
               <ElButton
-                v-if="(showExpand || expand) && !useExternalActionBar"
+                v-if="expandEnabled && !useExternalActionBar"
                 text
                 @click="setVisible"
               >
@@ -402,7 +403,7 @@ defineExpose(defaultExpose)
           <Icon class="mr-5px" icon="ep:refresh" />
           {{ t('common.reset') }}
         </ElButton>
-        <ElButton text @click="setVisible">
+        <ElButton v-if="expandEnabled" text @click="setVisible">
           {{ t(visible ? 'common.shrink' : 'common.expand') }}
           <Icon :icon="visible ? 'ep:arrow-up' : 'ep:arrow-down'" />
         </ElButton>
@@ -420,7 +421,7 @@ defineExpose(defaultExpose)
           <Icon class="mr-5px" icon="ep:refresh" />
           {{ t('common.reset') }}
         </ElButton>
-        <ElButton v-if="showExpand || expand" text @click="setVisible">
+        <ElButton v-if="expandEnabled" text @click="setVisible">
           {{ t(visible ? 'common.shrink' : 'common.expand') }}
           <Icon :icon="visible ? 'ep:arrow-up' : 'ep:arrow-down'" />
         </ElButton>

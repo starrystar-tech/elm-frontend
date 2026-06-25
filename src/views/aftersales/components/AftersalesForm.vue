@@ -41,9 +41,9 @@
                     />
                 </el-select>
             </el-form-item>
-            <el-form-item label="退款方式" prop="refundMethod">
+            <!-- <el-form-item label="退款方式" prop="refundMethod">
                 <el-input v-model="formData.refundMethod" placeholder="请输入退款方式" />
-            </el-form-item>
+            </el-form-item> -->
             <!-- <el-form-item label="退款金额" prop="refundAmount">
                 <el-input-number
                     v-model="formData.refundAmount"
@@ -63,10 +63,24 @@
                 />
             </el-form-item>
             <el-form-item label="申请原因" prop="reason">
-                <el-input v-model="formData.reason" type="textarea" :rows="3" />
+                <el-input
+                    v-model="formData.reason"
+                    type="textarea"
+                    :rows="3"
+                    maxlength="500"
+                    show-word-limit
+                    placeholder="请输入申请原因"
+                />
             </el-form-item>
             <el-form-item label="补充备注">
-                <el-input v-model="formData.remark" type="textarea" :rows="3" />
+                <el-input
+                    v-model="formData.remark"
+                    type="textarea"
+                    :rows="3"
+                    maxlength="500"
+                    show-word-limit
+                    placeholder="请输入补充备注"
+                />
             </el-form-item>
         </el-form>
         <template #footer>
@@ -116,7 +130,11 @@ const formRules = reactive({
     ticketType: [{ required: true, message: '请选择工单类型', trigger: 'change' }],
     priority: [{ required: true, message: '请选择优先级', trigger: 'change' }],
     refundMethod: [{ required: true, message: '请输入退款方式', trigger: 'blur' }],
-    reason: [{ required: true, message: '请输入申请原因', trigger: 'blur' }]
+    reason: [
+        { required: true, message: '请输入申请原因', trigger: 'blur' },
+        { max: 500, message: '申请原因长度不能超过 500 个字符', trigger: 'blur' }
+    ],
+    remark: [{ max: 500, message: '补充备注长度不能超过 500 个字符', trigger: 'blur' }]
 })
 
 const emit = defineEmits(['success'])
