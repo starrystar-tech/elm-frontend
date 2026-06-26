@@ -38,7 +38,7 @@ import * as ClueApi from '@/api/crm/clue'
 import * as CustomerDetailApi from '@/api/crm/customerDetail'
 import * as OrderApi from '@/api/crm/order'
 import type { OutboundCallRecordVO } from '@/api/system/call/record'
-import * as SmsLogApi from '@/api/system/sms/smsLog'
+import type * as SmsLogApi from '@/api/system/sms/smsLog'
 import CustomerForm from '@/views/crm/customer/CustomerForm.vue'
 import CustomerDetailRecords from './CustomerDetailRecords.vue'
 import CustomerDetailsHeader from './CustomerDetailsHeader.vue'
@@ -110,7 +110,7 @@ const sortByCreateTimeDesc = <T extends { createTime?: string | Date | null }>(l
 
 const loadSmsRecords = async () => {
     if (!clueId.value) return []
-    const pageResp = await SmsLogApi.getSmsLogPage({
+    const pageResp = await CustomerDetailApi.getCustomerSmsLogs({
         pageNo: 1,
         pageSize: 50,
         clueId: clueId.value

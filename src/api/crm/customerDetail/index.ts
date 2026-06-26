@@ -1,5 +1,6 @@
 import request from '@/config/axios'
 import type { OutboundCallRecordVO } from '@/api/system/call/record'
+import type { SmsLogVO, SmsLogPageReqVO } from '@/api/system/sms/smsLog'
 
 export interface CustomerTagItem {
     id: number
@@ -137,6 +138,13 @@ export const getCustomerOutboundCallRecords = async (id: number) => {
     return await request.get<OutboundCallRecordVO[]>({
         url: '/crm/customer-detail/outbound-call-records',
         params: { id }
+    })
+}
+
+export const getCustomerSmsLogs = async (params: SmsLogPageReqVO) => {
+    return await request.get<PageResult<SmsLogVO>>({
+        url: '/crm/customer-detail/sms-logs',
+        params
     })
 }
 

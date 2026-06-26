@@ -22,6 +22,11 @@ type RenderCopyMobileOptions<T extends CopyRow> = CopyFeedback & {
     mobile?: string
     clueId?: number
     getDetail?: (id: number) => Promise<{ clueId?: number } | undefined>
+    copyByRowIdApi?: (id: number) => Promise<{
+        mobile: string
+        usedCount?: number
+        remainingCount?: number
+    }>
     directCopyWhenMissingClueId?: boolean
     mobileField?: string
 }
@@ -31,6 +36,7 @@ export const renderCopyMobileCell = <T extends CopyRow>({
     mobile,
     clueId,
     getDetail,
+    copyByRowIdApi,
     directCopyWhenMissingClueId = false,
     warning,
     mobileField = 'mobile'
@@ -39,6 +45,16 @@ export const renderCopyMobileCell = <T extends CopyRow>({
     const handleCopy = async () => {
         const resolvedClueId =
             clueId !== undefined ? Number(clueId) : await resolveClueIdForCopy({ row, getDetail })
+        if (!resolvedClueId && copyByRowIdApi && row.id) {
+            const result = await copyByRowIdApi(Number(row.id))
+            await navigator.clipboard.writeText(result.mobile)
+            showCopyMobileSuccessMessage(
+                typeof result.usedCount === 'number' && typeof result.remainingCount === 'number'
+                    ? `今日已复制${result.usedCount}次，今日还可复制${result.remainingCount}次`
+                    : '复制成功'
+            )
+            return
+        }
         if (!resolvedClueId && directCopyWhenMissingClueId && mobile) {
             await navigator.clipboard.writeText(mobile)
             showCopyMobileSuccessMessage('复制成功')

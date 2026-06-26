@@ -214,6 +214,7 @@ const tableColumns = reactive<TableColumn[]>([
                     row: data.row,
                     mobile: data.row.calleeMobile,
                     clueId: data.row.clueId,
+                    copyByRowIdApi: OutboundCallRecordApi.copyOutboundCallRecordMobile,
                     success: message.success,
                     warning: message.warning
                 })

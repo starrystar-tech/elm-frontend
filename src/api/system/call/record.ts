@@ -35,6 +35,12 @@ export interface OutboundCallRecordVO {
   createTime: string
 }
 
+export interface OutboundCallRecordCopyMobileRespVO {
+  mobile: string
+  usedCount?: number
+  remainingCount?: number
+}
+
 export interface OutboundCallRecordPageReqVO extends PageParam {
   userId?: number
   deptId?: number
@@ -75,6 +81,13 @@ export const getOutboundCallRecordPage = (params: OutboundCallRecordPageReqVO) =
 
 export const getOutboundCallRecordList = (params: Omit<OutboundCallRecordPageReqVO, 'pageNo' | 'pageSize'>) => {
   return request.get<OutboundCallRecordVO[]>({ url: '/crm/call/outbound-record/list', params })
+}
+
+export const copyOutboundCallRecordMobile = (recordId: number) => {
+  return request.post<OutboundCallRecordCopyMobileRespVO>({
+    url: '/crm/call/outbound-record/copy-mobile',
+    data: { recordId }
+  })
 }
 
 export const getCallMonitorPage = (params: CallMonitorPageReqVO) => {
