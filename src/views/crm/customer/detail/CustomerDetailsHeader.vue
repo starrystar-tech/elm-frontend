@@ -6,7 +6,7 @@
                 <span>归属人：{{ currentOwnerText }}</span>
                 <span>班主任：{{ headteacherText }}</span>
                 <span>地域：{{ regionText }}</span>
-                <span>报名状态：{{ clue.customerId ? '已报名' : '未报名' }}</span>
+                <span>报名状态：{{ Number(clue.orderCount || 0) > 0 ? '已报名' : '未报名' }}</span>
             </template>
             <template #actions>
                 <slot></slot>

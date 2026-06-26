@@ -1,6 +1,6 @@
 <template>
     <ContentWrap>
-        <el-tabs v-model="activeTabName">
+        <el-tabs v-model="activeTabName" class="p-10px">
             <el-tab-pane label="预约记录" name="reservations">
                 <el-table v-if="appointments.length" :data="appointments" border>
                     <el-table-column prop="appointmentTypeName" label="操作类型" min-width="100" />
@@ -10,9 +10,19 @@
                         </template>
                     </el-table-column>
                     <el-table-column prop="campusName" label="校区" min-width="120" />
-                    <el-table-column label="咨询项目" min-width="180">
+                    <el-table-column label="咨询项目" min-width="160">
                         <template #default="{ row }">
-                            {{ row.projectName || row.productCategoryName || row.productName || '--' }}
+                            {{ row.projectName || '--' }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="商品分类" min-width="160">
+                        <template #default="{ row }">
+                            {{ row.productCategoryName || '--' }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="商品名称" min-width="180">
+                        <template #default="{ row }">
+                            {{ row.productName || '--' }}
                         </template>
                     </el-table-column>
                     <el-table-column label="预约价格" min-width="120">
@@ -110,7 +120,7 @@
                                 preload="metadata"
                                 :src="row.recordingFileUrl"
                                 style="width: 200px"
-                            />
+                            ></audio>
                             <template v-else>--</template>
                         </template>
                     </el-table-column>

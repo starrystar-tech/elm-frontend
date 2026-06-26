@@ -271,14 +271,19 @@
                                     </template>
                                 </el-table-column>
                                 <el-table-column prop="campusName" label="校区" min-width="120" />
+                                <el-table-column label="咨询项目" min-width="160">
+                                    <template #default="{ row }">
+                                        {{ row.projectName || '--' }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="商品分类" min-width="160">
+                                    <template #default="{ row }">
+                                        {{ row.productCategoryName || '--' }}
+                                    </template>
+                                </el-table-column>
                                 <el-table-column label="商品名称" min-width="180">
                                     <template #default="{ row }">
-                                        {{
-                                            row.productName ||
-                                            row.productCategoryName ||
-                                            row.projectName ||
-                                            '--'
-                                        }}
+                                        {{ row.productName || '--' }}
                                     </template>
                                 </el-table-column>
                                 <el-table-column label="预约价格" min-width="120">
