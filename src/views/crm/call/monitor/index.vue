@@ -94,8 +94,13 @@ const searchParams = reactive({ ...defaultSearchParams })
 
 const formatDurationClock = (durationSeconds?: number) => {
     const totalSeconds = Math.max(0, Math.floor(durationSeconds || 0))
+    const hours = Math.floor(totalSeconds / 3600)
     const minutes = Math.floor(totalSeconds / 60)
+    const remainMinutes = Math.floor((totalSeconds % 3600) / 60)
     const seconds = totalSeconds % 60
+    if (hours > 0) {
+        return `${String(hours).padStart(2, '0')}:${String(remainMinutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    }
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
@@ -117,10 +122,12 @@ const tableColumns = reactive<TableColumn[]>([
     { field: 'outgoingCustomers', label: '呼出客户数', minWidth: '110px' },
     {
         field: 'outgoingDurationSeconds',
-        label: '呼出总时长',
+        label: '通话总时长',
         minWidth: '120px',
-        formatter: (_row: unknown, _column: unknown, cellValue: number) =>
-            formatDurationClock(cellValue)
+        formatter: (row: OutboundCallRecordApi.CallMonitorVO) =>
+            formatDurationClock(
+                Number(row.outgoingDurationSeconds || 0) + Number(row.answeredDurationSeconds || 0)
+            )
     },
     {
         field: 'averageOutgoingDurationSeconds',
