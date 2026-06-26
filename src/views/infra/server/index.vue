@@ -14,7 +14,7 @@ const src = ref(import.meta.env.VITE_BASE_URL + '/admin/applications')
 /**
  * 统一修正 Spring Boot Admin 地址：
  * 1. 将 http 强制改成 https
- * 2. 将内部服务名 elm-backend 改写成当前站点域名，避免混合内容和内网域名暴露
+ * 2. 保留配置里的原始主机名，避免把可访问的监控地址错误改写到当前站点
  */
 const normalizeAdminServerUrl = (url?: string): string => {
   const fallbackUrl = `${window.location.origin}/admin/applications`
@@ -26,12 +26,9 @@ const normalizeAdminServerUrl = (url?: string): string => {
   try {
     const nextUrl = new URL(rawUrl, window.location.origin)
     nextUrl.protocol = 'https:'
-    if (nextUrl.hostname === 'elm-backend') {
-      nextUrl.host = window.location.host
-    }
     return nextUrl.toString()
   } catch {
-    return rawUrl.replace('http://', 'https://').replace('://elm-backend', `://${window.location.host}`)
+    return rawUrl.replace('http://', 'https://')
   }
 }
 

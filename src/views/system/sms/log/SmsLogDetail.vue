@@ -9,7 +9,7 @@
         <dict-tag :type="DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE" :value="detailData.channelCode" />
       </el-descriptions-item>
       <el-descriptions-item label="短信模板">
-        {{ detailData.templateId }} | {{ detailData.templateCode }}
+        {{ detailData.templateCode }} | {{ detailData.templateId }}
         <dict-tag :type="DICT_TYPE.SYSTEM_SMS_TEMPLATE_TYPE" :value="detailData.templateType" />
       </el-descriptions-item>
       <el-descriptions-item label="API 的模板编号">

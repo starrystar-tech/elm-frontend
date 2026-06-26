@@ -26,8 +26,13 @@ export interface SmsLogVO {
   createTime: Date | null
 }
 
+export interface SmsLogPageReqVO extends PageParam {
+  clueId?: number
+  mobile?: string
+}
+
 // 查询短信日志列表
-export const getSmsLogPage = (params: PageParam) => {
+export const getSmsLogPage = (params: SmsLogPageReqVO) => {
   return request.get({ url: '/system/sms-log/page', params })
 }
 

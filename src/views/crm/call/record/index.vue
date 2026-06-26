@@ -106,6 +106,7 @@ import type { UserVO } from '@/api/system/user'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import AudioPlayer from '@/components/AudioPlayer/index.vue'
 
 defineOptions({ name: 'CrmCallRecord' })
 
@@ -226,7 +227,7 @@ const tableColumns = reactive<TableColumn[]>([
     {
         field: 'recordingFileUrl',
         label: '通话录音',
-        minWidth: '250px',
+        width: '250px',
         showOverflowTooltip: false,
         slots: {
             default: (data) => {
@@ -238,55 +239,16 @@ const tableColumns = reactive<TableColumn[]>([
                     return <>-</>
                 }
                 return (
-                    <div style="display: flex; align-items: center; gap: 8px">
-                        <audio controls preload="metadata" style="width: 220px">
-                            <source src={data.row.recordingFileUrl} />
-                        </audio>
-                        <span style="color: var(--el-text-color-secondary); font-size: 12px">
-                            {formatDuration(data.row.durationSeconds)}
-                        </span>
-                    </div>
+                    <AudioPlayer
+                        src={data.row.recordingFileUrl}
+                        duration={data.row.durationSeconds}
+                    />
                 )
             }
         }
     },
     { field: 'outboundRouteName', label: '线路名称', width: '110px' },
-    // {
-    //     field: 'recordingSyncStatusDesc',
-    //     label: '语音同步',
-    //     minWidth: '180px',
-    //     slots: {
-    //         default: (data) => {
-    //             const statusText = data.row.recordingSyncStatusDesc || '-'
-    //             const message = data.row.recordingSyncMessage
-    //             if (!message) {
-    //                 return <span>{statusText}</span>
-    //             }
-    //             return (
-    //                 <ElTooltip content={message} placement="top">
-    //                     <span>{statusText}</span>
-    //                 </ElTooltip>
-    //             )
-    //         }
-    //     }
-    // },
-    // { field: 'callTypeDesc', label: '通话类型', width: '110px' },
-    // { field: 'submitMessage', label: '提交日志', minWidth: '160px' },
-    // {
-    //     field: 'callResult',
-    //     label: '呼叫结果',
-    //     width: '180px',
-    //     slots: {
-    //         default: (data) => <span>{buildCallResultText(data.row)}</span>
-    //     }
-    // },
-    // { field: 'jobUuid', label: '任务号', width: '240px' },
-    // { field: 'gatewayName', label: '网关', width: '170px' },
-    // { field: 'backupGatewayName', label: '备网关', width: '170px' },
     { field: 'durationSeconds', label: '通话时长(秒)', width: '120px' }
-    // { field: 'failReason', label: '失败原因', minWidth: '220px' }
-    // { field: 'originateDisposition', label: '外呼结果原值', width: '160px' },
-    // { field: 'hangupCause', label: '挂断原因原值', width: '160px' }
 ])
 
 onMounted(async () => {

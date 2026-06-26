@@ -224,7 +224,7 @@ const tableColumns = reactive<TableColumn[]>([
             )
         }
     },
-    { field: 'templateId', label: '模板编号' },
+    { field: 'templateCode', label: '模板编号', width: '180px', showOverflowTooltip: true },
     {
         field: 'templateType',
         label: '短信类型',
