@@ -102,25 +102,18 @@
                             {{ row.statusDesc || '--' }}
                         </template>
                     </el-table-column>
-                    <el-table-column label="外呼结果" min-width="180">
-                        <template #default="{ row }">
-                            {{ getCallResultText(row) }}
-                        </template>
-                    </el-table-column>
                     <el-table-column label="通话时长" min-width="100">
                         <template #default="{ row }">
                             {{ formatCallDuration(row.durationSeconds) }}
                         </template>
                     </el-table-column>
-                    <el-table-column label="录音" min-width="220">
+                    <el-table-column label="录音" min-width="250">
                         <template #default="{ row }">
-                            <audio
+                            <AudioPlayer
                                 v-if="row.recordingFileUrl"
-                                controls
-                                preload="metadata"
                                 :src="row.recordingFileUrl"
-                                style="width: 200px"
-                            ></audio>
+                                :duration="row.durationSeconds"
+                            />
                             <template v-else>--</template>
                         </template>
                     </el-table-column>
@@ -172,6 +165,7 @@ import type * as OrderApi from '@/api/crm/order'
 import type { OutboundCallRecordVO } from '@/api/system/call/record'
 import type * as SmsLogApi from '@/api/system/sms/smsLog'
 import { ContentWrap } from '@/components/ContentWrap'
+import AudioPlayer from '@/components/AudioPlayer/index.vue'
 import { getDictLabel } from '@/utils/dict'
 import { resolveTimestamp } from '@/utils/formatTime'
 import { DICT_TYPE } from '@/utils/dict'
