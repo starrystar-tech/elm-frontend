@@ -1,121 +1,120 @@
 <template>
-  <ElDialog v-if="isModal" v-model="showSearch" :show-close="false" title="菜单搜索">
-    <el-select
-      filterable
-      :reserve-keyword="false"
-      remote
-      placeholder="请输入菜单内容"
-      :remote-method="remoteMethod"
-      style="width: 100%"
-      @change="handleChange"
+    <ElDialog
+        v-if="isModal"
+        v-model="showSearch"
+        :show-close="false"
+        title="客户搜索"
+        width="560px"
     >
-      <el-option
-        v-for="item in options"
-        :key="item.value"
-        :label="item.label"
-        :value="item.value"
-      />
-    </el-select>
-  </ElDialog>
-  <div v-else class="custom-hover" @click.stop="showTopSearch = !showTopSearch">
-    <Icon icon="ep:search" :color="color"/>
-    <el-select
-      @click.stop
-      filterable
-      :reserve-keyword="false"
-      remote
-      placeholder="请输入菜单内容"
-      :remote-method="remoteMethod"
-      class="overflow-hidden transition-all-600"
-      :class="showTopSearch ? '!w-220px ml2' : '!w-0'"
-      @change="handleChange"
-    >
-      <el-option
-        v-for="item in options"
-        :key="item.value"
-        :label="item.label"
-        :value="item.value"
-      />
-    </el-select>
-  </div>
+        <el-input
+            v-model="keyword"
+            clearable
+            placeholder="请输入姓名、手机号或客户编号"
+            @keyup.enter="submitSearch"
+        >
+            <template #suffix>
+                <Icon
+                    class="cursor-pointer text-[var(--el-text-color-secondary)]"
+                    icon="ep:search"
+                    @click="submitSearch"
+                />
+            </template>
+        </el-input>
+    </ElDialog>
+    <div v-else class="router-search">
+        <el-input
+            v-model="keyword"
+            clearable
+            placeholder="请输入姓名、手机号或客户编号"
+            @keyup.enter="submitSearch"
+        >
+            <template #suffix>
+                <Icon
+                    class="cursor-pointer text-[var(--el-text-color-secondary)]"
+                    :color="color"
+                    icon="ep:search"
+                    @click="submitSearch"
+                />
+            </template>
+        </el-input>
+    </div>
 </template>
 
 <script lang="ts" setup>
 import { propTypes } from '@/utils/propTypes'
 defineProps({
-  isModal: {
-    type: Boolean,
-    default: true
-  },
-  color: propTypes.string.def('')
+    isModal: {
+        type: Boolean,
+        default: true
+    },
+    color: propTypes.string.def('')
 })
 
-const router = useRouter() // 路由对象
-const showSearch = ref(false) // 是否显示弹框
-const showTopSearch = ref(false) // 是否显示顶部搜索框
-const value: Ref = ref('') // 用户输入的值
-
-const routers = router.getRoutes() // 路由对象
-const options = computed(() => {
-  // 提示选项
-  if (!value.value) {
-    return []
-  }
-  const list = routers.filter((item: any) => {
-    if (item.meta.title?.indexOf(value.value) > -1 || item.path.indexOf(value.value) > -1) {
-      return true
-    }
-  })
-  return list.map((item) => {
-    return {
-      label: `${item.meta.title}${item.path}`,
-      value: item.path
-    }
-  })
-})
-
-function remoteMethod(data) {
-  // 这里可以执行相应的操作（例如打开搜索框等）
-  value.value = data
-}
-
-function handleChange(path) {
-  router.push({ path })
-  hiddenSearch()
-  hiddenTopSearch()
-}
+const router = useRouter()
+const showSearch = ref(false)
+const keyword = ref('')
 
 function hiddenSearch() {
-  showSearch.value = false
+    showSearch.value = false
 }
 
-function hiddenTopSearch() {
-  showTopSearch.value = false
+function submitSearch() {
+    const value = keyword.value.trim()
+    if (!value) return
+    router.push({
+        path: '/crm/clue/search',
+        query: { keyword: value }
+    })
+    hiddenSearch()
 }
 
 onMounted(() => {
-  window.addEventListener('keydown', listenKey)
-  window.addEventListener('click', hiddenTopSearch)
+    window.addEventListener('keydown', listenKey)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', listenKey)
-  window.removeEventListener('click', hiddenTopSearch)
+    window.removeEventListener('keydown', listenKey)
 })
 
-// 监听 ctrl + k
-function listenKey(event) {
-  if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
-    // 阻止触发浏览器默认事件
-    event.preventDefault()
-    showSearch.value = !showSearch.value
-    // 这里可以执行相应的操作（例如打开搜索框等）
-  }
+function listenKey(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault()
+        showSearch.value = !showSearch.value
+    }
 }
 
 defineExpose({
-  openSearch: () => {
-    showSearch.value = true
-  }
+    openSearch: () => {
+        showSearch.value = true
+    }
 })
 </script>
+
+<style scoped lang="scss">
+.router-search {
+    display: flex;
+    align-items: center;
+    width: 250px;
+    height: 36px;
+    margin-right: 8px;
+}
+
+.router-search :deep(.el-input__wrapper) {
+    height: 36px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    box-shadow: none;
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.router-search :deep(.el-input__inner) {
+    height: 36px;
+    line-height: 36px;
+    font-size: 13px;
+}
+
+.router-search :deep(.el-input__suffix-inner) {
+    cursor: pointer;
+}
+</style>

@@ -243,6 +243,20 @@ export interface ClueUpdateIntentLevelReqVO {
     intentLevel: number
 }
 
+export interface ClueSearchPageReqVO extends PageParam {
+    keyword: string
+}
+
+export interface ClueSearchPageRespVO {
+    id: number
+    customerId?: string
+    name?: string
+    currentOwnerName?: string
+    currentDepartmentName?: string
+    consultProjectName?: string
+    tagNames?: string[]
+}
+
 export interface ClueCopyMobileRespVO {
     mobile: string
     usedCount: number
@@ -512,6 +526,10 @@ export interface ClueComplaintTagImportRespVO {
 
 export const getCluePage = async (params: CluePageReqVO) => {
     return await request.get({ url: '/crm/clue/page', params })
+}
+
+export const getClueSearchPage = async (params: ClueSearchPageReqVO) => {
+    return await request.get({ url: '/crm/clue/search-page', params })
 }
 
 export const getClue = async (id: number) => {

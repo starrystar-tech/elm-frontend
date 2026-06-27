@@ -88,6 +88,7 @@
             :data="tableObject.tableList"
             :loading="tableObject.loading"
             :pagination="{ total: tableObject.total }"
+            :row-class-name="getRowClassName"
             row-key="id"
             selection
             reserve-selection
@@ -631,21 +632,6 @@ const tableColumns = computed<TableColumn[]>(() => [
     },
     { field: 'intentLevelName', label: '意向度', width: '100px' },
     {
-        field: 'feedbackStatus',
-        label: '反馈状态',
-        width: '100px',
-        slots: {
-            default: (data) => (
-                <span>
-                    {FEEDBACK_STATUS_OPTIONS.find((item) => item.value === data.row.feedbackStatus)
-                        ?.label ||
-                        data.row.feedbackStatusName ||
-                        '-'}
-                </span>
-            )
-        }
-    },
-    {
         field: 'name',
         label: '姓名',
         width: '150px',
@@ -660,10 +646,6 @@ const tableColumns = computed<TableColumn[]>(() => [
             )
         }
     },
-    { field: 'wechat', label: '微信', width: '130px' },
-    { field: 'qq', label: 'QQ', width: '120px' },
-    { field: 'clueSourceName', label: '来源', width: '130px' },
-    { field: 'assignModeName', label: '分配方式', width: '120px' },
     {
         field: 'currentOwnerName',
         label: '归属人',
@@ -681,12 +663,30 @@ const tableColumns = computed<TableColumn[]>(() => [
             }
         }
     },
+    { field: 'consultProjectName', label: '咨询项目', minWidth: '140px' },
     {
         field: 'region',
         label: '地区',
         minWidth: '160px',
         slots: { default: (data) => <span>{buildAreaLabel(data.row)}</span> }
     },
+    { field: 'clueSourceName', label: '来源', width: '130px' },
+    {
+        field: 'feedbackStatus',
+        label: '反馈状态',
+        width: '100px',
+        slots: {
+            default: (data) => (
+                <span>
+                    {FEEDBACK_STATUS_OPTIONS.find((item) => item.value === data.row.feedbackStatus)
+                        ?.label ||
+                        data.row.feedbackStatusName ||
+                        '-'}
+                </span>
+            )
+        }
+    },
+    { field: 'assignModeName', label: '分配方式', width: '120px' },
     { field: 'educationName', label: '学历', width: '100px' },
     { field: 'statusName', label: '客户状态', width: '110px' },
     {
@@ -701,7 +701,6 @@ const tableColumns = computed<TableColumn[]>(() => [
         minWidth: '150px',
         slots: { default: (data) => <span>{buildComplaintTagText(data.row)}</span> }
     },
-    { field: 'consultProjectName', label: '咨询项目', minWidth: '140px' },
     { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter },
     {
         field: 'creatorName',
@@ -711,6 +710,8 @@ const tableColumns = computed<TableColumn[]>(() => [
             default: (data) => <span>{data.row.creatorName || data.row.creator || '--'}</span>
         }
     },
+    { field: 'wechat', label: '微信', width: '130px' },
+    { field: 'qq', label: 'QQ', width: '120px' },
     {
         field: 'action',
         label: '操作',
@@ -796,6 +797,10 @@ const loadOptions = async () => {
 
 const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
     selectionList.value = rows || []
+}
+
+const getRowClassName = ({ row }: { row: ClueApi.ClueVO }) => {
+    return Number(row.currentOwnerId || 0) > 0 ? '' : 'clue-row--unassigned'
 }
 
 const mergeSearchParams = (params: SearchParams = {}): SearchParams => ({
@@ -1035,7 +1040,21 @@ onMounted(async () => {
 }
 
 .clue-owner-warning {
-    color: var(--el-color-warning);
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(230, 162, 60, 0.12);
+    color: #b26a00;
     font-weight: 600;
+    line-height: 1.2;
+}
+
+:deep(.el-table__row.clue-row--unassigned td) {
+    background: rgba(230, 162, 60, 0.08);
+}
+
+:deep(.el-table__row.clue-row--unassigned:hover td) {
+    background: rgba(230, 162, 60, 0.14) !important;
 }
 </style>

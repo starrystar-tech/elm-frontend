@@ -671,6 +671,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
                 component: () => import('@/views/crm/clue/detail/index.vue')
             },
             {
+                path: 'clue/search',
+                name: 'CrmClueSearch',
+                meta: {
+                    title: '客户搜索',
+                    noCache: true,
+                    hidden: true,
+                    activeMenu: '/crm/clue'
+                },
+                component: () => import('@/views/crm/clue/search.vue')
+            },
+            {
                 path: 'clue/silent',
                 name: 'CrmClueSilent',
                 meta: {
