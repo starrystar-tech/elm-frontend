@@ -91,10 +91,7 @@
     <ClueDetailDrawer ref="detailRef" @refresh="handleDetailRefresh" />
     <ClueSmsDialog ref="smsDialogRef" @success="handleDetailRefresh" />
     <ClueEnrollDialog ref="enrollRef" @success="handleDetailRefresh" />
-    <ComplaintTagImportDialog
-        ref="complaintImportDialogRef"
-        @success="handleDetailRefresh"
-    />
+    <ComplaintTagImportDialog ref="complaintImportDialogRef" @success="handleDetailRefresh" />
 
     <Dialog v-model="assignDialogVisible" title="批量分配客户" width="420px">
         <el-form label-width="90px">
@@ -176,7 +173,7 @@ import {
     type AreaOption,
     type LabelValueOption,
     type UserOption
-} from './listShared'
+} from './listShared.js'
 
 defineOptions({ name: 'CrmClueManager' })
 
@@ -395,7 +392,11 @@ const tableColumns = computed<TableColumn[]>(() => [
         minWidth: '120px',
         slots: {
             default: (data) => (
-                <ElLink underline={false} type="primary" onClick={() => openDetail(Number(data.row.id))}>
+                <ElLink
+                    underline={false}
+                    type="primary"
+                    onClick={() => openDetail(Number(data.row.id))}
+                >
                     {data.row.customerId || '--'}
                 </ElLink>
             )
