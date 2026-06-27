@@ -2,10 +2,14 @@
     <ContentWrap>
         <el-tabs v-model="activeTab" class="list-tabs-compact" @tab-change="handleTabChange">
             <el-tab-pane
-                v-for="tab in CUSTOMER_TABS"
+                v-for="tab in MANAGER_TABS"
                 :key="tab.value"
                 :name="tab.value"
-                :label="`${tab.label} (${counts[tab.countField] || 0})`"
+                :label="
+                    'countField' in tab
+                        ? `${tab.label} (${counts[tab.countField] || 0})`
+                        : `${tab.label} (${totalCount})`
+                "
             />
         </el-tabs>
         <div class="tab-content-wrap">
@@ -176,6 +180,8 @@ import {
 
 defineOptions({ name: 'CrmClueManager' })
 
+const MANAGER_TABS = [{ label: '全部', value: 'ALL' as const }, ...CUSTOMER_TABS]
+
 interface ManagerSearchParams {
     customer?: string
     mobile?: string
@@ -202,7 +208,7 @@ const smsDialogRef = ref<InstanceType<typeof ClueSmsDialog>>()
 const complaintImportDialogRef = ref<InstanceType<typeof ComplaintTagImportDialog>>()
 const enrollRef = ref<InstanceType<typeof ClueEnrollDialog>>()
 const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
-const activeTab = ref('FIRST')
+const activeTab = ref('ALL')
 const selectionList = ref<ClueApi.ClueManagementPageRespVO[]>([])
 const areaOptions = ref<AreaOption[]>([])
 const userOptions = ref<UserOption[]>([])
@@ -216,6 +222,14 @@ const counts = reactive({
     waitReturnCount: 0,
     returnedCount: 0
 })
+const totalCount = computed(
+    () =>
+        Number(counts.firstCount || 0) +
+        Number(counts.seaCount || 0) +
+        Number(counts.repurchaseCount || 0) +
+        Number(counts.waitReturnCount || 0) +
+        Number(counts.returnedCount || 0)
+)
 const assignDialogVisible = ref(false)
 const releaseDialogVisible = ref(false)
 const pendingAssignIds = ref<number[] | null>(null)
