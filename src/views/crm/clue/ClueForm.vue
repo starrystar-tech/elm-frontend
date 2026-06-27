@@ -113,7 +113,7 @@
                 </el-col>
 
                 <el-col :span="12">
-                    <el-form-item label="证件类型">
+                    <el-form-item label="证件类型" prop="certificateType">
                         <el-select
                             v-model="formData.certificateType"
                             clearable
@@ -127,7 +127,7 @@
                     </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                    <el-form-item label="证件号码">
+                    <el-form-item label="证件号码" prop="idCardNo">
                         <el-input v-model="formData.idCardNo" placeholder="请输入证件号码" />
                     </el-form-item>
                 </el-col>
@@ -178,6 +178,7 @@ import * as ClueApi from '@/api/crm/clue'
 import * as ClueSourceApi from '@/api/system/clueSource'
 import * as TagGroupApi from '@/api/system/tag-group'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
+import { isValidChineseIdCard, normalizeIdCardNo } from '@/utils/idCard'
 
 interface FormData {
     mobile: string
@@ -236,12 +237,26 @@ const createDefaultFormData = (): FormData => ({
 
 const formData = ref<FormData>(createDefaultFormData())
 
+const validateIdCardNo = (_rule: any, value: string, callback: (error?: Error) => void) => {
+    const idCardNo = String(value || '').trim()
+    if (!idCardNo || formData.value.certificateType !== '身份证') {
+        callback()
+        return
+    }
+    if (!isValidChineseIdCard(idCardNo)) {
+        callback(new Error('请输入合法的身份证号码'))
+        return
+    }
+    callback()
+}
+
 const formRules = reactive({
     mobile: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
     name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
     clueSourceId: [{ required: true, message: '请选择来源', trigger: 'change' }],
     areaId: [{ required: true, message: '请选择地区', trigger: 'change' }],
-    consultProjectId: [{ required: true, message: '请选择咨询项目', trigger: 'change' }]
+    consultProjectId: [{ required: true, message: '请选择咨询项目', trigger: 'change' }],
+    idCardNo: [{ validator: validateIdCardNo, trigger: 'blur' }]
 })
 
 const loadOptions = async () => {
@@ -312,7 +327,7 @@ const submitForm = async () => {
                 qq: formData.value.qq?.trim() || undefined,
                 name: formData.value.name.trim() || undefined,
                 certificateType: formData.value.certificateType?.trim() || undefined,
-                idCardNo: formData.value.idCardNo?.trim() || undefined,
+                idCardNo: normalizeIdCardNo(formData.value.idCardNo) || undefined,
                 gender: formData.value.gender,
                 education: formData.value.education,
                 intentLevel: formData.value.intentLevel,
@@ -338,7 +353,7 @@ const submitForm = async () => {
                 wechat2: formData.value.wechat2?.trim() || undefined,
                 qq: formData.value.qq?.trim() || undefined,
                 certificateType: formData.value.certificateType?.trim() || undefined,
-                idCardNo: formData.value.idCardNo?.trim() || undefined,
+                idCardNo: normalizeIdCardNo(formData.value.idCardNo) || undefined,
                 gender: formData.value.gender,
                 education: formData.value.education,
                 intentLevel: formData.value.intentLevel,

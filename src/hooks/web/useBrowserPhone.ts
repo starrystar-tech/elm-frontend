@@ -834,6 +834,9 @@ const createBrowserClient = async () => {
                 browserRegistered.value = false
                 incomingCall.value = false
                 activeCall.value = false
+                hideIncomingToast()
+                stopIncomingRing()
+                stopOutgoingWaitingTone()
                 stopCallTimer()
                 updateBrowserStatus(browserConnecting.value ? '注册失败' : '未注册')
                 const reason = browserDisconnecting.value
@@ -857,6 +860,9 @@ const createBrowserClient = async () => {
                 browserRegistered.value = false
                 incomingCall.value = false
                 activeCall.value = false
+                hideIncomingToast()
+                stopIncomingRing()
+                stopOutgoingWaitingTone()
                 stopCallTimer()
                 updateBrowserStatus(browserDisconnecting.value ? '未连接' : '连接断开')
                 const reason = error
@@ -880,6 +886,15 @@ const createBrowserClient = async () => {
             ...sessionManager.delegate,
             onCallReceived: () => {
                 const session = getCurrentBrowserSession()
+                const sessionState = getBrowserSessionState(session)
+                if (sessionState && sessionState !== 'Initial') {
+                    traceBrowserStep(
+                        'CALL_RECEIVED_IGNORED',
+                        `unexpected session state=${sessionState}`,
+                        'danger'
+                    )
+                    return
+                }
                 resetCurrentCallTerminationHandled()
                 attachSessionTerminationListener(session)
                 currentSessionDirection.value = 'incoming'

@@ -131,6 +131,7 @@ import * as DeptApi from '@/api/system/dept'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ClueMergeDialog from './components/ClueMergeDialog.vue'
 import ClueNameCell from './components/ClueNameCell.vue'
+import { buildOwnerDisplayName, prependUnassignedOwnerOption } from './listShared'
 
 defineOptions({ name: 'CrmClueAllocation' })
 
@@ -290,7 +291,23 @@ const tableColumns = computed<TableColumn[]>(() => [
                 })
         }
     },
-    { field: 'currentOwnerName', label: '当前归属人', width: '120px' },
+    {
+        field: 'currentOwnerName',
+        label: '当前归属人',
+        width: '120px',
+        slots: {
+            default: (data) => {
+                const hasOwner = Number(data.row.currentOwnerId || 0) > 0
+                return hasOwner ? (
+                    <span>
+                        {buildOwnerDisplayName(data.row.currentOwnerName, data.row.currentOwnerId)}
+                    </span>
+                ) : (
+                    <span class="clue-owner-warning">无归属人</span>
+                )
+            }
+        }
+    },
     { field: 'currentDepartmentName', label: '当前归属部门', width: '140px' },
     { field: 'firstAllocationOwnerName', label: '首次分配人', width: '120px' },
     { field: 'firstAllocationDepartmentName', label: '首次分配部门', width: '140px' },
@@ -337,11 +354,13 @@ const loadOptions = async () => {
         UserApi.getSimpleUserList(),
         DeptApi.getSimpleDeptList()
     ])
-    userOptions.value = (users || []).map((item) => ({
-        label: item.nickname || item.username,
-        value: item.id,
-        deptId: item.deptId
-    }))
+    userOptions.value = prependUnassignedOwnerOption(
+        (users || []).map((item) => ({
+            label: item.nickname || item.username,
+            value: item.id,
+            deptId: item.deptId
+        }))
+    )
     deptOptions.value = depts || []
     const ownerField = searchSchema.find((item) => item.field === 'currentOwnerId')
     if (ownerField?.componentProps) {
@@ -451,3 +470,10 @@ onMounted(async () => {
     tableMethods.getList()
 })
 </script>
+
+<style lang="scss" scoped>
+.clue-owner-warning {
+    color: var(--el-color-warning);
+    font-weight: 600;
+}
+</style>

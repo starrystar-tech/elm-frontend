@@ -1,6 +1,6 @@
 <script lang="tsx">
 import { defineComponent, computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { ElBadge, ElButton, ElInput } from 'element-plus'
+import { ElBadge, ElButton, ElInput, ElPopover } from 'element-plus'
 import { Message } from '@/layout/components//Message'
 import { Collapse } from '@/layout/components/Collapse'
 import { UserInfo } from '@/layout/components/UserInfo'
@@ -14,7 +14,9 @@ import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
 import { checkPermi } from '@/utils/permission'
 import { getExportTaskReminderSummary, markExportTaskCenterViewed } from '@/api/system/exportTask'
-import { updateUserOutboundStatus } from '@/api/system/user/profile'
+import { getOtherSettingConfig } from '@/api/crm/otherSettingConfig'
+import { updateUserOutboundStatus, updateUserProfile } from '@/api/system/user/profile'
+import { getOutboundRouteSimpleList, type OutboundRouteVO } from '@/api/system/call/router'
 import { useBrowserPhone } from '@/hooks/web/useBrowserPhone'
 import { useOutboundDial } from '@/hooks/web/useOutboundDial'
 import { useEmitt } from '@/hooks/web/useEmitt'
@@ -66,6 +68,11 @@ export default defineComponent({
         const newExportTaskCount = ref(0)
         const outboundStatus = ref(0)
         const outboundStatusLoading = ref(false)
+        const outboundRouteSaving = ref(false)
+        const outboundRoutePopoverVisible = ref(false)
+        const outboundRouteOptions = ref<OutboundRouteVO[]>([])
+        const selectedOutboundRouteId = ref<number | undefined>()
+        const systemOutboundRouteId = ref<number | undefined>()
         let exportTaskTimer: number | undefined
         const messageApi = useMessage()
         const {
@@ -119,9 +126,28 @@ export default defineComponent({
             ) {
                 return browserStatus.value
             }
-            return outboundSignedIn.value ? '外呼已签入' : '外呼已签出'
+            return outboundSignedIn.value ? '已连接' : '未连接'
         })
         const outboundStatusActionLabel = computed(() => (outboundSignedIn.value ? '签出' : '签入'))
+        const availableOutboundRouteOptions = computed(() => {
+            const currentId = Number(
+                selectedOutboundRouteId.value || profile.outboundRouteId || systemOutboundRouteId.value || 0
+            ) || 0
+            return outboundRouteOptions.value.filter(
+                (item) =>
+                    (item.status === 0 || Number(item.id) === currentId) &&
+                    Number(item.id) !== Number(systemOutboundRouteId.value || 0)
+            )
+        })
+        const effectiveOutboundRouteId = computed(
+            () => selectedOutboundRouteId.value || systemOutboundRouteId.value
+        )
+        const effectiveOutboundRoute = computed(() =>
+            outboundRouteOptions.value.find((item) => Number(item.id) === Number(effectiveOutboundRouteId.value))
+        )
+        const outboundRouteTriggerText = computed(() =>
+            effectiveOutboundRoute.value?.name || '系统默认线路'
+        )
         const dialerStatusType = computed(() => {
             if (browserStatus.value === '通话中') return 'inCall'
             if (browserStatus.value === '呼叫中' || browserStatus.value === '来电响铃')
@@ -205,8 +231,15 @@ export default defineComponent({
 
         const loadOutboundProfile = async () => {
             try {
-                await reloadProfile()
+                const [routeList, otherConfig] = await Promise.all([
+                    getOutboundRouteSimpleList(),
+                    getOtherSettingConfig(),
+                    reloadProfile()
+                ])
+                outboundRouteOptions.value = routeList || []
+                systemOutboundRouteId.value = otherConfig?.outboundRouteId
                 outboundStatus.value = profile.outboundStatus === 1 ? 1 : 0
+                selectedOutboundRouteId.value = profile.outboundRouteId
                 const seat = resolveSeatExtension()
                 applyBrowserPhoneCredentials({
                     username: seat,
@@ -223,6 +256,26 @@ export default defineComponent({
             } catch (error) {
                 console.warn('[ToolHeader] load outbound profile failed', error)
                 outboundStatus.value = 0
+            }
+        }
+
+        const handleOutboundRouteChange = async (value?: number) => {
+            if (outboundRouteSaving.value) {
+                return
+            }
+            outboundRouteSaving.value = true
+            try {
+                const nextValue = value && value !== systemOutboundRouteId.value ? value : undefined
+                await updateUserProfile({ outboundRouteId: nextValue })
+                profile.outboundRouteId = nextValue
+                selectedOutboundRouteId.value = nextValue
+                outboundRoutePopoverVisible.value = false
+                messageApi.success(nextValue ? '外呼线路已切换' : '已切换为系统默认线路')
+            } catch (error: any) {
+                selectedOutboundRouteId.value = profile.outboundRouteId
+                messageApi.error(error?.message || '更新外呼线路失败')
+            } finally {
+                outboundRouteSaving.value = false
             }
         }
 
@@ -317,40 +370,110 @@ export default defineComponent({
                             onDial={handleBrowserDial}
                             onHangup={handleBrowserHangup}
                         >
-                            <div
-                                class="outbound-toolbar__reference"
-                                onMousedown={(event: MouseEvent) => {
-                                    event.stopPropagation()
-                                    dialerRef.value?.holdOpen?.()
-                                }}
-                            >
-                                <button
-                                    type="button"
+                            <div class="outbound-toolbar__reference">
+                                <div
                                     class={[
-                                        'outbound-toolbar__status',
+                                        'outbound-toolbar__group',
                                         outboundSignedIn.value ? 'is-signed-in' : 'is-signed-out'
                                     ]}
-                                    onMousedown={(event: MouseEvent) => {
-                                        event.stopPropagation()
-                                        dialerRef.value?.holdOpen?.()
-                                    }}
-                                    onClick={(event: MouseEvent) => {
-                                        event.stopPropagation()
-                                        dialerRef.value?.openDialer?.()
-                                        toggleOutboundStatus()
-                                    }}
-                                    disabled={outboundStatusLoading.value || browserLoading.value}
                                 >
-                                    <span class="outbound-toolbar__status-dot"></span>
-                                    <span class="outbound-toolbar__status-text">
-                                        {outboundStatusLabel.value}
-                                    </span>
-                                    <span class="outbound-toolbar__status-action">
-                                        {outboundStatusLoading.value
-                                            ? '...'
-                                            : outboundStatusActionLabel.value}
-                                    </span>
-                                </button>
+                                    <ElPopover
+                                        visible={outboundRoutePopoverVisible.value}
+                                        trigger="click"
+                                        placement="bottom"
+                                        width={220}
+                                        popperClass="outbound-toolbar__route-popper"
+                                        onUpdate:visible={(value: boolean) => {
+                                            outboundRoutePopoverVisible.value = value
+                                        }}
+                                    >
+                                        {{
+                                            reference: () => (
+                                                <button
+                                                    type="button"
+                                                    class="outbound-toolbar__route-trigger"
+                                                    onMousedown={(event: MouseEvent) => {
+                                                        event.stopPropagation()
+                                                    }}
+                                                    onClick={(event: MouseEvent) => {
+                                                        event.stopPropagation()
+                                                    }}
+                                                >
+                                                    <Icon
+                                                        class="outbound-toolbar__route-icon"
+                                                        icon="svg-icon:route"
+                                                        size={14}
+                                                    />
+                                                    <span class="outbound-toolbar__route-name">
+                                                        {outboundRouteTriggerText.value}
+                                                    </span>
+                                                </button>
+                                            ),
+                                            default: () => (
+                                                <div class="outbound-toolbar__route-menu">
+                                                    {systemOutboundRouteId.value ? (
+                                                        <button
+                                                            type="button"
+                                                            class={[
+                                                                'outbound-toolbar__route-option',
+                                                                !selectedOutboundRouteId.value &&
+                                                                    'is-active'
+                                                            ]}
+                                                            onClick={() =>
+                                                                handleOutboundRouteChange(
+                                                                    systemOutboundRouteId.value
+                                                                )
+                                                            }
+                                                        >
+                                                            <strong>
+                                                                {outboundRouteOptions.value.find(
+                                                                    (item) =>
+                                                                        Number(item.id) ===
+                                                                        Number(systemOutboundRouteId.value)
+                                                                )?.name || '未配置'}
+                                                            </strong>
+                                                            <span>系统默认</span>
+                                                        </button>
+                                                    ) : undefined}
+                                                    {availableOutboundRouteOptions.value.map((item) => (
+                                                        <button
+                                                            key={item.id}
+                                                            type="button"
+                                                            class={[
+                                                                'outbound-toolbar__route-option',
+                                                                Number(selectedOutboundRouteId.value) ===
+                                                                    Number(item.id) && 'is-active'
+                                                            ]}
+                                                            onClick={() => handleOutboundRouteChange(item.id)}
+                                                        >
+                                                            <span>{item.name}</span>
+                                                            {Number(systemOutboundRouteId.value) ===
+                                                            Number(item.id) ? (
+                                                                <em>默认</em>
+                                                            ) : undefined}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )
+                                        }}
+                                    </ElPopover>
+                                    <button
+                                        type="button"
+                                        class="outbound-toolbar__status-action"
+                                        onMousedown={(event: MouseEvent) => {
+                                            event.stopPropagation()
+                                            dialerRef.value?.holdOpen?.()
+                                        }}
+                                        onClick={(event: MouseEvent) => {
+                                            event.stopPropagation()
+                                            dialerRef.value?.openDialer?.()
+                                            toggleOutboundStatus()
+                                        }}
+                                        disabled={outboundStatusLoading.value || browserLoading.value}
+                                    >
+                                        {outboundStatusLoading.value ? '...' : outboundStatusActionLabel.value}
+                                    </button>
+                                </div>
                                 <ElInput
                                     v-model={dialerMobile.value}
                                     ref={dialerInputRef}
@@ -480,33 +603,15 @@ $prefix-cls: #{$namespace}-tool-header;
         gap: 8px;
     }
 
-    &__status {
+    &__group {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        min-width: 152px;
+        gap: 6px;
         height: 36px;
-        padding: 0 12px;
-        border: none;
+        padding: 0 6px 0 8px;
         border-radius: 999px;
-        font-size: 12px;
-        transition:
-            transform 0.2s ease,
-            box-shadow 0.2s ease,
-            background 0.2s ease;
-        cursor: pointer;
-
-        &:disabled {
-            cursor: wait;
-            opacity: 0.88;
-        }
-
-        &:not(:disabled):hover {
-            transform: translateY(-1px);
-        }
 
         &.is-signed-in {
-            color: #0f5132;
             background: linear-gradient(
                 135deg,
                 rgba(220, 252, 231, 0.98),
@@ -516,13 +621,12 @@ $prefix-cls: #{$namespace}-tool-header;
         }
 
         &.is-signed-out {
-            color: #7c2d12;
             background: linear-gradient(
                 135deg,
-                rgba(255, 237, 213, 0.98),
-                rgba(254, 215, 170, 0.9)
+                rgba(255, 247, 237, 0.92),
+                rgba(255, 237, 213, 0.82)
             );
-            box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.18);
+            box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.1);
         }
     }
 
@@ -531,23 +635,28 @@ $prefix-cls: #{$namespace}-tool-header;
         height: 9px;
         border-radius: 999px;
         flex: none;
-        background: currentColor;
+        background: #909399;
         box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.35);
     }
 
-    &__status-text {
-        font-weight: 600;
-        letter-spacing: 0.01em;
-    }
-
     &__status-action {
-        margin-left: auto;
-        padding: 2px 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 68px;
+        height: 28px;
+        padding: 0 14px;
+        border: none;
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.72);
         color: rgba(15, 23, 42, 0.72);
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 600;
+
+        &:disabled {
+            cursor: wait;
+            opacity: 0.88;
+        }
     }
 
     &__input {
@@ -557,6 +666,67 @@ $prefix-cls: #{$namespace}-tool-header;
             border-radius: 999px;
             box-shadow: none;
             background: rgba(255, 255, 255, 0.92);
+        }
+    }
+
+    &__route-trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 28px;
+        max-width: 180px;
+        padding: 0 10px 0 2px;
+        border: none;
+        border-radius: 999px;
+        background: transparent;
+        color: rgba(51, 65, 85, 0.88);
+        cursor: pointer;
+    }
+
+    &__route-icon {
+        color: rgba(71, 85, 105, 0.82);
+    }
+
+    &__route-name {
+        max-width: 132px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    &__route-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    &__route-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 12px;
+        background: #fff;
+        color: #334155;
+        cursor: pointer;
+
+        &.is-active {
+            border-color: rgba(37, 99, 235, 0.26);
+            background: rgba(239, 246, 255, 0.92);
+            color: #1d4ed8;
+        }
+
+        strong,
+        em {
+            font-style: normal;
+            font-size: 12px;
+            color: inherit;
+            opacity: 0.8;
         }
     }
 
@@ -591,6 +761,11 @@ $prefix-cls: #{$namespace}-tool-header;
     align-items: center;
     justify-content: center;
     height: 100%;
+}
+
+:global(.outbound-toolbar__route-popper) {
+    z-index: 5001 !important;
+    padding: 10px !important;
 }
 
 :global(.dark) {

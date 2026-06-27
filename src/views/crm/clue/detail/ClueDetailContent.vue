@@ -9,9 +9,7 @@
                 />
             </template>
             <template #subline>
-                <span
-                    >归属：{{ clue.currentOwnerName || customerBasicInfo?.ownerName || '--' }}</span
-                >
+                <span>归属：{{ ownerText }}</span>
                 <span
                     >部门：{{
                         clue.currentDepartmentName || customerBasicInfo?.departmentName || '--'
@@ -129,7 +127,7 @@
                             <el-form-item label="QQ">
                                 <el-input v-model="editForm.qq" placeholder="请输入QQ" />
                             </el-form-item>
-                            <el-form-item label="证件类型">
+                            <el-form-item label="证件类型" prop="certificateType">
                                 <el-select
                                     v-model="editForm.certificateType"
                                     clearable
@@ -141,7 +139,7 @@
                                     <el-option label="港澳通行证" value="港澳通行证" />
                                 </el-select>
                             </el-form-item>
-                            <el-form-item label="证件号码">
+                            <el-form-item label="证件号码" prop="idCardNo">
                                 <el-input
                                     v-model="editForm.idCardNo"
                                     placeholder="请输入证件号码"
@@ -502,7 +500,7 @@
                                         {{ formatCallDuration(row.durationSeconds) }}
                                     </template>
                                 </el-table-column>
-                                <el-table-column label="录音" min-width="250">
+                                <el-table-column label="录音" min-width="340">
                                     <template #default="{ row }">
                                         <AudioPlayer
                                             v-if="row.recordingFileUrl"
@@ -795,12 +793,13 @@ import type * as SmsLogApi from '@/api/system/sms/smsLog'
 import * as UserApi from '@/api/system/user'
 import { DICT_TYPE, getDictLabel, getIntDictOptions } from '@/utils/dict'
 import { resolveTimestamp } from '@/utils/formatTime'
+import { isValidChineseIdCard } from '@/utils/idCard'
 import { getAftersalesStatusLabel } from '@/views/aftersales/config'
 import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
 import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 import ClueIntentLevel from '@/components/ClueIntentLevel'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
-import { buildAreaLabel } from '@/views/crm/clue/listShared'
+import { buildAreaLabel, buildOwnerDisplayName } from '@/views/crm/clue/listShared'
 import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
 import { useOutboundDial } from '@/hooks/web/useOutboundDial'
 import AudioPlayer from '@/components/AudioPlayer/index.vue'
@@ -854,6 +853,13 @@ const consultTypeOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_CONSULT_TYPE)
 
 const regionText = computed(() => {
     return buildAreaLabel(props.clue)
+})
+
+const ownerText = computed(() => {
+    return buildOwnerDisplayName(
+        props.clue.currentOwnerName || props.customerBasicInfo?.ownerName,
+        props.clue.currentOwnerId || props.customerBasicInfo?.ownerId
+    )
 })
 
 const weworkCustomerCard = computed(() => props.weworkContacts?.[0])
@@ -920,12 +926,26 @@ const consultForm = reactive({
     consultContent: props.clue.contactLastContent || ''
 })
 
+const validateIdCardNo = (_rule: any, value: string, callback: (error?: Error) => void) => {
+    const idCardNo = String(value || '').trim()
+    if (!idCardNo || editForm.certificateType !== '身份证') {
+        callback()
+        return
+    }
+    if (!isValidChineseIdCard(idCardNo)) {
+        callback(new Error('请输入合法的身份证号码'))
+        return
+    }
+    callback()
+}
+
 const editRules = reactive({
     mobile: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
     name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
     clueSourceId: [{ required: true, message: '请选择来源', trigger: 'change' }],
     areaId: [{ required: true, message: '请选择地区', trigger: 'change' }],
-    consultProjectId: [{ required: true, message: '请选择咨询项目', trigger: 'change' }]
+    consultProjectId: [{ required: true, message: '请选择咨询项目', trigger: 'change' }],
+    idCardNo: [{ validator: validateIdCardNo, trigger: 'blur' }]
 })
 
 const consultRules = reactive({

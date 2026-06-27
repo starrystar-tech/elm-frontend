@@ -228,7 +228,7 @@ const tableColumns = reactive<TableColumn[]>([
     {
         field: 'recordingFileUrl',
         label: '通话录音',
-        width: '250px',
+        width: '340px',
         showOverflowTooltip: false,
         slots: {
             default: (data) => {

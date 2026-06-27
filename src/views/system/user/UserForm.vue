@@ -216,6 +216,26 @@
             </el-row>
 
             <el-row>
+                <el-col :span="12">
+                    <el-form-item label="外呼线路">
+                        <el-select
+                            v-model="formData.outboundRouteId"
+                            clearable
+                            placeholder="请选择外呼线路"
+                        >
+                            <el-option
+                                v-for="item in outboundRouteList"
+                                :key="item.id"
+                                :label="item.status === 1 ? `${item.name}（已禁用）` : item.name"
+                                :value="item.id!"
+                            />
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12" />
+            </el-row>
+
+            <el-row>
                 <el-col :span="24">
                     <el-form-item label="备注">
                         <el-input
@@ -362,6 +382,7 @@ import * as WeworkContactApi from '@/api/crm/wework/contact'
 import * as CampusApi from '@/api/system/campus'
 import * as AreaApi from '@/api/system/area'
 import * as ProductCategoryApi from '@/api/crm/product/category'
+import * as OutboundRouteApi from '@/api/system/call/router'
 import WeworkAccountSelector from './components/WeworkAccountSelector.vue'
 import UserLevelSelect from '@/components/UserLevelSelect.vue'
 import { FormRules } from 'element-plus'
@@ -401,6 +422,7 @@ const formData = ref({
     callExt: '',
     callPassword: '',
     callerDisplayNumber: '',
+    outboundRouteId: undefined as number | undefined,
     mobileCopyLimitTimes: undefined as number | undefined,
     manageCompanyIds: [] as number[],
     campusIds: [] as number[],
@@ -431,6 +453,7 @@ const weappList = ref([] as WeappApi.WeappConfigVO[])
 const campusList = ref([] as CampusApi.CampusVO[])
 const areaTreeList = ref<Tree[]>([])
 const rootCategoryList = ref<any[]>([])
+const outboundRouteList = ref([] as OutboundRouteApi.OutboundRouteVO[])
 const wecomMemberList = ref([] as WeworkContactApi.WeworkMemberSimpleVO[])
 const occupiedWecomKeys = ref<string[]>([])
 
@@ -484,7 +507,7 @@ const open = async (type: string, id?: number) => {
     resetForm()
     formRenderKey.value += 1
 
-    const [deptData, postData, weappData, wecomMembers, campusData, areaData, categoryData] =
+    const [deptData, postData, weappData, wecomMembers, campusData, areaData, categoryData, routeData] =
         await Promise.all([
             DeptApi.getSimpleDeptList(),
             PostApi.getSimplePostList(),
@@ -492,7 +515,8 @@ const open = async (type: string, id?: number) => {
             WeworkContactApi.getWeworkMemberSimpleList(),
             CampusApi.getSimpleCampusList(),
             AreaApi.getAreaTree(),
-            ProductCategoryApi.getProductCategorySimpleList()
+            ProductCategoryApi.getProductCategorySimpleList(),
+            OutboundRouteApi.getOutboundRouteSimpleList()
         ])
     deptList.value = handleTree(deptData)
     postList.value = postData
@@ -500,6 +524,7 @@ const open = async (type: string, id?: number) => {
     campusList.value = campusData || []
     areaTreeList.value = areaData || []
     rootCategoryList.value = (categoryData || []).filter((item: any) => Number(item.level) === 1)
+    outboundRouteList.value = routeData || []
     wecomMemberList.value = (wecomMembers || []).map((item: any) => ({
         corpId: item.corpId,
         corpName: item.corpName || item.corpId,
@@ -529,6 +554,7 @@ const open = async (type: string, id?: number) => {
                 callExt: detail.callExt || '',
                 callPassword: detail.callPassword || '',
                 callerDisplayNumber: detail.callerDisplayNumber || '',
+                outboundRouteId: detail.outboundRouteId,
                 mobileCopyLimitTimes: detail.mobileCopyLimitTimes
             }
         } finally {
@@ -596,6 +622,7 @@ const resetForm = () => {
         callExt: '',
         callPassword: '',
         callerDisplayNumber: '',
+        outboundRouteId: undefined,
         mobileCopyLimitTimes: undefined,
         manageCompanyIds: [],
         campusIds: [],

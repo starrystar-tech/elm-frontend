@@ -26,7 +26,13 @@
             </template>
             <template #actions>
                 <el-button @click="goBack">返回</el-button>
-                <el-button type="success" plain @click="handleContractSign()">签署合同</el-button>
+                <el-button
+                    type="success"
+                    plain
+                    :disabled="!canSignContract"
+                    @click="handleContractSign()"
+                    >签署合同</el-button
+                >
                 <el-button type="primary" plain @click="handlePay">支付</el-button>
                 <el-button type="warning" plain @click="handleRefund">退款</el-button>
                 <el-button type="danger" plain @click="handleVoid">作废</el-button>
@@ -251,6 +257,7 @@
                                 <el-button
                                     link
                                     type="success"
+                                    :disabled="!canSignContract"
                                     @click="handleContractSign(row.productId)"
                                 >
                                     签署合同
@@ -330,6 +337,7 @@ import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
 import OrderContractSignDialog from './OrderContractSignDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import {
+    canSignOrderContract,
     ORDER_STATUS_OPTIONS,
     PAY_CONFIRM_STATUS_OPTIONS,
     PAY_STATUS_OPTIONS,
@@ -384,6 +392,7 @@ const orderOwnerText = computed(() => {
     const campus = detail.value.campusName ? `（${detail.value.campusName}）` : ''
     return `${owner}${campus}`
 })
+const canSignContract = computed(() => canSignOrderContract(detail.value))
 const consultTagText = computed(() => {
     const tags = consultBasicInfo.value?.tags || []
     return tags.length ? tags.map((item) => item.name).join('、') : '-'
@@ -515,6 +524,10 @@ const handleRepurchase = async () => {
 }
 
 const handleContractSign = (productId?: number) => {
+    if (!canSignContract.value) {
+        message.warning('订单支付后才可以签署合同')
+        return
+    }
     contractSignRef.value?.open(detail.value, productId)
 }
 

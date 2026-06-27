@@ -80,6 +80,7 @@ import { hasPermission } from '@/directives/permission/hasPermi'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ExportTaskDialog from './components/ExportTaskDialog.vue'
 import ClueNameCell from './components/ClueNameCell.vue'
+import { buildOwnerDisplayName, prependUnassignedOwnerOption } from './listShared'
 
 defineOptions({ name: 'CrmClueSilent' })
 
@@ -211,7 +212,23 @@ const tableColumns = computed<TableColumn[]>(() => [
                 })
         }
     },
-    { field: 'currentOwnerName', label: '归属人', width: '120px' },
+    {
+        field: 'currentOwnerName',
+        label: '归属人',
+        width: '120px',
+        slots: {
+            default: (data) => {
+                const hasOwner = Number(data.row.currentOwnerId || 0) > 0
+                return hasOwner ? (
+                    <span>
+                        {buildOwnerDisplayName(data.row.currentOwnerName, data.row.currentOwnerId)}
+                    </span>
+                ) : (
+                    <span class="clue-owner-warning">无归属人</span>
+                )
+            }
+        }
+    },
     { field: 'currentDepartmentName', label: '所属部门', width: '140px' },
     { field: 'consultProjectName', label: '咨询项目', minWidth: '160px' },
     { field: 'intentLevelName', label: '意向度', width: '100px' },
@@ -242,11 +259,13 @@ const tableColumns = computed<TableColumn[]>(() => [
 
 const loadOptions = async () => {
     const [users, depts] = await Promise.all([UserApi.getSimpleUserList(), DeptApi.getSimpleDeptList()])
-    userOptions.value = (users || []).map((item) => ({
-        label: item.nickname || item.username,
-        value: item.id,
-        deptId: item.deptId
-    }))
+    userOptions.value = prependUnassignedOwnerOption(
+        (users || []).map((item) => ({
+            label: item.nickname || item.username,
+            value: item.id,
+            deptId: item.deptId
+        }))
+    )
     deptOptions.value = depts || []
     const ownerField = searchSchema.find((item) => item.field === 'currentOwnerId')
     if (ownerField?.componentProps) {
@@ -337,3 +356,10 @@ onMounted(async () => {
     tableMethods.getList()
 })
 </script>
+
+<style lang="scss" scoped>
+.clue-owner-warning {
+    color: var(--el-color-warning);
+    font-weight: 600;
+}
+</style>

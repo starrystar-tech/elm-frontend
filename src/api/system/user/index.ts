@@ -23,6 +23,7 @@ export interface UserVO {
   callPassword?: string
   callerDisplayNumber?: string
   outboundStatus?: number
+  outboundRouteId?: number
   mobileCopyLimitTimes?: number
   manageCompanyIds?: number[]
   companyName?: string

@@ -107,7 +107,7 @@
                             {{ formatCallDuration(row.durationSeconds) }}
                         </template>
                     </el-table-column>
-                    <el-table-column label="录音" min-width="250">
+                    <el-table-column label="录音" min-width="340">
                         <template #default="{ row }">
                             <AudioPlayer
                                 v-if="row.recordingFileUrl"

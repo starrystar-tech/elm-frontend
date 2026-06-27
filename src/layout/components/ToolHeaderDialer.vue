@@ -1,6 +1,6 @@
 <template>
     <div ref="rootRef" class="tool-header-dialer">
-        <div ref="referenceRef" class="tool-header-dialer__reference" @click="openDialer">
+        <div ref="referenceRef" class="tool-header-dialer__reference">
             <slot></slot>
         </div>
 

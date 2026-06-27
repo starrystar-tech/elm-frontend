@@ -92,6 +92,7 @@ import * as ClueSourceApi from '@/api/system/clueSource'
 import * as SmsLogApi from '@/api/system/sms/smsLog'
 import * as TagGroupApi from '@/api/system/tag-group'
 import { hasPermission } from '@/directives/permission/hasPermi'
+import { normalizeIdCardNo } from '@/utils/idCard'
 import ClueSmsDialog from '../ClueSmsDialog.vue'
 import ClueEnrollDialog from './ClueEnrollDialog.vue'
 import ClueDetailContent from './ClueDetailContent.vue'
@@ -284,7 +285,7 @@ const handleSave = async (payload: { formRef: any; formData: any }) => {
             wechatRemark: formData.wechatRemark?.trim() || undefined,
             qq: formData.qq?.trim() || undefined,
             avatar: formData.avatar?.trim() || undefined,
-            idCardNo: formData.idCardNo?.trim() || undefined,
+            idCardNo: normalizeIdCardNo(formData.idCardNo) || undefined,
             certificateType: formData.certificateType?.trim() || undefined,
             occupation: formData.occupation?.trim() || undefined,
             emergencyMobile: formData.emergencyMobile?.trim() || undefined,

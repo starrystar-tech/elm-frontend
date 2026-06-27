@@ -17,7 +17,7 @@
 
 <script lang="ts" setup>
 import * as ClueApi from '@/api/crm/clue'
-import { buildAreaLabel } from '@/views/crm/clue/listShared'
+import { buildAreaLabel, buildOwnerDisplayName } from '@/views/crm/clue/listShared'
 import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
 
 const props = defineProps<{
@@ -27,7 +27,9 @@ const props = defineProps<{
 
 const avatarText = computed(() => (props.clue.name || '学').slice(0, 1))
 
-const currentOwnerText = computed(() => props.clue.currentOwnerName || '--')
+const currentOwnerText = computed(() =>
+    buildOwnerDisplayName(props.clue.currentOwnerName, props.clue.currentOwnerId)
+)
 
 const headteacherText = computed(() => props.clue.headteacherName || '--')
 

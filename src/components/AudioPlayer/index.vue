@@ -21,6 +21,33 @@
             <span class="separator">/</span>
             <span class="total-time">{{ formatTime(duration) }}</span>
         </div>
+        <div class="audio-actions">
+            <el-select
+                v-model="playbackRate"
+                size="small"
+                class="rate-select"
+                popper-class="audio-rate-select-popper"
+                @change="handlePlaybackRateChange"
+                @click.stop
+            >
+                <el-option
+                    v-for="item in playbackRateOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                />
+            </el-select>
+            <el-button
+                link
+                type="primary"
+                class="download-btn"
+                @click.stop="downloadAudio"
+            >
+                <el-icon :size="14">
+                    <Download />
+                </el-icon>
+            </el-button>
+        </div>
         <audio
             ref="audioRef"
             :src="src"
@@ -33,7 +60,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
-import { VideoPlay, VideoPause } from '@element-plus/icons-vue'
+import { Download, VideoPlay, VideoPause } from '@element-plus/icons-vue'
 
 const props = defineProps<{
     src: string
@@ -44,6 +71,13 @@ const audioRef = ref<HTMLAudioElement | null>(null)
 const isPlaying = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
+const playbackRate = ref(1)
+const playbackRateOptions = [
+    { label: '1.0x', value: 1 },
+    { label: '1.25x', value: 1.25 },
+    { label: '1.5x', value: 1.5 },
+    { label: '2.0x', value: 2 }
+]
 
 watch(
     () => props.duration,
@@ -53,6 +87,21 @@ watch(
         }
     },
     { immediate: true }
+)
+
+watch(
+    () => props.src,
+    () => {
+        isPlaying.value = false
+        currentTime.value = 0
+        duration.value = props.duration && props.duration > 0 ? props.duration : 0
+        playbackRate.value = 1
+        if (audioRef.value) {
+            audioRef.value.pause()
+            audioRef.value.currentTime = 0
+            audioRef.value.playbackRate = 1
+        }
+    }
 )
 
 const progressPercent = computed(() => {
@@ -71,6 +120,7 @@ const togglePlay = () => {
     if (isPlaying.value) {
         audioRef.value.pause()
     } else {
+        audioRef.value.playbackRate = playbackRate.value
         audioRef.value.play()
     }
     isPlaying.value = !isPlaying.value
@@ -103,6 +153,45 @@ const onLoadedMetadata = () => {
     }
 }
 
+const handlePlaybackRateChange = (value: number) => {
+    if (!audioRef.value) return
+    audioRef.value.playbackRate = value
+}
+
+const buildDownloadFileName = () => {
+    try {
+        const url = new URL(props.src, window.location.origin)
+        const pathname = url.pathname.split('/').filter(Boolean)
+        return pathname[pathname.length - 1] || 'audio'
+    } catch (error) {
+        return 'audio'
+    }
+}
+
+const triggerBrowserDownload = (url: string, fileName: string) => {
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    link.rel = 'noopener'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+}
+
+const downloadAudio = async () => {
+    if (!props.src) return
+    const fileName = buildDownloadFileName()
+    try {
+        const response = await fetch(props.src)
+        const blob = await response.blob()
+        const blobUrl = URL.createObjectURL(blob)
+        triggerBrowserDownload(blobUrl, fileName)
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+    } catch (error) {
+        triggerBrowserDownload(props.src, fileName)
+    }
+}
+
 onBeforeUnmount(() => {
     if (audioRef.value) {
         audioRef.value.pause()
@@ -121,6 +210,8 @@ onBeforeUnmount(() => {
     border: 1px solid #e4e7ed;
     border-radius: 16px;
     min-width: 100px;
+    width: 100%;
+    box-sizing: border-box;
     box-shadow: none;
 }
 
@@ -161,7 +252,7 @@ onBeforeUnmount(() => {
 
 .audio-progress {
     flex: 1;
-    min-width: 80px;
+    min-width: 70px;
     padding: 0 2px;
 }
 
@@ -216,10 +307,28 @@ onBeforeUnmount(() => {
     gap: 4px;
     font-size: 12px;
     color: #606266;
-    min-width: 70px;
+    min-width: 92px;
+    flex-shrink: 0;
 
     .separator {
         color: #c0c4cc;
     }
+}
+
+.audio-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.rate-select,
+.download-btn {
+    min-height: 24px;
+    padding: 4px 6px;
+}
+
+.rate-select {
+    width: 72px;
 }
 </style>

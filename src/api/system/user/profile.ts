@@ -25,6 +25,7 @@ export interface ProfileVO {
   callPassword?: string
   callerDisplayNumber?: string
   outboundStatus?: number
+  outboundRouteId?: number
   status: number
   remark: string
   loginIp: string
@@ -38,6 +39,7 @@ export interface UserProfileUpdateReqVO {
   mobile?: string
   sex?: number
   avatar?: string
+  outboundRouteId?: number
 }
 
 export interface UserProfileUpdateOutboundStatusReqVO {

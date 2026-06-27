@@ -99,6 +99,18 @@ export const buildAreaLabel = (row: {
   return '--'
 }
 
+export const buildOwnerDisplayName = (
+  ownerName?: string | null,
+  ownerId?: number | null,
+  fallback = '--'
+) => {
+  return Number(ownerId || 0) > 0 ? ownerName || fallback : '无归属人'
+}
+
+export const prependUnassignedOwnerOption = (options: UserOption[]) => {
+  return [{ label: '无归属人', value: 0 }, ...options]
+}
+
 interface LoadClueListOptionsArgs {
   schema: FormSchema[]
   areaOptions: Ref<AreaOption[]>
@@ -107,6 +119,7 @@ interface LoadClueListOptionsArgs {
   tagOptions?: Ref<LabelValueOption[]>
   deptOptions?: Ref<DeptVO[]>
   ownerFields?: string[]
+  includeUnassignedOwnerOption?: boolean
 }
 
 export const loadClueListOptions = async ({
@@ -117,7 +130,8 @@ export const loadClueListOptions = async ({
   clueSourceOptions,
   tagOptions,
   deptOptions,
-  ownerFields = ['currentOwnerId', 'ownerId']
+  ownerFields = ['currentOwnerId', 'ownerId'],
+  includeUnassignedOwnerOption = false
 }: LoadClueListOptionsArgs) => {
   const [areas, users, depts, sources, tagGroups] = await Promise.all([
     AreaApi.getAreaTree(),
@@ -128,11 +142,14 @@ export const loadClueListOptions = async ({
   ])
 
   areaOptions.value = flattenAreas(areas || [])
-  userOptions.value = (users || []).map((item) => ({
+  const ownerOptions = (users || []).map((item) => ({
     label: item.nickname || item.username,
     value: item.id,
     deptId: item.deptId
   }))
+  userOptions.value = includeUnassignedOwnerOption
+    ? prependUnassignedOwnerOption(ownerOptions)
+    : ownerOptions
   clueSourceOptions.value = (sources || []).map((item) => ({
     label: item.name,
     value: Number(item.id)

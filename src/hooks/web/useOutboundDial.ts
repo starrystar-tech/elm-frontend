@@ -31,21 +31,23 @@ export const useOutboundDial = () => {
 
         dialing.value = true
         try {
-            const config = await getOtherSettingConfig()
-            if (!config?.outboundRouteId) {
-                message.warning('当前商户未绑定线路，请联系管理员配置线路')
+            const routeList = await getOutboundRouteSimpleList()
+            const userRouteId = Number(profile.outboundRouteId || 0) || undefined
+            const config = userRouteId ? undefined : await getOtherSettingConfig()
+            const targetRouteId = userRouteId || config?.outboundRouteId
+            if (!targetRouteId) {
+                message.warning('当前未选择外呼线路，请联系管理员配置线路')
                 return
             }
 
-            const routeList = await getOutboundRouteSimpleList()
-            const currentRoute = routeList.find((item) => item.id === config.outboundRouteId)
+            const currentRoute = routeList.find((item) => item.id === targetRouteId)
             const routePrefix = String(currentRoute?.numberPrefix || '').trim()
             if (!currentRoute?.id || !routePrefix) {
-                message.warning('当前商户未绑定线路，请联系管理员配置线路')
+                message.warning('当前外呼线路不存在，请重新选择')
                 return
             }
             if (currentRoute.status === 1) {
-                message.warning('当前商户绑定线路已禁用，请联系管理员配置线路')
+                message.warning('当前外呼线路已禁用，请重新选择')
                 return
             }
 

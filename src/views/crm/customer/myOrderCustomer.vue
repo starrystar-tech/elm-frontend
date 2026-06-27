@@ -6,17 +6,6 @@
             @reset="resetSearchParams"
             @search="setSearchParams"
         >
-            <template #enrollStatus>
-                <el-select
-                    v-model="searchForm.enrollStatus"
-                    clearable
-                    placeholder="请选择报名状态"
-                    style="width: 180px"
-                >
-                    <el-option label="未报名" value="unregistered" />
-                    <el-option label="已报名" value="registered" />
-                </el-select>
-            </template>
             <template #areaId>
                 <AreaSelect
                     v-model="searchForm.areaId"
@@ -26,15 +15,6 @@
                 />
             </template>
         </Search>
-        <div class="mb-12px flex items-center justify-between action-btn-wrap">
-            <BaseButton
-                type="primary"
-                :disabled="selectionList.length === 0"
-                @click="openBatchHeadteacherForm"
-            >
-                设置班主任
-            </BaseButton>
-        </div>
         <Table
             v-model:currentPage="tableObject.currentPage"
             v-model:pageSize="tableObject.pageSize"
@@ -43,30 +23,26 @@
             :loading="tableObject.loading"
             :pagination="{ total: tableObject.total }"
             row-key="id"
-            selection
-            @register="registerTable"
-            @selection-change="handleSelectionChange"
+            @register="tableRegister"
         />
     </ContentWrap>
 
-    <BatchHeadteacherForm ref="batchHeadteacherFormRef" @success="handleBatchHeadteacherSuccess" />
     <CustomerDetailDrawer ref="detailRef" @refresh="handleDetailRefresh" />
 </template>
 
 <script lang="tsx" setup>
-import { computed, nextTick, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { ElLink } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import * as ClueApi from '@/api/crm/clue'
-import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
 import AreaSelect from '@/components/AreaSelect.vue'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
+import { useUserStore } from '@/store/modules/user'
 import type { FormSchema } from '@/types/form'
-import BatchHeadteacherForm from './BatchHeadteacherForm.vue'
 import CustomerDetailDrawer from './detail/CustomerDetailDrawer.vue'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import { buildAreaLabel } from '@/views/crm/clue/listShared'
@@ -75,17 +51,14 @@ interface StudentSearchParams {
     mobile?: string
     customer?: string
     areaId?: number
-    headteacherUserId?: number
-    enrollStatus?: 'registered' | 'unregistered'
 }
 
-defineOptions({ name: 'CrmCustomer' })
+defineOptions({ name: 'CrmMyOrderCustomer' })
 
-const batchHeadteacherFormRef = ref<InstanceType<typeof BatchHeadteacherForm>>()
 const detailRef = ref<InstanceType<typeof CustomerDetailDrawer>>()
 const searchForm = reactive<StudentSearchParams>({})
-const selectionList = ref<ClueApi.ClueVO[]>([])
-const headteacherOptions = ref<{ label: string; value: number }[]>([])
+const userStore = useUserStore()
+const currentUserId = computed(() => Number(userStore.getUser.id || 0))
 const searchSchema = reactive<FormSchema[]>([
     {
         field: 'mobile',
@@ -108,15 +81,6 @@ const searchSchema = reactive<FormSchema[]>([
         }
     },
     {
-        field: 'enrollStatus',
-        label: '报名状态',
-        component: 'Input',
-        componentProps: {
-            clearable: true,
-            style: { width: '180px' }
-        }
-    },
-    {
         field: 'areaId',
         label: '地域',
         component: 'Input',
@@ -124,21 +88,9 @@ const searchSchema = reactive<FormSchema[]>([
             clearable: true,
             style: { width: '220px' }
         }
-    },
-    {
-        field: 'headteacherUserId',
-        label: '班主任',
-        component: 'Select',
-        componentProps: {
-            clearable: true,
-            filterable: true,
-            style: { width: '220px' },
-            options: headteacherOptions.value
-        }
     }
 ])
 
-const tableRef = ref<any>()
 const {
     tableObject,
     tableMethods,
@@ -147,28 +99,13 @@ const {
     getListApi: async (params) => await ClueApi.getCluePage(params)
 })
 
-const buildEnrollStatus = (row: ClueApi.ClueVO) =>
-    Number(row.orderCount || 0) > 0 ? '已报名' : '未报名'
-
-const buildListParams = (params: StudentSearchParams = {}) => {
-    const nextParams: Record<string, any> = {
-        mobile: params.mobile,
-        customer: params.customer,
-        areaId: params.areaId,
-        headteacherUserId: params.headteacherUserId,
-        minOrderCount: (params as Record<string, any>).minOrderCount,
-        maxOrderCount: (params as Record<string, any>).maxOrderCount
-    }
-    if (params.enrollStatus === 'registered') {
-        nextParams.minOrderCount = 1
-        delete nextParams.maxOrderCount
-    }
-    if (params.enrollStatus === 'unregistered') {
-        nextParams.maxOrderCount = 0
-        delete nextParams.minOrderCount
-    }
-    return nextParams
-}
+const buildListParams = (params: StudentSearchParams = {}) => ({
+    mobile: params.mobile,
+    customer: params.customer,
+    areaId: params.areaId,
+    headteacherUserId: currentUserId.value || undefined,
+    minOrderCount: 1
+})
 
 const syncSearchForm = (params: StudentSearchParams = {}) => {
     Object.keys(searchForm).forEach((key) => {
@@ -181,33 +118,23 @@ const openDetail = (id: number) => {
     detailRef.value?.open(id)
 }
 
-const registerTable = (table: any, elTable: any) => {
-    tableRegister(table, elTable)
-    tableRef.value = table
-}
-
 const handleDetailRefresh = async () => {
     await tableMethods.getList()
 }
 
-const handleSelectionChange = (rows: ClueApi.ClueVO[]) => {
-    selectionList.value = rows || []
-}
-
-const openBatchHeadteacherForm = () => {
-    batchHeadteacherFormRef.value?.open(selectionList.value.map((item) => Number(item.id)))
-}
-
-const handleBatchHeadteacherSuccess = async () => {
-    selectionList.value = []
-    tableRef.value?.clearSelection?.()
-    await tableMethods.getList()
-    await nextTick()
-    tableRef.value?.clearSelection?.()
-}
-
 const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'customerId', label: '学员ID', width: '120px' },
+    {
+        field: 'customerId',
+        label: '学员ID',
+        width: '120px',
+        slots: {
+            default: (data) => (
+                <ElLink underline={false} type="primary" onClick={() => openDetail(data.row.id)}>
+                    {data.row.customerId || '--'}
+                </ElLink>
+            )
+        }
+    },
     {
         field: 'name',
         label: '学员姓名',
@@ -261,7 +188,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'enrollStatus',
         label: '报名状态',
         width: '100px',
-        slots: { default: (data) => <span>{buildEnrollStatus(data.row)}</span> }
+        slots: { default: () => <span>已报名</span> }
     },
     { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter },
     {
@@ -279,22 +206,9 @@ const tableColumns = computed<TableColumn[]>(() => [
     }
 ])
 
-const loadFilterOptions = async () => {
-    const [headteachers] = await Promise.all([HeadteacherApi.getHeadteacherSimpleList()])
-    headteacherOptions.value = (headteachers || []).map((item) => ({
-        label: item.nickname || item.username,
-        value: item.id
-    }))
-    const headteacherField = searchSchema.find((item) => item.field === 'headteacherUserId')
-    if (headteacherField?.componentProps) {
-        headteacherField.componentProps.options = headteacherOptions.value
-    }
-}
-
 const setSearchParams = (params: StudentSearchParams) => {
     const mergedParams = {
         ...params,
-        enrollStatus: searchForm.enrollStatus,
         areaId: searchForm.areaId
     }
     syncSearchForm(mergedParams)
@@ -306,8 +220,7 @@ const resetSearchParams = () => {
     tableMethods.setSearchParams(buildListParams({}))
 }
 
-onMounted(async () => {
-    await loadFilterOptions()
-    await tableMethods.getList()
+onMounted(() => {
+    tableMethods.setSearchParams(buildListParams())
 })
 </script>

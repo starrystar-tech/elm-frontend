@@ -263,7 +263,7 @@ import ClueMergeDialog from './components/ClueMergeDialog.vue'
 import ExportTaskDialog from './components/ExportTaskDialog.vue'
 import ClueNameCell from './components/ClueNameCell.vue'
 import { renderCopyMobileCell } from './mobileCopy'
-import { buildAreaLabel, FEEDBACK_STATUS_OPTIONS } from './listShared'
+import { buildAreaLabel, buildOwnerDisplayName, FEEDBACK_STATUS_OPTIONS } from './listShared'
 
 interface SearchParams {
     customer?: string
@@ -664,7 +664,23 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'qq', label: 'QQ', width: '120px' },
     { field: 'clueSourceName', label: '来源', width: '130px' },
     { field: 'assignModeName', label: '分配方式', width: '120px' },
-    { field: 'currentOwnerName', label: '归属人', width: '110px' },
+    {
+        field: 'currentOwnerName',
+        label: '归属人',
+        width: '110px',
+        slots: {
+            default: (data) => {
+                const hasOwner = Number(data.row.currentOwnerId || 0) > 0
+                return hasOwner ? (
+                    <span>
+                        {buildOwnerDisplayName(data.row.currentOwnerName, data.row.currentOwnerId)}
+                    </span>
+                ) : (
+                    <span class="clue-owner-warning">无归属人</span>
+                )
+            }
+        }
+    },
     {
         field: 'region',
         label: '地区',
@@ -748,10 +764,13 @@ const loadOptions = async () => {
     ])
 
     areaOptions.value = flattenAreas(areas || [])
-    userOptions.value = (users || []).map((item) => ({
-        label: item.nickname || item.username,
-        value: item.id
-    }))
+    userOptions.value = [
+        { label: '无归属人', value: 0 },
+        ...(users || []).map((item) => ({
+            label: item.nickname || item.username,
+            value: item.id
+        }))
+    ]
     clueSourceOptions.value = (sources || []).map((item) => ({
         label: item.name,
         value: Number(item.id)
@@ -1013,5 +1032,10 @@ onMounted(async () => {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.clue-owner-warning {
+    color: var(--el-color-warning);
+    font-weight: 600;
 }
 </style>

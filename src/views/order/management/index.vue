@@ -117,6 +117,7 @@ import type { FormSchema } from '@/types/form'
 import { dateFormatter } from '@/utils/formatTime'
 import * as OrderApi from '@/api/crm/order'
 import {
+    canSignOrderContract,
     CONTRACT_STATUS_OPTIONS,
     ORDER_STATUS_OPTIONS,
     formatAmount,
@@ -488,14 +489,17 @@ const handleExportSuccess = async () => {
 }
 
 const handleContractSign = (row: OrderApi.OrderPageRespVO) => {
+    if (!canSignOrderContract(row)) {
+        message.warning('订单支付后才可以签署合同')
+        return
+    }
     contractSignRef.value?.open(row)
 }
 
 const isPendingPayOrder = (row: OrderApi.OrderPageRespVO) => [0, 10].includes(row.orderStatus)
 const isClosedOrder = (row: OrderApi.OrderPageRespVO) => row.orderStatus === 30
 const isRefundedOrder = (row: OrderApi.OrderPageRespVO) => row.orderStatus === 40
-const canSignContract = (row: OrderApi.OrderPageRespVO) =>
-    !isPendingPayOrder(row) && !isClosedOrder(row) && !isRefundedOrder(row)
+const canSignContract = (row: OrderApi.OrderPageRespVO) => canSignOrderContract(row)
 const canPayOrder = (row: OrderApi.OrderPageRespVO) =>
     !isClosedOrder(row) &&
     !isRefundedOrder(row) &&

@@ -63,9 +63,7 @@
                     <span class="text-base font-bold">系统信息</span>
                 </template>
                 <el-descriptions :column="4">
-                    <el-descriptions-item label="归属人">{{
-                        clue.currentOwnerName || '--'
-                    }}</el-descriptions-item>
+                    <el-descriptions-item label="归属人">{{ ownerText }}</el-descriptions-item>
                     <el-descriptions-item label="所属部门">{{
                         clue.currentDepartmentName || '--'
                     }}</el-descriptions-item>
@@ -85,7 +83,7 @@
 import * as ClueApi from '@/api/crm/clue'
 import { formatDate } from '@/utils/formatTime'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
-import { buildAreaLabel } from '@/views/crm/clue/listShared'
+import { buildAreaLabel, buildOwnerDisplayName } from '@/views/crm/clue/listShared'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
@@ -95,5 +93,9 @@ const activeNames = ref(['basicInfo', 'systemInfo'])
 
 const addressText = computed(() => {
     return buildAreaLabel(props.clue)
+})
+
+const ownerText = computed(() => {
+    return buildOwnerDisplayName(props.clue.currentOwnerName, props.clue.currentOwnerId)
 })
 </script>

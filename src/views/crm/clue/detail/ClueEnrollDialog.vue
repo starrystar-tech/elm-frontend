@@ -255,6 +255,7 @@ import type { ProductCategoryVO } from '@/api/crm/product/category'
 import type { CampusVO } from '@/api/system/campus'
 import CampusSelect from '@/components/CampusSelect.vue'
 import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
+import { isValidChineseIdCard, normalizeIdCardNo } from '@/utils/idCard'
 import { fenToYuan, yuanToFen } from '@/utils'
 
 defineOptions({ name: 'ClueEnrollDialog' })
@@ -375,12 +376,28 @@ const createDefaultFormData = (): EnrollFormData => ({
 
 const formData = ref<EnrollFormData>(createDefaultFormData())
 
+const validateIdCardNo = (_rule: any, value: string, callback: (error?: Error) => void) => {
+    const idCardNo = String(value || '').trim()
+    if (!idCardNo || formData.value.certificateType !== '身份证') {
+        callback()
+        return
+    }
+    if (!isValidChineseIdCard(idCardNo)) {
+        callback(new Error('请输入合法的身份证号码'))
+        return
+    }
+    callback()
+}
+
 const formRules = reactive({
     clueName: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
     gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
     areaId: [{ required: true, message: '请选择地区', trigger: 'change' }],
     certificateType: [{ required: true, message: '请选择证件类型', trigger: 'change' }],
-    idCardNo: [{ required: true, message: '请输入证件号码', trigger: 'blur' }],
+    idCardNo: [
+        { required: true, message: '请输入证件号码', trigger: 'blur' },
+        { validator: validateIdCardNo, trigger: 'blur' }
+    ],
     campusId: [{ required: true, message: '请选择报名分校', trigger: 'change' }],
     payableAmount: [{ required: true, message: '应付金额不能为空', trigger: 'change' }]
 })
@@ -597,7 +614,7 @@ const submitForm = async () => {
                 gender: formData.value.gender,
                 areaId: formData.value.areaId!,
                 remark: formData.value.remark,
-                idCardNo: formData.value.idCardNo,
+                idCardNo: normalizeIdCardNo(formData.value.idCardNo),
                 certificateType: formData.value.certificateType,
                 occupation: formData.value.occupation || originalOptionalFields.value.occupation,
                 emergencyMobile:
