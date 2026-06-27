@@ -37,6 +37,13 @@
     justify-content: flex-start;
 }
 
+.crm-table-overflow-tooltip {
+    max-width: min(520px, calc(100vw - 32px)) !important;
+    line-height: 1.6;
+    white-space: normal;
+    word-break: break-all;
+}
+
 div.action-btn-wrap {
     padding: 16px 0 0 16px;
 }

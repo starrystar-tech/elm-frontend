@@ -47,7 +47,7 @@ export default defineComponent({
     }
 
     const renderBreadcrumb = () => {
-      const breadcrumbList = treeToList<AppRouteRecordRaw[]>(unref(levelList))
+      const breadcrumbList = treeToList<AppRouteRecordRaw[]>(unref(levelList)).slice(-2)
       return breadcrumbList.map((v) => {
         const disabled = !v.redirect || v.redirect === 'noredirect'
         const meta = v.meta as RouteMeta

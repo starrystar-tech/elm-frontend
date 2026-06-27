@@ -25,7 +25,7 @@
         <el-input
             v-model="keyword"
             clearable
-            placeholder="请输入姓名、手机号或客户编号"
+            placeholder="输入姓名、手机、编号搜索客户"
             @keyup.enter="submitSearch"
         >
             <template #suffix>

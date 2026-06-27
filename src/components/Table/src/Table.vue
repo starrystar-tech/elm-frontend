@@ -281,6 +281,19 @@ export default defineComponent({
       return attrsEmptyText || '暂无数据'
     })
 
+    const resolveOverflowTooltip = (value?: boolean | Recordable) => {
+      if (!value) return false
+      if (value === true) {
+        return {
+          popperClass: 'crm-table-overflow-tooltip'
+        }
+      }
+      return {
+        ...value,
+        popperClass: ['crm-table-overflow-tooltip', value.popperClass].filter(Boolean).join(' ')
+      }
+    }
+
     const renderTableSelection = () => {
       const { selection, reserveSelection, align, headerAlign } = unref(getProps)
       // 渲染多选
@@ -313,12 +326,13 @@ export default defineComponent({
       return columnsChildren.map((v) => {
         const props = { ...v }
         if (props.children) delete props.children
+        if ('showOverflowTooltip' in props) delete props.showOverflowTooltip
         return (
           <ElTableColumn
-            showOverflowTooltip={showOverflowTooltip}
             align={align}
             headerAlign={headerAlign}
             {...props}
+            showOverflowTooltip={resolveOverflowTooltip(v.showOverflowTooltip ?? showOverflowTooltip)}
             prop={v.field}
           >
             {{
@@ -370,12 +384,13 @@ export default defineComponent({
           } else {
             const props = { ...v }
             if (props.children) delete props.children
+            if ('showOverflowTooltip' in props) delete props.showOverflowTooltip
             return (
               <ElTableColumn
-                showOverflowTooltip={showOverflowTooltip}
                 align={align}
                 headerAlign={headerAlign}
                 {...props}
+                showOverflowTooltip={resolveOverflowTooltip(v.showOverflowTooltip ?? showOverflowTooltip)}
                 prop={v.field}
               >
                 {{
