@@ -721,6 +721,10 @@ $prefix-cls: #{$namespace}-tool-header;
             color: #1d4ed8;
         }
 
+        span {
+            color: #64748b;
+        }
+
         strong,
         em {
             font-style: normal;

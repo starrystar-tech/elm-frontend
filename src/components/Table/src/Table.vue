@@ -1,6 +1,16 @@
 <script lang="tsx">
 import { ElTable, ElTableColumn, ElPagination } from 'element-plus'
-import { defineComponent, PropType, ref, computed, unref, watch, onMounted } from 'vue'
+import {
+  defineComponent,
+  PropType,
+  ref,
+  computed,
+  unref,
+  watch,
+  onMounted,
+  nextTick,
+  onBeforeUnmount
+} from 'vue'
 import { propTypes } from '@/utils/propTypes'
 import { setIndex } from './helper'
 import { getSlot } from '@/utils/tsxHelper'
@@ -52,12 +62,51 @@ export default defineComponent({
   emits: ['update:pageSize', 'update:currentPage', 'register', 'selection-change'],
   setup(props, { attrs, slots, emit, expose }) {
     const elTableRef = ref<ComponentRef<typeof ElTable>>()
+    const tableWrapRef = ref<HTMLDivElement>()
+    const paginationRef = ref<HTMLDivElement>()
+    const autoTableMaxHeight = ref<number>()
     const slotMode = computed(() => !props.columns?.length && !!slots.default)
+    let resizeObserver: ResizeObserver | undefined
+
+    const syncTableMaxHeight = async () => {
+      await nextTick()
+      const tableWrap = tableWrapRef.value
+      if (!tableWrap) {
+        autoTableMaxHeight.value = undefined
+        return
+      }
+      const rect = tableWrap.getBoundingClientRect()
+      const paginationHeight = paginationRef.value?.offsetHeight || 0
+      const viewportPadding = 28
+      const minHeight = 260
+      const availableHeight = Math.floor(
+        window.innerHeight - rect.top - paginationHeight - viewportPadding
+      )
+      autoTableMaxHeight.value = availableHeight > minHeight ? availableHeight : minHeight
+    }
 
     // 注册
     onMounted(() => {
       const tableRef = unref(elTableRef)
       emit('register', tableRef?.$parent, elTableRef.value)
+      syncTableMaxHeight()
+      window.addEventListener('resize', syncTableMaxHeight)
+      if (typeof ResizeObserver !== 'undefined') {
+        resizeObserver = new ResizeObserver(() => {
+          syncTableMaxHeight()
+        })
+        if (tableWrapRef.value) {
+          resizeObserver.observe(tableWrapRef.value)
+        }
+        if (paginationRef.value) {
+          resizeObserver.observe(paginationRef.value)
+        }
+      }
+    })
+
+    onBeforeUnmount(() => {
+      window.removeEventListener('resize', syncTableMaxHeight)
+      resizeObserver?.disconnect()
     })
 
     const pageSizeRef = ref(props.pageSize)
@@ -203,11 +252,27 @@ export default defineComponent({
       }
     )
 
+    watch(
+      () => [unref(getProps).data, unref(getProps).columns, unref(getProps).loading],
+      async () => {
+        syncTableMaxHeight()
+      },
+      { deep: true }
+    )
+
     const getBindValue = computed(() => {
       const bindValue: Recordable = { ...attrs, ...props }
       delete bindValue.columns
       delete bindValue.data
       delete bindValue.rowClassName
+      if (
+        bindValue.height === undefined &&
+        bindValue.maxHeight === undefined &&
+        bindValue['max-height'] === undefined &&
+        autoTableMaxHeight.value
+      ) {
+        bindValue.maxHeight = autoTableMaxHeight.value
+      }
       return bindValue
     })
 
@@ -334,7 +399,7 @@ export default defineComponent({
     }
 
     return () => (
-      <div v-loading={unref(getProps).loading} class="crm-soft-table-wrap">
+      <div ref={tableWrapRef} v-loading={unref(getProps).loading} class="crm-soft-table-wrap">
         <ElTable
           // @ts-ignore
           ref={elTableRef}
@@ -352,13 +417,14 @@ export default defineComponent({
           }}
         </ElTable>
         {unref(getProps).pagination ? (
-          // update by worker：保持和 Pagination 组件一致
-          <ElPagination
-            v-model:pageSize={pageSizeRef.value}
-            v-model:currentPage={currentPageRef.value}
-            class="float-right mb-15px mt-15px crm-soft-pagination"
-            {...unref(pagination)}
-          ></ElPagination>
+          <div ref={paginationRef}>
+            <ElPagination
+              v-model:pageSize={pageSizeRef.value}
+              v-model:currentPage={currentPageRef.value}
+              class="float-right mb-15px mt-15px crm-soft-pagination"
+              {...unref(pagination)}
+            ></ElPagination>
+          </div>
         ) : undefined}
       </div>
     )
@@ -366,6 +432,12 @@ export default defineComponent({
 })
 </script>
 <style lang="scss" scoped>
+.crm-soft-table-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 :deep(.el-button.is-text) {
   padding: 8px 4px;
   margin-left: 0;
