@@ -11,10 +11,12 @@
             @register="tableRegister"
         />
     </ContentWrap>
+    <PayProofDialog ref="payProofDialogRef" @success="tableMethods.getList" />
 </template>
 
 <script setup lang="tsx">
 import { computed, onMounted } from 'vue'
+import { ElImage } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -24,10 +26,13 @@ import { dateFormatter } from '@/utils/formatTime'
 import * as OrderApi from '@/api/crm/order'
 import { PAY_METHOD_OPTIONS, PAY_STATUS_OPTIONS, formatAmount, getOptionLabel } from '../utils'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import { BaseButton } from '@/components/Button'
+import PayProofDialog from './PayProofDialog.vue'
 
 defineOptions({ name: 'OrderPayRecord' })
 
 const message = useMessage()
+const payProofDialogRef = ref<InstanceType<typeof PayProofDialog>>()
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
@@ -114,6 +119,19 @@ const getOrderClueDetail = async (id: number) => {
     return { clueId: detail.clueId }
 }
 
+const renderPayProofCell = (url?: string) => {
+    if (!url) return <span>-</span>
+    return (
+        <ElImage
+            src={url}
+            previewSrcList={[url]}
+            previewTeleported
+            fit="cover"
+            style={{ width: '48px', height: '48px', borderRadius: '6px' }}
+        />
+    )
+}
+
 const tableColumns = computed<TableColumn[]>(() => [
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
     { field: 'customerName', label: '姓名', minWidth: '100px' },
@@ -141,13 +159,40 @@ const tableColumns = computed<TableColumn[]>(() => [
     },
     { field: 'payMethod', label: '支付方式', minWidth: '100px' },
     {
+        field: 'payProofUrl',
+        label: '支付凭证',
+        minWidth: '100px',
+        slots: {
+            default: (data) => renderPayProofCell(data.row.payProofUrl)
+        }
+    },
+    {
         field: 'payStatus',
         label: '支付状态',
         minWidth: '100px',
         formatter: (_r, _c, v) => getOptionLabel(PAY_STATUS_OPTIONS, v)
     },
     { field: 'payNo', label: '支付流水号', minWidth: '220px' },
-    { field: 'payTime', label: '支付时间', minWidth: '180px', formatter: dateFormatter }
+    { field: 'payTime', label: '支付时间', minWidth: '180px', formatter: dateFormatter },
+    {
+        field: 'action',
+        label: '操作',
+        width: '120px',
+        fixed: 'right',
+        slots: {
+            default: (data) => (
+                <BaseButton
+                    link
+                    type="primary"
+                    onClick={() =>
+                        payProofDialogRef.value?.open(data.row as OrderApi.OrderPayRecordRespVO)
+                    }
+                >
+                    支付凭证
+                </BaseButton>
+            )
+        }
+    }
 ])
 
 onMounted(() => {

@@ -15,7 +15,7 @@
 
 <script setup lang="tsx">
 import { computed, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { ElImage, ElMessageBox } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -146,6 +146,19 @@ const audit = async (row: OrderApi.OrderPayRecordRespVO, confirmStatus: number) 
     await tableMethods.getList()
 }
 
+const renderPayProofCell = (url?: string) => {
+    if (!url) return <span>-</span>
+    return (
+        <ElImage
+            src={url}
+            previewSrcList={[url]}
+            previewTeleported
+            fit="cover"
+            style={{ width: '48px', height: '48px', borderRadius: '6px' }}
+        />
+    )
+}
+
 const tableColumns = computed<TableColumn[]>(() => [
     // {
     //     field: 'confirmStatus',
@@ -179,6 +192,14 @@ const tableColumns = computed<TableColumn[]>(() => [
         formatter: (_r, _c, v) => formatAmount(v)
     },
     { field: 'payMethod', label: '支付方式', minWidth: '100px' },
+    {
+        field: 'payProofUrl',
+        label: '支付凭证',
+        minWidth: '100px',
+        slots: {
+            default: (data) => renderPayProofCell(data.row.payProofUrl)
+        }
+    },
     { field: 'payNo', label: '支付流水号', minWidth: '220px' },
     { field: 'payTime', label: '支付时间', minWidth: '180px', formatter: dateFormatter },
     {

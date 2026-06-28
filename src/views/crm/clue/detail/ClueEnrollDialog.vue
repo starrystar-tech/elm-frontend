@@ -217,6 +217,16 @@
                                         class="!w-full"
                                     />
                                 </el-form-item>
+                                <el-form-item label="支付凭证" class="enroll-payment__detail-full">
+                                    <UploadImg
+                                        v-model="record.payProofUrl"
+                                        :drag="false"
+                                        :show-btn-text="false"
+                                        directory="crm_order_pay_proof"
+                                        width="96px"
+                                        height="96px"
+                                    />
+                                </el-form-item>
                                 <el-form-item label="备注" class="enroll-payment__detail-full">
                                     <el-input v-model="record.payRemark" placeholder="请输入备注" />
                                 </el-form-item>
@@ -247,6 +257,7 @@
 <script setup lang="ts">
 import AreaSelect from '@/components/AreaSelect.vue'
 import { BaseButton } from '@/components/Button'
+import { UploadImg } from '@/components/UploadFile'
 import * as ClueApi from '@/api/crm/clue'
 import * as OrderApi from '@/api/crm/order'
 import * as ProductCategoryApi from '@/api/crm/product/category'
@@ -310,6 +321,7 @@ type EnrollPayRecordItem = {
     key: string
     payMethod: string
     paidAmount?: number
+    payProofUrl?: string
     payRemark: string
 }
 
@@ -338,6 +350,7 @@ const createDefaultPayRecord = (): EnrollPayRecordItem => ({
     key: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     payMethod: '',
     paidAmount: undefined,
+    payProofUrl: '',
     payRemark: ''
 })
 
@@ -660,7 +673,8 @@ const submitForm = async () => {
             await OrderApi.payOrder({
                 orderId,
                 payAmount: yuanToFen(item.paidAmount || 0),
-                payMethod: item.payMethod
+                payMethod: item.payMethod,
+                payProofUrl: item.payProofUrl || ''
             })
         }
         message.success('报名成功，订单及支付记录已创建')

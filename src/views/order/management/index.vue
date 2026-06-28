@@ -98,6 +98,7 @@
     <OrderDetailDrawer ref="detailRef" />
     <OrderContractSignDialog ref="contractSignRef" @success="tableMethods.getList" />
     <RefundDialog ref="refundRef" @success="tableMethods.getList" />
+    <OrderPayDialog ref="payDialogRef" @success="tableMethods.getList" />
     <BatchUpdateOwnerDialog ref="batchUpdateOwnerDialogRef" @confirm="submitBatchUpdateOwner" />
     <ExportTaskDialog ref="exportDialogRef" @success="handleExportSuccess" />
     <UserSelectForm ref="userSelectFormRef" @confirm="handleUserSelectConfirm" />
@@ -127,6 +128,7 @@ import {
 } from '../utils'
 import OrderDetailDrawer from '../detail/OrderDetailDrawer.vue'
 import OrderContractSignDialog from '../detail/OrderContractSignDialog.vue'
+import OrderPayDialog from '../components/OrderPayDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 import BatchUpdateOwnerDialog from './BatchUpdateOwnerDialog.vue'
@@ -142,6 +144,7 @@ const detailRef = ref<InstanceType<typeof OrderDetailDrawer>>()
 const searchRef = ref<SearchExpose>()
 const contractSignRef = ref<InstanceType<typeof OrderContractSignDialog>>()
 const refundRef = ref<InstanceType<typeof RefundDialog>>()
+const payDialogRef = ref<InstanceType<typeof OrderPayDialog>>()
 const batchUpdateOwnerDialogRef = ref<InstanceType<typeof BatchUpdateOwnerDialog>>()
 const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
 const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
@@ -390,18 +393,7 @@ const handlePay = async (row: OrderApi.OrderPageRespVO) => {
         message.warning('当前订单没有可支付金额')
         return
     }
-    const result = await ElMessageBox.prompt('请输入支付金额（元）', '订单支付', {
-        inputValue: formatAmount(remain),
-        inputPattern: /^(0|[1-9]\d*)(\.\d{1,2})?$/,
-        inputErrorMessage: '请输入正确金额'
-    })
-    await OrderApi.payOrder({
-        orderId: row.id,
-        payAmount: Math.round(Number(result.value) * 100),
-        payMethod: '微信支付'
-    })
-    message.success('支付记录已生成，待财务确认')
-    await tableMethods.getList()
+    payDialogRef.value?.open(row.id, formatAmount(remain))
 }
 
 const handleRefund = async (row: OrderApi.OrderPageRespVO) => {

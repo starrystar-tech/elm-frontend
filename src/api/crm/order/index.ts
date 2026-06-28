@@ -78,6 +78,7 @@ export interface OrderPayRecordRespVO {
   payStatus: number
   payTime?: string
   channelPayNo?: string
+  payProofUrl?: string
   confirmStatus: number
   confirmResult?: string
   confirmUserId?: number
@@ -186,6 +187,7 @@ export interface OrderPayReqVO {
   payAmount: number
   payMethod: string
   channelPayNo?: string
+  payProofUrl?: string
   payTime?: string
 }
 
@@ -194,6 +196,11 @@ export interface OrderPayConfirmReqVO {
   confirmStatus: number
   confirmResult?: string
   confirmRemark?: string
+}
+
+export interface OrderPayRecordProofUpdateReqVO {
+  id: number
+  payProofUrl?: string
 }
 
 export interface OrderBatchUpdateOwnerReqVO {
@@ -302,6 +309,10 @@ export const getPayConfirmPage = async (params: OrderPayRecordPageReqVO) => {
 
 export const confirmPayRecord = async (data: OrderPayConfirmReqVO) => {
   return await request.put<boolean>({ url: '/crm/order/pay-record/confirm', data })
+}
+
+export const updatePayRecordProof = async (data: OrderPayRecordProofUpdateReqVO) => {
+  return await request.put<boolean>({ url: '/crm/order/pay-record/update-proof', data })
 }
 
 export const getRefundPage = async (params: OrderRefundPageReqVO) => {

@@ -280,6 +280,19 @@
                             }}</template>
                         </el-table-column>
                         <el-table-column prop="payNo" label="支付流水号" min-width="200" />
+                        <el-table-column prop="payProofUrl" label="支付凭证" min-width="120">
+                            <template #default="{ row }">
+                                <el-image
+                                    v-if="row.payProofUrl"
+                                    :src="row.payProofUrl"
+                                    :preview-src-list="[row.payProofUrl]"
+                                    preview-teleported
+                                    fit="cover"
+                                    style="width: 48px; height: 48px; border-radius: 6px"
+                                />
+                                <span v-else>-</span>
+                            </template>
+                        </el-table-column>
                         <el-table-column prop="payTime" label="支付时间" min-width="180">
                             <template #default="{ row }"
                                 >{{ formatDateTimeText(row.payTime) }}
@@ -320,6 +333,7 @@
         </ContentWrap>
 
         <RefundDialog ref="refundRef" @success="loadDetail" />
+        <OrderPayDialog ref="payDialogRef" @success="loadDetail" />
         <OrderContractSignDialog ref="contractSignRef" @success="loadDetail" />
     </div>
 </template>
@@ -335,6 +349,7 @@ import { resolveTimestamp } from '@/utils/formatTime'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
 import OrderContractSignDialog from './OrderContractSignDialog.vue'
+import OrderPayDialog from '../components/OrderPayDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import {
     canSignOrderContract,
@@ -356,6 +371,7 @@ const message = useMessage()
 const loading = ref(false)
 const refundRef = ref<InstanceType<typeof RefundDialog>>()
 const contractSignRef = ref<InstanceType<typeof OrderContractSignDialog>>()
+const payDialogRef = ref<InstanceType<typeof OrderPayDialog>>()
 const detail = ref<OrderApi.OrderDetailRespVO>({ items: [], payRecords: [], refunds: [] } as any)
 const consultBasicInfo = ref<CustomerDetailApi.CustomerBasicInfoRespVO>()
 const consultAppointments = ref<CustomerDetailApi.CustomerAppointmentRespVO[]>([])
@@ -491,18 +507,7 @@ const handlePay = async () => {
         message.warning('当前订单没有可支付金额')
         return
     }
-    const amountResult = await ElMessageBox.prompt('请输入支付金额（元）', '订单支付', {
-        inputValue: formatAmount(remain),
-        inputPattern: /^(0|[1-9]\d*)(\.\d{1,2})?$/,
-        inputErrorMessage: '请输入正确金额'
-    })
-    await OrderApi.payOrder({
-        orderId: detail.value.id,
-        payAmount: Math.round(Number(amountResult.value) * 100),
-        payMethod: '微信支付'
-    })
-    message.success('支付记录已生成，待财务确认')
-    await loadDetail()
+    payDialogRef.value?.open(detail.value.id, formatAmount(remain))
 }
 
 const handleRefund = async () => {
