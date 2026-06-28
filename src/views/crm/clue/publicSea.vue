@@ -104,6 +104,7 @@
 
 <script setup lang="tsx">
 import { computed, nextTick, reactive, ref } from 'vue'
+import { ElLink } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -313,6 +314,23 @@ const claimSummaryText = computed(() => {
 })
 
 const tableColumns = computed<TableColumn[]>(() => [
+    {
+        field: 'customerId',
+        label: '客户编号',
+        width: '130px',
+        fixed: 'left',
+        slots: {
+            default: (data) => (
+                <ElLink
+                    underline={false}
+                    type="primary"
+                    onClick={() => openDetail(Number(data.row.id))}
+                >
+                    {data.row.customerId || '--'}
+                </ElLink>
+            )
+        }
+    },
     {
         field: 'mobile',
         label: '联系电话',

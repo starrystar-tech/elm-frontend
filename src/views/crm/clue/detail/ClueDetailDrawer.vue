@@ -190,7 +190,7 @@ const getClue = async () => {
         trackList.value = tracksResp || []
         orderRecords.value = await loadOrderRecords(clueResp)
         ticketRecords.value = await loadTicketRecords()
-        smsRecords.value = await loadSmsRecords(clueResp)
+        smsRecords.value = await loadSmsRecords()
         outboundCallRecords.value =
             (await CustomerDetailApi.getCustomerOutboundCallRecords(clueId.value)) || []
         await getOperateLog()
@@ -227,9 +227,6 @@ const loadTicketRecords = async () => {
     return pageResp?.list || []
 }
 
-const buildMobileList = (clueResp: ClueApi.ClueVO) =>
-    Array.from(new Set([clueResp.mobile, clueResp.mobile2].filter(Boolean) as string[]))
-
 const sortByCreateTimeDesc = <T extends { createTime?: string | Date | null }>(list: T[]) =>
     [...list].sort((a, b) => {
         const timeA = a.createTime ? new Date(a.createTime).getTime() : 0
@@ -237,27 +234,14 @@ const sortByCreateTimeDesc = <T extends { createTime?: string | Date | null }>(l
         return timeB - timeA
     })
 
-const loadSmsRecords = async (clueResp: ClueApi.ClueVO) => {
-    const mobileList = buildMobileList(clueResp)
-    if (!mobileList.length) return []
-    const pageList = await Promise.all(
-        mobileList.map((mobile) =>
-            SmsLogApi.getSmsLogPage({
-                pageNo: 1,
-                pageSize: 50,
-                mobile
-            })
-        )
-    )
-    const recordMap = new Map<number, SmsLogApi.SmsLogVO>()
-    pageList.forEach((pageResp) => {
-        ;(pageResp?.list || []).forEach((item) => {
-            if (item?.id != null) {
-                recordMap.set(Number(item.id), item)
-            }
-        })
+const loadSmsRecords = async () => {
+    if (!clueId.value) return []
+    const pageResp = await CustomerDetailApi.getCustomerSmsLogs({
+        pageNo: 1,
+        pageSize: 50,
+        clueId: clueId.value
     })
-    return sortByCreateTimeDesc(Array.from(recordMap.values()))
+    return sortByCreateTimeDesc(pageResp?.list || [])
 }
 
 const openForm = () => {

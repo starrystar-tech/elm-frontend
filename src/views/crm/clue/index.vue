@@ -237,6 +237,7 @@
 <script setup lang="tsx">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import type { UploadUserFile } from 'element-plus'
+import { ElLink } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import { useTable } from '@/hooks/web/useTable'
 import { Table, type TableColumn } from '@/components/Table'
@@ -614,7 +615,32 @@ const buildComplaintTagText = (row: ClueApi.ClueVO) =>
     row.complaintTagNames?.length ? row.complaintTagNames.join('、') : '-'
 
 const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'customerId', label: '客户编号', width: '130px' },
+    {
+        field: 'customerId',
+        label: '客户编号',
+        width: '130px',
+        fixed: 'left',
+        slots: {
+            default: (data) => (
+                <ElLink
+                    underline={false}
+                    type="primary"
+                    onClick={() => openDetail(Number(data.row.id))}
+                >
+                    {data.row.customerId || '--'}
+                </ElLink>
+            )
+        }
+    },
+    {
+        field: 'name',
+        label: '姓名',
+        width: '150px',
+        fixed: 'left',
+        slots: {
+            default: (data) => <ClueNameCell avatar={data.row.avatar} name={data.row.name} />
+        }
+    },
     {
         field: 'mobile',
         label: '联系电话',
@@ -631,21 +657,6 @@ const tableColumns = computed<TableColumn[]>(() => [
         }
     },
     { field: 'intentLevelName', label: '意向度', width: '100px' },
-    {
-        field: 'name',
-        label: '姓名',
-        width: '150px',
-        fixed: 'left',
-        slots: {
-            default: (data) => (
-                <ClueNameCell
-                    avatar={data.row.avatar}
-                    name={data.row.name}
-                    onClick={() => openDetail(data.row.id!)}
-                />
-            )
-        }
-    },
     {
         field: 'currentOwnerName',
         label: '归属人',

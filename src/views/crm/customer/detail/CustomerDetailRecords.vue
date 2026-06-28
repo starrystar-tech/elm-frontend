@@ -90,7 +90,15 @@
             <el-tab-pane label="通话记录" name="calls">
                 <el-table v-if="outboundCallRecords.length" :data="outboundCallRecords" border>
                     <el-table-column prop="recordNo" label="记录编号" min-width="180" />
-                    <el-table-column prop="calleeMobile" label="被叫号码" min-width="140" />
+                    <el-table-column label="被叫号码" min-width="170">
+                        <template #default="{ row }">
+                            <OutboundCallMobileCopyInline
+                                :record-id="row.id"
+                                :clue-id="row.clueId"
+                                :mobile="row.calleeMobile"
+                            />
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="userNickname" label="主叫" min-width="120" />
                     <el-table-column prop="createTime" label="发起时间" min-width="160">
                         <template #default="{ row }">
@@ -128,7 +136,16 @@
                             {{ formatDateTime(row.createTime) }}
                         </template>
                     </el-table-column>
-                    <el-table-column prop="mobile" label="手机号" min-width="140" />
+                    <el-table-column label="手机号" min-width="170">
+                        <template #default="{ row }">
+                            <SmsLogMobileCopyInline
+                                :mobile="row.mobile"
+                                :clue-id="clueId"
+                                :primary-mobile="primaryMobile"
+                                :secondary-mobile="secondaryMobile"
+                            />
+                        </template>
+                    </el-table-column>
                     <el-table-column label="发送状态" min-width="120">
                         <template #default="{ row }">
                             {{ getSmsSendStatusLabel(row.sendStatus) }}
@@ -170,10 +187,15 @@ import { getDictLabel } from '@/utils/dict'
 import { resolveTimestamp } from '@/utils/formatTime'
 import { DICT_TYPE } from '@/utils/dict'
 import { getAftersalesStatusLabel } from '@/views/aftersales/config'
+import OutboundCallMobileCopyInline from '@/views/crm/call/OutboundCallMobileCopyInline.vue'
+import SmsLogMobileCopyInline from '@/views/crm/clue/SmsLogMobileCopyInline.vue'
 
 defineOptions({ name: 'CustomerDetailRecords' })
 
 defineProps<{
+    clueId?: number
+    primaryMobile?: string
+    secondaryMobile?: string
     appointments: CustomerDetailApi.CustomerAppointmentRespVO[]
     orderRecords: OrderApi.OrderPageRespVO[]
     ticketRecords: AftersalesApi.AftersalesRespVO[]

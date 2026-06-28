@@ -20,6 +20,9 @@
                 </el-tab-pane>
             </el-tabs>
             <CustomerDetailRecords
+                :clue-id="clue.id"
+                :primary-mobile="clue.mobile"
+                :secondary-mobile="clue.mobile2"
                 :appointments="appointments"
                 :order-records="orderRecords"
                 :ticket-records="ticketRecords"

@@ -65,6 +65,7 @@
 
 <script setup lang="tsx">
 import { computed, nextTick, reactive, ref } from 'vue'
+import { ElLink } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -183,18 +184,29 @@ const openDetail = (id?: number) => {
 
 const tableColumns = computed<TableColumn[]>(() => [
     {
+        field: 'customerId',
+        label: '客户编号',
+        width: '130px',
+        fixed: 'left',
+        slots: {
+            default: (data) => (
+                <ElLink
+                    underline={false}
+                    type="primary"
+                    onClick={() => openDetail(Number(data.row.id))}
+                >
+                    {data.row.customerId || '--'}
+                </ElLink>
+            )
+        }
+    },
+    {
         field: 'name',
         label: '姓名',
         width: '150px',
         fixed: 'left',
         slots: {
-            default: (data) => (
-                <ClueNameCell
-                    avatar={data.row.avatar}
-                    name={data.row.name}
-                    onClick={() => openDetail(data.row.id)}
-                />
-            )
+            default: (data) => <ClueNameCell avatar={data.row.avatar} name={data.row.name} />
         }
     },
     {

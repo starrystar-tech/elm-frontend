@@ -438,7 +438,16 @@
                                         {{ formatDateTime(row.createTime) }}
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="mobile" label="手机号" min-width="140" />
+                                <el-table-column label="手机号" min-width="170">
+                                    <template #default="{ row }">
+                                        <SmsLogMobileCopyInline
+                                            :mobile="row.mobile"
+                                            :clue-id="clue.id || clueId"
+                                            :primary-mobile="clue.mobile"
+                                            :secondary-mobile="clue.mobile2"
+                                        />
+                                    </template>
+                                </el-table-column>
                                 <el-table-column label="发送状态" min-width="120">
                                     <template #default="{ row }">
                                         {{ getSmsSendStatusLabel(row.sendStatus) }}
@@ -475,11 +484,15 @@
                                 v-if="outboundCallRecords.length > 0"
                             >
                                 <el-table-column prop="recordNo" label="记录编号" min-width="180" />
-                                <el-table-column
-                                    prop="calleeMobile"
-                                    label="被叫号码"
-                                    min-width="140"
-                                />
+                                <el-table-column label="被叫号码" min-width="170">
+                                    <template #default="{ row }">
+                                        <OutboundCallMobileCopyInline
+                                            :record-id="row.id"
+                                            :clue-id="row.clueId"
+                                            :mobile="row.calleeMobile"
+                                        />
+                                    </template>
+                                </el-table-column>
                                 <el-table-column
                                     prop="userNickname"
                                     label="主叫"
@@ -799,10 +812,12 @@ import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
 import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
 import ClueIntentLevel from '@/components/ClueIntentLevel'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
+import SmsLogMobileCopyInline from '@/views/crm/clue/SmsLogMobileCopyInline.vue'
 import { buildAreaLabel, buildOwnerDisplayName } from '@/views/crm/clue/listShared'
 import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
 import { useOutboundDial } from '@/hooks/web/useOutboundDial'
 import AudioPlayer from '@/components/AudioPlayer/index.vue'
+import OutboundCallMobileCopyInline from '@/views/crm/call/OutboundCallMobileCopyInline.vue'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
