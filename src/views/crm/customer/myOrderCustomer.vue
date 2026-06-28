@@ -28,6 +28,7 @@
     </ContentWrap>
 
     <CustomerDetailDrawer ref="detailRef" @refresh="handleDetailRefresh" />
+    <AftersalesForm ref="aftersalesFormRef" @success="tableMethods.getList" />
 </template>
 
 <script lang="tsx" setup>
@@ -43,9 +44,11 @@ import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
 import { useUserStore } from '@/store/modules/user'
 import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 import CustomerDetailDrawer from './detail/CustomerDetailDrawer.vue'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import { buildAreaLabel } from '@/views/crm/clue/listShared'
+import AftersalesForm from '@/views/aftersales/components/AftersalesForm.vue'
 
 interface StudentSearchParams {
     mobile?: string
@@ -56,9 +59,11 @@ interface StudentSearchParams {
 defineOptions({ name: 'CrmMyOrderCustomer' })
 
 const detailRef = ref<InstanceType<typeof CustomerDetailDrawer>>()
+const aftersalesFormRef = ref<InstanceType<typeof AftersalesForm>>()
 const searchForm = reactive<StudentSearchParams>({})
 const userStore = useUserStore()
 const currentUserId = computed(() => Number(userStore.getUser.id || 0))
+const canCreateAftersales = hasPermission(['crm:aftersales:create'])
 const searchSchema = reactive<FormSchema[]>([
     {
         field: 'mobile',
@@ -120,6 +125,15 @@ const openDetail = (id: number) => {
 
 const handleDetailRefresh = async () => {
     await tableMethods.getList()
+}
+
+const handleCreateAftersales = (row: ClueApi.ClueVO) => {
+    aftersalesFormRef.value?.open({
+        clueId: Number(row.id),
+        customerId: row.customerId,
+        customerName: row.name,
+        orderFilterClueId: Number(row.id)
+    })
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
@@ -194,13 +208,24 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'action',
         label: '操作',
-        width: '120px',
+        width: '180px',
         fixed: 'right',
         slots: {
             default: (data) => (
-                <BaseButton link type="primary" onClick={() => openDetail(data.row.id)}>
-                    详情
-                </BaseButton>
+                <div class="flex items-center justify-center">
+                    <BaseButton link type="primary" onClick={() => openDetail(data.row.id)}>
+                        详情
+                    </BaseButton>
+                    {canCreateAftersales ? (
+                        <BaseButton
+                            link
+                            type="primary"
+                            onClick={() => handleCreateAftersales(data.row as ClueApi.ClueVO)}
+                        >
+                            新增工单
+                        </BaseButton>
+                    ) : null}
+                </div>
             )
         }
     }

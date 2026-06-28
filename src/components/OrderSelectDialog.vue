@@ -39,6 +39,7 @@ const emit = defineEmits<{
 
 const message = useMessage()
 const dialogVisible = ref(false)
+const baseSearchParams = ref<Partial<OrderApi.OrderPageReqVO>>({})
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
@@ -70,12 +71,19 @@ const {
 })
 
 const setSearchParams = (params: Recordable) => {
-    tableMethods.setSearchParams(params)
+    tableMethods.setSearchParams({
+        ...baseSearchParams.value,
+        ...params
+    })
 }
 
-const open = async () => {
+const open = async (options: Partial<OrderApi.OrderPageReqVO> = {}) => {
     dialogVisible.value = true
+    baseSearchParams.value = {
+        clueId: options.clueId
+    }
     tableMethods.setSearchParams({
+        ...baseSearchParams.value,
         orderNo: undefined,
         customer: undefined,
         mobile: undefined

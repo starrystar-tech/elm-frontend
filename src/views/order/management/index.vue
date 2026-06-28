@@ -102,6 +102,7 @@
     <BatchUpdateOwnerDialog ref="batchUpdateOwnerDialogRef" @confirm="submitBatchUpdateOwner" />
     <ExportTaskDialog ref="exportDialogRef" @success="handleExportSuccess" />
     <UserSelectForm ref="userSelectFormRef" @confirm="handleUserSelectConfirm" />
+    <AftersalesForm ref="aftersalesFormRef" @success="tableMethods.getList" />
 </template>
 
 <script setup lang="tsx">
@@ -135,6 +136,8 @@ import BatchUpdateOwnerDialog from './BatchUpdateOwnerDialog.vue'
 import ExportTaskDialog from '@/views/crm/clue/components/ExportTaskDialog.vue'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import type { UserVO } from '@/api/system/user'
+import { hasPermission } from '@/directives/permission/hasPermi'
+import AftersalesForm from '@/views/aftersales/components/AftersalesForm.vue'
 
 defineOptions({ name: 'OrderManagement' })
 
@@ -148,7 +151,9 @@ const payDialogRef = ref<InstanceType<typeof OrderPayDialog>>()
 const batchUpdateOwnerDialogRef = ref<InstanceType<typeof BatchUpdateOwnerDialog>>()
 const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
 const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
+const aftersalesFormRef = ref<InstanceType<typeof AftersalesForm>>()
 const currentSearchParams = ref<Recordable>({})
+const canCreateAftersales = hasPermission(['crm:aftersales:create'])
 const defaultSearchForm = {
     mobile: '',
     customer: '',
@@ -405,6 +410,22 @@ const handleRefund = async (row: OrderApi.OrderPageRespVO) => {
     refundRef.value?.open(row)
 }
 
+const handleCreateAftersales = async (row: OrderApi.OrderPageRespVO) => {
+    const detail = await OrderApi.getOrder(row.id)
+    if (!detail?.clueId) {
+        message.warning('该订单未关联客户，无法用于售后工单')
+        return
+    }
+    aftersalesFormRef.value?.open({
+        clueId: Number(detail.clueId),
+        orderId: detail.id,
+        orderNo: detail.orderNo,
+        customerId: detail.customerId,
+        customerName: detail.customerName,
+        orderFilterClueId: Number(detail.clueId)
+    })
+}
+
 const handleVoid = async (row: OrderApi.OrderPageRespVO) => {
     await ElMessageBox.confirm(`确认作废订单“${row.orderNo}”吗？`, '提示', { type: 'warning' })
     await OrderApi.voidOrder(row.id)
@@ -500,6 +521,11 @@ const canPayOrder = (row: OrderApi.OrderPageRespVO) =>
 const getMoreActions = (row: OrderApi.OrderPageRespVO) =>
     [
         {
+            command: 'aftersales',
+            label: '新增工单',
+            show: canCreateAftersales
+        },
+        {
             command: 'contractSign',
             label: '签署合同',
             show: canSignContract(row)
@@ -530,6 +556,9 @@ const handleMoreCommand = async (command: string, row: OrderApi.OrderPageRespVO)
             break
         case 'pay':
             await handlePay(row)
+            break
+        case 'aftersales':
+            await handleCreateAftersales(row)
             break
         case 'refund':
             await handleRefund(row)

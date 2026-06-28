@@ -111,6 +111,7 @@ const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
 const orderSelectDialogRef = ref<InstanceType<typeof OrderSelectDialog>>()
 const handlerUserName = ref('')
 const selectedOrderDisplay = ref('')
+const orderSelectClueId = ref<number>()
 const aftersalesTypeOptions = computed(() => getAftersalesTypeOptions())
 const aftersalesPriorityOptions = computed(() => getAftersalesPriorityOptions())
 const formData = ref<AftersalesApi.AftersalesCreateReqVO>({
@@ -139,14 +140,41 @@ const formRules = reactive({
 
 const emit = defineEmits(['success'])
 
-const open = () => {
+interface AftersalesFormOpenOptions {
+    clueId?: number
+    orderId?: number
+    orderNo?: string
+    customerId?: string
+    customerName?: string
+    orderFilterClueId?: number
+}
+
+const buildCustomerDisplay = (options: AftersalesFormOpenOptions) => {
+    const parts = [options.customerId, options.customerName].filter(Boolean)
+    return parts.length ? parts.join(' / ') : ''
+}
+
+const buildOrderDisplay = (options: AftersalesFormOpenOptions) => {
+    const parts = [options.orderNo, options.customerName].filter(Boolean)
+    return parts.length ? parts.join(' / ') : buildCustomerDisplay(options)
+}
+
+const open = (options: AftersalesFormOpenOptions = {}) => {
     dialogVisible.value = true
     resetForm()
+    formData.value.clueId = options.clueId as number
+    formData.value.orderId = options.orderId
+    orderSelectClueId.value = options.orderFilterClueId || options.clueId
+    selectedOrderDisplay.value = options.orderId
+        ? buildOrderDisplay(options)
+        : buildCustomerDisplay(options)
 }
 defineExpose({ open })
 
 const openOrderSelect = () => {
-    orderSelectDialogRef.value?.open()
+    orderSelectDialogRef.value?.open({
+        clueId: orderSelectClueId.value
+    })
 }
 
 const handleOrderConfirm = (order: OrderApi.OrderDetailRespVO) => {
@@ -156,6 +184,7 @@ const handleOrderConfirm = (order: OrderApi.OrderDetailRespVO) => {
     }
     formData.value.orderId = order.id
     formData.value.clueId = Number(order.clueId)
+    orderSelectClueId.value = Number(order.clueId)
     selectedOrderDisplay.value = `${order.orderNo} / ${order.customerName || '--'}`
 }
 
@@ -209,6 +238,7 @@ const resetForm = () => {
         handlerUserId: undefined
     }
     selectedOrderDisplay.value = ''
+    orderSelectClueId.value = undefined
     handlerUserName.value = ''
     formRef.value?.resetFields()
 }
