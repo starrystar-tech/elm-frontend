@@ -10,6 +10,9 @@
             <BaseButton v-hasPermi="['crm:aftersales:create']" type="primary" @click="openCreate">
                 新增工单
             </BaseButton>
+            <BaseButton v-hasPermi="['crm:aftersales:create']" plain @click="openImport">
+                批量导入
+            </BaseButton>
             <BaseButton v-hasPermi="['crm:aftersales:assign']" @click="openAssign">
                 分配处理人
             </BaseButton>
@@ -31,6 +34,7 @@
         <AftersalesAssignDialog ref="assignRef" @success="tableMethods.getList()" />
         <AftersalesProcessDialog ref="processRef" @success="tableMethods.getList()" />
         <AftersalesDetailDialog ref="detailRef" />
+        <AftersalesImportDialog ref="importRef" @success="tableMethods.getList()" />
         <ExportTaskDialog ref="exportDialogRef" @success="handleExportSuccess" />
     </ContentWrap>
 </template>
@@ -60,6 +64,7 @@ import AftersalesForm from '../components/AftersalesForm.vue'
 import AftersalesAssignDialog from '../components/AftersalesAssignDialog.vue'
 import AftersalesProcessDialog from '../components/AftersalesProcessDialog.vue'
 import AftersalesDetailDialog from '../components/AftersalesDetailDialog.vue'
+import AftersalesImportDialog from './AftersalesImportDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 import ExportTaskDialog from '@/views/crm/clue/components/ExportTaskDialog.vue'
 
@@ -71,6 +76,7 @@ const formRef = ref()
 const assignRef = ref()
 const processRef = ref()
 const detailRef = ref()
+const importRef = ref<InstanceType<typeof AftersalesImportDialog>>()
 const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
 const { emitter } = useEmitt()
 const handlerOptions = ref<{ label: string; value: number }[]>([])
@@ -136,6 +142,8 @@ const initSearchFormFromRoute = () => {
 }
 
 const openCreate = () => formRef.value.open()
+
+const openImport = () => importRef.value?.open()
 
 const openAssign = async () => {
     const selections = await tableMethods.getSelections()

@@ -6,6 +6,7 @@
         <div class="clue-name-cell__content">
             <el-tooltip :content="displayName" placement="top" :show-after="300">
                 <el-link
+                    v-if="clickable"
                     class="clue-name-cell__link"
                     :underline="false"
                     type="primary"
@@ -13,6 +14,9 @@
                 >
                     {{ displayName }}
                 </el-link>
+                <span v-else class="clue-name-cell__text">
+                    {{ displayName }}
+                </span>
             </el-tooltip>
             <el-tooltip v-if="suffix" :content="suffixText" placement="top" :show-after="300">
                 <span class="clue-name-cell__suffix" :style="{ color: suffixColor }">
@@ -31,6 +35,7 @@ const props = defineProps<{
     avatar?: string
     suffix?: string
     suffixColor?: string
+    clickable?: boolean
 }>()
 
 defineEmits<{
@@ -79,6 +84,17 @@ const avatarText = computed(() => (props.name || '线').slice(0, 1))
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+}
+
+.clue-name-cell__text {
+    flex: 0 1 auto;
+    display: block;
+    min-width: 0;
+    max-width: 88px;
+    overflow: hidden;
+    color: var(--el-text-color-primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .clue-name-cell__suffix {

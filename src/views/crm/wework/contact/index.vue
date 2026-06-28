@@ -8,6 +8,10 @@
             <Search
                 ref="searchRef"
                 :schema="searchSchema"
+                layout="bottom"
+                button-position="right"
+                show-expand
+                expand-field="dateRange"
                 @search="setSearchParams"
                 @reset="setSearchParams"
             />
@@ -21,6 +25,7 @@
                 v-model:pageSize="tableObject.pageSize"
                 :columns="tableColumns"
                 :data="tableObject.tableList"
+                :row-class-name="getRowClassName"
                 row-key="id"
                 :loading="tableObject.loading"
                 :pagination="{ total: tableObject.total }"
@@ -64,6 +69,8 @@ const memberOptions = ref<{ label: string; value: string }[]>([])
 const allMemberList = ref<WeworkContactApi.WeworkMemberSimpleVO[]>([])
 const corpCompanyMap = ref<Record<string, string>>({})
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
+const SYNC_STATUS_SUCCESS = 1
+const SYNC_STATUS_FAILED = 2
 
 const handleViewDetail = (row: WeworkContactApi.WeworkContactVO) => {
     if (row.clueId) {
@@ -125,6 +132,20 @@ const searchSchema = reactive<FormSchema[]>([
             clearable: true,
             placeholder: '请选择添加方式',
             options: getStrDictOptions(DICT_TYPE.WEWORK_FOLLOW_USER_ADD_WAY),
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'syncStatus',
+        label: '名片状态',
+        component: 'Select',
+        componentProps: {
+            clearable: true,
+            placeholder: '请选择同步状态',
+            options: [
+                { label: '同步成功', value: SYNC_STATUS_SUCCESS },
+                { label: '同步异常', value: SYNC_STATUS_FAILED }
+            ],
             style: { width: '220px' }
         }
     },
@@ -276,6 +297,10 @@ const handleCompanyChange = async (corpId?: string) => {
     }
 }
 
+const getRowClassName = ({ row }: { row: WeworkContactApi.WeworkContactVO }) => {
+    return row.syncStatus === SYNC_STATUS_FAILED ? 'wework-contact-row--failed' : ''
+}
+
 const loadFilterOptions = async () => {
     const [weappList, members] = await Promise.all([
         WeappApi.getWeappConfigList(),
@@ -312,18 +337,21 @@ const tableColumns = reactive<TableColumn[]>([
         field: 'customerName',
         label: '客户',
         fixed: 'left',
-        width: '210px',
+        width: '250px',
         slots: {
             default: (data) => {
                 const row = data.row as WeworkContactApi.WeworkContactVO
                 return (
-                    <ClueNameCell
-                        name={row.customerName}
-                        avatar={row.avatar}
-                        suffix={row.corpName ? row.corpName : '个微'}
-                        suffixColor={row.corpName ? '#fa8c16' : '#52c41a'}
-                        onClick={() => handleViewDetail(row)}
-                    />
+                    <div class="wework-contact-name-cell">
+                        <ClueNameCell
+                            name={row.customerName}
+                            avatar={row.avatar}
+                            suffix={row.corpName ? row.corpName : '个微'}
+                            suffixColor={row.corpName ? '#fa8c16' : '#52c41a'}
+                            clickable={!!row.clueId}
+                            onClick={() => handleViewDetail(row)}
+                        />
+                    </div>
                 )
             }
         }
@@ -337,7 +365,7 @@ const tableColumns = reactive<TableColumn[]>([
                 renderCopyMobileCell({
                     row: data.row,
                     mobile: data.row.mobile,
-                    directCopyWhenMissingClueId: true,
+                    copyByRowIdApi: WeworkContactApi.copyWeworkContactMobile,
                     success: message.success,
                     warning: message.warning
                 })
@@ -356,6 +384,7 @@ const tableColumns = reactive<TableColumn[]>([
                         avatar={row.staffAvatar}
                         suffix={corpCompanyMap.value[row.corpId] || row.corpName || '个微'}
                         suffixColor="#fa8c16"
+                        clickable={false}
                     />
                 )
             }
@@ -369,6 +398,38 @@ const tableColumns = reactive<TableColumn[]>([
             default: (data) => (
                 <DictTag type={DICT_TYPE.WEWORK_FOLLOW_USER_ADD_WAY} value={data.row.addWay} />
             )
+        }
+    },
+    {
+        field: 'syncStatus',
+        label: '名片状态',
+        width: '120px',
+        slots: {
+            default: (data) => {
+                const row = data.row as WeworkContactApi.WeworkContactVO
+                if (row.syncStatus === SYNC_STATUS_SUCCESS) {
+                    return <span class="sync-status-text sync-status-text--success">同步成功</span>
+                }
+                if (row.syncStatus === SYNC_STATUS_FAILED) {
+                    return <span class="sync-status-text sync-status-text--warning">同步异常</span>
+                }
+                return '-'
+            }
+        }
+    },
+    {
+        field: 'syncFailReason',
+        label: '失败原因',
+        width: '220px',
+        showOverflowTooltip: true,
+        slots: {
+            default: (data) => {
+                const row = data.row as WeworkContactApi.WeworkContactVO
+                if (row.syncStatus === SYNC_STATUS_FAILED && row.syncFailReason) {
+                    return <span class="sync-fail-reason">{row.syncFailReason}</span>
+                }
+                return ''
+            }
         }
     },
     {
@@ -448,3 +509,54 @@ watch(
     }
 )
 </script>
+
+<style scoped lang="scss">
+.wework-contact-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.wework-contact-sync-tag {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(103, 194, 58, 0.14);
+    color: #389e0d;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.wework-contact-sync-tag--warning {
+    background: rgba(230, 162, 60, 0.16);
+    color: #b26a00;
+}
+
+.sync-status-text {
+    font-weight: 600;
+}
+
+.sync-status-text--success {
+    color: #389e0d;
+}
+
+.sync-status-text--warning {
+    color: #b26a00;
+}
+
+.sync-fail-reason {
+    color: #b26a00;
+}
+
+:deep(.el-table__row.wework-contact-row--failed td) {
+    background: rgba(230, 162, 60, 0.08);
+}
+
+:deep(.el-table__row.wework-contact-row--failed:hover td) {
+    background: rgba(230, 162, 60, 0.14) !important;
+}
+</style>

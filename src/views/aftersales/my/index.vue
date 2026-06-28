@@ -10,6 +10,9 @@
             <BaseButton v-hasPermi="['crm:aftersales:create']" type="primary" @click="openCreate">
                 新增工单
             </BaseButton>
+            <BaseButton v-hasPermi="['crm:aftersales:create']" plain @click="openImport">
+                批量导入
+            </BaseButton>
         </div>
         <Table
             v-model:currentPage="tableObject.currentPage"
@@ -23,6 +26,7 @@
         <AftersalesForm ref="formRef" @success="tableMethods.getList()" />
         <AftersalesProcessDialog ref="processRef" @success="tableMethods.getList()" />
         <AftersalesDetailDialog ref="detailRef" />
+        <AftersalesImportDialog ref="importRef" @success="tableMethods.getList()" />
     </ContentWrap>
 </template>
 
@@ -49,6 +53,7 @@ import {
 import AftersalesForm from '../components/AftersalesForm.vue'
 import AftersalesProcessDialog from '../components/AftersalesProcessDialog.vue'
 import AftersalesDetailDialog from '../components/AftersalesDetailDialog.vue'
+import AftersalesImportDialog from '../ticket/AftersalesImportDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 
 defineOptions({ name: 'AftersalesMy' })
@@ -60,6 +65,7 @@ const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 const formRef = ref()
 const processRef = ref()
 const detailRef = ref()
+const importRef = ref<InstanceType<typeof AftersalesImportDialog>>()
 const searchForm = reactive<Recordable>({})
 
 const searchSchema = computed<FormSchema[]>(() => {
@@ -95,6 +101,7 @@ const initSearchFormFromRoute = () => {
 }
 
 const openCreate = () => formRef.value.open()
+const openImport = () => importRef.value?.open()
 const openProcess = (row: AftersalesApi.AftersalesRespVO) => processRef.value.open(row)
 const openDetail = (id: number) => detailRef.value.open(id)
 

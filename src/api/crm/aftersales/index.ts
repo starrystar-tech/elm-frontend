@@ -63,6 +63,11 @@ export interface AftersalesCreateReqVO {
   handlerUserId?: number
 }
 
+export interface AftersalesImportRespVO {
+  successOrderNos: string[]
+  failureOrderNos: Record<string, string>
+}
+
 export interface AftersalesAssignReqVO {
   ids: number[]
   handlerUserId: number
@@ -110,6 +115,14 @@ export const getAftersales = async (id: number) => {
 
 export const createAftersales = async (data: AftersalesCreateReqVO) => {
   return await request.post<number>({ url: '/crm/aftersales/create', data })
+}
+
+export const importAftersales = async (data: FormData) => {
+  return await request.upload<AftersalesImportRespVO>({ url: '/crm/aftersales/import', data })
+}
+
+export const downloadAftersalesImportTemplate = async () => {
+  return await request.download({ url: '/crm/aftersales/import-template' })
 }
 
 export const claimAftersales = async (id: number) => {

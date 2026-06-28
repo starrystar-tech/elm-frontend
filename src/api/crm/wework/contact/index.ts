@@ -18,6 +18,9 @@ export interface WeworkContactVO {
   state: string
   createTime: Date
   clueId?: number
+  reusedExistingClue?: boolean
+  syncStatus?: number
+  syncFailReason?: string
 }
 
 export interface WeworkMemberSimpleVO {
@@ -42,6 +45,7 @@ export interface WeworkContactPageReqVO extends PageParam {
   mobile?: string
   addWay?: string
   hasPhone?: boolean
+  syncStatus?: number
   beginAddTime?: string
   endAddTime?: string
 }
@@ -60,6 +64,10 @@ export const getWeworkMemberSimpleList = async (corpId?: string) => {
 
 export const getWeworkCompanySimpleList = async () => {
   return await request.get<WeworkCorpSimpleVO[]>({ url: '/crm/wework-contact/company-simple-list' })
+}
+
+export const copyWeworkContactMobile = async (id: number) => {
+  return await request.post({ url: '/crm/wework-contact/copy-mobile', params: { id } })
 }
 
 export const updateWeworkRemarkMobile = async (data: { id: number; mobile: string }) => {
