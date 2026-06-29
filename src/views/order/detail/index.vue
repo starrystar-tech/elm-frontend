@@ -485,10 +485,10 @@ const loadConsultInfo = async () => {
     }
     const [basicInfo, appointments] = await Promise.all([
         CustomerDetailApi.getCustomerBasicInfo(clueId),
-        CustomerDetailApi.getCustomerAppointments(clueId)
+        CustomerDetailApi.getCustomerAppointments({ id: clueId, pageNo: 1, pageSize: 100 })
     ])
     consultBasicInfo.value = basicInfo
-    consultAppointments.value = appointments || []
+    consultAppointments.value = appointments?.list || []
 }
 
 const loadDetail = async () => {

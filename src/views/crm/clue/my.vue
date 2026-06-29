@@ -479,20 +479,29 @@ const handleSelectionChange = (rows: ClueApi.MyCluePageRespVO[]) => {
     selectionList.value = rows || []
 }
 
-const mergeSearchParams = (params: MyClueSearchParams = {}): MyClueSearchParams => ({
-    ...params,
-    areaId: searchForm.areaId,
-    consultProjectId: searchForm.consultProjectId
-})
-
-const handleSearch = (params: MyClueSearchParams) => {
-    tableMethods.setSearchParams(buildSearchParams(mergeSearchParams(params)))
+const collectSearchParams = (params: MyClueSearchParams = {}): MyClueSearchParams => {
+    const merged: MyClueSearchParams = { ...searchForm }
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+            merged[key as keyof MyClueSearchParams] = value as never
+        }
+    })
+    return merged
 }
 
-const handleResetSearch = (params: MyClueSearchParams) => {
-    searchForm.areaId = undefined
-    searchForm.consultProjectId = undefined
-    tableMethods.setSearchParams(buildSearchParams(mergeSearchParams(params)))
+const resetSearchForm = () => {
+    Object.keys(searchForm).forEach((key) => {
+        delete searchForm[key as keyof MyClueSearchParams]
+    })
+}
+
+const handleSearch = (params: MyClueSearchParams) => {
+    tableMethods.setSearchParams(buildSearchParams(collectSearchParams(params)))
+}
+
+const handleResetSearch = () => {
+    resetSearchForm()
+    tableMethods.setSearchParams(buildSearchParams({}))
 }
 
 const getQueryString = (value: unknown) => {
@@ -623,7 +632,7 @@ onMounted(async () => {
         }),
         loadCounts()
     ])
-    tableMethods.setSearchParams(buildSearchParams(mergeSearchParams(searchForm)))
+    tableMethods.setSearchParams(buildSearchParams(collectSearchParams(searchForm)))
 })
 </script>
 

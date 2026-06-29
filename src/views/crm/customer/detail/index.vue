@@ -14,14 +14,40 @@
                 </el-tab-pane>
             </el-tabs>
             <CustomerDetailRecords
+                :clue="clue"
                 :clue-id="clue.id"
                 :primary-mobile="clue.mobile"
                 :secondary-mobile="clue.mobile2"
                 :appointments="appointments"
+                :appointment-total="appointmentPagination.total"
+                :appointment-page-no="appointmentPagination.pageNo"
+                :appointment-page-size="appointmentPagination.pageSize"
                 :order-records="orderRecords"
+                :order-total="orderPagination.total"
+                :order-page-no="orderPagination.pageNo"
+                :order-page-size="orderPagination.pageSize"
                 :ticket-records="ticketRecords"
+                :ticket-total="ticketPagination.total"
+                :ticket-page-no="ticketPagination.pageNo"
+                :ticket-page-size="ticketPagination.pageSize"
+                :track-list="trackList"
+                :track-total="trackPagination.total"
+                :track-page-no="trackPagination.pageNo"
+                :track-page-size="trackPagination.pageSize"
                 :outbound-call-records="outboundCallRecords"
+                :outbound-call-total="outboundCallPagination.total"
+                :outbound-call-page-no="outboundCallPagination.pageNo"
+                :outbound-call-page-size="outboundCallPagination.pageSize"
                 :sms-records="smsRecords"
+                :sms-total="smsPagination.total"
+                :sms-page-no="smsPagination.pageNo"
+                :sms-page-size="smsPagination.pageSize"
+                @change-appointment-page="handleAppointmentPageChange"
+                @change-order-page="handleOrderPageChange"
+                @change-ticket-page="handleTicketPageChange"
+                @change-track-page="handleTrackPageChange"
+                @change-outbound-call-page="handleOutboundCallPageChange"
+                @change-sms-page="handleSmsPageChange"
             />
         </el-col>
 
@@ -56,45 +82,78 @@ const { params } = useRoute()
 const appointments = ref<CustomerDetailApi.CustomerAppointmentRespVO[]>([])
 const orderRecords = ref<OrderApi.OrderPageRespVO[]>([])
 const ticketRecords = ref<AftersalesApi.AftersalesRespVO[]>([])
+const trackList = ref<CustomerDetailApi.CustomerTrackRespVO[]>([])
 const smsRecords = ref<SmsLogApi.SmsLogVO[]>([])
 const outboundCallRecords = ref<OutboundCallRecordVO[]>([])
+const appointmentPagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
+const orderPagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
+const ticketPagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
+const trackPagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
+const outboundCallPagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
+const smsPagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
 
 const getClue = async () => {
     loading.value = true
     try {
-        const [clueResp, appointmentsResp, callRecordsResp] = await Promise.all([
-            ClueApi.getClue(clueId.value),
-            CustomerDetailApi.getCustomerAppointments(clueId.value),
-            CustomerDetailApi.getCustomerOutboundCallRecords(clueId.value)
+        clue.value = await ClueApi.getClue(clueId.value)
+        await Promise.all([
+            loadAppointmentRecords(),
+            loadOrderRecords(),
+            loadTicketRecords(),
+            loadTrackRecords(),
+            loadOutboundCallRecords(),
+            loadSmsRecords()
         ])
-        clue.value = clueResp
-        appointments.value = appointmentsResp || []
-        outboundCallRecords.value = callRecordsResp || []
-        orderRecords.value = await loadOrderRecords()
-        ticketRecords.value = await loadTicketRecords()
-        smsRecords.value = await loadSmsRecords()
     } finally {
         loading.value = false
     }
 }
 
+const loadAppointmentRecords = async () => {
+    if (!clueId.value) return []
+    const pageResp = await CustomerDetailApi.getCustomerAppointments({
+        id: clueId.value,
+        pageNo: appointmentPagination.pageNo,
+        pageSize: appointmentPagination.pageSize
+    })
+    appointments.value = pageResp?.list || []
+    appointmentPagination.total = Number(pageResp?.total || 0)
+    return appointments.value
+}
+
 const loadOrderRecords = async () => {
     if (!clueId.value) return []
     const pageResp = await OrderApi.getOrderPage({
-        pageNo: 1,
-        pageSize: 20,
+        pageNo: orderPagination.pageNo,
+        pageSize: orderPagination.pageSize,
         clueId: clueId.value
     })
-    return pageResp?.list || []
+    orderRecords.value = pageResp?.list || []
+    orderPagination.total = Number(pageResp?.total || 0)
+    return orderRecords.value
 }
 
 const loadTicketRecords = async () => {
     const pageResp = await AftersalesApi.getAftersalesPage({
-        pageNo: 1,
-        pageSize: 20,
+        pageNo: ticketPagination.pageNo,
+        pageSize: ticketPagination.pageSize,
         clueId: clueId.value
     })
-    return pageResp?.list || []
+    ticketRecords.value = pageResp?.list || []
+    ticketPagination.total = Number(pageResp?.total || 0)
+    return ticketRecords.value
+}
+
+const loadTrackRecords = async () => {
+    if (!clueId.value) return []
+    const pageResp = await CustomerDetailApi.getCustomerTracks({
+        id: clueId.value,
+        pageNo: trackPagination.pageNo,
+        pageSize: trackPagination.pageSize
+    })
+    trackList.value = pageResp?.list || []
+    trackPagination.total = Number(pageResp?.total || 0)
+    return trackList.value
 }
 
 const sortByCreateTimeDesc = <T extends { createTime?: string | Date | null }>(list: T[]) =>
@@ -107,11 +166,61 @@ const sortByCreateTimeDesc = <T extends { createTime?: string | Date | null }>(l
 const loadSmsRecords = async () => {
     if (!clueId.value) return []
     const pageResp = await CustomerDetailApi.getCustomerSmsLogs({
-        pageNo: 1,
-        pageSize: 50,
+        pageNo: smsPagination.pageNo,
+        pageSize: smsPagination.pageSize,
         clueId: clueId.value
     })
-    return sortByCreateTimeDesc(pageResp?.list || [])
+    smsRecords.value = sortByCreateTimeDesc(pageResp?.list || [])
+    smsPagination.total = Number(pageResp?.total || 0)
+    return smsRecords.value
+}
+
+const loadOutboundCallRecords = async () => {
+    if (!clueId.value) return []
+    const pageResp = await CustomerDetailApi.getCustomerOutboundCallRecords({
+        id: clueId.value,
+        pageNo: outboundCallPagination.pageNo,
+        pageSize: outboundCallPagination.pageSize
+    })
+    outboundCallRecords.value = pageResp?.list || []
+    outboundCallPagination.total = Number(pageResp?.total || 0)
+    return outboundCallRecords.value
+}
+
+const handleAppointmentPageChange = async (payload: { pageNo: number; pageSize: number }) => {
+    appointmentPagination.pageNo = payload.pageNo
+    appointmentPagination.pageSize = payload.pageSize
+    await loadAppointmentRecords()
+}
+
+const handleOrderPageChange = async (payload: { pageNo: number; pageSize: number }) => {
+    orderPagination.pageNo = payload.pageNo
+    orderPagination.pageSize = payload.pageSize
+    await loadOrderRecords()
+}
+
+const handleTicketPageChange = async (payload: { pageNo: number; pageSize: number }) => {
+    ticketPagination.pageNo = payload.pageNo
+    ticketPagination.pageSize = payload.pageSize
+    await loadTicketRecords()
+}
+
+const handleTrackPageChange = async (payload: { pageNo: number; pageSize: number }) => {
+    trackPagination.pageNo = payload.pageNo
+    trackPagination.pageSize = payload.pageSize
+    await loadTrackRecords()
+}
+
+const handleOutboundCallPageChange = async (payload: { pageNo: number; pageSize: number }) => {
+    outboundCallPagination.pageNo = payload.pageNo
+    outboundCallPagination.pageSize = payload.pageSize
+    await loadOutboundCallRecords()
+}
+
+const handleSmsPageChange = async (payload: { pageNo: number; pageSize: number }) => {
+    smsPagination.pageNo = payload.pageNo
+    smsPagination.pageSize = payload.pageSize
+    await loadSmsRecords()
 }
 
 const openForm = () => {
@@ -130,6 +239,12 @@ onMounted(async () => {
         return
     }
     clueId.value = Number(params.id)
+    appointmentPagination.pageNo = 1
+    orderPagination.pageNo = 1
+    ticketPagination.pageNo = 1
+    trackPagination.pageNo = 1
+    outboundCallPagination.pageNo = 1
+    smsPagination.pageNo = 1
     await getClue()
 })
 </script>

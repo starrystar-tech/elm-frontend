@@ -814,26 +814,47 @@ const getRowClassName = ({ row }: { row: ClueApi.ClueVO }) => {
     return Number(row.currentOwnerId || 0) > 0 ? '' : 'clue-row--unassigned'
 }
 
-const mergeSearchParams = (params: SearchParams = {}): SearchParams => ({
-    ...params,
-    areaId: searchForm.areaId,
-    consultProjectId: searchForm.consultProjectId,
-    allocationType: searchForm.allocationType
-})
+const collectSearchParams = (params: SearchParams = {}): SearchParams => {
+    const merged: SearchParams = { ...currentSearchParams.value }
+    Object.entries(searchForm).forEach(([key, value]) => {
+        if (value !== undefined) {
+            merged[key as keyof SearchParams] = value as never
+        }
+    })
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+            merged[key as keyof SearchParams] = value as never
+        }
+    })
+    return merged
+}
+
+const resetSearchForm = () => {
+    Object.keys(searchForm).forEach((key) => {
+        delete searchForm[key as keyof SearchParams]
+    })
+}
+
+const syncSearchForm = (params: SearchParams) => {
+    resetSearchForm()
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+            searchForm[key as keyof SearchParams] = value as never
+        }
+    })
+}
 
 const handleSearch = (params: SearchParams) => {
-    const nextParams = mergeSearchParams(params)
+    const nextParams = collectSearchParams(params)
+    syncSearchForm(nextParams)
     currentSearchParams.value = { ...nextParams }
     tableMethods.setSearchParams(buildPageParams(nextParams))
 }
 
-const handleResetSearch = (params: SearchParams) => {
-    searchForm.areaId = undefined
-    searchForm.consultProjectId = undefined
-    searchForm.allocationType = undefined
-    const nextParams = mergeSearchParams(params)
-    currentSearchParams.value = { ...nextParams }
-    tableMethods.setSearchParams(buildPageParams(nextParams))
+const handleResetSearch = () => {
+    resetSearchForm()
+    currentSearchParams.value = {}
+    tableMethods.setSearchParams(buildPageParams())
 }
 
 const openExportDialog = () => {

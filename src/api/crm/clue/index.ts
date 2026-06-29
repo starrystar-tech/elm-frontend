@@ -615,6 +615,13 @@ export const copyClueMobile = async (clueId: number, mobileField: string = 'mobi
     })
 }
 
+export const copyClueSmsLogMobile = async (smsLogId: number) => {
+    return await request.post<ClueCopyMobileRespVO>({
+        url: '/crm/clue/copy-mobile-direct',
+        data: { smsLogId }
+    })
+}
+
 export const copyClueMobileDirect = async (mobile: string) => {
     return await request.post<ClueCopyMobileRespVO>({
         url: '/crm/clue/copy-mobile-direct',

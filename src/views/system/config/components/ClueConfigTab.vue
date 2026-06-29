@@ -9,6 +9,16 @@
                     <el-input-number v-model="item.days" :min="1" :max="365" :controls="false" />
                     <span>{{ item.tailText }}</span>
                 </div>
+                <div class="line-item">
+                    <span>自动进入待回访，累计外呼时长达到</span>
+                    <el-input-number
+                        v-model="autoReturnVisitCallDurationSeconds"
+                        :min="0"
+                        :max="86400"
+                        :controls="false"
+                    />
+                    <span>秒</span>
+                </div>
             </div>
         </section>
 
@@ -99,6 +109,7 @@ const canUpdate = hasPermission(['system:clue-flow-config:update'])
 const loading = ref(false)
 const saving = ref(false)
 const rules = ref<RuleViewItem[]>([])
+const autoReturnVisitCallDurationSeconds = ref(0)
 
 const recycleRules = computed(() => {
     return rules.value.filter((item) => RECYCLE_RULE_CODES.includes(item.ruleCode))
@@ -143,6 +154,9 @@ const loadConfig = async () => {
     try {
         const data = await ClueFlowConfigApi.getClueFlowConfig()
         rules.value = normalizeRules(data?.rules || [])
+        autoReturnVisitCallDurationSeconds.value = Number(
+            data?.autoReturnVisitCallDurationSeconds || 0
+        )
     } finally {
         loading.value = false
     }
@@ -152,6 +166,7 @@ const handleSave = async () => {
     saving.value = true
     try {
         const payload: ClueFlowConfigApi.ClueFlowConfigSaveReqVO = {
+            autoReturnVisitCallDurationSeconds: autoReturnVisitCallDurationSeconds.value,
             rules: rules.value
                 .map((item) => ({
                     ruleCode: item.ruleCode,

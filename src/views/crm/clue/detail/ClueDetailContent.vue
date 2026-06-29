@@ -310,6 +310,25 @@
                                     min-width="220"
                                 />
                             </el-table>
+                            <div v-if="appointments?.length" class="record-pagination">
+                                <el-pagination
+                                    background
+                                    layout="total, prev, pager, next, sizes"
+                                    :total="appointmentTotal"
+                                    :current-page="appointmentPageNo"
+                                    :page-size="appointmentPageSize"
+                                    :page-sizes="[10, 20, 50, 100]"
+                                    @current-change="
+                                        emit('change-appointment-page', {
+                                            pageNo: $event,
+                                            pageSize: appointmentPageSize
+                                        })
+                                    "
+                                    @size-change="
+                                        emit('change-appointment-page', { pageNo: 1, pageSize: $event })
+                                    "
+                                />
+                            </div>
                             <el-empty
                                 v-if="!appointments?.length"
                                 description="暂无预约记录"
@@ -350,6 +369,25 @@
                                     min-width="100"
                                 />
                             </el-table>
+                            <div v-if="orderRecords?.length" class="record-pagination">
+                                <el-pagination
+                                    background
+                                    layout="total, prev, pager, next, sizes"
+                                    :total="orderTotal"
+                                    :current-page="orderPageNo"
+                                    :page-size="orderPageSize"
+                                    :page-sizes="[10, 20, 50, 100]"
+                                    @current-change="
+                                        emit('change-order-page', {
+                                            pageNo: $event,
+                                            pageSize: orderPageSize
+                                        })
+                                    "
+                                    @size-change="
+                                        emit('change-order-page', { pageNo: 1, pageSize: $event })
+                                    "
+                                />
+                            </div>
                             <el-empty
                                 v-if="!orderRecords?.length"
                                 description="暂无报名记录"
@@ -386,6 +424,25 @@
                                     </template>
                                 </el-table-column>
                             </el-table>
+                            <div v-if="ticketRecords?.length" class="record-pagination">
+                                <el-pagination
+                                    background
+                                    layout="total, prev, pager, next, sizes"
+                                    :total="ticketTotal"
+                                    :current-page="ticketPageNo"
+                                    :page-size="ticketPageSize"
+                                    :page-sizes="[10, 20, 50, 100]"
+                                    @current-change="
+                                        emit('change-ticket-page', {
+                                            pageNo: $event,
+                                            pageSize: ticketPageSize
+                                        })
+                                    "
+                                    @size-change="
+                                        emit('change-ticket-page', { pageNo: 1, pageSize: $event })
+                                    "
+                                />
+                            </div>
                             <el-empty
                                 v-if="!ticketRecords?.length"
                                 description="暂无工单记录"
@@ -393,7 +450,7 @@
                             />
                         </el-tab-pane>
                         <el-tab-pane label="客户轨迹" name="tracks">
-                            <el-timeline class="clue-timeline">
+                            <el-timeline v-if="parsedTrackList.length" class="clue-timeline">
                                 <el-timeline-item
                                     v-for="item in parsedTrackList"
                                     :key="item.id"
@@ -425,6 +482,25 @@
                                     </div>
                                 </el-timeline-item>
                             </el-timeline>
+                            <div v-if="parsedTrackList.length" class="record-pagination">
+                                <el-pagination
+                                    background
+                                    layout="total, prev, pager, next, sizes"
+                                    :total="trackTotal"
+                                    :current-page="trackPageNo"
+                                    :page-size="trackPageSize"
+                                    :page-sizes="[10, 20, 50, 100]"
+                                    @current-change="
+                                        emit('change-track-page', {
+                                            pageNo: $event,
+                                            pageSize: trackPageSize
+                                        })
+                                    "
+                                    @size-change="
+                                        emit('change-track-page', { pageNo: 1, pageSize: $event })
+                                    "
+                                />
+                            </div>
                             <el-empty
                                 v-if="!trackList?.length"
                                 description="暂无客户轨迹"
@@ -471,6 +547,25 @@
                                     show-overflow-tooltip
                                 />
                             </el-table>
+                            <div v-if="smsRecords?.length" class="record-pagination">
+                                <el-pagination
+                                    background
+                                    layout="total, prev, pager, next, sizes"
+                                    :total="smsTotal"
+                                    :current-page="smsPageNo"
+                                    :page-size="smsPageSize"
+                                    :page-sizes="[10, 20, 50, 100]"
+                                    @current-change="
+                                        emit('change-sms-page', {
+                                            pageNo: $event,
+                                            pageSize: smsPageSize
+                                        })
+                                    "
+                                    @size-change="
+                                        emit('change-sms-page', { pageNo: 1, pageSize: $event })
+                                    "
+                                />
+                            </div>
                             <el-empty
                                 v-if="!smsRecords?.length"
                                 description="暂无短信记录"
@@ -524,6 +619,25 @@
                                     </template>
                                 </el-table-column>
                             </el-table>
+                            <div v-if="outboundCallRecords?.length" class="record-pagination">
+                                <el-pagination
+                                    background
+                                    layout="total, prev, pager, next, sizes"
+                                    :total="outboundCallTotal"
+                                    :current-page="outboundCallPageNo"
+                                    :page-size="outboundCallPageSize"
+                                    :page-sizes="[10, 20, 50, 100]"
+                                    @current-change="
+                                        emit('change-outbound-call-page', {
+                                            pageNo: $event,
+                                            pageSize: outboundCallPageSize
+                                        })
+                                    "
+                                    @size-change="
+                                        emit('change-outbound-call-page', { pageNo: 1, pageSize: $event })
+                                    "
+                                />
+                            </div>
                             <el-empty
                                 v-if="!outboundCallRecords?.length"
                                 description="暂无外呼记录"
@@ -836,11 +950,29 @@ const props = defineProps<{
     weworkContacts?: CustomerDetailApi.CustomerWeworkContactItem[]
     customerBasicInfo?: CustomerDetailApi.CustomerBasicInfoRespVO
     appointments?: CustomerDetailApi.CustomerAppointmentRespVO[]
+    appointmentTotal?: number
+    appointmentPageNo?: number
+    appointmentPageSize?: number
     orderRecords?: OrderApi.OrderPageRespVO[]
+    orderTotal?: number
+    orderPageNo?: number
+    orderPageSize?: number
     ticketRecords?: AftersalesApi.AftersalesRespVO[]
+    ticketTotal?: number
+    ticketPageNo?: number
+    ticketPageSize?: number
     trackList?: CustomerDetailApi.CustomerTrackRespVO[]
+    trackTotal?: number
+    trackPageNo?: number
+    trackPageSize?: number
     smsRecords?: SmsLogApi.SmsLogVO[]
+    smsTotal?: number
+    smsPageNo?: number
+    smsPageSize?: number
     outboundCallRecords?: OutboundCallRecordApi.OutboundCallRecordVO[]
+    outboundCallTotal?: number
+    outboundCallPageNo?: number
+    outboundCallPageSize?: number
 }>()
 
 const emit = defineEmits<{
@@ -853,6 +985,12 @@ const emit = defineEmits<{
     release: []
     tag: []
     close: []
+    'change-appointment-page': [payload: { pageNo: number; pageSize: number }]
+    'change-order-page': [payload: { pageNo: number; pageSize: number }]
+    'change-ticket-page': [payload: { pageNo: number; pageSize: number }]
+    'change-track-page': [payload: { pageNo: number; pageSize: number }]
+    'change-outbound-call-page': [payload: { pageNo: number; pageSize: number }]
+    'change-sms-page': [payload: { pageNo: number; pageSize: number }]
 }>()
 
 const avatarText = computed(() => (props.clue.name || '线').slice(0, 1))
@@ -1436,4 +1574,10 @@ const handleConsultProductSelect = (products: ProductVO[]) => {
 
 <style scoped lang="scss">
 @import './style.scss';
+
+.record-pagination {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
 </style>

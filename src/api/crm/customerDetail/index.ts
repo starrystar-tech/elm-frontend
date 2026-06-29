@@ -118,6 +118,10 @@ export interface CustomerTrackRespVO {
     createTime?: string
 }
 
+export interface CustomerDetailPageReqVO extends PageParam {
+    id: number
+}
+
 export const getCustomerWeworkInfo = async (id: number) => {
     return await request.get<CustomerWeworkInfoRespVO>({ url: '/crm/customer-detail/wework-info', params: { id } })
 }
@@ -126,18 +130,18 @@ export const getCustomerBasicInfo = async (id: number) => {
     return await request.get<CustomerBasicInfoRespVO>({ url: '/crm/customer-detail/basic-info', params: { id } })
 }
 
-export const getCustomerTracks = async (id: number) => {
-    return await request.get<CustomerTrackRespVO[]>({ url: '/crm/customer-detail/tracks', params: { id } })
+export const getCustomerTracks = async (params: CustomerDetailPageReqVO) => {
+    return await request.get<PageResult<CustomerTrackRespVO>>({ url: '/crm/customer-detail/tracks', params })
 }
 
-export const getCustomerAppointments = async (id: number) => {
-    return await request.get<CustomerAppointmentRespVO[]>({ url: '/crm/customer-detail/appointments', params: { id } })
+export const getCustomerAppointments = async (params: CustomerDetailPageReqVO) => {
+    return await request.get<PageResult<CustomerAppointmentRespVO>>({ url: '/crm/customer-detail/appointments', params })
 }
 
-export const getCustomerOutboundCallRecords = async (id: number) => {
-    return await request.get<OutboundCallRecordVO[]>({
+export const getCustomerOutboundCallRecords = async (params: CustomerDetailPageReqVO) => {
+    return await request.get<PageResult<OutboundCallRecordVO>>({
         url: '/crm/customer-detail/outbound-call-records',
-        params: { id }
+        params
     })
 }
 

@@ -464,20 +464,29 @@ const handleSelectionChange = (rows: ClueApi.PublicSeaPageRespVO[]) => {
     selectionList.value = rows || []
 }
 
-const mergeSearchParams = (params: PublicSeaSearchParams = {}): PublicSeaSearchParams => ({
-    ...params,
-    areaId: searchForm.areaId,
-    consultProjectId: searchForm.consultProjectId
-})
-
-const handleSearch = (params: PublicSeaSearchParams) => {
-    tableMethods.setSearchParams(buildSearchParams(mergeSearchParams(params)))
+const collectSearchParams = (params: PublicSeaSearchParams = {}): PublicSeaSearchParams => {
+    const merged: PublicSeaSearchParams = { ...searchForm }
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+            merged[key as keyof PublicSeaSearchParams] = value as never
+        }
+    })
+    return merged
 }
 
-const handleResetSearch = (params: PublicSeaSearchParams) => {
-    searchForm.areaId = undefined
-    searchForm.consultProjectId = undefined
-    tableMethods.setSearchParams(buildSearchParams(mergeSearchParams(params)))
+const resetSearchForm = () => {
+    Object.keys(searchForm).forEach((key) => {
+        delete searchForm[key as keyof PublicSeaSearchParams]
+    })
+}
+
+const handleSearch = (params: PublicSeaSearchParams) => {
+    tableMethods.setSearchParams(buildSearchParams(collectSearchParams(params)))
+}
+
+const handleResetSearch = () => {
+    resetSearchForm()
+    tableMethods.setSearchParams(buildSearchParams({}))
 }
 
 const handleTabChange = async () => {
@@ -549,6 +558,6 @@ const handleBatchAssign = async () => {
 
 onMounted(async () => {
     await Promise.all([loadPageOptions(), loadCounts(), loadClaimSummary()])
-    tableMethods.setSearchParams(buildSearchParams({}))
+    tableMethods.setSearchParams(buildSearchParams(collectSearchParams(searchForm)))
 })
 </script>

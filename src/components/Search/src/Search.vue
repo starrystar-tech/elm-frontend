@@ -111,7 +111,14 @@ const schemaRef = ref<FormSchema[]>([])
 watch(
   () => unref(newSchema),
   (schema = []) => {
-    formModel.value = initModel(schema, unref(formModel))
+    const prevModel = { ...unref(formModel) }
+    const nextModel = initModel(schema, prevModel)
+    schema.forEach((item) => {
+      if (item.hidden && Object.prototype.hasOwnProperty.call(prevModel, item.field)) {
+        nextModel[item.field] = prevModel[item.field]
+      }
+    })
+    formModel.value = nextModel
     schemaRef.value = schema
   },
   {

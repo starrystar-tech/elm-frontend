@@ -44,10 +44,14 @@ import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import { DictTag } from '@/components/DictTag'
+import { Icon } from '@/components/Icon'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
-import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
+import {
+    buildCopySuccessMessage,
+    showCopyMobileSuccessMessage
+} from '@/views/crm/clue/mobileCopyCore.mjs'
 
 defineOptions({ name: 'SystemSmsLog' })
 
@@ -64,7 +68,7 @@ const searchSchema = reactive<FormSchema[]>([
         componentProps: {
             placeholder: '请输入手机号',
             clearable: true,
-            style: { width: '240px' }
+            style: { width: '220px' }
         }
     },
     {
@@ -75,7 +79,7 @@ const searchSchema = reactive<FormSchema[]>([
             placeholder: '请选择短信渠道',
             clearable: true,
             options: [],
-            style: { width: '240px' }
+            style: { width: '220px' }
         }
     },
     {
@@ -85,7 +89,7 @@ const searchSchema = reactive<FormSchema[]>([
         componentProps: {
             placeholder: '请输入模板编号',
             clearable: true,
-            style: { width: '240px' }
+            style: { width: '220px' }
         }
     },
     {
@@ -96,7 +100,7 @@ const searchSchema = reactive<FormSchema[]>([
             placeholder: '请选择发送状态',
             clearable: true,
             options: getIntDictOptions(DICT_TYPE.SYSTEM_SMS_SEND_STATUS),
-            style: { width: '240px' }
+            style: { width: '220px' }
         }
     },
     {
@@ -108,7 +112,7 @@ const searchSchema = reactive<FormSchema[]>([
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
             startPlaceholder: '开始日期',
             endPlaceholder: '结束日期',
-            style: { width: '240px' }
+            style: { width: '220px' }
         }
     },
     {
@@ -119,7 +123,7 @@ const searchSchema = reactive<FormSchema[]>([
             placeholder: '请选择接收状态',
             clearable: true,
             options: getIntDictOptions(DICT_TYPE.SYSTEM_SMS_RECEIVE_STATUS),
-            style: { width: '240px' }
+            style: { width: '220px' }
         }
     },
     {
@@ -131,7 +135,7 @@ const searchSchema = reactive<FormSchema[]>([
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
             startPlaceholder: '开始日期',
             endPlaceholder: '结束日期',
-            style: { width: '240px' }
+            style: { width: '220px' }
         }
     }
 ])
@@ -166,21 +170,33 @@ const handleExport = async () => {
     await tableMethods.exportList('短信日志.xls')
 }
 
+const handleCopyMobile = async (id: number) => {
+    const result = await ClueApi.copyClueSmsLogMobile(id)
+    await navigator.clipboard.writeText(result.mobile)
+    showCopyMobileSuccessMessage(buildCopySuccessMessage(result))
+}
+
 const tableColumns = reactive<TableColumn[]>([
     { field: 'id', label: '编号' },
     { field: 'createTime', label: '创建时间', width: '180px', formatter: dateFormatter },
     {
         field: 'mobile',
         label: '手机号',
-        width: '140px',
+        width: '150px',
         slots: {
             default: (data) => (
                 <>
-                    <div>
-                        <MobileCopyInline
-                            mobile={data.row.mobile}
-                            copyDirectApi={ClueApi.copyClueMobileDirect}
-                        />
+                    <div class="inline-flex items-center gap-6px">
+                        <span>{data.row.mobile || '--'}</span>
+                        {data.row.id ? (
+                            <BaseButton
+                                link
+                                type="primary"
+                                onClick={() => handleCopyMobile(data.row.id)}
+                            >
+                                <Icon icon="ep:copy-document" size={14} />
+                            </BaseButton>
+                        ) : null}
                     </div>
                     {data.row.userId ? <div>{data.row.userId}</div> : null}
                 </>

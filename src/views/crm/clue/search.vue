@@ -72,26 +72,12 @@ const tableColumns = ref<TableColumn[]>([
     {
         field: 'customerId',
         label: '客户编号',
-        minWidth: 160,
-        slots: {
-            default: (data) => (
-                <ElLink type="primary" underline={false} onClick={() => openDetail(data.row.id)}>
-                    {data.row.customerId || '--'}
-                </ElLink>
-            )
-        }
+        minWidth: 160
     },
     {
         field: 'name',
         label: '姓名',
-        minWidth: 120,
-        slots: {
-            default: (data) => (
-                <ElLink type="primary" underline={false} onClick={() => openDetail(data.row.id)}>
-                    {data.row.name || '--'}
-                </ElLink>
-            )
-        }
+        minWidth: 120
     },
     { field: 'currentOwnerName', label: '归属人', minWidth: 120 },
     { field: 'currentDepartmentName', label: '所在部门', minWidth: 140 },

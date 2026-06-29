@@ -14,11 +14,13 @@ export interface ClueFlowRuleVO {
 export interface ClueFlowConfigVO {
   id?: number
   rules: ClueFlowRuleVO[]
+  autoReturnVisitCallDurationSeconds?: number
   createTime?: Date
   updateTime?: Date
 }
 
 export interface ClueFlowConfigSaveReqVO {
+  autoReturnVisitCallDurationSeconds?: number
   rules: Array<Pick<ClueFlowRuleVO, 'ruleCode' | 'enabled' | 'days'>>
 }
 
