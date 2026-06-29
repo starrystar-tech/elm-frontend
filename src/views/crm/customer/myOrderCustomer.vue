@@ -101,7 +101,7 @@ const {
     tableMethods,
     register: tableRegister
 } = useTable<ClueApi.ClueVO>({
-    getListApi: async (params) => await ClueApi.getCluePage(params)
+    getListApi: async (params) => await ClueApi.getStudentPage(params)
 })
 
 const buildListParams = (params: StudentSearchParams = {}) => ({

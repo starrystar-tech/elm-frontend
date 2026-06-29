@@ -59,8 +59,16 @@
                     </el-table-column>
                     <el-table-column prop="mainProductName" label="商品名称" min-width="180" />
                     <el-table-column prop="campusName" label="校区" min-width="120" />
-                    <el-table-column prop="payableAmount" label="应付金额" min-width="100" />
-                    <el-table-column prop="paidAmount" label="已付金额" min-width="100" />
+                    <el-table-column prop="payableAmount" label="应付金额" min-width="100">
+                        <template #default="{ row }">
+                            {{ formatAmount(row.payableAmount) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="paidAmount" label="已付金额" min-width="100">
+                        <template #default="{ row }">
+                            {{ formatAmount(row.paidAmount) }}
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="ownerUserName" label="归属人" min-width="100" />
                 </el-table>
                 <el-empty v-else description="暂无订单记录" :image-size="60" />
@@ -189,6 +197,7 @@ import { DICT_TYPE } from '@/utils/dict'
 import { getAftersalesStatusLabel } from '@/views/aftersales/config'
 import OutboundCallMobileCopyInline from '@/views/crm/call/OutboundCallMobileCopyInline.vue'
 import SmsLogMobileCopyInline from '@/views/crm/clue/SmsLogMobileCopyInline.vue'
+import { formatAmount } from '@/views/order/utils'
 
 defineOptions({ name: 'CustomerDetailRecords' })
 

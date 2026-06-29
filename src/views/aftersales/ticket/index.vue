@@ -10,7 +10,7 @@
             <BaseButton v-hasPermi="['crm:aftersales:create']" type="primary" @click="openCreate">
                 新增工单
             </BaseButton>
-            <BaseButton v-hasPermi="['crm:aftersales:create']" plain @click="openImport">
+            <BaseButton v-hasPermi="['crm:aftersales:import']" plain @click="openImport">
                 批量导入
             </BaseButton>
             <BaseButton v-hasPermi="['crm:aftersales:assign']" @click="openAssign">

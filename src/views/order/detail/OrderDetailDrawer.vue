@@ -350,6 +350,15 @@
                                         </template>
                                     </el-table-column>
                                     <el-table-column
+                                        prop="remark"
+                                        label="支付备注"
+                                        min-width="180"
+                                    >
+                                        <template #default="{ row }">
+                                            {{ row.remark || '-' }}
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column
                                         prop="confirmStatus"
                                         label="财务确认"
                                         min-width="100"

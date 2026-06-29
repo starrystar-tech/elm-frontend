@@ -30,6 +30,20 @@
                     <el-form-item label="手机号" prop="mobile">
                         <div class="readonly-value">{{ maskedMobile }}</div>
                     </el-form-item>
+                    <el-form-item label="证件类型" prop="certificateType">
+                        <el-select
+                            v-model="formData.certificateType"
+                            class="!w-full"
+                            placeholder="请选择"
+                        >
+                            <el-option label="身份证" value="身份证" />
+                            <el-option label="护照" value="护照" />
+                            <el-option label="港澳通行证" value="港澳通行证" />
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="证件号码" prop="idCardNo">
+                        <el-input v-model="formData.idCardNo" placeholder="请输入证件号码" />
+                    </el-form-item>
                     <el-form-item label="手机号2">
                         <el-input v-model="formData.mobile2" placeholder="请输入手机号2" />
                     </el-form-item>
@@ -52,20 +66,7 @@
                     <el-form-item label="来源">
                         <div class="readonly-value">{{ formData.sourceName || '-' }}</div>
                     </el-form-item>
-                    <el-form-item label="证件类型" prop="certificateType">
-                        <el-select
-                            v-model="formData.certificateType"
-                            class="!w-full"
-                            placeholder="请选择"
-                        >
-                            <el-option label="身份证" value="身份证" />
-                            <el-option label="护照" value="护照" />
-                            <el-option label="港澳通行证" value="港澳通行证" />
-                        </el-select>
-                    </el-form-item>
-                    <el-form-item label="证件号码" prop="idCardNo">
-                        <el-input v-model="formData.idCardNo" placeholder="请输入证件号码" />
-                    </el-form-item>
+
                     <el-form-item label="职业">
                         <el-input v-model="formData.occupation" placeholder="请输入职业" />
                     </el-form-item>
@@ -516,7 +517,10 @@ const open = async (clue?: ClueApi.ClueVO) => {
         try {
             fullClue = await ClueApi.getClue(clue.id)
         } catch (error) {
-            console.warn('Failed to load full clue detail for enroll dialog, fallback to current clue', error)
+            console.warn(
+                'Failed to load full clue detail for enroll dialog, fallback to current clue',
+                error
+            )
         }
     }
     formData.value = {
@@ -633,8 +637,7 @@ const submitForm = async () => {
                 emergencyMobile:
                     formData.value.emergencyMobile || originalOptionalFields.value.emergencyMobile,
                 emergencyContact:
-                    formData.value.emergencyContact ||
-                    originalOptionalFields.value.emergencyContact
+                    formData.value.emergencyContact || originalOptionalFields.value.emergencyContact
             })
         }
         const orderId = await OrderApi.createOrder({
@@ -740,7 +743,6 @@ defineExpose({ open })
 .enroll-plan__amount-input {
     position: relative;
 }
-
 
 .enroll-plan__amount-prefix {
     position: absolute;

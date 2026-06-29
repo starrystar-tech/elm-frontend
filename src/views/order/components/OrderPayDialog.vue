@@ -34,6 +34,16 @@
                     height="96px"
                 />
             </el-form-item>
+            <el-form-item label="支付备注">
+                <el-input
+                    v-model="formData.remark"
+                    type="textarea"
+                    :rows="3"
+                    maxlength="255"
+                    show-word-limit
+                    placeholder="请输入支付备注"
+                />
+            </el-form-item>
         </el-form>
         <template #footer>
             <el-button :loading="loading" type="primary" @click="submitForm">确 定</el-button>
@@ -61,7 +71,8 @@ const formData = ref({
     orderId: undefined as number | undefined,
     payMethod: '微信支付',
     payAmount: '',
-    payProofUrl: ''
+    payProofUrl: '',
+    remark: ''
 })
 
 const validatePayAmount = (_rule: any, value: string, callback: (error?: Error) => void) => {
@@ -91,7 +102,8 @@ const resetForm = () => {
         orderId: undefined,
         payMethod: '微信支付',
         payAmount: '',
-        payProofUrl: ''
+        payProofUrl: '',
+        remark: ''
     }
     formRef.value?.resetFields()
 }
@@ -111,7 +123,8 @@ const submitForm = async () => {
             orderId: formData.value.orderId!,
             payAmount: Math.round(Number(formData.value.payAmount) * 100),
             payMethod: formData.value.payMethod,
-            payProofUrl: formData.value.payProofUrl || ''
+            payProofUrl: formData.value.payProofUrl || '',
+            remark: formData.value.remark?.trim() || undefined
         })
         message.success('支付记录已生成，待财务确认')
         dialogVisible.value = false

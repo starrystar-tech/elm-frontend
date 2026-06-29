@@ -524,7 +524,7 @@ watch(
     align-items: center;
     padding: 2px 8px;
     border-radius: 999px;
-    background: rgba(103, 194, 58, 0.14);
+    background: var(--el-color-success-light-8);
     color: #389e0d;
     font-size: 12px;
     font-weight: 600;
@@ -532,7 +532,7 @@ watch(
 }
 
 .wework-contact-sync-tag--warning {
-    background: rgba(230, 162, 60, 0.16);
+    background: var(--el-color-warning-light-8);
     color: #b26a00;
 }
 
@@ -553,10 +553,10 @@ watch(
 }
 
 :deep(.el-table__row.wework-contact-row--failed td) {
-    background: rgba(230, 162, 60, 0.08);
+    background: var(--el-color-warning-light-9);
 }
 
 :deep(.el-table__row.wework-contact-row--failed:hover td) {
-    background: rgba(230, 162, 60, 0.14) !important;
+    background: var(--el-color-warning-light-8) !important;
 }
 </style>

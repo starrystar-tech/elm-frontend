@@ -11,7 +11,7 @@ export const resolveClueIdForCopy = async ({ row, getDetail }) => {
     return detail?.clueId ? Number(detail.clueId) : undefined
 }
 
-const buildCopySuccessMessage = (result) => {
+export const buildCopySuccessMessage = (result) => {
     const usedCount = result?.usedCount
     const remainingCount = result?.remainingCount
     if (

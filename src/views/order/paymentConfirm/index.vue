@@ -200,6 +200,7 @@ const tableColumns = computed<TableColumn[]>(() => [
             default: (data) => renderPayProofCell(data.row.payProofUrl)
         }
     },
+    { field: 'remark', label: '支付备注', minWidth: '180px', showOverflowTooltip: true },
     { field: 'payNo', label: '支付流水号', minWidth: '220px' },
     { field: 'payTime', label: '支付时间', minWidth: '180px', formatter: dateFormatter },
     {

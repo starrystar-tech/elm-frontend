@@ -37,6 +37,7 @@ import { DICT_TYPE, getIntDictOptions, getDictLabel } from '@/utils/dict'
 import { dateFormatter, formatDate } from '@/utils/formatTime'
 import * as SmsChannelApi from '@/api/system/sms/smsChannel'
 import * as SmsLogApi from '@/api/system/sms/smsLog'
+import * as ClueApi from '@/api/crm/clue'
 import SmsLogDetail from './SmsLogDetail.vue'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -46,6 +47,7 @@ import { DictTag } from '@/components/DictTag'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
+import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 
 defineOptions({ name: 'SystemSmsLog' })
 
@@ -174,7 +176,12 @@ const tableColumns = reactive<TableColumn[]>([
         slots: {
             default: (data) => (
                 <>
-                    <div>{data.row.mobile}</div>
+                    <div>
+                        <MobileCopyInline
+                            mobile={data.row.mobile}
+                            copyDirectApi={ClueApi.copyClueMobileDirect}
+                        />
+                    </div>
                     {data.row.userId ? <div>{data.row.userId}</div> : null}
                 </>
             )

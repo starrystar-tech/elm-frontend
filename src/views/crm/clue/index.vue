@@ -297,7 +297,7 @@ interface AreaOption {
 defineOptions({ name: 'CrmClue' })
 
 const CLUE_IMPORT_TEMPLATE_URL =
-    'https://file.bgwa.cn/bgwa/20260611/首咨名片上传模板_1781163860531.xlsx'
+    'https://file.bgwa.cn/bgwa/20260629/首咨名片上传模板_1782701064289.xlsx'
 
 const message = useMessage()
 const route = useRoute()
@@ -1055,17 +1055,17 @@ onMounted(async () => {
     align-items: center;
     padding: 2px 8px;
     border-radius: 999px;
-    background: rgba(230, 162, 60, 0.12);
+    background: var(--el-color-warning-light-8);
     color: #b26a00;
     font-weight: 600;
     line-height: 1.2;
 }
 
 :deep(.el-table__row.clue-row--unassigned td) {
-    background: rgba(230, 162, 60, 0.08);
+    background: var(--el-color-warning-light-9);
 }
 
 :deep(.el-table__row.clue-row--unassigned:hover td) {
-    background: rgba(230, 162, 60, 0.14) !important;
+    background: var(--el-color-warning-light-8) !important;
 }
 </style>

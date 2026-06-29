@@ -528,6 +528,10 @@ export const getCluePage = async (params: CluePageReqVO) => {
     return await request.get({ url: '/crm/clue/page', params })
 }
 
+export const getStudentPage = async (params: CluePageReqVO) => {
+    return await request.get({ url: '/crm/clue/student-page', params })
+}
+
 export const getClueSearchPage = async (params: ClueSearchPageReqVO) => {
     return await request.get({ url: '/crm/clue/search-page', params })
 }
@@ -608,6 +612,13 @@ export const copyClueMobile = async (clueId: number, mobileField: string = 'mobi
     return await request.post<ClueCopyMobileRespVO>({
         url: '/crm/clue/copy-mobile',
         data: { clueId, mobileField }
+    })
+}
+
+export const copyClueMobileDirect = async (mobile: string) => {
+    return await request.post<ClueCopyMobileRespVO>({
+        url: '/crm/clue/copy-mobile-direct',
+        data: { mobile }
     })
 }
 

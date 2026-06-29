@@ -16,19 +16,36 @@
 <script setup lang="ts">
 import * as ClueApi from '@/api/crm/clue'
 import { Icon } from '@/components/Icon'
-import { copyMobileByClueId, showCopyMobileSuccessMessage } from './mobileCopyCore.mjs'
+import {
+    buildCopySuccessMessage,
+    copyMobileByClueId,
+    showCopyMobileSuccessMessage
+} from './mobileCopyCore.mjs'
+
+type CopyMobileResult = {
+    mobile: string
+    usedCount?: number
+    remainingCount?: number
+}
 
 const props = defineProps<{
     mobile?: string
     clueId?: number
     directCopy?: boolean
     mobileField?: string
+    copyDirectApi?: (mobile: string) => Promise<CopyMobileResult>
 }>()
 
 const message = useMessage()
 
 const handleCopy = async () => {
     if (!props.mobile) {
+        return
+    }
+    if (!props.clueId && props.copyDirectApi) {
+        const result = await props.copyDirectApi(props.mobile)
+        await navigator.clipboard.writeText(result.mobile)
+        showCopyMobileSuccessMessage(buildCopySuccessMessage(result))
         return
     }
     if (props.directCopy || !props.clueId) {

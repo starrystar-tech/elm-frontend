@@ -79,6 +79,7 @@ export interface OrderPayRecordRespVO {
   payTime?: string
   channelPayNo?: string
   payProofUrl?: string
+  remark?: string
   confirmStatus: number
   confirmResult?: string
   confirmUserId?: number
@@ -188,6 +189,7 @@ export interface OrderPayReqVO {
   payMethod: string
   channelPayNo?: string
   payProofUrl?: string
+  remark?: string
   payTime?: string
 }
 
