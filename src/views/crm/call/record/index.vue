@@ -243,6 +243,7 @@ const tableColumns = reactive<TableColumn[]>([
                     <AudioPlayer
                         src={data.row.recordingFileUrl}
                         duration={data.row.durationSeconds}
+                        recordId={data.row.id}
                     />
                 )
             }

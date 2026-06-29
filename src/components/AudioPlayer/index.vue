@@ -61,10 +61,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { Download, VideoPlay, VideoPause } from '@element-plus/icons-vue'
+import { downloadOutboundCallRecordAudio } from '@/api/system/call/record'
 
 const props = defineProps<{
     src: string
     duration?: number
+    recordId?: number
 }>()
 
 const audioRef = ref<HTMLAudioElement | null>(null)
@@ -179,6 +181,11 @@ const triggerBrowserDownload = (url: string, fileName: string) => {
 }
 
 const downloadAudio = async () => {
+    if (props.recordId) {
+        try {
+            await downloadOutboundCallRecordAudio(props.recordId)
+        } catch (error) {}
+    }
     if (!props.src) return
     const fileName = buildDownloadFileName()
     try {

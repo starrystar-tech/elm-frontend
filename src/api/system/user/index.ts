@@ -35,6 +35,8 @@ export interface UserVO {
   categoryNames?: string
   permissionDeptIds?: number[]
   permissionDeptNames?: string
+  sessionArchiveDeptIds?: number[]
+  sessionArchiveDeptNames?: string
   wechatBindInfo?: string
   wecomBindList?: UserWecomBindVO[]
   roleIds?: number[]

@@ -622,6 +622,7 @@
                                             v-if="row.recordingFileUrl"
                                             :src="row.recordingFileUrl"
                                             :duration="row.durationSeconds"
+                                            :record-id="row.id"
                                         />
                                         <template v-else>--</template>
                                     </template>

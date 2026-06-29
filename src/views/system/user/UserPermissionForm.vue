@@ -70,6 +70,14 @@
                     placeholder="请选择部门权限"
                 />
             </el-form-item>
+            <el-form-item label="会话存档">
+                <DeptSelector
+                    v-model="formData.sessionArchiveDeptIds"
+                    multiple
+                    style="width: 100%"
+                    placeholder="请选择企微会话存档管辖部门"
+                />
+            </el-form-item>
         </el-form>
         <template #footer>
             <el-button @click="dialogVisible = false">取消</el-button>
@@ -85,7 +93,7 @@ import * as CampusApi from '@/api/system/campus'
 import * as AreaApi from '@/api/system/area'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as WeappApi from '@/api/system/weapp'
-import { normalizeAreaIds } from '@/utils/areaScope'
+import { compactAreaIds } from '@/utils/areaScope'
 import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
 
 defineOptions({ name: 'UserPermissionForm' })
@@ -106,7 +114,8 @@ const formData = ref({
     campusIds: [] as number[],
     areaIds: [] as number[],
     categoryIds: [] as number[],
-    permissionDeptIds: [] as number[]
+    permissionDeptIds: [] as number[],
+    sessionArchiveDeptIds: [] as number[]
 })
 
 const open = async (row: UserApi.UserVO) => {
@@ -131,9 +140,10 @@ const open = async (row: UserApi.UserVO) => {
             id: detail.id,
             manageCompanyIds: detail.manageCompanyIds || [],
             campusIds: detail.campusIds || [],
-            areaIds: detail.areaIds || [],
+            areaIds: compactAreaIds(detail.areaIds || [], areaData || []),
             categoryIds: detail.categoryIds || [],
-            permissionDeptIds: detail.permissionDeptIds || []
+            permissionDeptIds: detail.permissionDeptIds || [],
+            sessionArchiveDeptIds: detail.sessionArchiveDeptIds || []
         }
     } finally {
         loading.value = false
@@ -146,7 +156,7 @@ const submit = async () => {
     try {
         await UserApi.updateUserPermission({
             ...formData.value,
-            areaIds: normalizeAreaIds(formData.value.areaIds || [], areaTreeList.value as any[])
+            areaIds: formData.value.areaIds || []
         } as any)
         message.success('设置成功')
         dialogVisible.value = false

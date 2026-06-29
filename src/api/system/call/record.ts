@@ -90,6 +90,13 @@ export const copyOutboundCallRecordMobile = (recordId: number) => {
   })
 }
 
+export const downloadOutboundCallRecordAudio = (recordId: number) => {
+  return request.download({
+    url: '/crm/call/outbound-record/download',
+    params: { recordId }
+  })
+}
+
 export const getCallMonitorPage = (params: CallMonitorPageReqVO) => {
   return request.get({ url: '/crm/call/monitor/page', params })
 }

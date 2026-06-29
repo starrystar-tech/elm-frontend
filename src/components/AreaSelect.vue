@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import { defaultProps } from '@/utils/tree'
 import * as AreaApi from '@/api/system/area'
+import { compactAreaIds } from '@/utils/areaScope'
 
 const createAllAreaNode = () => ({
     id: -1,
@@ -48,7 +49,10 @@ const emit = defineEmits<{
 const multiple = computed(() => props.multiple ?? false)
 const includeAllNode = computed(() => props.includeAllNode ?? true)
 const checkStrictly = computed(() => props.checkStrictly ?? true)
-const showCheckedStrategy = computed(() => props.showCheckedStrategy)
+const showCheckedStrategy = computed(() => {
+    if (props.showCheckedStrategy) return props.showCheckedStrategy
+    return multiple.value ? 'parent' : undefined
+})
 const checkOnClickNode = computed(() => props.checkOnClickNode ?? true)
 const expandOnClickNode = computed(() => props.expandOnClickNode ?? false)
 const placeholder = computed(() => props.placeholder || '请选择地区')
@@ -57,6 +61,10 @@ const innerData = ref<any[]>(props.data || [])
 const model = computed({
     get: () => props.modelValue,
     set: (value: number | number[] | undefined) => {
+        if (multiple.value && Array.isArray(value)) {
+            emit('update:modelValue', compactAreaIds(value, innerData.value || []))
+            return
+        }
         emit('update:modelValue', value)
     }
 })

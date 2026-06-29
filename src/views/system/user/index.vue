@@ -564,6 +564,12 @@ const tableColumns = reactive<TableColumn[]>([
         minWidth: 220,
         formatter: (_, __, value) => textCell(value)
     },
+    {
+        field: 'sessionArchiveDeptNames',
+        label: '会话存档管辖部门',
+        minWidth: 220,
+        formatter: (_, __, value) => textCell(value)
+    },
     // {
     //     field: 'callNo',
     //     label: '呼叫工号',

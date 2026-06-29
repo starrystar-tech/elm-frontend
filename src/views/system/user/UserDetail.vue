@@ -72,6 +72,9 @@
                 <el-descriptions-item label="部门权限" :span="2">{{
                     text(userDetail.permissionDeptNames)
                 }}</el-descriptions-item>
+                <el-descriptions-item label="会话存档管辖部门" :span="2">{{
+                    text(userDetail.sessionArchiveDeptNames)
+                }}</el-descriptions-item>
                 <el-descriptions-item label="备注" :span="2">{{
                     text(userDetail.remark)
                 }}</el-descriptions-item>

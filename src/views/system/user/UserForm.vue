@@ -269,15 +269,12 @@
                 </el-col>
                 <el-col :span="12">
                     <el-form-item label="管辖地区">
-                        <el-tree-select
+                        <AreaSelect
                             v-model="formData.areaIds"
                             :data="areaTreeList"
-                            :props="defaultProps"
                             multiple
-                            show-checkbox
-                            check-strictly
-                            node-key="id"
-                            value-key="id"
+                            :include-all-node="true"
+                            :check-strictly="true"
                             placeholder="请选择管辖地区"
                         />
                     </el-form-item>
@@ -304,7 +301,16 @@
                         </el-select>
                     </el-form-item>
                 </el-col>
-                <el-col :span="12" />
+                <el-col :span="12">
+                    <el-form-item label="会话存档">
+                        <DeptSelector
+                            v-model="formData.sessionArchiveDeptIds"
+                            multiple
+                            style="width: 100%"
+                            placeholder="请选择企微会话存档管辖部门"
+                        />
+                    </el-form-item>
+                </el-col>
             </el-row>
 
             <el-divider content-position="left">企微绑定</el-divider>
@@ -385,8 +391,10 @@ import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as OutboundRouteApi from '@/api/system/call/router'
 import WeworkAccountSelector from './components/WeworkAccountSelector.vue'
 import UserLevelSelect from '@/components/UserLevelSelect.vue'
+import AreaSelect from '@/components/AreaSelect.vue'
+import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
 import { FormRules } from 'element-plus'
-import { normalizeAreaIds } from '@/utils/areaScope'
+import { compactAreaIds } from '@/utils/areaScope'
 import { formatDate } from '@/utils/formatTime'
 
 defineOptions({ name: 'SystemUserForm' })
@@ -428,6 +436,7 @@ const formData = ref({
     campusIds: [] as number[],
     areaIds: [] as number[],
     categoryIds: [] as number[],
+    sessionArchiveDeptIds: [] as number[],
     wecomBindList: [] as UserApi.UserWecomBindVO[]
 })
 
@@ -507,17 +516,25 @@ const open = async (type: string, id?: number) => {
     resetForm()
     formRenderKey.value += 1
 
-    const [deptData, postData, weappData, wecomMembers, campusData, areaData, categoryData, routeData] =
-        await Promise.all([
-            DeptApi.getSimpleDeptList(),
-            PostApi.getSimplePostList(),
-            WeappApi.getWeappConfigList(),
-            WeworkContactApi.getWeworkMemberSimpleList(),
-            CampusApi.getSimpleCampusList(),
-            AreaApi.getAreaTree(),
-            ProductCategoryApi.getProductCategorySimpleList(),
-            OutboundRouteApi.getOutboundRouteSimpleList()
-        ])
+    const [
+        deptData,
+        postData,
+        weappData,
+        wecomMembers,
+        campusData,
+        areaData,
+        categoryData,
+        routeData
+    ] = await Promise.all([
+        DeptApi.getSimpleDeptList(),
+        PostApi.getSimplePostList(),
+        WeappApi.getWeappConfigList(),
+        WeworkContactApi.getWeworkMemberSimpleList(),
+        CampusApi.getSimpleCampusList(),
+        AreaApi.getAreaTree(),
+        ProductCategoryApi.getProductCategorySimpleList(),
+        OutboundRouteApi.getOutboundRouteSimpleList()
+    ])
     deptList.value = handleTree(deptData)
     postList.value = postData
     weappList.value = weappData || []
@@ -544,8 +561,9 @@ const open = async (type: string, id?: number) => {
                 roleIds: detail.roleIds || [],
                 manageCompanyIds: detail.manageCompanyIds || [],
                 campusIds: detail.campusIds || [],
-                areaIds: detail.areaIds || [],
+                areaIds: compactAreaIds(detail.areaIds || [], areaData || []),
                 categoryIds: detail.categoryIds || [],
+                sessionArchiveDeptIds: detail.sessionArchiveDeptIds || [],
                 wecomBindList: detail.wecomBindList || [],
                 accountType: detail.accountType || 'free',
                 memberId: detail.memberId || '',
@@ -579,7 +597,7 @@ const submitForm = async () => {
     try {
         const data: UserApi.UserVO = {
             ...formData.value,
-            areaIds: normalizeAreaIds(formData.value.areaIds || [], areaTreeList.value as any[]),
+            areaIds: formData.value.areaIds || [],
             wecomBindList: formData.value.wecomBindList.filter(
                 (item) => item.corpId && item.staffUserId
             )
@@ -628,6 +646,7 @@ const resetForm = () => {
         campusIds: [],
         areaIds: [],
         categoryIds: [],
+        sessionArchiveDeptIds: [],
         wecomBindList: []
     }
     formRef.value?.resetFields()
