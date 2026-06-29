@@ -71,6 +71,21 @@ export default defineComponent({
     // 表单数据
     const formModel = ref<Recordable>({})
 
+    const syncOuterModel = (model: Recordable = {}) => {
+      const outerModel = unref(getProps).model
+      if (!outerModel || typeof outerModel !== 'object') {
+        return
+      }
+      Object.keys(outerModel).forEach((key) => {
+        if (!Object.prototype.hasOwnProperty.call(model, key)) {
+          delete outerModel[key]
+        }
+      })
+      Object.entries(model).forEach(([key, value]) => {
+        outerModel[key] = value
+      })
+    }
+
     onMounted(() => {
       emit('register', unref(elFormRef)?.$parent, unref(elFormRef))
     })
@@ -140,9 +155,20 @@ export default defineComponent({
           }
         })
         formModel.value = nextModel
+        syncOuterModel(nextModel)
       },
       {
         immediate: true,
+        deep: true
+      }
+    )
+
+    watch(
+      formModel,
+      (model) => {
+        syncOuterModel(model || {})
+      },
+      {
         deep: true
       }
     )
@@ -229,6 +255,14 @@ export default defineComponent({
               >
 
               const { autoSetPlaceholder } = unref(getProps)
+              const componentProps = setComponentProps(item)
+              const originClear = componentProps.onClear
+              if (componentProps.clearable) {
+                componentProps.onClear = (...args: any[]) => {
+                  formModel.value[item.field] = undefined
+                  originClear?.(...args)
+                }
+              }
 
               return slots[item.field] ? (
                 getSlot(slots, item.field, formModel.value)
@@ -236,7 +270,7 @@ export default defineComponent({
                 <Com
                   vModel={formModel.value[item.field]}
                   {...(autoSetPlaceholder && setTextPlaceholder(item))}
-                  {...setComponentProps(item)}
+                  {...componentProps}
                   style={item.componentProps?.style}
                   {...(notRenderOptions.includes(item?.component as string) &&
                   item?.componentProps?.options

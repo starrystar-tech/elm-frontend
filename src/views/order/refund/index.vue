@@ -93,7 +93,7 @@ const searchSchema = computed<FormSchema[]>(() => [
         label: '客户',
         component: 'Input',
         componentProps: {
-            placeholder: '请输入客户编号',
+            placeholder: '请输入客户编号/姓名',
             clearable: true,
             style: { width: '220px' }
         }

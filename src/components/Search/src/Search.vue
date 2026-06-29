@@ -108,6 +108,20 @@ const { register, elFormRef, methods } = useForm({
 
 const schemaRef = ref<FormSchema[]>([])
 
+const syncExternalModel = (model: Recordable = {}) => {
+  if (!props.model || typeof props.model !== 'object') {
+    return
+  }
+  Object.keys(props.model).forEach((key) => {
+    if (!Object.prototype.hasOwnProperty.call(model, key)) {
+      delete props.model[key]
+    }
+  })
+  Object.entries(model).forEach(([key, value]) => {
+    props.model[key] = value
+  })
+}
+
 watch(
   () => unref(newSchema),
   (schema = []) => {
@@ -119,10 +133,21 @@ watch(
       }
     })
     formModel.value = nextModel
+    syncExternalModel(nextModel)
     schemaRef.value = schema
   },
   {
     immediate: true,
+    deep: true
+  }
+)
+
+watch(
+  formModel,
+  (model) => {
+    syncExternalModel(model || {})
+  },
+  {
     deep: true
   }
 )
