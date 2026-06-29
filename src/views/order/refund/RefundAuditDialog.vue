@@ -142,7 +142,7 @@
                 </div>
             </div>
         </div>
-        <!-- <template #footer>
+        <template #footer>
             <div class="refund-audit-drawer__footer">
                 <el-button @click="dialogVisible = false">
                     {{ readonly ? '关闭' : '取消' }}
@@ -156,7 +156,7 @@
                     提交
                 </el-button>
             </div>
-        </template> -->
+        </template>
     </el-drawer>
 </template>
 

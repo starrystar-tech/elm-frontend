@@ -357,12 +357,20 @@
                                     prop="payableAmount"
                                     label="应付金额"
                                     min-width="100"
-                                />
+                                >
+                                    <template #default="{ row }">
+                                        {{ formatAmount(row.payableAmount) }}
+                                    </template>
+                                </el-table-column>
                                 <el-table-column
                                     prop="paidAmount"
                                     label="已付金额"
                                     min-width="100"
-                                />
+                                >
+                                    <template #default="{ row }">
+                                        {{ formatAmount(row.paidAmount) }}
+                                    </template>
+                                </el-table-column>
                                 <el-table-column
                                     prop="ownerUserName"
                                     label="归属人"
@@ -766,7 +774,7 @@
                         </el-row>
                         <el-row :gutter="20" v-if="consultForm.consultType === 2">
                             <el-col :span="12">
-                                <el-form-item label="预约时间">
+                                <el-form-item label="预约时间" prop="appointmentTime" required>
                                     <el-date-picker
                                         v-model="consultForm.appointmentTime"
                                         type="datetime"
@@ -932,6 +940,7 @@ import DetailHeroCard from '@/views/crm/components/DetailHeroCard.vue'
 import { useOutboundDial } from '@/hooks/web/useOutboundDial'
 import AudioPlayer from '@/components/AudioPlayer/index.vue'
 import OutboundCallMobileCopyInline from '@/views/crm/call/OutboundCallMobileCopyInline.vue'
+import { formatAmount } from '@/views/order/utils'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
@@ -1116,6 +1125,18 @@ const consultRules = reactive({
         }
     ],
     nextFollowTime: [{ required: true, message: '请选择下次回访时间', trigger: 'change' }],
+    appointmentTime: [
+        {
+            validator: (_rule: any, value: string | undefined, callback: any) => {
+                if (consultForm.consultType === 2 && !value) {
+                    callback(new Error('请选择预约时间'))
+                    return
+                }
+                callback()
+            },
+            trigger: 'change'
+        }
+    ],
     productId: [
         { required: true, message: '请选择商品', trigger: 'change' },
         {

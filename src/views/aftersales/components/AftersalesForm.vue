@@ -99,6 +99,7 @@ import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import * as AftersalesApi from '@/api/crm/aftersales'
 import * as OrderApi from '@/api/crm/order'
 import type { UserVO } from '@/api/system/user'
+import { useUserStore } from '@/store/modules/user'
 import { getAftersalesPriorityOptions, getAftersalesTypeOptions } from '../config'
 
 defineOptions({ name: 'AftersalesForm' })
@@ -112,6 +113,7 @@ const orderSelectDialogRef = ref<InstanceType<typeof OrderSelectDialog>>()
 const handlerUserName = ref('')
 const selectedOrderDisplay = ref('')
 const orderSelectClueId = ref<number>()
+const userStore = useUserStore()
 const aftersalesTypeOptions = computed(() => getAftersalesTypeOptions())
 const aftersalesPriorityOptions = computed(() => getAftersalesPriorityOptions())
 const formData = ref<AftersalesApi.AftersalesCreateReqVO>({
@@ -157,6 +159,12 @@ const buildCustomerDisplay = (options: AftersalesFormOpenOptions) => {
 const buildOrderDisplay = (options: AftersalesFormOpenOptions) => {
     const parts = [options.orderNo, options.customerName].filter(Boolean)
     return parts.length ? parts.join(' / ') : buildCustomerDisplay(options)
+}
+
+const fillDefaultHandler = () => {
+    const currentUser = userStore.getUser
+    formData.value.handlerUserId = currentUser?.id || undefined
+    handlerUserName.value = currentUser?.nickname || ''
 }
 
 const open = (options: AftersalesFormOpenOptions = {}) => {
@@ -239,7 +247,7 @@ const resetForm = () => {
     }
     selectedOrderDisplay.value = ''
     orderSelectClueId.value = undefined
-    handlerUserName.value = ''
+    fillDefaultHandler()
     formRef.value?.resetFields()
 }
 </script>

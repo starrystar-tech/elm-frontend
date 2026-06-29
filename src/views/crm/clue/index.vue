@@ -332,6 +332,7 @@ const complaintTagForm = reactive({ complaintTagIds: [] as number[] })
 
 const areaOptions = ref<AreaOption[]>([])
 const userOptions = ref<{ label: string; value: number }[]>([])
+const creatorOptions = ref<{ label: string; value: number }[]>([])
 const clueSourceOptions = ref<{ label: string; value: number }[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
 const complaintTagOptions = ref<{ label: string; value: number }[]>([])
@@ -783,6 +784,10 @@ const loadOptions = async () => {
             value: item.id
         }))
     ]
+    creatorOptions.value = (users || []).map((item) => ({
+        label: item.nickname || item.username,
+        value: item.id
+    }))
     clueSourceOptions.value = (sources || []).map((item) => ({
         label: item.name,
         value: Number(item.id)
@@ -800,7 +805,7 @@ const loadOptions = async () => {
 
     updateSchemaOptions('areaId', areaOptions.value)
     updateSchemaOptions('currentOwnerId', userOptions.value)
-    updateSchemaOptions('creator', userOptions.value)
+    updateSchemaOptions('creator', creatorOptions.value)
     updateSchemaOptions('clueSourceId', clueSourceOptions.value)
     updateSchemaOptions('tagId', tagOptions.value)
     updateSchemaOptions('complaintTagId', complaintTagOptions.value)
@@ -815,12 +820,7 @@ const getRowClassName = ({ row }: { row: ClueApi.ClueVO }) => {
 }
 
 const collectSearchParams = (params: SearchParams = {}): SearchParams => {
-    const merged: SearchParams = { ...currentSearchParams.value }
-    Object.entries(searchForm).forEach(([key, value]) => {
-        if (value !== undefined) {
-            merged[key as keyof SearchParams] = value as never
-        }
-    })
+    const merged: SearchParams = { ...searchForm }
     Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined) {
             merged[key as keyof SearchParams] = value as never
