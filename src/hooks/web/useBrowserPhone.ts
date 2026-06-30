@@ -1126,17 +1126,6 @@ const makeBrowserCall = async (options?: {
             extraHeaders: browserRecordId.value
                 ? [`X-CRM-Record-Id: ${browserRecordId.value}`]
                 : undefined
-        }, {
-            requestDelegate: {
-                onTrying: (response: any) =>
-                    traceBrowserStep('CALL_TRYING', describeSipResponse(response)),
-                onProgress: (response: any) =>
-                    traceBrowserStep('CALL_PROGRESS', describeSipResponse(response)),
-                onAccept: (response: any) =>
-                    traceBrowserStep('CALL_ACCEPT', describeSipResponse(response)),
-                onReject: (response: any) =>
-                    traceBrowserStep('CALL_REJECT', describeSipResponse(response), 'danger')
-            }
         })
         attachSessionTerminationListener(getCurrentBrowserSession())
         await callPromise
