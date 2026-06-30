@@ -25,7 +25,6 @@ const browserHangupPending = ref(false)
 const browserCallStarting = ref(false)
 const browserClient = shallowRef<any>()
 const activeBrowserSession = shallowRef<any>()
-const browserCallAnswered = ref(false)
 const browserRecordId = ref<number>()
 const currentSessionDirection = ref<'incoming' | 'outgoing' | null>(null)
 const currentBrowserCaller = ref('')
@@ -337,9 +336,6 @@ const clearCallEndedStatusResetTimer = () => {
 }
 
 const resolveCallEndedStatus = (reason: string) => {
-    if (reason.includes('failed')) {
-        return '呼叫失败'
-    }
     if (browserHangupPending.value || reason.includes('fallback') || reason.includes('stuck')) {
         return '已挂断'
     }
@@ -364,7 +360,6 @@ const finalizeBrowserCall = (reason: string, caller?: string, callee?: string) =
     stopOutgoingWaitingTone()
     browserCallStarting.value = false
     browserHangupPending.value = false
-    browserCallAnswered.value = false
     incomingCall.value = false
     activeCall.value = false
     hideIncomingToast()
@@ -480,22 +475,6 @@ const handleBrowserCallEnded = (reason: string, caller: string, callee: string) 
     finalizeBrowserCall(reason, caller, callee)
 }
 
-const handleBrowserCallFailed = (reason: string, caller: string, callee: string, failReason: string) => {
-    if (!markCurrentCallTerminationHandled(reason)) {
-        return
-    }
-    void syncBrowserRecord({
-        recordId: browserRecordId.value,
-        event: 'failed',
-        caller,
-        callee,
-        failReason
-    })
-    traceBrowserStep('CALL_FAILED', `reason=${reason}, caller=${caller}, callee=${callee}, failReason=${failReason}`, 'danger')
-    addBrowserLog(failReason, '失败', 'danger')
-    finalizeBrowserCall(reason, caller, callee)
-}
-
 const attachSessionTerminationListener = (session?: any) => {
     if (!session?.stateChange || session.__browserTerminationListenerAttached) return
     session.__browserTerminationListenerAttached = true
@@ -516,10 +495,6 @@ const attachSessionTerminationListener = (session?: any) => {
             currentSessionDirection.value === 'incoming'
                 ? currentBrowserCallee.value || localUser
                 : currentBrowserCallee.value || remoteUser
-        if (currentSessionDirection.value === 'outgoing' && !browserCallAnswered.value) {
-            handleBrowserCallFailed('session-terminated-before-answer-failed', caller, callee, '呼叫未接通，请检查外呼线路或号码')
-            return
-        }
         handleBrowserCallEnded('session-terminated', caller, callee)
     })
 }
@@ -963,7 +938,6 @@ const createBrowserClient = async () => {
                 stopOutgoingWaitingTone()
                 clearHangupFallbackTimer()
                 browserHangupPending.value = false
-                browserCallAnswered.value = true
                 const currentSession = session || getCurrentBrowserSession()
                 activeBrowserSession.value = currentSession
                 attachSessionTerminationListener(currentSession)
@@ -1084,7 +1058,6 @@ const disconnectBrowserPhone = async (silent = false) => {
     browserRegistered.value = false
     browserCallStarting.value = false
     browserHangupPending.value = false
-    browserCallAnswered.value = false
     resetCurrentCallTerminationHandled()
     clearHangupFallbackTimer()
     clearCallEndedStatusResetTimer()
@@ -1133,7 +1106,6 @@ const makeBrowserCall = async (options?: {
     }
     try {
         browserCallStarting.value = true
-        browserCallAnswered.value = false
         resetCurrentCallTerminationHandled()
         await ensureBrowserSessionReadyForCall()
         setBrowserCallParties(browserForm.username.trim(), displayTarget)
@@ -1185,7 +1157,6 @@ const makeBrowserCall = async (options?: {
         })
         browserRecordId.value = undefined
         activeBrowserSession.value = undefined
-        browserCallAnswered.value = false
         currentSessionDirection.value = null
         resetCurrentCallTerminationHandled()
         resetBrowserCallParties()

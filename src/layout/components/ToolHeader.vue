@@ -122,8 +122,7 @@ export default defineComponent({
             if (
                 browserStatus.value === '已挂断' ||
                 browserStatus.value === '对方已挂断' ||
-                browserStatus.value === '来电已取消' ||
-                browserStatus.value === '呼叫失败'
+                browserStatus.value === '来电已取消'
             ) {
                 return browserStatus.value
             }
@@ -161,7 +160,6 @@ export default defineComponent({
             ) {
                 return 'hungup'
             }
-            if (browserStatus.value === '呼叫失败') return 'failed'
             if (browserStatus.value === '已注册') return 'registered'
             if (browserStatus.value === '连接失败') return 'failed'
             return 'idle'
@@ -187,9 +185,6 @@ export default defineComponent({
             }
             if (browserStatus.value === '来电已取消') {
                 return '对方已取消来电'
-            }
-            if (browserStatus.value === '呼叫失败') {
-                return '呼叫未接通，请检查外呼线路或号码'
             }
             if (outboundSignedIn.value) {
                 return '浏览器分机已注册，支持电脑端通话'
