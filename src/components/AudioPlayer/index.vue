@@ -52,6 +52,9 @@
         <audio
             ref="audioRef"
             :src="src"
+            data-audio-player="shared"
+            @play="onPlay"
+            @pause="onPause"
             @timeupdate="onTimeUpdate"
             @ended="onEnded"
             @loadedmetadata="onLoadedMetadata"
@@ -63,6 +66,8 @@
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { Download, VideoPlay, VideoPause } from '@element-plus/icons-vue'
 import { downloadOutboundCallRecordAudio } from '@/api/system/call/record'
+
+const AUDIO_PLAYER_SELECTOR = 'audio[data-audio-player="shared"]'
 
 const props = defineProps<{
     src: string
@@ -82,6 +87,22 @@ const playbackRateOptions = [
     { label: '1.5x', value: 1.5 },
     { label: '2.0x', value: 2 }
 ]
+
+const pauseAudio = () => {
+    if (!audioRef.value) return
+    audioRef.value.pause()
+    isPlaying.value = false
+}
+
+const pauseOtherAudios = () => {
+    if (!audioRef.value) return
+    document.querySelectorAll(AUDIO_PLAYER_SELECTOR).forEach((element) => {
+        const otherAudio = element as HTMLAudioElement
+        if (otherAudio !== audioRef.value) {
+            otherAudio.pause()
+        }
+    })
+}
 
 watch(
     () => props.duration,
@@ -122,12 +143,14 @@ const formatTime = (seconds: number) => {
 const togglePlay = () => {
     if (!audioRef.value) return
     if (isPlaying.value) {
-        audioRef.value.pause()
+        pauseAudio()
     } else {
+        pauseOtherAudios()
         audioRef.value.playbackRate = playbackRate.value
-        audioRef.value.play()
+        void audioRef.value.play().catch(() => {
+            isPlaying.value = false
+        })
     }
-    isPlaying.value = !isPlaying.value
 }
 
 const seekTo = (e: MouseEvent) => {
@@ -155,6 +178,15 @@ const onLoadedMetadata = () => {
     if (audioRef.value && audioRef.value.duration && !duration.value) {
         duration.value = audioRef.value.duration
     }
+}
+
+const onPlay = () => {
+    pauseOtherAudios()
+    isPlaying.value = true
+}
+
+const onPause = () => {
+    isPlaying.value = false
 }
 
 const handlePlaybackRateChange = (value: number) => {

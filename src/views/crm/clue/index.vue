@@ -237,7 +237,8 @@
 <script setup lang="tsx">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import type { UploadUserFile } from 'element-plus'
-import { ElLink } from 'element-plus'
+import { ElIcon, ElLink } from 'element-plus'
+import { WarningFilled } from '@element-plus/icons-vue'
 import { dateFormatter } from '@/utils/formatTime'
 import { useTable } from '@/hooks/web/useTable'
 import { Table, type TableColumn } from '@/components/Table'
@@ -698,7 +699,48 @@ const tableColumns = computed<TableColumn[]>(() => [
             )
         }
     },
-    { field: 'assignModeName', label: '分配方式', width: '120px' },
+    {
+        field: 'assignModeName',
+        label: '分配方式',
+        width: '240px',
+        slots: {
+            default: (data) => {
+                const failReason = data.row.autoAssignFailReason?.trim()
+                return (
+                    <div class="assign-mode-cell">
+                        {failReason ? (
+                            <ElTooltip content={failReason} placement="top">
+                                {{
+                                    default: () => (
+                                        <span class="flex items-center justify-center">
+                                            <ElIcon
+                                                class="assign-mode-fail-icon"
+                                                size={16}
+                                                color="#f04438"
+                                                style={{
+                                                    color: '#f04438',
+                                                    fontSize: '16px',
+                                                    width: '16px',
+                                                    height: '16px',
+                                                    lineHeight: '16px'
+                                                }}
+                                                aria-label="自动分配失败"
+                                            >
+                                                <WarningFilled />
+                                            </ElIcon>
+                                            {data.row.assignModeName || '--'}
+                                        </span>
+                                    )
+                                }}
+                            </ElTooltip>
+                        ) : (
+                            <span>{data.row.assignModeName || '--'}</span>
+                        )}
+                    </div>
+                )
+            }
+        }
+    },
     { field: 'educationName', label: '学历', width: '100px' },
     { field: 'statusName', label: '客户状态', width: '110px' },
     {
@@ -1080,6 +1122,44 @@ onMounted(async () => {
     color: #b26a00;
     font-weight: 600;
     line-height: 1.2;
+}
+
+.assign-mode-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    min-height: 20px;
+    line-height: 20px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.assign-mode-fail-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    align-self: center;
+    color: #f04438 !important;
+    cursor: help;
+    flex-shrink: 0;
+    font-size: 14px !important;
+    line-height: 14px;
+    vertical-align: middle;
+    margin-top: 0;
+    filter: drop-shadow(0 1px 2px rgba(240, 68, 56, 0.3));
+}
+
+.assign-mode-fail-icon :deep(svg) {
+    display: block;
+    width: 16px;
+    height: 16px;
+    color: #f04438 !important;
+    fill: currentColor;
 }
 
 :deep(.el-table__row.clue-row--unassigned td) {

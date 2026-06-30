@@ -1384,7 +1384,11 @@ const TRACK_ACTION_LABELS: Record<string, string> = {
     repurchase_activate: '复购激活'
 }
 
-const TRACK_HIDDEN_FIELDS = new Set(['ownerUserId', 'ownerId', 'orderId'])
+const TRACK_HIDDEN_FIELDS = new Set(['ownerUserId', 'ownerId', 'orderId', 'mobile', 'mobile2'])
+const TRACK_HIDDEN_LINE_PATTERN = /^(手机号|手机号2|联系电话|联系电话2|mobile|mobile2)\s*[:：]/
+
+const filterTrackLines = (lines: string[]) =>
+    lines.filter((line) => !TRACK_HIDDEN_LINE_PATTERN.test(String(line || '').trim()))
 
 const buildConsultTrackLines = (content?: string) => {
     if (!content || !content.trim().startsWith('{')) {
@@ -1581,16 +1585,18 @@ const normalizeTrackLines = (item: CustomerDetailApi.CustomerTrackRespVO) => {
         if (rawContentLines.length === 1) {
             const [singleLine] = rawContentLines
             if (singleLine?.trim().startsWith('{')) {
-                return item.type === 4 || item.typeName === '咨询信息'
+                const parsedLines = item.type === 4 || item.typeName === '咨询信息'
                     ? buildConsultTrackLines(singleLine)
                     : buildJsonTrackLines(singleLine)
+                return filterTrackLines(parsedLines)
             }
         }
-        return rawContentLines
+        return filterTrackLines(rawContentLines)
     }
-    return item.type === 4 || item.typeName === '咨询信息'
+    const parsedLines = item.type === 4 || item.typeName === '咨询信息'
         ? buildConsultTrackLines(item.content)
         : buildJsonTrackLines(item.content)
+    return filterTrackLines(parsedLines)
 }
 
 const syncEditForm = () => {
