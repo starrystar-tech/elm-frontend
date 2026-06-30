@@ -65,7 +65,7 @@ export interface CustomerAppointmentRespVO {
 export interface CustomerConsultRecordCreateReqVO {
     clueId: number
     consultResult?: number
-    consultType: number
+    consultType?: number
     campusId?: number
     projectId?: number
     productCategoryId?: number
@@ -74,6 +74,9 @@ export interface CustomerConsultRecordCreateReqVO {
     appointmentTime?: string
     nextFollowTime?: string
     needRemind?: boolean
+    invalidType?: number
+    invalidReason?: string
+    notConnectedReason?: number
     consultContent?: string
 }
 

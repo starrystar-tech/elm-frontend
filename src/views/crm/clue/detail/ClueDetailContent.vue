@@ -15,7 +15,7 @@
                         clue.currentDepartmentName || customerBasicInfo?.departmentName || '--'
                     }}</span
                 >
-                <span>名片编号：{{ clue.customerId || clue.id || '--' }}</span>
+                <span>客户编号：{{ clue.customerId || clue.id || '--' }}</span>
             </template>
             <template #actions>
                 <el-button plain :loading="outboundDialing" @click="handleOutboundCall">
@@ -677,7 +677,7 @@
                         label-position="right"
                         class="consult-form"
                     >
-                        <el-form-item label="是否有效" prop="consultResult">
+                        <el-form-item label="是否有效" prop="consultResult" required>
                             <el-radio-group v-model="consultForm.consultResult">
                                 <el-radio
                                     v-for="item in consultResultOptions"
@@ -688,7 +688,12 @@
                                 </el-radio>
                             </el-radio-group>
                         </el-form-item>
-                        <el-form-item label="操作类型" prop="consultType">
+                        <el-form-item
+                            v-if="showConsultType"
+                            label="操作类型"
+                            prop="consultType"
+                            required
+                        >
                             <el-radio-group v-model="consultForm.consultType">
                                 <el-radio
                                     v-for="item in consultTypeOptions"
@@ -699,9 +704,65 @@
                                 </el-radio>
                             </el-radio-group>
                         </el-form-item>
-                        <el-row :gutter="20" v-if="consultForm.consultType === 1">
+                        <el-form-item
+                            v-if="showInvalidFields"
+                            label="无效类型"
+                            prop="invalidType"
+                            required
+                        >
+                            <el-select
+                                v-model="consultForm.invalidType"
+                                clearable
+                                filterable
+                                placeholder="请选择无效类型"
+                                class="w-1/1"
+                            >
+                                <el-option
+                                    v-for="item in invalidTypeOptions"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                />
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item
+                            v-if="showInvalidFields"
+                            label="无效原因"
+                            prop="invalidReason"
+                            class="is-full"
+                            required
+                        >
+                            <el-input
+                                v-model="consultForm.invalidReason"
+                                type="textarea"
+                                :rows="4"
+                                placeholder="请输入无效原因"
+                            />
+                        </el-form-item>
+                        <el-form-item
+                            v-if="showNotConnectedFields"
+                            label="未接通原因"
+                            prop="notConnectedReason"
+                            required
+                        >
+                            <el-select
+                                v-model="consultForm.notConnectedReason"
+                                clearable
+                                filterable
+                                placeholder="请选择未接通原因"
+                                class="w-1/1"
+                            >
+                                <el-option
+                                    v-for="item in notConnectedReasonOptions"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                />
+                            </el-select>
+                        </el-form-item>
+                        <el-row :gutter="20" v-if="showFollowUpFields">
                             <el-col :span="16">
-                                <el-form-item label="下次回访时间" prop="nextFollowTime">
+                                <el-form-item label="下次回访时间" prop="nextFollowTime" required>
                                     <el-date-picker
                                         v-model="consultForm.nextFollowTime"
                                         type="datetime"
@@ -719,7 +780,7 @@
                         </el-row>
                         <el-row :gutter="20">
                             <el-col :span="12">
-                                <el-form-item v-if="consultForm.consultType === 2" label="校区">
+                                <el-form-item v-if="showAppointmentFields" label="校区">
                                     <el-select
                                         v-model="consultForm.campusId"
                                         clearable
@@ -737,7 +798,7 @@
                                 </el-form-item>
                             </el-col>
                             <el-col :span="12">
-                                <el-form-item v-if="consultForm.consultType === 2" label="咨询项目">
+                                <el-form-item v-if="showAppointmentFields" label="咨询项目">
                                     <ProductTypeSelect
                                         v-model="consultForm.projectId"
                                         placeholder="请选择咨询项目"
@@ -749,7 +810,7 @@
                         </el-row>
                         <el-row :gutter="20">
                             <el-col :span="12">
-                                <el-form-item v-if="consultForm.consultType === 2" label="商品分类">
+                                <el-form-item v-if="showAppointmentFields" label="商品分类">
                                     <ProductTypeSelect
                                         v-model="consultForm.productCategoryId"
                                         :parent-id="consultForm.projectId"
@@ -760,9 +821,10 @@
                             </el-col>
                             <el-col :span="12">
                                 <el-form-item
-                                    v-if="consultForm.consultType === 2"
+                                    v-if="showAppointmentFields"
                                     label="商品选择"
                                     prop="productId"
+                                    required
                                 >
                                     <el-input
                                         :model-value="selectedConsultProductName"
@@ -773,7 +835,7 @@
                                 </el-form-item>
                             </el-col>
                         </el-row>
-                        <el-row :gutter="20" v-if="consultForm.consultType === 2">
+                        <el-row :gutter="20" v-if="showAppointmentFields">
                             <el-col :span="12">
                                 <el-form-item label="预约时间" prop="appointmentTime" required>
                                     <el-date-picker
@@ -791,7 +853,7 @@
                                 </el-form-item>
                             </el-col>
                         </el-row>
-                        <el-form-item v-if="consultForm.consultType === 2" label="预约价格">
+                        <el-form-item v-if="showAppointmentFields" label="预约价格">
                             <el-input-number
                                 v-model="consultForm.appointmentPrice"
                                 :min="0"
@@ -801,7 +863,15 @@
                             />
                         </el-form-item>
                         <el-form-item
-                            :label="consultForm.consultType === 2 ? '预约备注' : '回访备注'"
+                            :label="
+                                showAppointmentFields
+                                    ? '预约备注'
+                                    : showInvalidFields
+                                      ? '无效备注'
+                                      : showNotConnectedFields
+                                        ? '未接通备注'
+                                        : '回访备注'
+                            "
                             prop="consultContent"
                             class="is-full"
                         >
@@ -810,9 +880,13 @@
                                 type="textarea"
                                 :rows="4"
                                 :placeholder="
-                                    consultForm.consultType === 2
+                                    showAppointmentFields
                                         ? '请输入预约备注'
-                                        : '请输入回访备注'
+                                        : showInvalidFields
+                                          ? '请输入无效备注'
+                                          : showNotConnectedFields
+                                            ? '请输入未接通备注'
+                                            : '请输入回访备注'
                                 "
                             />
                         </el-form-item>
@@ -1013,6 +1087,8 @@ const productPickerVisible = ref(false)
 const educationOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_EDUCATION)
 const consultResultOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_CONSULT_RESULT)
 const consultTypeOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_CONSULT_TYPE)
+const invalidTypeOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_INVALID_TYPE)
+const notConnectedReasonOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_NOT_CONNECTED_REASON)
 
 const regionText = computed(() => {
     return buildAreaLabel(props.clue)
@@ -1051,6 +1127,16 @@ const selectedConsultProductName = computed(() => {
     return ''
 })
 
+const showConsultType = computed(() => Number(consultForm.consultResult) === 1)
+const showFollowUpFields = computed(
+    () => Number(consultForm.consultResult) === 1 && Number(consultForm.consultType) === 1
+)
+const showAppointmentFields = computed(
+    () => Number(consultForm.consultResult) === 1 && Number(consultForm.consultType) === 2
+)
+const showInvalidFields = computed(() => Number(consultForm.consultResult) === 2)
+const showNotConnectedFields = computed(() => Number(consultForm.consultResult) === 3)
+
 const editForm = reactive({
     id: undefined as number | undefined,
     mobile: '',
@@ -1086,6 +1172,9 @@ const consultForm = reactive({
     appointmentTime: '',
     nextFollowTime: props.clue.contactNextTime || '',
     needRemind: Boolean(props.clue.followUpStatus),
+    invalidType: undefined as number | undefined,
+    invalidReason: '',
+    notConnectedReason: undefined as number | undefined,
     consultContent: props.clue.contactLastContent || ''
 })
 
@@ -1112,7 +1201,18 @@ const editRules = reactive({
 })
 
 const consultRules = reactive({
-    consultType: [{ required: true, message: '请选择操作类型', trigger: 'change' }],
+    consultType: [
+        {
+            validator: (_rule: any, value: number | undefined, callback: any) => {
+                if (showConsultType.value && !value) {
+                    callback(new Error('请选择操作类型'))
+                    return
+                }
+                callback()
+            },
+            trigger: 'change'
+        }
+    ],
     consultResult: [
         {
             validator: (_rule: any, value: number | undefined, callback: any) => {
@@ -1125,11 +1225,22 @@ const consultRules = reactive({
             trigger: 'change'
         }
     ],
-    nextFollowTime: [{ required: true, message: '请选择下次回访时间', trigger: 'change' }],
+    nextFollowTime: [
+        {
+            validator: (_rule: any, value: string | undefined, callback: any) => {
+                if (showFollowUpFields.value && !value) {
+                    callback(new Error('请选择下次回访时间'))
+                    return
+                }
+                callback()
+            },
+            trigger: 'change'
+        }
+    ],
     appointmentTime: [
         {
             validator: (_rule: any, value: string | undefined, callback: any) => {
-                if (consultForm.consultType === 2 && !value) {
+                if (showAppointmentFields.value && !value) {
                     callback(new Error('请选择预约时间'))
                     return
                 }
@@ -1139,11 +1250,46 @@ const consultRules = reactive({
         }
     ],
     productId: [
-        { required: true, message: '请选择商品', trigger: 'change' },
         {
             validator: (_rule: any, value: number | undefined, callback: any) => {
-                if (consultForm.consultType === 2 && !value) {
+                if (showAppointmentFields.value && !value) {
                     callback(new Error('请选择商品'))
+                    return
+                }
+                callback()
+            },
+            trigger: 'change'
+        }
+    ],
+    invalidType: [
+        {
+            validator: (_rule: any, value: number | undefined, callback: any) => {
+                if (showInvalidFields.value && !value) {
+                    callback(new Error('请选择无效类型'))
+                    return
+                }
+                callback()
+            },
+            trigger: 'change'
+        }
+    ],
+    invalidReason: [
+        {
+            validator: (_rule: any, value: string | undefined, callback: any) => {
+                if (showInvalidFields.value && !String(value || '').trim()) {
+                    callback(new Error('请输入无效原因'))
+                    return
+                }
+                callback()
+            },
+            trigger: 'blur'
+        }
+    ],
+    notConnectedReason: [
+        {
+            validator: (_rule: any, value: number | undefined, callback: any) => {
+                if (showNotConnectedFields.value && !value) {
+                    callback(new Error('请选择未接通原因'))
                     return
                 }
                 callback()
@@ -1257,6 +1403,14 @@ const buildConsultTrackLines = (content?: string) => {
             DICT_TYPE.CRM_CLUE_CONSULT_TYPE,
             Number(parsed.consultType)
         )
+        const invalidTypeLabel = getDictLabel(
+            DICT_TYPE.CRM_CLUE_INVALID_TYPE,
+            Number(parsed.invalidType)
+        )
+        const notConnectedReasonLabel = getDictLabel(
+            DICT_TYPE.CRM_CLUE_NOT_CONNECTED_REASON,
+            Number(parsed.notConnectedReason)
+        )
         const lines = [
             consultResultLabel ? `是否有效：${consultResultLabel}` : '',
             consultTypeLabel ? `操作类型：${consultTypeLabel}` : '',
@@ -1274,6 +1428,9 @@ const buildConsultTrackLines = (content?: string) => {
             parsed.needRemind !== null && parsed.needRemind !== undefined
                 ? `是否提醒：${parsed.needRemind ? '是' : '否'}`
                 : '',
+            invalidTypeLabel ? `无效类型：${invalidTypeLabel}` : '',
+            parsed.invalidReason ? `无效原因：${parsed.invalidReason}` : '',
+            notConnectedReasonLabel ? `未接通原因：${notConnectedReasonLabel}` : '',
             parsed.consultContent ? `备注：${parsed.consultContent}` : ''
         ].filter(Boolean)
         return lines.length ? lines : [content]
@@ -1471,8 +1628,47 @@ const syncConsultForm = () => {
     consultForm.appointmentTime = ''
     consultForm.nextFollowTime = props.clue.contactNextTime || ''
     consultForm.needRemind = Boolean(props.clue.followUpStatus)
+    consultForm.invalidType = undefined
+    consultForm.invalidReason = ''
+    consultForm.notConnectedReason = undefined
     consultForm.consultContent = props.clue.contactLastContent || ''
 }
+
+watch(
+    () => consultForm.consultResult,
+    (value) => {
+        const result = Number(value)
+        if (result !== 1) {
+            consultForm.campusId = undefined
+            consultForm.projectId = props.clue.consultProjectId
+            consultForm.productCategoryId = undefined
+            consultForm.productId = undefined
+            consultForm.productName = ''
+            consultForm.appointmentPrice = undefined
+            consultForm.appointmentTime = ''
+            consultForm.nextFollowTime = ''
+            consultForm.needRemind = false
+        }
+        if (result !== 2) {
+            consultForm.invalidType = undefined
+            consultForm.invalidReason = ''
+        }
+        if (result !== 3) {
+            consultForm.notConnectedReason = undefined
+        }
+        nextTick(() => {
+            consultFormRef.value?.clearValidate?.([
+                'consultType',
+                'nextFollowTime',
+                'appointmentTime',
+                'productId',
+                'invalidType',
+                'invalidReason',
+                'notConnectedReason'
+            ])
+        })
+    }
+)
 
 watch(
     () => props.clue,
@@ -1553,16 +1749,19 @@ const submitConsult = async () => {
     emit('save-consult', {
         clueId: Number(props.clue.id),
         consultResult: consultForm.consultResult,
-        consultType: consultForm.consultType,
-        campusId: consultForm.consultType === 2 ? consultForm.campusId : undefined,
-        projectId: consultForm.consultType === 2 ? consultForm.projectId : consultForm.projectId,
-        productCategoryId: consultForm.productCategoryId,
-        productId: consultForm.productId,
-        appointmentPrice: consultForm.consultType === 2 ? consultForm.appointmentPrice : undefined,
+        consultType: showConsultType.value ? consultForm.consultType : undefined,
+        campusId: showAppointmentFields.value ? consultForm.campusId : undefined,
+        projectId: showAppointmentFields.value ? consultForm.projectId : undefined,
+        productCategoryId: showAppointmentFields.value ? consultForm.productCategoryId : undefined,
+        productId: showAppointmentFields.value ? consultForm.productId : undefined,
+        appointmentPrice: showAppointmentFields.value ? consultForm.appointmentPrice : undefined,
         appointmentTime:
-            consultForm.consultType === 2 ? consultForm.appointmentTime || undefined : undefined,
-        nextFollowTime: consultForm.nextFollowTime || undefined,
-        needRemind: consultForm.needRemind,
+            showAppointmentFields.value ? consultForm.appointmentTime || undefined : undefined,
+        nextFollowTime: showFollowUpFields.value ? consultForm.nextFollowTime || undefined : undefined,
+        needRemind: showFollowUpFields.value ? consultForm.needRemind : undefined,
+        invalidType: showInvalidFields.value ? consultForm.invalidType : undefined,
+        invalidReason: showInvalidFields.value ? consultForm.invalidReason.trim() || undefined : undefined,
+        notConnectedReason: showNotConnectedFields.value ? consultForm.notConnectedReason : undefined,
         consultContent: consultForm.consultContent.trim()
     })
 }

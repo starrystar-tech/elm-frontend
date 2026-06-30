@@ -520,6 +520,14 @@ const buildConsultTrackLines = (content?: string) => {
             DICT_TYPE.CRM_CLUE_CONSULT_TYPE,
             Number(parsed.consultType)
         )
+        const invalidTypeLabel = getDictLabel(
+            DICT_TYPE.CRM_CLUE_INVALID_TYPE,
+            Number(parsed.invalidType)
+        )
+        const notConnectedReasonLabel = getDictLabel(
+            DICT_TYPE.CRM_CLUE_NOT_CONNECTED_REASON,
+            Number(parsed.notConnectedReason)
+        )
         const lines = [
             consultResultLabel ? `是否有效：${consultResultLabel}` : '',
             consultTypeLabel ? `操作类型：${consultTypeLabel}` : '',
@@ -537,6 +545,9 @@ const buildConsultTrackLines = (content?: string) => {
             parsed.needRemind !== null && parsed.needRemind !== undefined
                 ? `是否提醒：${parsed.needRemind ? '是' : '否'}`
                 : '',
+            invalidTypeLabel ? `无效类型：${invalidTypeLabel}` : '',
+            parsed.invalidReason ? `无效原因：${parsed.invalidReason}` : '',
+            notConnectedReasonLabel ? `未接通原因：${notConnectedReasonLabel}` : '',
             parsed.consultContent ? `备注：${parsed.consultContent}` : ''
         ].filter(Boolean)
         return lines.length ? lines : [content]

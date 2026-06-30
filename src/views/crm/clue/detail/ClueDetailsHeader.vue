@@ -4,7 +4,7 @@
             <div>
                 <div class="text-20px font-bold text-[#303133]">{{ clue.name || '--' }}</div>
                 <div class="mt-8px text-13px text-[#606266]"
-                    >名片编号：{{ clue.customerId || clue.id || '--' }}</div
+                    >客户编号：{{ clue.customerId || clue.id || '--' }}</div
                 >
             </div>
             <div>

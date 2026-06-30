@@ -189,6 +189,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'customerId',
         label: '学员ID',
         width: '120px',
+        fixed: 'left',
         slots: {
             default: (data) => (
                 <ElLink underline={false} type="primary" onClick={() => openDetail(data.row.id)}>
@@ -201,14 +202,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'name',
         label: '学员姓名',
         minWidth: '140px',
-        fixed: 'left',
-        slots: {
-            default: (data) => (
-                <ElLink underline={false} type="primary" onClick={() => openDetail(data.row.id)}>
-                    {data.row.name || '--'}
-                </ElLink>
-            )
-        }
+        fixed: 'left'
     },
     {
         field: 'mobile',

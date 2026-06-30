@@ -41,9 +41,10 @@
                 link
                 type="primary"
                 class="download-btn"
+                :loading="downloadLoading"
                 @click.stop="downloadAudio"
             >
-                <el-icon :size="14">
+                <el-icon v-if="!downloadLoading" :size="14">
                     <Download />
                 </el-icon>
             </el-button>
@@ -74,6 +75,7 @@ const isPlaying = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
 const playbackRate = ref(1)
+const downloadLoading = ref(false)
 const playbackRateOptions = [
     { label: '1.0x', value: 1 },
     { label: '1.25x', value: 1.25 },
@@ -181,6 +183,9 @@ const triggerBrowserDownload = (url: string, fileName: string) => {
 }
 
 const downloadAudio = async () => {
+    if (downloadLoading.value) return
+    downloadLoading.value = true
+    try {
     if (props.recordId) {
         try {
             await downloadOutboundCallRecordAudio(props.recordId)
@@ -196,6 +201,9 @@ const downloadAudio = async () => {
         setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
     } catch (error) {
         triggerBrowserDownload(props.src, fileName)
+    }
+    } finally {
+        downloadLoading.value = false
     }
 }
 
