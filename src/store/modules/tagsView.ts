@@ -6,6 +6,17 @@ import { store } from '../index'
 import { findIndex } from '@/utils'
 import { useUserStoreWithOut } from './user'
 
+const shouldKeepSingleTagByPath = (view: RouteLocationNormalizedLoaded) =>
+  Boolean(view.meta?.singleTagByPath)
+
+const isSameVisitedView = (
+  currentView: RouteLocationNormalizedLoaded,
+  targetView: RouteLocationNormalizedLoaded
+) =>
+  shouldKeepSingleTagByPath(targetView)
+    ? currentView.path === targetView.path
+    : currentView.fullPath === targetView.fullPath
+
 export interface TagsViewState {
   visitedViews: RouteLocationNormalizedLoaded[]
   cachedViews: Set<string>
@@ -37,9 +48,24 @@ export const useTagsViewStore = defineStore('tagsView', {
     },
     // 新增tag
     addVisitedView(view: RouteLocationNormalizedLoaded) {
-      if (this.visitedViews.some((v) => v.fullPath === view.fullPath)) return
       if (view.meta?.noTagsView) return
       const visitedView = Object.assign({}, view, { title: view.meta?.title || 'no-name' })
+      const currentIndex = this.visitedViews.findIndex((v) => isSameVisitedView(visitedView, v))
+
+      if (currentIndex > -1) {
+        const mergedVisitedView = Object.assign({}, this.visitedViews[currentIndex], visitedView)
+        if (shouldKeepSingleTagByPath(visitedView)) {
+          const nextVisitedViews = this.visitedViews.filter(
+            (v, index) => index === currentIndex || v.path !== visitedView.path
+          )
+          nextVisitedViews[currentIndex] = mergedVisitedView
+          this.visitedViews = nextVisitedViews
+          return
+        }
+
+        this.visitedViews[currentIndex] = mergedVisitedView
+        return
+      }
 
       if (visitedView.meta) {
         const titleSuffixList: string[] = []

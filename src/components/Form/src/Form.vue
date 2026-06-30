@@ -70,17 +70,14 @@ export default defineComponent({
 
     // 表单数据
     const formModel = ref<Recordable>({})
+    const preservedModel = ref<Recordable>({})
+    const schemaFieldSignature = ref('')
 
     const syncOuterModel = (model: Recordable = {}) => {
       const outerModel = unref(getProps).model
       if (!outerModel || typeof outerModel !== 'object') {
         return
       }
-      Object.keys(outerModel).forEach((key) => {
-        if (!Object.prototype.hasOwnProperty.call(model, key)) {
-          delete outerModel[key]
-        }
-      })
       Object.entries(model).forEach(([key, value]) => {
         outerModel[key] = value
       })
@@ -92,6 +89,7 @@ export default defineComponent({
 
     // 对表单赋值
     const setValues = (data: Recordable = {}) => {
+      preservedModel.value = Object.assign({}, unref(preservedModel), data)
       formModel.value = Object.assign(unref(formModel), data)
     }
 
@@ -145,17 +143,31 @@ export default defineComponent({
 
     // 监听表单结构化数组，重新生成formModel
     watch(
-      () => [unref(getProps).schema, unref(getProps).model],
-      ([schema = [], model = {}]) => {
-        const prevModel = { ...unref(formModel), ...(model || {}) }
-        const nextModel = initModel(schema, prevModel)
+      () => unref(getProps).schema,
+      (schema = []) => {
+        const nextSignature = schema.map((item) => item.field).join('|')
+        if (schemaFieldSignature.value === nextSignature) {
+          return
+        }
+
+        const mergedModel = {
+          ...unref(preservedModel),
+          ...unref(formModel),
+          ...(unref(getProps).model || {})
+        }
+        const nextModel = initModel(schema, mergedModel)
         schema.forEach((item) => {
-          if (item.hidden && Object.prototype.hasOwnProperty.call(prevModel, item.field)) {
-            nextModel[item.field] = prevModel[item.field]
+          if (item.hidden && Object.prototype.hasOwnProperty.call(mergedModel, item.field)) {
+            nextModel[item.field] = mergedModel[item.field]
           }
         })
         formModel.value = nextModel
-        syncOuterModel(nextModel)
+        preservedModel.value = {
+          ...unref(preservedModel),
+          ...nextModel
+        }
+        schemaFieldSignature.value = nextSignature
+        syncOuterModel(unref(preservedModel))
       },
       {
         immediate: true,
@@ -164,9 +176,31 @@ export default defineComponent({
     )
 
     watch(
+      () => unref(getProps).model,
+      (model) => {
+        const nextModel = model || {}
+        formModel.value = {
+          ...unref(formModel),
+          ...nextModel
+        }
+        preservedModel.value = {
+          ...unref(preservedModel),
+          ...nextModel
+        }
+      },
+      {
+        deep: true
+      }
+    )
+
+    watch(
       formModel,
       (model) => {
-        syncOuterModel(model || {})
+        preservedModel.value = {
+          ...unref(preservedModel),
+          ...(model || {})
+        }
+        syncOuterModel(unref(preservedModel))
       },
       {
         deep: true

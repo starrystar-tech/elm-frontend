@@ -365,6 +365,7 @@ export interface MyCluePageRespVO extends ClueVO {
 }
 
 export interface MyClueCountRespVO {
+    totalCount?: number
     firstCount?: number
     seaCount?: number
     repurchaseCount?: number

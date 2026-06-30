@@ -53,6 +53,8 @@ const searchOverflow = ref(false)
 const collapsedMaxHeight = ref(0)
 
 const formModel = ref<Recordable>(props.model)
+const preservedModel = ref<Recordable>({ ...(props.model || {}) })
+const schemaFieldSignature = ref('')
 
 const mergedButtonPosition = computed(() => props.buttonPosition || props.buttomPosition)
 const expandEnabled = computed(() => {
@@ -112,11 +114,6 @@ const syncExternalModel = (model: Recordable = {}) => {
   if (!props.model || typeof props.model !== 'object') {
     return
   }
-  Object.keys(props.model).forEach((key) => {
-    if (!Object.prototype.hasOwnProperty.call(model, key)) {
-      delete props.model[key]
-    }
-  })
   Object.entries(model).forEach(([key, value]) => {
     props.model[key] = value
   })
@@ -125,16 +122,44 @@ const syncExternalModel = (model: Recordable = {}) => {
 watch(
   () => unref(newSchema),
   (schema = []) => {
-    const prevModel = { ...unref(formModel) }
+    schemaRef.value = schema
+    const nextSignature = schema.map((item) => item.field).join('|')
+
+    if (schemaFieldSignature.value === nextSignature) {
+      return
+    }
+
+    const externalModel = props.model || {}
+    const prevModel = {
+      ...unref(preservedModel),
+      ...unref(formModel),
+      ...externalModel
+    }
     const nextModel = initModel(schema, prevModel)
     schema.forEach((item) => {
-      if (item.hidden && Object.prototype.hasOwnProperty.call(prevModel, item.field)) {
+      if (!item.hidden) {
+        return
+      }
+      if (Object.prototype.hasOwnProperty.call(prevModel, item.field)) {
         nextModel[item.field] = prevModel[item.field]
+        return
+      }
+      if (Object.prototype.hasOwnProperty.call(externalModel, item.field)) {
+        nextModel[item.field] = externalModel[item.field]
+      }
+    })
+    Object.keys(prevModel).forEach((key) => {
+      if (!Object.prototype.hasOwnProperty.call(nextModel, key)) {
+        nextModel[key] = prevModel[key]
       }
     })
     formModel.value = nextModel
-    syncExternalModel(nextModel)
-    schemaRef.value = schema
+    preservedModel.value = {
+      ...unref(preservedModel),
+      ...nextModel
+    }
+    schemaFieldSignature.value = nextSignature
+    syncExternalModel(unref(preservedModel))
   },
   {
     immediate: true,
@@ -143,9 +168,31 @@ watch(
 )
 
 watch(
+  () => props.model,
+  (model) => {
+    const nextModel = model || {}
+    formModel.value = {
+      ...unref(formModel),
+      ...nextModel
+    }
+    preservedModel.value = {
+      ...unref(preservedModel),
+      ...nextModel
+    }
+  },
+  {
+    deep: true
+  }
+)
+
+watch(
   formModel,
   (model) => {
-    syncExternalModel(model || {})
+    preservedModel.value = {
+      ...unref(preservedModel),
+      ...(model || {})
+    }
+    syncExternalModel(unref(preservedModel))
   },
   {
     deep: true
@@ -270,6 +317,7 @@ const setProps = async (searchProps: Recordable = {}) => {
 }
 
 const setValues = async (data: Recordable) => {
+  preservedModel.value = Object.assign({}, unref(preservedModel), data)
   formModel.value = Object.assign({}, formModel.value, data)
   await methods.setValues(data)
 }

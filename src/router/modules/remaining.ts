@@ -677,7 +677,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
                     title: '客户搜索',
                     noCache: true,
                     hidden: true,
-                    activeMenu: '/crm/clue'
+                    activeMenu: '/crm/clue',
+                    singleTagByPath: true
                 },
                 component: () => import('@/views/crm/clue/search.vue')
             },

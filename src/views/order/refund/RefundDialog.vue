@@ -1,11 +1,6 @@
 <template>
     <Dialog v-model="dialogVisible" title="新增退款" width="920px">
         <div class="refund-dialog">
-            <div class="refund-tip">
-                <Icon icon="ep:warning-filled" class="refund-tip__icon" />
-                <span>提交退款后，将分别生成一条退款申请和工单记录</span>
-            </div>
-
             <div class="refund-section">
                 <div class="refund-section__title">订单信息</div>
                 <div class="refund-section__grid">
@@ -217,78 +212,62 @@ defineExpose({ open })
 
 <style scoped lang="scss">
 .refund-dialog {
-  padding: 8px 4px 0;
-}
-
-.refund-tip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  margin-bottom: 20px;
-  color: #d97706;
-  background: #fff7e6;
-  border: 1px solid #f9d27d;
-  border-radius: 6px;
-}
-
-.refund-tip__icon {
-  font-size: 16px;
+    padding: 8px 4px 0;
 }
 
 .refund-section {
-  margin-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 .refund-section__title {
-  position: relative;
-  padding-left: 12px;
-  margin-bottom: 18px;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
+    position: relative;
+    padding-left: 12px;
+    margin-bottom: 18px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
 }
 
 .refund-section__title::before {
-  position: absolute;
-  top: 2px;
-  left: 0;
-  width: 4px;
-  height: 18px;
-  content: '';
-  background: var(--el-color-primary);
-  border-radius: 4px;
+    position: absolute;
+    top: 2px;
+    left: 0;
+    width: 4px;
+    height: 18px;
+    content: '';
+    background: var(--el-color-primary);
+    border-radius: 4px;
 }
 
 .refund-section__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px 48px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 48px;
 }
 
 .refund-section__item {
-  font-size: 15px;
-  color: var(--el-text-color-primary);
+    font-size: 15px;
+    color: var(--el-text-color-primary);
 }
 
 .refund-section__item .label {
-  color: var(--el-text-color-regular);
+    color: var(--el-text-color-regular);
 }
 
 .refund-form__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 24px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 24px;
 }
 
 .refund-type-wrap {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .refund-type-wrap__icon {
-  color: #f59e0b;
-  font-size: 16px;
+    color: #f59e0b;
+    font-size: 16px;
 }
 </style>

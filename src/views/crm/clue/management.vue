@@ -213,20 +213,14 @@ const deptOptions = ref<DeptVO[]>([])
 const clueSourceOptions = ref<LabelValueOption[]>([])
 const tagOptions = ref<LabelValueOption[]>([])
 const counts = reactive({
+    totalCount: 0,
     firstCount: 0,
     seaCount: 0,
     repurchaseCount: 0,
     waitReturnCount: 0,
     returnedCount: 0
 })
-const totalCount = computed(
-    () =>
-        Number(counts.firstCount || 0) +
-        Number(counts.seaCount || 0) +
-        Number(counts.repurchaseCount || 0) +
-        Number(counts.waitReturnCount || 0) +
-        Number(counts.returnedCount || 0)
-)
+const totalCount = computed(() => Number(counts.totalCount || 0))
 const assignDialogVisible = ref(false)
 const releaseDialogVisible = ref(false)
 const pendingAssignIds = ref<number[] | null>(null)
@@ -553,6 +547,7 @@ const buildSearchParams = (params: ManagerSearchParams) => {
 const loadCounts = async () => {
     const data = await ClueApi.getClueManagementCounts()
     Object.assign(counts, {
+        totalCount: Number(data?.totalCount || 0),
         firstCount: Number(data?.firstCount || 0),
         seaCount: Number(data?.seaCount || 0),
         repurchaseCount: Number(data?.repurchaseCount || 0),
