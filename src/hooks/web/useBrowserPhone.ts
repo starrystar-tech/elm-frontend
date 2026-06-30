@@ -355,6 +355,7 @@ const showCallEndedStatus = (status: string) => {
 
 const finalizeBrowserCall = (reason: string, caller?: string, callee?: string) => {
     const endedStatus = resolveCallEndedStatus(reason)
+    clearBrowserMediaTerminationTimer(getCurrentBrowserSession())
     clearHangupFallbackTimer()
     clearHangupStatusResetTimer()
     stopOutgoingWaitingTone()
@@ -475,12 +476,132 @@ const handleBrowserCallEnded = (reason: string, caller: string, callee: string) 
     finalizeBrowserCall(reason, caller, callee)
 }
 
+const resolveBrowserSessionParties = (session?: any) => {
+    const remoteUser = resolveRemoteBrowserExtension(
+        session?.remoteIdentity,
+        currentBrowserCaller.value || browserForm.target
+    )
+    const localUser = resolveCurrentBrowserExtension()
+    const caller =
+        currentSessionDirection.value === 'incoming'
+            ? remoteUser || currentBrowserCaller.value
+            : currentBrowserCaller.value || localUser
+    const callee =
+        currentSessionDirection.value === 'incoming'
+            ? currentBrowserCallee.value || localUser
+            : currentBrowserCallee.value || remoteUser
+    return { caller, callee }
+}
+
+const handleBrowserSessionMediaEnded = (reason: string, session?: any) => {
+    if (!activeCall.value && !incomingCall.value && browserStatus.value !== '通话中') {
+        return
+    }
+    const { caller, callee } = resolveBrowserSessionParties(session)
+    traceBrowserStep('MEDIA_TERMINATION_DETECTED', `reason=${reason}`)
+    handleBrowserCallEnded(reason, caller, callee)
+}
+
+const scheduleBrowserMediaTerminationCheck = (session: any, reason: string, delay = 2500) => {
+    if (session.__browserMediaTerminationTimer) {
+        clearTimeout(session.__browserMediaTerminationTimer)
+    }
+    session.__browserMediaTerminationTimer = setTimeout(() => {
+        session.__browserMediaTerminationTimer = undefined
+        const peerConnection = session.sessionDescriptionHandler?.peerConnection
+        const connectionState = peerConnection?.connectionState
+        const iceState = peerConnection?.iceConnectionState
+        if (
+            connectionState === 'disconnected' ||
+            connectionState === 'failed' ||
+            connectionState === 'closed' ||
+            iceState === 'disconnected' ||
+            iceState === 'failed' ||
+            iceState === 'closed'
+        ) {
+            handleBrowserSessionMediaEnded(reason, session)
+        }
+    }, delay)
+}
+
+const clearBrowserMediaTerminationTimer = (session?: any) => {
+    if (!session?.__browserMediaTerminationTimer) return
+    clearTimeout(session.__browserMediaTerminationTimer)
+    session.__browserMediaTerminationTimer = undefined
+}
+
+const attachBrowserRemoteTrackListener = (session: any, track?: MediaStreamTrack) => {
+    const browserTrack = track as (MediaStreamTrack & {
+        __browserTerminationListenerAttached?: boolean
+    }) | undefined
+    if (!browserTrack || browserTrack.__browserTerminationListenerAttached) return
+    browserTrack.__browserTerminationListenerAttached = true
+    browserTrack.addEventListener('ended', () => {
+        traceBrowserStep('REMOTE_TRACK_ENDED', `kind=${browserTrack.kind}`)
+        handleBrowserSessionMediaEnded('remote-track-ended', session)
+    })
+}
+
+const attachSessionMediaTerminationListener = (session?: any) => {
+    const sessionDescriptionHandler = session?.sessionDescriptionHandler
+    if (!session || !sessionDescriptionHandler || session.__browserMediaTerminationListenerAttached) return
+    session.__browserMediaTerminationListenerAttached = true
+
+    const originalDelegate = sessionDescriptionHandler.peerConnectionDelegate || {}
+    sessionDescriptionHandler.peerConnectionDelegate = {
+        ...originalDelegate,
+        onconnectionstatechange: (event: Event) => {
+            originalDelegate.onconnectionstatechange?.(event)
+            const state = sessionDescriptionHandler.peerConnection?.connectionState
+            traceBrowserStep('PEER_CONNECTION_STATE', `state=${state || '<empty>'}`)
+            if (state === 'closed' || state === 'failed') {
+                handleBrowserSessionMediaEnded(`peer-connection-${state}`, session)
+                return
+            }
+            if (state === 'disconnected') {
+                scheduleBrowserMediaTerminationCheck(session, 'peer-connection-disconnected')
+                return
+            }
+            if (state === 'connected') {
+                clearBrowserMediaTerminationTimer(session)
+            }
+        },
+        oniceconnectionstatechange: (event: Event) => {
+            originalDelegate.oniceconnectionstatechange?.(event)
+            const state = sessionDescriptionHandler.peerConnection?.iceConnectionState
+            traceBrowserStep('ICE_CONNECTION_STATE', `state=${state || '<empty>'}`)
+            if (state === 'closed' || state === 'failed') {
+                handleBrowserSessionMediaEnded(`ice-connection-${state}`, session)
+                return
+            }
+            if (state === 'disconnected') {
+                scheduleBrowserMediaTerminationCheck(session, 'ice-connection-disconnected')
+                return
+            }
+            if (state === 'connected' || state === 'completed') {
+                clearBrowserMediaTerminationTimer(session)
+            }
+        },
+        ontrack: (event: Event) => {
+            originalDelegate.ontrack?.(event)
+            attachBrowserRemoteTrackListener(session, (event as RTCTrackEvent).track)
+        }
+    }
+
+    sessionDescriptionHandler.remoteMediaStream
+        ?.getTracks()
+        .forEach((track: MediaStreamTrack) => attachBrowserRemoteTrackListener(session, track))
+}
+
 const attachSessionTerminationListener = (session?: any) => {
     if (!session?.stateChange || session.__browserTerminationListenerAttached) return
     session.__browserTerminationListenerAttached = true
     activeBrowserSession.value = session
     session.stateChange.addListener((state: string) => {
         traceBrowserStep('SESSION_STATE', `state=${state}`)
+        if (String(state) === 'Established') {
+            attachSessionMediaTerminationListener(session)
+        }
         if (String(state) !== 'Terminated') return
         const remoteUser = resolveRemoteBrowserExtension(
             session?.remoteIdentity,
@@ -941,6 +1062,7 @@ const createBrowserClient = async () => {
                 const currentSession = session || getCurrentBrowserSession()
                 activeBrowserSession.value = currentSession
                 attachSessionTerminationListener(currentSession)
+                attachSessionMediaTerminationListener(currentSession)
                 const remoteUser = resolveRemoteBrowserExtension(
                     currentSession?.remoteIdentity,
                     currentBrowserCaller.value || browserForm.target

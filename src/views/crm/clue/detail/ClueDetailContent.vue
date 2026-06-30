@@ -477,12 +477,37 @@
                                             </span>
                                         </div>
                                         <div class="timeline-card__body">
-                                            <template v-if="item.lines.length">
+                                            <template v-if="item.displayLines.length">
                                                 <p
-                                                    v-for="(line, index) in item.lines"
+                                                    v-for="(line, index) in item.displayLines"
                                                     :key="`${item.id}-${index}`"
                                                 >
-                                                    {{ line }}
+                                                    <span v-if="line.type === 'mobile'" class="track-mobile-line">
+                                                        <span>{{ line.label }}：</span>
+                                                        <span class="track-mobile-line__value">
+                                                            {{
+                                                                isTrackMobileVisible(item.id, index)
+                                                                    ? line.value
+                                                                    : maskTrackMobile(line.value)
+                                                            }}
+                                                        </span>
+                                                        <el-button
+                                                            link
+                                                            class="track-mobile-line__toggle"
+                                                            :aria-label="
+                                                                isTrackMobileVisible(item.id, index)
+                                                                    ? '隐藏手机号'
+                                                                    : '显示手机号'
+                                                            "
+                                                            @click="toggleTrackMobileVisible(item.id, index)"
+                                                        >
+                                                            <el-icon>
+                                                                <Hide v-if="isTrackMobileVisible(item.id, index)" />
+                                                                <View v-else />
+                                                            </el-icon>
+                                                        </el-button>
+                                                    </span>
+                                                    <template v-else>{{ line.text }}</template>
                                                 </p>
                                             </template>
                                             <p v-else>{{ item.content || '--' }}</p>
@@ -988,6 +1013,7 @@
 </template>
 
 <script setup lang="ts">
+import { Hide, View } from '@element-plus/icons-vue'
 import AreaSelect from '@/components/AreaSelect.vue'
 import { UploadImg } from '@/components/UploadFile'
 import type * as AftersalesApi from '@/api/crm/aftersales'
@@ -1083,6 +1109,7 @@ const editFormRef = ref()
 const consultFormRef = ref()
 const recordTab = ref('appointments')
 const productPickerVisible = ref(false)
+const visibleTrackMobileMap = ref<Record<string, boolean>>({})
 
 const educationOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_EDUCATION)
 const consultResultOptions = getIntDictOptions(DICT_TYPE.CRM_CLUE_CONSULT_RESULT)
@@ -1366,7 +1393,9 @@ const TRACK_FIELD_LABELS: Record<string, string> = {
     productId: '商品编号',
     campusId: '校区编号',
     allocationType: '分配类型',
-    ownerUserName: '归属人'
+    ownerUserName: '归属人',
+    mobile: '手机号',
+    mobile2: '手机号2'
 }
 
 const TRACK_FIELD_ORDER = [
@@ -1384,11 +1413,97 @@ const TRACK_ACTION_LABELS: Record<string, string> = {
     repurchase_activate: '复购激活'
 }
 
-const TRACK_HIDDEN_FIELDS = new Set(['ownerUserId', 'ownerId', 'orderId', 'mobile', 'mobile2'])
-const TRACK_HIDDEN_LINE_PATTERN = /^(手机号|手机号2|联系电话|联系电话2|mobile|mobile2)\s*[:：]/
+const TRACK_HIDDEN_FIELDS = new Set(['ownerUserId', 'ownerId', 'orderId'])
+const TRACK_MOBILE_LINE_PATTERN = /^(手机号|手机号2|联系电话|联系电话2|mobile|mobile2)\s*[:：]\s*(.+)$/
 
 const filterTrackLines = (lines: string[]) =>
-    lines.filter((line) => !TRACK_HIDDEN_LINE_PATTERN.test(String(line || '').trim()))
+    lines.filter((line) => Boolean(String(line || '').trim()))
+
+const parseTrackMobileLine = (line?: string) => {
+    const match = String(line || '').trim().match(TRACK_MOBILE_LINE_PATTERN)
+    if (!match) return undefined
+    return {
+        label: TRACK_FIELD_LABELS[match[1]] || match[1],
+        value: match[2]?.trim() || ''
+    }
+}
+
+const maskTrackMobile = (mobile?: string) => {
+    const value = String(mobile || '').trim()
+    if (!value) return '--'
+    if (value.length <= 4) return '*'.repeat(value.length)
+    if (value.length <= 7) return `${value.slice(0, 2)}${'*'.repeat(value.length - 4)}${value.slice(-2)}`
+    return `${value.slice(0, 3)}${'*'.repeat(Math.max(4, value.length - 7))}${value.slice(-4)}`
+}
+
+const getTrackMobileVisibleKey = (trackId: number | string | undefined, index: number) =>
+    `${trackId || 'track'}-${index}`
+
+const isTrackMobileVisible = (trackId: number | string | undefined, index: number) =>
+    Boolean(visibleTrackMobileMap.value[getTrackMobileVisibleKey(trackId, index)])
+
+const toggleTrackMobileVisible = (trackId: number | string | undefined, index: number) => {
+    const key = getTrackMobileVisibleKey(trackId, index)
+    visibleTrackMobileMap.value[key] = !visibleTrackMobileMap.value[key]
+}
+
+const getTrackMobileLinesFromContent = (content?: string) => {
+    if (!content || !content.trim().startsWith('{')) return []
+    try {
+        const parsed = JSON.parse(content)
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return []
+        return ['mobile', 'mobile2']
+            .map((key) => {
+                const value = (parsed as Record<string, unknown>)[key]
+                if (value === null || value === undefined || value === '') return ''
+                return `${TRACK_FIELD_LABELS[key]}：${String(value)}`
+            })
+            .filter(Boolean)
+    } catch {
+        return []
+    }
+}
+
+const getFallbackTrackMobileLines = () =>
+    [
+        { key: 'mobile', value: props.customerBasicInfo?.mobile || props.clue.mobile },
+        { key: 'mobile2', value: props.customerBasicInfo?.mobile2 || props.clue.mobile2 }
+    ]
+        .map(({ key, value }) => (value ? `${TRACK_FIELD_LABELS[key]}：${value}` : ''))
+        .filter(Boolean)
+
+const ensureTrackMobileLines = (
+    lines: string[],
+    item: CustomerDetailApi.CustomerTrackRespVO
+) => {
+    const normalizedLines = filterTrackLines(lines)
+    const hasMobileLine = normalizedLines.some((line) => parseTrackMobileLine(line))
+    if (hasMobileLine) return normalizedLines
+    const contentMobileLines = getTrackMobileLinesFromContent(item.content)
+    return [
+        ...normalizedLines,
+        ...(contentMobileLines.length ? contentMobileLines : getFallbackTrackMobileLines())
+    ]
+}
+
+const buildTrackDisplayLines = (lines: string[]) =>
+    lines.map((line) => {
+        const mobileLine = parseTrackMobileLine(line)
+        if (mobileLine) {
+            return {
+                type: 'mobile' as const,
+                label: mobileLine.label,
+                value: mobileLine.value,
+                text: ''
+            }
+        }
+        return {
+            type: 'text' as const,
+            text: line,
+            label: '',
+            value: ''
+        }
+    })
 
 const buildConsultTrackLines = (content?: string) => {
     if (!content || !content.trim().startsWith('{')) {
@@ -1588,15 +1703,15 @@ const normalizeTrackLines = (item: CustomerDetailApi.CustomerTrackRespVO) => {
                 const parsedLines = item.type === 4 || item.typeName === '咨询信息'
                     ? buildConsultTrackLines(singleLine)
                     : buildJsonTrackLines(singleLine)
-                return filterTrackLines(parsedLines)
+                return ensureTrackMobileLines(parsedLines, item)
             }
         }
-        return filterTrackLines(rawContentLines)
+        return ensureTrackMobileLines(rawContentLines, item)
     }
     const parsedLines = item.type === 4 || item.typeName === '咨询信息'
         ? buildConsultTrackLines(item.content)
         : buildJsonTrackLines(item.content)
-    return filterTrackLines(parsedLines)
+    return ensureTrackMobileLines(parsedLines, item)
 }
 
 const syncEditForm = () => {
@@ -1719,10 +1834,14 @@ const complaintTagText = computed(() => {
 })
 
 const parsedTrackList = computed(() =>
-    (props.trackList || []).map((item) => ({
-        ...item,
-        lines: normalizeTrackLines(item)
-    }))
+    (props.trackList || []).map((item) => {
+        const lines = normalizeTrackLines(item)
+        return {
+            ...item,
+            lines,
+            displayLines: buildTrackDisplayLines(lines)
+        }
+    })
 )
 
 const basicInfoItems = computed(() => [
@@ -1806,5 +1925,23 @@ const handleConsultProductSelect = (products: ProductVO[]) => {
     display: flex;
     justify-content: flex-end;
     margin-top: 12px;
+}
+
+.track-mobile-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.track-mobile-line__value {
+    color: var(--el-text-color-primary);
+}
+
+.track-mobile-line__toggle {
+    height: 20px;
+    min-height: 20px;
+    padding: 0 2px;
+    color: var(--el-color-primary);
+    vertical-align: middle;
 }
 </style>
