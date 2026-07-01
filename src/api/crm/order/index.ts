@@ -31,6 +31,8 @@ export interface OrderPageRespVO {
   customerMobile: string
   orderStatus: number
   contractStatus: number
+  installmentStatus?: number
+  finalPaymentChannel?: string
   payableAmount: number
   paidAmount: number
   refundAmount: number
@@ -141,6 +143,8 @@ export interface OrderDetailRespVO extends OrderPageRespVO {
   district?: string
   campusId?: number
   organizationName?: string
+  installmentStatus?: number
+  finalPaymentChannel?: string
   ownerUserId?: number
   cardOwnerUserId?: number
   items: OrderItemRespVO[]
@@ -170,6 +174,8 @@ export interface OrderCreateReqVO {
   campusId: number
   campusName: string
   projectName?: string
+  installmentStatus?: number
+  finalPaymentChannel?: string
   mainProductCategoryPath?: string
   mainProductName?: string
   mainProductCode?: string

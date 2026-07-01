@@ -14,6 +14,11 @@ export const CONTRACT_STATUS_OPTIONS = [
     { label: '已解约', value: 20 }
 ]
 
+export const INSTALLMENT_STATUS_OPTIONS = [
+    { label: '分期', value: 1 },
+    { label: '全款', value: 2 }
+]
+
 export const PAY_STATUS_OPTIONS = [
     { label: '待支付', value: 0 },
     { label: '已支付', value: 10 },

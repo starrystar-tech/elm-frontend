@@ -175,6 +175,27 @@
                         </div>
                     </div>
 
+                    <div class="enroll-payment__installment">
+                        <el-form-item label="分期状态" prop="installmentStatus">
+                            <el-radio-group v-model="formData.installmentStatus">
+                                <el-radio
+                                    v-for="item in installmentStatusOptions"
+                                    :key="item.value"
+                                    :label="item.value"
+                                >
+                                    {{ item.label }}
+                                </el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                        <el-form-item label="尾款渠道" prop="finalPaymentChannel">
+                            <el-input
+                                v-model="formData.finalPaymentChannel"
+                                placeholder="请输入尾款渠道"
+                                clearable
+                            />
+                        </el-form-item>
+                    </div>
+
                     <el-form-item label="备注" prop="enrollRemark" class="enroll-payment__remark">
                         <el-input v-model="formData.enrollRemark" placeholder="请输入备注" />
                     </el-form-item>
@@ -301,6 +322,8 @@ type EnrollFormData = {
     campusId?: number
     campusName: string
     payableAmount?: number
+    installmentStatus: number
+    finalPaymentChannel: string
     enrollRemark: string
     payStatus: 'unpaid' | 'paid'
 }
@@ -341,6 +364,10 @@ const categoryOptions = ref<ProductCategoryVO[]>([])
 const productPickerVisible = ref(false)
 const selectedProducts = ref<EnrollProductItem[]>([])
 const payRecords = ref<EnrollPayRecordItem[]>([])
+const installmentStatusOptions = [
+    { label: '分期', value: 1 },
+    { label: '全款', value: 2 }
+]
 const originalOptionalFields = ref({
     occupation: '',
     emergencyMobile: '',
@@ -384,6 +411,8 @@ const createDefaultFormData = (): EnrollFormData => ({
     campusId: undefined,
     campusName: '',
     payableAmount: undefined,
+    installmentStatus: 2,
+    finalPaymentChannel: '',
     enrollRemark: '',
     payStatus: 'unpaid'
 })
@@ -650,6 +679,8 @@ const submitForm = async () => {
             campusId: formData.value.campusId!,
             campusName: formData.value.campusName,
             projectName: selectedProducts.value[0]?.projectName || '',
+            installmentStatus: formData.value.installmentStatus,
+            finalPaymentChannel: formData.value.finalPaymentChannel?.trim() || undefined,
             mainProductCategoryPath: selectedProducts.value[0]?.categoryPath || '',
             mainProductName: selectedProducts.value[0]?.productName || '',
             mainProductCode: selectedProducts.value[0]?.productCode || '',
@@ -677,7 +708,8 @@ const submitForm = async () => {
                 orderId,
                 payAmount: yuanToFen(item.paidAmount || 0),
                 payMethod: item.payMethod,
-                payProofUrl: item.payProofUrl || ''
+                payProofUrl: item.payProofUrl || '',
+                remark: item.payRemark?.trim() || undefined
             })
         }
         message.success('报名成功，订单及支付记录已创建')
@@ -827,6 +859,13 @@ defineExpose({ open })
     gap: 24px;
 }
 
+.enroll-payment__installment {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 18px;
+    max-width: 720px;
+}
+
 .enroll-payment__amount {
     display: flex;
     align-items: center;
@@ -914,6 +953,7 @@ defineExpose({ open })
     }
 
     .enroll-payment__summary,
+    .enroll-payment__installment,
     .enroll-payment__detail {
         grid-template-columns: 1fr;
     }

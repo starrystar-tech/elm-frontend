@@ -78,6 +78,21 @@
                     </el-table-column>
                     <el-table-column prop="mainProductName" label="商品名称" min-width="180" />
                     <el-table-column prop="campusName" label="校区" min-width="120" />
+                    <el-table-column label="分期状态" min-width="100">
+                        <template #default="{ row }">
+                            {{ installmentStatusLabel(row.installmentStatus) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column
+                        prop="finalPaymentChannel"
+                        label="尾款渠道"
+                        min-width="140"
+                        show-overflow-tooltip
+                    >
+                        <template #default="{ row }">
+                            {{ row.finalPaymentChannel || '--' }}
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="payableAmount" label="应付金额" min-width="100">
                         <template #default="{ row }">
                             {{ formatAmount(row.payableAmount) }}
@@ -357,7 +372,7 @@ import { resolveTimestamp } from '@/utils/formatTime'
 import { getAftersalesStatusLabel } from '@/views/aftersales/config'
 import OutboundCallMobileCopyInline from '@/views/crm/call/OutboundCallMobileCopyInline.vue'
 import SmsLogMobileCopyInline from '@/views/crm/clue/SmsLogMobileCopyInline.vue'
-import { formatAmount } from '@/views/order/utils'
+import { formatAmount, getOptionLabel, INSTALLMENT_STATUS_OPTIONS } from '@/views/order/utils'
 import ContractRecords from './ContractRecords.vue'
 
 defineOptions({ name: 'CustomerDetailRecords' })
@@ -427,6 +442,9 @@ const getSmsReceiveStatusLabel = (value?: number | null) => {
 
 const getSmsChannelLabel = (value?: string) =>
     value ? getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, value) || value : '--'
+
+const installmentStatusLabel = (value?: number) =>
+    getOptionLabel(INSTALLMENT_STATUS_OPTIONS, value)
 
 const formatCallDuration = (durationSeconds?: number) => {
     if (!durationSeconds || durationSeconds < 0) return '--'

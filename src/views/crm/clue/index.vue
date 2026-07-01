@@ -917,7 +917,7 @@ const handleExportSuccess = async () => {
 }
 
 const openDetail = (id: number) => {
-    detailRef.value?.open(id)
+    detailRef.value?.open(id, { readonly: true })
 }
 
 const openEnroll = async (id: number) => {

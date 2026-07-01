@@ -172,6 +172,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         minWidth: '100px',
         formatter: (_r, _c, v) => getOptionLabel(PAY_STATUS_OPTIONS, v)
     },
+    { field: 'remark', label: '支付备注', minWidth: '180px', showOverflowTooltip: true },
     { field: 'payNo', label: '支付流水号', minWidth: '220px' },
     { field: 'payTime', label: '支付时间', minWidth: '180px', formatter: dateFormatter },
     {

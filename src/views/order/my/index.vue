@@ -93,6 +93,7 @@ import * as OrderApi from '@/api/crm/order'
 import {
     canSignOrderContract,
     CONTRACT_STATUS_OPTIONS,
+    INSTALLMENT_STATUS_OPTIONS,
     ORDER_STATUS_OPTIONS,
     formatAmount,
     getOptionLabel,
@@ -254,6 +255,8 @@ const {
 })
 
 const orderStatusLabel = (value?: number) => getOptionLabel(ORDER_STATUS_OPTIONS, value)
+const installmentStatusLabel = (value?: number) =>
+    getOptionLabel(INSTALLMENT_STATUS_OPTIONS, value)
 
 const syncSearchField = async (field: 'cardOwnerUserName' | 'creator', value: string) => {
     searchForm[field] = value
@@ -537,6 +540,19 @@ const tableColumns = computed<TableColumn[]>(() => [
         label: '订单状态',
         minWidth: '100px',
         formatter: (_r, _c, v) => orderStatusLabel(v)
+    },
+    {
+        field: 'installmentStatus',
+        label: '分期状态',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => installmentStatusLabel(v)
+    },
+    {
+        field: 'finalPaymentChannel',
+        label: '尾款渠道',
+        minWidth: '140px',
+        showOverflowTooltip: true,
+        formatter: (_row, _column, value) => value || '-'
     },
     {
         field: 'mainProductCode',

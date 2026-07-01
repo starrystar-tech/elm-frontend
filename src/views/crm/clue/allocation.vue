@@ -258,7 +258,7 @@ const selectedDeptName = computed(() => {
 
 const openDetail = (id?: number) => {
     if (!id) return
-    detailRef.value?.open(id)
+    detailRef.value?.open(id, { readonly: true })
 }
 
 const tableColumns = computed<TableColumn[]>(() => [

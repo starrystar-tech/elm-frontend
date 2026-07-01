@@ -56,6 +56,12 @@
                     <el-descriptions-item label="订单归属">{{
                         orderOwnerText
                     }}</el-descriptions-item>
+                    <el-descriptions-item label="分期状态">{{
+                        installmentStatusText
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="尾款渠道">{{
+                        detail.finalPaymentChannel || '-'
+                    }}</el-descriptions-item>
                     <el-descriptions-item label="应付金额">{{
                         `￥${formatAmount(detail.payableAmount)}`
                     }}</el-descriptions-item>
@@ -358,6 +364,7 @@ import OrderPayDialog from '../components/OrderPayDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import {
     canSignOrderContract,
+    INSTALLMENT_STATUS_OPTIONS,
     ORDER_STATUS_OPTIONS,
     PAY_CONFIRM_STATUS_OPTIONS,
     PAY_STATUS_OPTIONS,
@@ -391,6 +398,9 @@ const payStatusLabel = (value?: number) => getOptionLabel(PAY_STATUS_OPTIONS, va
 const payConfirmStatusLabel = (value?: number) => getOptionLabel(PAY_CONFIRM_STATUS_OPTIONS, value)
 const refundStatusLabel = (value?: number) => getOptionLabel(REFUND_STATUS_OPTIONS, value)
 const refundTypeLabel = (value?: number) => getOptionLabel(REFUND_TYPE_OPTIONS, value)
+const installmentStatusText = computed(() =>
+    getOptionLabel(INSTALLMENT_STATUS_OPTIONS, detail.value.installmentStatus)
+)
 const genderText = computed(() => {
     if (detail.value.gender === 1) return '男'
     if (detail.value.gender === 2) return '女'
