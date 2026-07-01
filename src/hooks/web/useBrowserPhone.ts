@@ -1,6 +1,7 @@
 import { computed, reactive, ref, shallowRef } from 'vue'
 import { getUserProfile, type ProfileVO } from '@/api/system/user/profile'
 import { syncBrowserCallRecord, type BrowserCallRecordSyncReqVO } from '@/api/system/call'
+import { getOutboundCallRecord, type OutboundCallRecordVO } from '@/api/system/call/record'
 
 export type BrowserPhoneLogItem = {
     id: number
@@ -50,6 +51,8 @@ let callDurationTimer: ReturnType<typeof setInterval> | undefined
 let hangupFallbackTimer: ReturnType<typeof setTimeout> | undefined
 let hangupStatusResetTimer: ReturnType<typeof setTimeout> | undefined
 let callEndedStatusResetTimer: ReturnType<typeof setTimeout> | undefined
+let outboundRecordStatusPollTimer: ReturnType<typeof setInterval> | undefined
+let lastOutboundRecordPollSignature = ''
 let currentCallTerminationHandled = false
 let browserRegisterWaiter:
     | {
@@ -335,6 +338,13 @@ const clearCallEndedStatusResetTimer = () => {
     callEndedStatusResetTimer = undefined
 }
 
+const clearOutboundRecordStatusPolling = () => {
+    if (!outboundRecordStatusPollTimer) return
+    clearInterval(outboundRecordStatusPollTimer)
+    outboundRecordStatusPollTimer = undefined
+    lastOutboundRecordPollSignature = ''
+}
+
 const resolveCallEndedStatus = (reason: string) => {
     if (browserHangupPending.value || reason.includes('fallback') || reason.includes('stuck')) {
         return '已挂断'
@@ -358,6 +368,7 @@ const finalizeBrowserCall = (reason: string, caller?: string, callee?: string) =
     clearBrowserMediaTerminationTimer(getCurrentBrowserSession())
     clearHangupFallbackTimer()
     clearHangupStatusResetTimer()
+    clearOutboundRecordStatusPolling()
     stopOutgoingWaitingTone()
     browserCallStarting.value = false
     browserHangupPending.value = false
@@ -896,6 +907,62 @@ const syncBrowserRecord = async (
     }
 }
 
+const isFinishedOutboundRecord = (record?: OutboundCallRecordVO) => {
+    if (!record) return false
+    const status = Number(record.status)
+    return (
+        status === 40 ||
+        status === 50 ||
+        status === 60 ||
+        status === 70 ||
+        !!record.endTime ||
+        Number(record.durationSeconds || 0) > 0
+    )
+}
+
+const pollOutboundRecordStatus = async () => {
+    const recordId = browserRecordId.value
+    if (!recordId || !activeCall.value || currentSessionDirection.value !== 'outgoing') {
+        clearOutboundRecordStatusPolling()
+        return
+    }
+    try {
+        const record = await getOutboundCallRecord(recordId)
+        const signature = [
+            record?.status ?? '-',
+            record?.endTime || '-',
+            record?.durationSeconds ?? '-'
+        ].join('|')
+        if (signature !== lastOutboundRecordPollSignature) {
+            lastOutboundRecordPollSignature = signature
+            traceBrowserStep(
+                'OUTBOUND_RECORD_STATUS',
+                `recordId=${recordId}, status=${record?.status ?? '-'}, endTime=${record?.endTime || '-'}, durationSeconds=${record?.durationSeconds ?? '-'}`
+            )
+        }
+        if (!isFinishedOutboundRecord(record)) {
+            return
+        }
+        const { caller, callee } = resolveBrowserSessionParties(getCurrentBrowserSession())
+        handleBrowserCallEnded('outbound-record-finished', caller, callee)
+    } catch (error: any) {
+        traceBrowserStep(
+            'OUTBOUND_RECORD_STATUS_FAILED',
+            `recordId=${recordId}, ${formatBrowserError(error)}`,
+            'danger'
+        )
+    }
+}
+
+const startOutboundRecordStatusPolling = () => {
+    clearOutboundRecordStatusPolling()
+    if (!browserRecordId.value || currentSessionDirection.value !== 'outgoing') return
+    void pollOutboundRecordStatus()
+    outboundRecordStatusPollTimer = setInterval(() => {
+        void pollOutboundRecordStatus()
+    }, 2000)
+}
+
 const waitForBrowserAudioRefs = async (timeoutMs = 3000) => {
     if (remoteAudioRef.value && localAudioRef.value) {
         return
@@ -1183,6 +1250,7 @@ const disconnectBrowserPhone = async (silent = false) => {
     resetCurrentCallTerminationHandled()
     clearHangupFallbackTimer()
     clearCallEndedStatusResetTimer()
+    clearOutboundRecordStatusPolling()
     incomingCall.value = false
     activeCall.value = false
     currentSessionDirection.value = null
@@ -1244,6 +1312,7 @@ const makeBrowserCall = async (options?: {
             callee: displayTarget,
             outboundRouteId: options?.outboundRouteId
         })
+        startOutboundRecordStatusPolling()
         const callPromise = browserClient.value.call(`sip:${target}@${browserForm.domain.trim()}`, {
             extraHeaders: browserRecordId.value
                 ? [`X-CRM-Record-Id: ${browserRecordId.value}`]
@@ -1256,6 +1325,7 @@ const makeBrowserCall = async (options?: {
         addBrowserLog(`已向 ${target} 发起网页呼叫`)
     } catch (error: any) {
         stopOutgoingWaitingTone()
+        clearOutboundRecordStatusPolling()
         activeCall.value = false
         updateBrowserStatus('已注册')
         const errorMessage = formatBrowserError(error) || '网页呼叫失败'

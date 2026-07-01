@@ -79,6 +79,13 @@ export const getOutboundCallRecordPage = (params: OutboundCallRecordPageReqVO) =
   return request.get({ url: '/crm/call/outbound-record/page', params })
 }
 
+export const getOutboundCallRecord = (recordId: number) => {
+  return request.get<OutboundCallRecordVO>({
+    url: '/crm/call/outbound-record/get',
+    params: { recordId }
+  })
+}
+
 export const getOutboundCallRecordList = (params: Omit<OutboundCallRecordPageReqVO, 'pageNo' | 'pageSize'>) => {
   return request.get<OutboundCallRecordVO[]>({ url: '/crm/call/outbound-record/list', params })
 }

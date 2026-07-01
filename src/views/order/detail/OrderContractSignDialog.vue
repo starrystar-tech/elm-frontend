@@ -81,7 +81,7 @@
                                         type="primary"
                                         @click="handleOpenSignUrl(row.id)"
                                     >
-                                        签署链接
+                                        签署二维码
                                     </el-button>
                                     <el-button link type="primary" @click="handlePreview(row.id)">
                                         预览
@@ -150,14 +150,18 @@
 
     <Dialog
         v-model="signUrlDialogVisible"
-        title="签署链接"
+        title="签署二维码"
         width="560px"
         :fullscreen="false"
         append-to-body
     >
         <div v-loading="signUrlLoading" class="order-contract-sign-url">
             <div class="order-contract-sign-url__tip">
-                请复制签署链接发送给学员，由学员打开链接完成合同签署。
+                请让学员扫码打开签署页面完成合同签署，也可复制链接发送给学员。
+            </div>
+            <div v-if="signUrl" class="order-contract-sign-url__qr">
+                <Qrcode :text="signUrl" :width="220" @done="handleSignQrcodeDone" />
+                <div class="order-contract-sign-url__qr-tip">扫码签署合同</div>
             </div>
             <el-input v-model="signUrl" readonly>
                 <template #append>
@@ -167,6 +171,9 @@
         </div>
         <template #footer>
             <el-button @click="signUrlDialogVisible = false">关闭</el-button>
+            <el-button :disabled="!signQrcodeDataUrl" @click="handleDownloadSignQrcode">
+                下载二维码
+            </el-button>
             <el-button :disabled="!signUrl" type="primary" @click="handleCopySignUrl">
                 复制链接
             </el-button>
@@ -177,6 +184,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
+import { Qrcode } from '@/components/Qrcode'
 import * as ClueApi from '@/api/crm/clue'
 import * as OrderApi from '@/api/crm/order'
 import * as ContractApi from '@/api/system/contract'
@@ -196,6 +204,7 @@ const submitting = ref(false)
 const signUrlDialogVisible = ref(false)
 const signUrlLoading = ref(false)
 const signUrl = ref('')
+const signQrcodeDataUrl = ref('')
 const activeTab = ref('order')
 const orderDetail = ref<OrderApi.OrderDetailRespVO>({
     items: [],
@@ -243,6 +252,9 @@ const formatValue = (value: unknown) => {
     if (value === null || value === undefined) return ''
     return String(value).trim()
 }
+
+const formatDownloadFileName = (value: string) =>
+    value.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, '').trim()
 
 const formatFenAmount = (value: unknown) => {
     if (value === null || value === undefined || value === '') return ''
@@ -474,6 +486,7 @@ const handleOrderItemChange = async () => {
 
 const openSignUrlDialog = async (id: number) => {
     signUrl.value = ''
+    signQrcodeDataUrl.value = ''
     signUrlDialogVisible.value = true
     signUrlLoading.value = true
     try {
@@ -511,6 +524,22 @@ const handleCopySignUrl = async () => {
         document.body.removeChild(textarea)
     }
     message.success('复制成功')
+}
+
+const handleSignQrcodeDone = (url: string) => {
+    signQrcodeDataUrl.value = url
+}
+
+const handleDownloadSignQrcode = () => {
+    if (!signQrcodeDataUrl.value) {
+        message.warning('二维码生成中，请稍后再试')
+        return
+    }
+    const link = document.createElement('a')
+    const orderNo = formatDownloadFileName(orderDetail.value.orderNo || 'contract') || 'contract'
+    link.href = signQrcodeDataUrl.value
+    link.download = `签署二维码-${orderNo}.png`
+    link.click()
 }
 
 const handlePreview = async (id: number) => {
@@ -564,6 +593,7 @@ const open = async (
         variableFields.value = []
         signUrlDialogVisible.value = false
         signUrl.value = ''
+        signQrcodeDataUrl.value = ''
         clueDetail.value = null
         Object.keys(plainMobileCache).forEach((key) => delete plainMobileCache[key])
         Object.keys(variableForm).forEach((key) => delete variableForm[key])
@@ -645,5 +675,22 @@ defineExpose({ open })
 .order-contract-sign-url__tip {
     margin-bottom: 12px;
     color: var(--el-text-color-regular);
+}
+
+.order-contract-sign-url__qr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0 16px;
+    padding: 16px;
+    background: var(--el-fill-color-lighter);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 6px;
+}
+
+.order-contract-sign-url__qr-tip {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
 }
 </style>

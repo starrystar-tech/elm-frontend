@@ -27,7 +27,7 @@
             <template #actions>
                 <el-button @click="goBack">返回</el-button>
                 <el-button
-                    type="success"
+                    type="primary"
                     plain
                     :disabled="!canSignContract"
                     @click="handleContractSign()"
