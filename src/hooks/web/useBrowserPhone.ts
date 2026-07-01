@@ -14,6 +14,21 @@ export type BrowserPhoneLogItem = {
     type: 'success' | 'danger'
 }
 
+type BrowserPhoneDebugLogItem = {
+    time: string
+    type: 'success' | 'danger'
+    message: string
+}
+
+type BrowserPhoneDebugWindow = Window & {
+    __browserPhoneDebugLogs?: BrowserPhoneDebugLogItem[]
+    __browserPhoneDebug?: () => BrowserPhoneDebugLogItem[]
+    __browserPhoneClearDebug?: () => void
+}
+
+const browserPhoneDebugStorageKey = 'browserPhoneDebugLogs'
+const browserPhoneDebugLimit = 120
+
 const profileLoading = ref(false)
 const browserLoading = ref(false)
 const browserRegistered = ref(false)
@@ -77,6 +92,55 @@ outgoingWaitingAudio.loop = true
 outgoingWaitingAudio.preload = 'auto'
 
 const message = useMessage()
+
+const getBrowserPhoneDebugWindow = () => {
+    if (typeof window === 'undefined') return undefined
+    return window as BrowserPhoneDebugWindow
+}
+
+const readStoredBrowserPhoneDebugLogs = () => {
+    if (typeof localStorage === 'undefined') return []
+    try {
+        const stored = JSON.parse(localStorage.getItem(browserPhoneDebugStorageKey) || '[]')
+        return Array.isArray(stored) ? (stored as BrowserPhoneDebugLogItem[]) : []
+    } catch {
+        return []
+    }
+}
+
+const ensureBrowserPhoneDebugAccess = () => {
+    const debugWindow = getBrowserPhoneDebugWindow()
+    if (!debugWindow) return undefined
+    if (!debugWindow.__browserPhoneDebugLogs) {
+        debugWindow.__browserPhoneDebugLogs = readStoredBrowserPhoneDebugLogs()
+    }
+    debugWindow.__browserPhoneDebug = () => debugWindow.__browserPhoneDebugLogs || []
+    debugWindow.__browserPhoneClearDebug = () => {
+        debugWindow.__browserPhoneDebugLogs = []
+        localStorage.removeItem(browserPhoneDebugStorageKey)
+    }
+    return debugWindow
+}
+
+const saveBrowserPhoneDebugLog = (messageText: string, type: 'success' | 'danger') => {
+    const debugWindow = ensureBrowserPhoneDebugAccess()
+    if (!debugWindow) return
+    const list = debugWindow.__browserPhoneDebugLogs || []
+    list.unshift({
+        time: new Date().toLocaleString('zh-CN', { hour12: false }),
+        type,
+        message: messageText
+    })
+    debugWindow.__browserPhoneDebugLogs = list.slice(0, browserPhoneDebugLimit)
+    try {
+        localStorage.setItem(
+            browserPhoneDebugStorageKey,
+            JSON.stringify(debugWindow.__browserPhoneDebugLogs)
+        )
+    } catch {}
+}
+
+ensureBrowserPhoneDebugAccess()
 
 const appendLog = (
     payload: Pick<
@@ -185,6 +249,7 @@ const traceBrowserStep = (
     const messageText = details
         ? `[${step}] ${details} | ${stringifyTraceContext()}`
         : `[${step}] ${stringifyTraceContext()}`
+    saveBrowserPhoneDebugLog(messageText, type)
     console.info('[BrowserPhone]', messageText)
     addBrowserLog(messageText, '调试', type)
 }
