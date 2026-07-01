@@ -105,6 +105,10 @@
                 <el-empty v-else description="暂无订单记录" :image-size="60" />
             </el-tab-pane>
 
+            <el-tab-pane label="合同信息" name="contracts">
+                <ContractRecords :clue-id="clueId" />
+            </el-tab-pane>
+
             <el-tab-pane label="工单记录" name="tickets">
                 <el-table v-if="ticketRecords.length" :data="ticketRecords" border>
                     <el-table-column prop="ticketNo" label="工单号" min-width="160" />
@@ -354,6 +358,7 @@ import { getAftersalesStatusLabel } from '@/views/aftersales/config'
 import OutboundCallMobileCopyInline from '@/views/crm/call/OutboundCallMobileCopyInline.vue'
 import SmsLogMobileCopyInline from '@/views/crm/clue/SmsLogMobileCopyInline.vue'
 import { formatAmount } from '@/views/order/utils'
+import ContractRecords from './ContractRecords.vue'
 
 defineOptions({ name: 'CustomerDetailRecords' })
 
@@ -406,7 +411,8 @@ const formatDateTime = (value?: string | number | Date | null) => {
     if (value === null || value === undefined || value === '' || Number(value) === 0) {
         return '--'
     }
-    return resolveTimestamp(value)?.format('YYYY-MM-DD HH:mm:ss') || String(value)
+    const resolvedValue = value instanceof Date ? value.getTime() : value
+    return resolveTimestamp(resolvedValue)?.format('YYYY-MM-DD HH:mm:ss') || String(value)
 }
 
 const getSmsSendStatusLabel = (value?: number | null) => {
@@ -421,9 +427,6 @@ const getSmsReceiveStatusLabel = (value?: number | null) => {
 
 const getSmsChannelLabel = (value?: string) =>
     value ? getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, value) || value : '--'
-
-const getCallResultText = (row: OutboundCallRecordVO) =>
-    row.failReason || row.hangupCause || row.originateDisposition || row.statusDesc || '--'
 
 const formatCallDuration = (durationSeconds?: number) => {
     if (!durationSeconds || durationSeconds < 0) return '--'

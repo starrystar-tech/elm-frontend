@@ -179,6 +179,7 @@ import { dateFormatter } from '@/utils/formatTime'
 import { CommonStatusEnum } from '@/utils/constants'
 import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
+import * as RoleApi from '@/api/system/role'
 import UserForm from './UserForm.vue'
 import UserDetail from './UserDetail.vue'
 import UserImportForm from './UserImportForm.vue'
@@ -259,6 +260,14 @@ const assignRoleFormRef = ref<InstanceType<typeof UserAssignRoleForm>>()
 const permissionFormRef = ref<InstanceType<typeof UserPermissionForm>>()
 const deptPermissionFormRef = ref<InstanceType<typeof DeptPermissionForm>>()
 const currentDeptPermission = ref<DeptApi.DeptVO | null>(null)
+const roleList = ref<RoleApi.RoleVO[]>([])
+const roleNameMap = computed(() => {
+    const map = new Map<number, string>()
+    roleList.value.forEach((item) => {
+        map.set(Number(item.id), item.name)
+    })
+    return map
+})
 
 const openForm = (type: string, id?: number) => {
     formRef.value?.open(type, id)
@@ -270,6 +279,10 @@ const handleImport = () => {
 
 const handleShowUploadResult = () => {
     uploadResultVisible.value = true
+}
+
+const loadRoleList = async () => {
+    roleList.value = await RoleApi.getSimpleRoleList()
 }
 
 const handleImportSuccess = (result?: any) => {
@@ -447,6 +460,16 @@ const handleCommand = (command: string, row: UserApi.UserVO) => {
 }
 
 const textCell = (value?: string | number) => value || '--'
+const getRoleNames = (row: UserApi.UserVO) => {
+    const roleIds = row.roleIds || []
+    if (!roleIds.length) return '--'
+    return (
+        roleIds
+            .map((id) => roleNameMap.value.get(Number(id)))
+            .filter(Boolean)
+            .join('、') || '--'
+    )
+}
 const areaExpanded = ref(false)
 const areaGroups = computed(() => {
     const areaList = currentDeptPermission.value?.areas || []
@@ -471,9 +494,18 @@ const tableColumns = reactive<TableColumn[]>([
     { field: 'nickname', label: '姓名', minWidth: 100, fixed: 'left' },
     { field: 'username', label: '登录账号', minWidth: 130, fixed: 'left' },
     {
+        field: 'roleIds',
+        label: '角色',
+        minWidth: 140,
+        showOverflowTooltip: true,
+        slots: {
+            default: (data) => <span>{getRoleNames(data.row as UserApi.UserVO)}</span>
+        }
+    },
+    {
         field: 'userLevel',
-        label: '角色/等级',
-        minWidth: 110,
+        label: '等级',
+        width: 90,
         slots: {
             default: (data) => (
                 <DictTag type={'system_user_level'} value={data.row.userLevel || data.row.level} />
@@ -658,8 +690,8 @@ const tableColumns = reactive<TableColumn[]>([
     }
 ])
 
-onMounted(() => {
-    tableMethods.getList()
+onMounted(async () => {
+    await Promise.all([loadRoleList(), tableMethods.getList()])
 })
 </script>
 

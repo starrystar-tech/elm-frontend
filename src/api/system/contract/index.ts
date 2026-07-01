@@ -26,10 +26,16 @@ export interface ContractPageRespVO {
   docTitle?: string
   contractType?: number
   status?: number
+  statusDesc?: string
   productName?: string
   payFee?: number
   creatorName?: string
   createTime?: Date
+}
+
+export interface ContractAbolishReqVO {
+  contractId: string
+  reason?: string
 }
 
 export interface ContractOrderProductReqVO {
@@ -73,6 +79,10 @@ export const getContractListByOrderProduct = (params: ContractOrderProductReqVO)
   return request.get<ContractOrderProductRespVO[]>({ url: '/system/contract/list-by-order-product', params })
 }
 
+export const getContractListByClue = (clueId: number) => {
+  return request.get<ContractPageRespVO[]>({ url: '/system/contract/list-by-clue', params: { clueId } })
+}
+
 export const getContractPreviewUrl = (id: number) => {
   return request.get<string>({ url: '/system/contract/preview', params: { id } })
 }
@@ -83,6 +93,10 @@ export const getContractSignUrl = (id: number) => {
 
 export const getContractDownloadUrl = (id: number) => {
   return request.get<string>({ url: '/system/contract/download', params: { id } })
+}
+
+export const abolishContract = (data: ContractAbolishReqVO) => {
+  return request.put<boolean>({ url: '/system/contract/abolish', data })
 }
 
 export const cancelContractSign = (id: number) => {

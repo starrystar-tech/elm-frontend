@@ -498,7 +498,7 @@ const handleTabChange = async () => {
 }
 
 const openDetail = (id: number) => {
-    detailRef.value?.open(id)
+    detailRef.value?.open(id, { readonly: true })
 }
 
 const handleDetailRefresh = async () => {

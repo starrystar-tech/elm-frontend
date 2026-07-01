@@ -15,6 +15,7 @@
 
 <script setup lang="tsx">
 import { reactive } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -31,6 +32,7 @@ defineOptions({ name: 'ContractRecord' })
 
 const message = useMessage()
 const canDownload = hasPermission(['system:contract:download'])
+const canUpdate = hasPermission(['system:contract:update'])
 
 const contractTypeOptions = [
     { label: '普通合同', value: 1 },
@@ -41,7 +43,8 @@ const contractStatusOptions = [
     { label: '待签署', value: 1 },
     { label: '已拒签', value: 2 },
     { label: '已撤销', value: 3 },
-    { label: '已签署', value: 4 }
+    { label: '已签署', value: 4 },
+    { label: '已废弃', value: 5 }
 ]
 
 const searchSchema = reactive<FormSchema[]>([
@@ -153,6 +156,8 @@ const getContractStatusMeta = (value?: number) => {
             return { label: '已撤销', type: 'info' as const }
         case 4:
             return { label: '已签署', type: 'success' as const }
+        case 5:
+            return { label: '已废弃', type: 'info' as const }
         default:
             return { label: '-', type: 'info' as const }
     }
@@ -168,6 +173,29 @@ const handlePreview = async (id: number) => {
 const handleDownload = async (id: number) => {
     const url = await ContractApi.getContractDownloadUrl(id)
     window.open(url, '_blank')
+}
+
+const canAbolish = (row: ContractApi.ContractPageRespVO) =>
+    canUpdate && Boolean(row.contractNo) && Number(row.status) !== 5
+
+const handleAbolish = async (row: ContractApi.ContractPageRespVO) => {
+    const result = await ElMessageBox.prompt('请输入作废原因', '作废合同', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        inputPlaceholder: '请输入作废原因',
+        inputValue: '合同作废',
+        inputValidator: (value) => Boolean(String(value || '').trim()),
+        inputErrorMessage: '请输入作废原因',
+        type: 'warning'
+    }).catch(() => undefined)
+    if (!result) return
+
+    await ContractApi.abolishContract({
+        contractId: row.contractNo,
+        reason: String(result.value || '').trim()
+    })
+    message.success('作废成功')
+    await tableMethods.getList()
 }
 
 const tableColumns = reactive<TableColumn[]>([
@@ -230,7 +258,7 @@ const tableColumns = reactive<TableColumn[]>([
     {
         field: 'action',
         label: '操作',
-        width: '150px',
+        width: '190px',
         fixed: 'right',
         slots: {
             default: (data) => (
@@ -241,6 +269,11 @@ const tableColumns = reactive<TableColumn[]>([
                     {canDownload ? (
                         <BaseButton link type="primary" onClick={() => handleDownload(data.row.id)}>
                             下载
+                        </BaseButton>
+                    ) : null}
+                    {canAbolish(data.row) ? (
+                        <BaseButton link type="danger" onClick={() => handleAbolish(data.row)}>
+                            作废
                         </BaseButton>
                     ) : null}
                 </>

@@ -51,6 +51,7 @@
                     :outbound-call-total="outboundCallPagination.total"
                     :outbound-call-page-no="outboundCallPagination.pageNo"
                     :outbound-call-page-size="outboundCallPagination.pageSize"
+                    :readonly="readonlyMode"
                     @edit="openForm"
                     @cancel-edit="cancelEdit"
                     @save="handleSave"
@@ -162,6 +163,11 @@ const outboundCallPagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
 const smsPagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
 const tagDialogVisible = ref(false)
 const tagForm = reactive({ tagIds: [] as number[] })
+const readonlyMode = ref(false)
+
+type OpenOptions = {
+    readonly?: boolean
+}
 
 const loadOptions = async () => {
     const [projects, tagGroups, complaintTags, clueSources, campuses] = await Promise.all([
@@ -461,8 +467,9 @@ const submitTag = async () => {
     emit('refresh')
 }
 
-const open = async (id: number) => {
+const open = async (id: number, options: OpenOptions = {}) => {
     clueId.value = id
+    readonlyMode.value = !!options.readonly
     appointmentPagination.pageNo = 1
     orderPagination.pageNo = 1
     ticketPagination.pageNo = 1

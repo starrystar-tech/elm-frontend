@@ -28,6 +28,7 @@ type BrowserPhoneDebugWindow = Window & {
 
 const browserPhoneDebugStorageKey = 'browserPhoneDebugLogs'
 const browserPhoneDebugLimit = 120
+const outboundRecordPollIntervalMs = 60000
 
 const profileLoading = ref(false)
 const browserLoading = ref(false)
@@ -69,6 +70,7 @@ let callEndedStatusResetTimer: ReturnType<typeof setTimeout> | undefined
 let outboundRecordStatusPollTimer: ReturnType<typeof setInterval> | undefined
 let lastOutboundRecordPollSignature = ''
 let currentCallTerminationHandled = false
+let currentCallStartedAt = 0
 let browserRegisterWaiter:
     | {
           resolve: () => void
@@ -222,6 +224,7 @@ const buildBrowserTraceContext = () => ({
     disconnecting: browserDisconnecting.value,
     incomingCall: incomingCall.value,
     activeCall: activeCall.value,
+    callElapsedMs: currentCallStartedAt ? Date.now() - currentCallStartedAt : 0,
     hasClient: !!browserClient.value
 })
 
@@ -431,6 +434,7 @@ const showCallEndedStatus = (status: string) => {
 
 const finalizeBrowserCall = (reason: string, caller?: string, callee?: string) => {
     const endedStatus = resolveCallEndedStatus(reason)
+    const callElapsedMs = currentCallStartedAt ? Date.now() - currentCallStartedAt : 0
     clearBrowserMediaTerminationTimer(getCurrentBrowserSession())
     clearHangupFallbackTimer()
     clearHangupStatusResetTimer()
@@ -460,7 +464,11 @@ const finalizeBrowserCall = (reason: string, caller?: string, callee?: string) =
     }
     activeBrowserSession.value = undefined
     showCallEndedStatus(endedStatus)
-    traceBrowserStep('CALL_FINALIZED', `reason=${reason}, caller=${caller || '-'}, callee=${callee || '-'}`)
+    traceBrowserStep(
+        'CALL_FINALIZED',
+        `reason=${reason}, caller=${caller || '-'}, callee=${callee || '-'}, elapsedMs=${callElapsedMs}`
+    )
+    currentCallStartedAt = 0
 }
 
 const startCallTimer = () => {
@@ -1040,10 +1048,9 @@ const startOutboundRecordStatusPolling = () => {
         )
         return
     }
-    void pollOutboundRecordStatus()
     outboundRecordStatusPollTimer = setInterval(() => {
         void pollOutboundRecordStatus()
-    }, 2000)
+    }, outboundRecordPollIntervalMs)
 }
 
 const waitForBrowserAudioRefs = async (timeoutMs = 3000) => {
@@ -1183,6 +1190,7 @@ const createBrowserClient = async () => {
                 resetCurrentCallTerminationHandled()
                 attachSessionTerminationListener(currentSession)
                 currentSessionDirection.value = 'incoming'
+                currentCallStartedAt = Date.now()
                 const caller = resolveRemoteBrowserExtension(
                     currentSession?.remoteIdentity,
                     currentBrowserCaller.value || browserForm.target
@@ -1383,6 +1391,7 @@ const makeBrowserCall = async (options?: {
         await ensureBrowserSessionReadyForCall()
         setBrowserCallParties(browserForm.username.trim(), displayTarget)
         currentSessionDirection.value = 'outgoing'
+        currentCallStartedAt = Date.now()
         activeCall.value = true
         updateBrowserStatus('呼叫中')
         void unlockOutgoingWaitingAudio().finally(() => {
@@ -1425,6 +1434,7 @@ const makeBrowserCall = async (options?: {
         browserRecordId.value = undefined
         activeBrowserSession.value = undefined
         currentSessionDirection.value = null
+        currentCallStartedAt = 0
         resetCurrentCallTerminationHandled()
         resetBrowserCallParties()
         markBrowserCallFinished()

@@ -18,13 +18,15 @@
                 <span>客户编号：{{ clue.customerId || clue.id || '--' }}</span>
             </template>
             <template #actions>
-                <el-button plain :loading="outboundDialing" @click="handleOutboundCall">
-                    外呼
-                </el-button>
-                <el-button plain @click="emit('sms')">短信</el-button>
-                <el-button plain @click="emit('enroll')">报名</el-button>
-                <el-button plain @click="emit('release')">释放</el-button>
-                <el-button plain @click="emit('tag')">加标签</el-button>
+                <template v-if="!readonlyMode">
+                    <el-button plain :loading="outboundDialing" @click="handleOutboundCall">
+                        外呼
+                    </el-button>
+                    <el-button plain @click="emit('sms')">短信</el-button>
+                    <el-button v-if="!hideEnrollAction" plain @click="emit('enroll')">报名</el-button>
+                    <el-button plain @click="emit('release')">释放</el-button>
+                    <el-button plain @click="emit('tag')">加标签</el-button>
+                </template>
             </template>
         </DetailHeroCard>
 
@@ -33,7 +35,7 @@
                 <section class="clue-section" v-loading="loading">
                     <div class="clue-section__title">
                         <span>基本信息</span>
-                        <div v-if="canUpdate" class="clue-section__actions">
+                        <div v-if="canUpdate && !readonlyMode" class="clue-section__actions">
                             <template v-if="!editing">
                                 <el-button link type="primary" @click="emit('edit')"
                                     >编辑</el-button
@@ -252,7 +254,7 @@
                             <el-table
                                 :data="appointments || []"
                                 border
-                                v-if="appointments.length > 0"
+                                v-if="(appointments?.length || 0) > 0"
                             >
                                 <el-table-column
                                     prop="appointmentTypeName"
@@ -321,7 +323,7 @@
                                     @current-change="
                                         emit('change-appointment-page', {
                                             pageNo: $event,
-                                            pageSize: appointmentPageSize
+                                            pageSize: appointmentPageSize || 10
                                         })
                                     "
                                     @size-change="
@@ -339,7 +341,7 @@
                             <el-table
                                 :data="orderRecords || []"
                                 border
-                                v-if="orderRecords.length > 0"
+                                v-if="(orderRecords?.length || 0) > 0"
                             >
                                 <el-table-column prop="orderNo" label="订单编号" min-width="160" />
                                 <el-table-column prop="createTime" label="创建时间" min-width="160">
@@ -388,7 +390,7 @@
                                     @current-change="
                                         emit('change-order-page', {
                                             pageNo: $event,
-                                            pageSize: orderPageSize
+                                            pageSize: orderPageSize || 10
                                         })
                                     "
                                     @size-change="
@@ -402,11 +404,14 @@
                                 :image-size="60"
                             />
                         </el-tab-pane>
+                        <el-tab-pane label="合同信息" name="contracts">
+                            <ContractRecords :clue-id="clue.id || clueId" />
+                        </el-tab-pane>
                         <el-tab-pane label="工单记录" name="tickets">
                             <el-table
                                 :data="ticketRecords || []"
                                 border
-                                v-if="ticketRecords.length > 0"
+                                v-if="(ticketRecords?.length || 0) > 0"
                             >
                                 <el-table-column prop="ticketNo" label="工单号" min-width="160" />
                                 <el-table-column
@@ -443,7 +448,7 @@
                                     @current-change="
                                         emit('change-ticket-page', {
                                             pageNo: $event,
-                                            pageSize: ticketPageSize
+                                            pageSize: ticketPageSize || 10
                                         })
                                     "
                                     @size-change="
@@ -526,7 +531,7 @@
                                     @current-change="
                                         emit('change-track-page', {
                                             pageNo: $event,
-                                            pageSize: trackPageSize
+                                            pageSize: trackPageSize || 10
                                         })
                                     "
                                     @size-change="
@@ -541,7 +546,7 @@
                             />
                         </el-tab-pane>
                         <el-tab-pane label="短信记录" name="sms">
-                            <el-table :data="smsRecords || []" border v-if="smsRecords.length > 0">
+                            <el-table :data="smsRecords || []" border v-if="(smsRecords?.length || 0) > 0">
                                 <el-table-column prop="createTime" label="创建时间" min-width="160">
                                     <template #default="{ row }">
                                         {{ formatDateTime(row.createTime) }}
@@ -591,7 +596,7 @@
                                     @current-change="
                                         emit('change-sms-page', {
                                             pageNo: $event,
-                                            pageSize: smsPageSize
+                                            pageSize: smsPageSize || 10
                                         })
                                     "
                                     @size-change="
@@ -609,7 +614,7 @@
                             <el-table
                                 :data="outboundCallRecords || []"
                                 border
-                                v-if="outboundCallRecords.length > 0"
+                                v-if="(outboundCallRecords?.length || 0) > 0"
                             >
                                 <el-table-column prop="recordNo" label="记录编号" min-width="180" />
                                 <el-table-column label="被叫号码" min-width="170">
@@ -664,7 +669,7 @@
                                     @current-change="
                                         emit('change-outbound-call-page', {
                                             pageNo: $event,
-                                            pageSize: outboundCallPageSize
+                                            pageSize: outboundCallPageSize || 10
                                         })
                                     "
                                     @size-change="
@@ -683,7 +688,7 @@
             </div>
 
             <div class="clue-column clue-column--side">
-                <section class="clue-section">
+                <section v-if="!readonlyMode" class="clue-section">
                     <div class="clue-section__title">
                         <span>咨询信息</span>
                         <el-button
@@ -817,7 +822,7 @@
                                             v-for="item in campusOptions"
                                             :key="item.id"
                                             :label="item.name"
-                                            :value="item.id"
+                                            :value="Number(item.id)"
                                         />
                                     </el-select>
                                 </el-form-item>
@@ -1042,6 +1047,7 @@ import { useOutboundDial } from '@/hooks/web/useOutboundDial'
 import AudioPlayer from '@/components/AudioPlayer/index.vue'
 import OutboundCallMobileCopyInline from '@/views/crm/call/OutboundCallMobileCopyInline.vue'
 import { formatAmount } from '@/views/order/utils'
+import ContractRecords from '@/views/crm/customer/detail/ContractRecords.vue'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
@@ -1083,7 +1089,19 @@ const props = defineProps<{
     outboundCallTotal?: number
     outboundCallPageNo?: number
     outboundCallPageSize?: number
+    hideEnrollAction?: boolean
+    readonly?: boolean
 }>()
+
+const route = useRoute()
+const readonlyMode = computed(() => !!props.readonly)
+const hideEnrollAction = computed(
+    () =>
+        readonlyMode.value ||
+        props.hideEnrollAction ||
+        route.name === 'CrmCustomerDetail' ||
+        route.path.startsWith('/crm/customer')
+)
 
 const emit = defineEmits<{
     edit: []
@@ -1360,9 +1378,6 @@ const getSmsReceiveStatusLabel = (value?: number | null) => {
 
 const getSmsChannelLabel = (value?: string) =>
     value ? getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, value) || value : '--'
-
-const getCallResultText = (row: OutboundCallRecordApi.OutboundCallRecordVO) =>
-    row.failReason || row.hangupCause || row.originateDisposition || row.statusDesc || '--'
 
 const formatCallDuration = (durationSeconds?: number) => {
     if (!durationSeconds || durationSeconds < 0) {

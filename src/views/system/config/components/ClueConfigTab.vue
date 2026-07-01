@@ -1,7 +1,7 @@
 <template>
     <div class="panel-wrap" v-loading="loading">
         <section class="config-section">
-            <h4 class="section-title">客户回收</h4>
+            <h4 class="section-title">客户刷新</h4>
             <div class="section-body">
                 <div v-for="item in recycleRules" :key="item.ruleCode" class="line-item">
                     <el-switch v-model="item.enabled" active-text="" inactive-text="" />
@@ -10,14 +10,14 @@
                     <span>{{ item.tailText }}</span>
                 </div>
                 <div class="line-item">
-                    <span>自动进入待回访，累计外呼时长达到</span>
+                    <span>累计外呼时长达到</span>
                     <el-input-number
                         v-model="autoReturnVisitCallDurationSeconds"
                         :min="0"
                         :max="86400"
                         :controls="false"
                     />
-                    <span>秒</span>
+                    <span>秒，自动进入已回访</span>
                 </div>
             </div>
         </section>
@@ -63,11 +63,11 @@ interface RuleViewItem {
 const RULE_META_MAP: Record<string, { ruleName: string; tailText: string; sort: number }> = {
     FIRST_CONSULT_TO_WAIT_VISIT: {
         ruleName: '首咨客户',
-        tailText: '天未回访，自动进入待回访客户',
+        tailText: '天未回访，自动进入已回访',
         sort: 10
     },
     WAIT_VISIT_TO_FIRST_POOL: {
-        ruleName: '待回访客户',
+        ruleName: '已回访',
         tailText: '天未回访，自动进入首咨公海',
         sort: 20
     },
@@ -140,7 +140,7 @@ const normalizeRules = (serverRules: ClueFlowConfigApi.ClueFlowRuleVO[] = []) =>
         const remoteRule = map.get(code)
         return {
             ruleCode: code,
-            ruleName: remoteRule?.ruleName || meta.ruleName,
+            ruleName: meta.ruleName,
             enabled: Boolean(remoteRule?.enabled),
             days: Number(remoteRule?.days || 1),
             tailText: meta.tailText,

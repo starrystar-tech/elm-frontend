@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ContentWrap } from '@/components/ContentWrap'
-import * as ClueApi from '@/api/crm/clue'
+import * as StudentCenterApi from '@/api/crm/studentCenter'
 import CustomerManagement from './management.vue'
 import MyOrderCustomer from './myOrderCustomer.vue'
 
@@ -26,11 +26,11 @@ const allStudentTotalCount = ref(0)
 
 const loadTabCounts = async () => {
     const [myCounts, managementCounts] = await Promise.all([
-        ClueApi.getMyClueCounts(),
-        ClueApi.getClueManagementCounts()
+        StudentCenterApi.getMyStudentPage({ pageNo: 1, pageSize: 1 }),
+        StudentCenterApi.getStudentPage({ pageNo: 1, pageSize: 1 })
     ])
-    myStudentTotalCount.value = Number(myCounts?.totalCount || 0)
-    allStudentTotalCount.value = Number(managementCounts?.totalCount || 0)
+    myStudentTotalCount.value = Number(myCounts?.total || 0)
+    allStudentTotalCount.value = Number(managementCounts?.total || 0)
 }
 
 onMounted(() => {
