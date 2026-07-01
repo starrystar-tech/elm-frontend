@@ -122,12 +122,10 @@ const tableColumns = reactive<TableColumn[]>([
     { field: 'outgoingCustomers', label: '呼出客户数', minWidth: '110px' },
     {
         field: 'outgoingDurationSeconds',
-        label: '通话总时长',
+        label: '呼出总时长',
         minWidth: '120px',
         formatter: (row: OutboundCallRecordApi.CallMonitorVO) =>
-            formatDurationClock(
-                Number(row.outgoingDurationSeconds || 0) + Number(row.answeredDurationSeconds || 0)
-            )
+            formatDurationClock(Number(row.outgoingDurationSeconds || 0))
     },
     {
         field: 'averageOutgoingDurationSeconds',

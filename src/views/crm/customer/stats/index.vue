@@ -250,13 +250,38 @@ const courseChartOptions = reactive<EChartsOption>({
 
 const projectChartOptions = reactive<EChartsOption>({
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    grid: { left: 24, right: 24, bottom: 24, top: 24, containLabel: true },
+    grid: { left: 24, right: 32, bottom: 48, top: 24, containLabel: true },
     dataset: {
         dimensions: ['displayName', 'studentCount'],
         source: []
     },
-    xAxis: { type: 'value', name: '服务学员数' },
-    yAxis: { type: 'category' },
+    xAxis: {
+        type: 'value',
+        name: '服务学员数',
+        nameLocation: 'middle',
+        nameGap: 30,
+        nameTextStyle: {
+            color: '#606266',
+            fontSize: 12,
+            fontWeight: 500
+        },
+        axisLabel: {
+            color: '#606266'
+        },
+        splitLine: {
+            lineStyle: {
+                color: '#edf2f7'
+            }
+        }
+    },
+    yAxis: {
+        type: 'category',
+        axisLabel: {
+            color: '#606266',
+            width: 150,
+            overflow: 'truncate'
+        }
+    },
     series: [{ type: 'bar', name: '服务学员数' }]
 }) as EChartsOption
 
