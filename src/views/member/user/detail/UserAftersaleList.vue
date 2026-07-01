@@ -161,6 +161,8 @@
     </Table>
     <!-- 分页 -->
     <Pagination
+      :background="false"
+      layout="prev, pager, next"
       v-model:limit="queryParams.pageSize"
       v-model:page="queryParams.pageNo"
       :total="total"

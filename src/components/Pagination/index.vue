@@ -4,13 +4,13 @@
     v-show="total > 0"
     v-model:current-page="currentPage"
     v-model:page-size="pageSize"
-    :background="true"
+    :background="background"
     :page-sizes="[10, 20, 30, 50, 100]"
     :pager-count="pagerCount"
     :total="total"
     :small="isSmall"
     class="float-right mb-15px mt-15px"
-    layout="total, sizes, prev, pager, next, jumper"
+    :layout="layout"
     @size-change="handleSizeChange"
     @current-change="handleCurrentChange"
   />
@@ -50,6 +50,14 @@ const props = defineProps({
   pagerCount: {
     type: Number,
     default: document.body.clientWidth < 992 ? 5 : 7
+  },
+  background: {
+    type: Boolean,
+    default: true
+  },
+  layout: {
+    type: String,
+    default: 'total, sizes, prev, pager, next, jumper'
   }
 })
 

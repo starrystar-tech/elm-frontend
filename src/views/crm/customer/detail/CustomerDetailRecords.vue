@@ -48,8 +48,7 @@
                 </el-table>
                 <div v-if="appointments.length" class="record-pagination">
                     <el-pagination
-                        background
-                        layout="total, prev, pager, next, sizes"
+                        layout="prev, pager, next"
                         :total="appointmentTotal"
                         :current-page="appointmentPageNo"
                         :page-size="appointmentPageSize"
@@ -107,8 +106,7 @@
                 </el-table>
                 <div v-if="orderRecords.length" class="record-pagination">
                     <el-pagination
-                        background
-                        layout="total, prev, pager, next, sizes"
+                        layout="prev, pager, next"
                         :total="orderTotal"
                         :current-page="orderPageNo"
                         :page-size="orderPageSize"
@@ -144,8 +142,7 @@
                 </el-table>
                 <div v-if="ticketRecords.length" class="record-pagination">
                     <el-pagination
-                        background
-                        layout="total, prev, pager, next, sizes"
+                        layout="prev, pager, next"
                         :total="ticketTotal"
                         :current-page="ticketPageNo"
                         :page-size="ticketPageSize"
@@ -215,8 +212,7 @@
                 </el-timeline>
                 <div v-if="parsedTrackList.length" class="record-pagination">
                     <el-pagination
-                        background
-                        layout="total, prev, pager, next, sizes"
+                        layout="prev, pager, next"
                         :total="trackTotal"
                         :current-page="trackPageNo"
                         :page-size="trackPageSize"
@@ -275,8 +271,7 @@
                 </el-table>
                 <div v-if="outboundCallRecords.length" class="record-pagination">
                     <el-pagination
-                        background
-                        layout="total, prev, pager, next, sizes"
+                        layout="prev, pager, next"
                         :total="outboundCallTotal"
                         :current-page="outboundCallPageNo"
                         :page-size="outboundCallPageSize"
@@ -337,8 +332,7 @@
                 </el-table>
                 <div v-if="smsRecords.length" class="record-pagination">
                     <el-pagination
-                        background
-                        layout="total, prev, pager, next, sizes"
+                        layout="prev, pager, next"
                         :total="smsTotal"
                         :current-page="smsPageNo"
                         :page-size="smsPageSize"

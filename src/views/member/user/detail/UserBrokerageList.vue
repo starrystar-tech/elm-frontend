@@ -59,6 +59,8 @@
     </Table>
     <!-- 分页 -->
     <Pagination
+      :background="false"
+      layout="prev, pager, next"
       :total="total"
       v-model:page="queryParams.pageNo"
       v-model:limit="queryParams.pageSize"
