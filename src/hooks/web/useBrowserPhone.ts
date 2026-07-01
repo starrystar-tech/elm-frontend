@@ -185,6 +185,7 @@ const traceBrowserStep = (
     const messageText = details
         ? `[${step}] ${details} | ${stringifyTraceContext()}`
         : `[${step}] ${stringifyTraceContext()}`
+    console.info('[BrowserPhone]', messageText)
     addBrowserLog(messageText, '调试', type)
 }
 
@@ -899,11 +900,22 @@ const syncBrowserRecord = async (
                 'SYNC_TIMEOUT',
                 `event=${payload.event}, timeoutMs=${timeoutMs}, recordId=${payload.recordId ?? '-'}`
             )
-            return
+            return undefined
         }
         if (result?.recordId) browserRecordId.value = result.recordId
+        traceBrowserStep(
+            'SYNC_OK',
+            `event=${payload.event}, recordId=${result?.recordId ?? payload.recordId ?? '-'}`
+        )
+        return result
     } catch (error) {
         console.warn('[BrowserPhone] sync browser record failed', error)
+        traceBrowserStep(
+            'SYNC_FAILED',
+            `event=${payload.event}, recordId=${payload.recordId ?? '-'}, ${formatBrowserError(error)}`,
+            'danger'
+        )
+        return undefined
     }
 }
 
@@ -956,7 +968,13 @@ const pollOutboundRecordStatus = async () => {
 
 const startOutboundRecordStatusPolling = () => {
     clearOutboundRecordStatusPolling()
-    if (!browserRecordId.value || currentSessionDirection.value !== 'outgoing') return
+    if (!browserRecordId.value || currentSessionDirection.value !== 'outgoing') {
+        traceBrowserStep(
+            'OUTBOUND_RECORD_POLL_SKIPPED',
+            `recordId=${browserRecordId.value ?? '-'}, direction=${currentSessionDirection.value ?? '-'}`
+        )
+        return
+    }
     void pollOutboundRecordStatus()
     outboundRecordStatusPollTimer = setInterval(() => {
         void pollOutboundRecordStatus()
@@ -1306,12 +1324,15 @@ const makeBrowserCall = async (options?: {
             void playOutgoingWaitingTone()
         })
         traceBrowserStep('CALL_START', `target=${target}`)
-        await syncBrowserRecord({
-            event: 'start',
-            caller: browserForm.username.trim(),
-            callee: displayTarget,
-            outboundRouteId: options?.outboundRouteId
-        })
+        await syncBrowserRecord(
+            {
+                event: 'start',
+                caller: browserForm.username.trim(),
+                callee: displayTarget,
+                outboundRouteId: options?.outboundRouteId
+            },
+            { timeoutMs: 5000 }
+        )
         startOutboundRecordStatusPolling()
         const callPromise = browserClient.value.call(`sip:${target}@${browserForm.domain.trim()}`, {
             extraHeaders: browserRecordId.value
