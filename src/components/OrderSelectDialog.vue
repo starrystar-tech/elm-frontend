@@ -11,11 +11,15 @@
                 :data="tableObject.tableList"
                 :loading="tableObject.loading"
                 :pagination="{ total: tableObject.total }"
+                :selection="multiple"
+                row-key="id"
+                reserve-selection
                 @register="tableRegister"
             />
         </ContentWrap>
         <template #footer>
             <el-button @click="dialogVisible = false">取 消</el-button>
+            <el-button v-if="multiple" type="primary" @click="handleBatchConfirm">确 定</el-button>
         </template>
     </Dialog>
 </template>
@@ -34,11 +38,16 @@ import * as OrderApi from '@/api/crm/order'
 defineOptions({ name: 'OrderSelectDialog' })
 
 const emit = defineEmits<{
-    confirm: [order: OrderApi.OrderDetailRespVO]
+    confirm: [order: OrderApi.OrderDetailRespVO | OrderApi.OrderPageRespVO[]]
 }>()
+
+interface OrderSelectOpenOptions extends Partial<OrderApi.OrderPageReqVO> {
+    multiple?: boolean
+}
 
 const message = useMessage()
 const dialogVisible = ref(false)
+const multiple = ref(false)
 const baseSearchParams = ref<Partial<OrderApi.OrderPageReqVO>>({})
 
 const searchSchema = computed<FormSchema[]>(() => [
@@ -77,11 +86,13 @@ const setSearchParams = (params: Recordable) => {
     })
 }
 
-const open = async (options: Partial<OrderApi.OrderPageReqVO> = {}) => {
+const open = async (options: OrderSelectOpenOptions = {}) => {
     dialogVisible.value = true
+    multiple.value = !!options.multiple
     baseSearchParams.value = {
         clueId: options.clueId
     }
+    await tableMethods.clearSelection()
     tableMethods.setSearchParams({
         ...baseSearchParams.value,
         orderNo: undefined,
@@ -100,31 +111,46 @@ const handleSelect = async (row: OrderApi.OrderPageRespVO) => {
     emit('confirm', detail)
 }
 
-const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'orderNo', label: '订单编号', minWidth: '180px' },
-    { field: 'customerName', label: '客户', minWidth: '120px' },
-    { field: 'customerMobile', label: '手机号', minWidth: '150px' },
-    { field: 'campusName', label: '校区', minWidth: '140px' },
-    { field: 'projectName', label: '项目', minWidth: '160px' },
-    { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter },
-    {
-        field: 'action',
-        label: '操作',
-        width: '90px',
-        fixed: 'right',
-        slots: {
-            default: (data) => (
-                <ElLink
-                    type="primary"
-                    underline={false}
-                    onClick={() => handleSelect(data.row as OrderApi.OrderPageRespVO)}
-                >
-                    选择
-                </ElLink>
-            )
-        }
+const handleBatchConfirm = async () => {
+    const selections = await tableMethods.getSelections()
+    if (!selections.length) {
+        message.warning('请选择订单')
+        return
     }
-])
+    dialogVisible.value = false
+    emit('confirm', selections)
+}
+
+const tableColumns = computed<TableColumn[]>(() => {
+    const columns: TableColumn[] = [
+        { field: 'orderNo', label: '订单编号', minWidth: '180px' },
+        { field: 'customerName', label: '客户', minWidth: '120px' },
+        { field: 'customerMobile', label: '手机号', minWidth: '150px' },
+        { field: 'campusName', label: '校区', minWidth: '140px' },
+        { field: 'projectName', label: '项目', minWidth: '160px' },
+        { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter }
+    ]
+    if (!multiple.value) {
+        columns.push({
+            field: 'action',
+            label: '操作',
+            width: '90px',
+            fixed: 'right',
+            slots: {
+                default: (data) => (
+                    <ElLink
+                        type="primary"
+                        underline={false}
+                        onClick={() => handleSelect(data.row as OrderApi.OrderPageRespVO)}
+                    >
+                        选择
+                    </ElLink>
+                )
+            }
+        })
+    }
+    return columns
+})
 
 defineExpose({ open })
 </script>

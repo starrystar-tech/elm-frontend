@@ -24,7 +24,12 @@ import * as AftersalesApi from '@/api/crm/aftersales'
 import * as UserApi from '@/api/system/user'
 import * as DeptApi from '@/api/system/dept'
 import * as ComplaintTagApi from '@/api/system/complaintTag'
-import { dateRangeDefaultTime, getAftersalesPriorityOptions, getAftersalesTypeOptions } from '../config'
+import {
+    buildComplaintTagSearchOptions,
+    buildPageParams,
+    dateRangeDefaultTime,
+    getAftersalesPriorityOptions
+} from '../config'
 
 defineOptions({ name: 'AftersalesStats' })
 
@@ -46,13 +51,16 @@ const searchSchema = computed<FormSchema[]>(() => [
         componentProps: { options: userOptions.value, clearable: true, style: { width: '220px' } }
     },
     {
-        field: 'complaintTagId',
+        field: 'complaintTagIds',
         label: '投诉标签',
         component: 'Select',
         componentProps: {
-            options: complaintTagOptions.value,
+            options: buildComplaintTagSearchOptions(complaintTagOptions.value),
+            multiple: true,
             clearable: true,
             filterable: true,
+            collapseTags: true,
+            collapseTagsTooltip: true,
             style: { width: '220px' }
         }
     },
@@ -79,16 +87,6 @@ const searchSchema = computed<FormSchema[]>(() => [
         }
     },
     {
-        field: 'ticketType',
-        label: '工单类型',
-        component: 'Select',
-        componentProps: {
-            options: getAftersalesTypeOptions(),
-            clearable: true,
-            style: { width: '220px' }
-        }
-    },
-    {
         field: 'priority',
         label: '优先级',
         component: 'Select',
@@ -109,15 +107,7 @@ const {
 })
 
 const setSearchParams = (params: Recordable) => {
-    const { receiveTimeRange = [], processTimeRange = [], deptId, ...rest } = params
-    tableMethods.setSearchParams({
-        ...rest,
-        beginReceiveTime: receiveTimeRange[0],
-        endReceiveTime: receiveTimeRange[1],
-        beginProcessTime: processTimeRange[0],
-        endProcessTime: processTimeRange[1],
-        deptId
-    })
+    tableMethods.setSearchParams(buildPageParams(params))
 }
 
 const tableColumns = computed<TableColumn[]>(() => [

@@ -63,6 +63,7 @@ import CustomerDetailDrawer from './detail/CustomerDetailDrawer.vue'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import { buildAreaLabel } from '@/views/crm/clue/listShared'
 import AftersalesForm from '@/views/aftersales/components/AftersalesForm.vue'
+import { AFTERSALES_SOURCE } from '@/views/aftersales/config'
 import StudentEditForm from './StudentEditForm.vue'
 
 interface StudentSearchParams {
@@ -203,8 +204,11 @@ const handleDetailRefresh = async () => {
 const handleCreateAftersales = (row: StudentCenterApi.StudentCenterPageRespVO) => {
     aftersalesFormRef.value?.open({
         clueId: Number(row.clueId),
+        orderId: Number(row.orderId),
+        orderNo: row.orderNo,
         customerId: row.customerId,
         customerName: row.customerName,
+        source: AFTERSALES_SOURCE.HEADTEACHER_FEEDBACK,
         orderFilterClueId: Number(row.clueId)
     })
 }

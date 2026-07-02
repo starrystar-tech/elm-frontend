@@ -27,26 +27,37 @@ import { Table, type TableColumn } from '@/components/Table'
 import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
-import { dateFormatter } from '@/utils/formatTime'
 import * as AftersalesApi from '@/api/crm/aftersales'
 import * as ComplaintTagApi from '@/api/system/complaintTag'
-import {
-    buildBaseSearchSchema,
-    buildPageParams,
-    getAftersalesPriorityLabel,
-    getAftersalesStatusLabel,
-    getAftersalesTypeLabel
-} from '../config'
-import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import * as CampusApi from '@/api/system/campus'
+import { buildBaseSearchSchema, buildPageParams } from '../config'
+import { buildAftersalesColumns } from '../listColumns'
 
 defineOptions({ name: 'AftersalesPool' })
 
 const message = useMessage()
 const complaintTagOptions = ref<{ label: string; value: number }[]>([])
+const campusOptions = ref<{ label: string; value: number }[]>([])
+const hiddenPoolSearchFields = [
+    'handlerUserId',
+    'enrollTimeRange',
+    'installmentStatus',
+    'finalPaymentChannel',
+    'aftersalesResult',
+    'receiveTimeRange',
+    'processTimeRange'
+]
+const hiddenPoolTableFields = [
+    'aftersalesResult',
+    'enrollTime',
+    'installmentStatus',
+    'finalPaymentChannel',
+    'receiveTime'
+]
 
 const searchSchema = computed<FormSchema[]>(() =>
-    buildBaseSearchSchema([], complaintTagOptions.value).filter(
-        (item) => !['handlerUserId', 'receiveTimeRange', 'processTimeRange'].includes(item.field)
+    buildBaseSearchSchema([], complaintTagOptions.value, campusOptions.value).filter(
+        (item) => !hiddenPoolSearchFields.includes(item.field)
     )
 )
 
@@ -79,77 +90,26 @@ const batchClaim = async () => {
     await tableMethods.getList()
 }
 
-const tableColumns = computed<TableColumn[]>(() => [
-    {
-        field: 'ticketNo',
-        label: '工单号',
-        minWidth: '200px',
-        fixed: 'left'
-    },
-    { field: 'customerId', label: '客户编号', minWidth: '120px' },
-    { field: 'orderNo', label: '订单编号', minWidth: '160px' },
-    { field: 'customerName', label: '客户', minWidth: '100px' },
-    {
-        field: 'customerMobile',
-        label: '手机号',
-        minWidth: '170px',
-        slots: {
-            default: (data) =>
-                renderCopyMobileCell({
-                    row: data.row,
-                    mobile: data.row.customerMobile,
-                    success: message.success,
-                    warning: message.warning
-                })
-        }
-    },
-    {
-        field: 'ticketType',
-        label: '工单类型',
-        minWidth: '100px',
-        formatter: (_r, _c, v) => getAftersalesTypeLabel(v)
-    },
-    {
-        field: 'priority',
-        label: '优先级',
-        minWidth: '90px',
-        formatter: (_r, _c, v) => getAftersalesPriorityLabel(v)
-    },
-    {
-        field: 'status',
-        label: '状态',
-        minWidth: '100px',
-        formatter: (_r, _c, v) => getAftersalesStatusLabel(v)
-    },
-    { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter },
-    {
-        field: 'action',
-        label: '操作',
-        width: '80px',
-        fixed: 'right',
-        slots: {
-            default: (data) => {
-                const row = data.row as AftersalesApi.AftersalesRespVO
-                return (
-                    <BaseButton
-                        v-hasPermi={['crm:aftersales:claim']}
-                        link
-                        type="primary"
-                        onClick={() => claim(row)}
-                    >
-                        领取
-                    </BaseButton>
-                )
-            }
-        }
-    }
-])
+const tableColumns = computed<TableColumn[]>(() =>
+    buildAftersalesColumns({
+        message,
+        claim,
+        actionWidth: '80px'
+    }).filter((item) => !hiddenPoolTableFields.includes(item.field))
+)
 
 onMounted(async () => {
-    const complaintTags = await ComplaintTagApi.getComplaintTagSimpleList()
+    const [complaintTags, campuses] = await Promise.all([
+        ComplaintTagApi.getComplaintTagSimpleList(),
+        CampusApi.getSimpleCampusList()
+    ])
     complaintTagOptions.value = (complaintTags || []).map((item) => ({
         label: item.name,
         value: item.id
+    }))
+    campusOptions.value = (campuses || []).map((item) => ({
+        label: item.name,
+        value: Number(item.id)
     }))
     await tableMethods.getList()
 })

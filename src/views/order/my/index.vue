@@ -110,6 +110,7 @@ import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import type { UserVO } from '@/api/system/user'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import AftersalesForm from '@/views/aftersales/components/AftersalesForm.vue'
+import { AFTERSALES_SOURCE } from '@/views/aftersales/config'
 
 defineOptions({ name: 'OrderMy' })
 
@@ -372,6 +373,7 @@ const handleCreateAftersales = async (row: OrderApi.OrderPageRespVO) => {
         orderNo: detail.orderNo,
         customerId: detail.customerId,
         customerName: detail.customerName,
+        source: AFTERSALES_SOURCE.SALES_FEEDBACK,
         orderFilterClueId: Number(detail.clueId)
     })
 }

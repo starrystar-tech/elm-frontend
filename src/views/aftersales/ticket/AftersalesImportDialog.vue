@@ -4,7 +4,9 @@
             <span class="text-[var(--el-text-color-secondary)]">
                 模板字段：订单编号、工单类型、优先级、申请原因、补充备注。支持 `.xlsx`、`.xls`。
             </span>
-            <el-button link type="primary" @click="downloadTemplate">下载模板</el-button>
+            <el-button link type="primary" :loading="downloadLoading" @click="downloadTemplate">
+                下载模板
+            </el-button>
         </div>
         <el-upload
             v-model:file-list="fileList"
@@ -60,12 +62,14 @@
 <script setup lang="ts">
 import type { UploadUserFile } from 'element-plus'
 import * as AftersalesApi from '@/api/crm/aftersales'
+import download from '@/utils/download'
 
 defineOptions({ name: 'AftersalesImportDialog' })
 
 const message = useMessage()
 const dialogVisible = ref(false)
 const loading = ref(false)
+const downloadLoading = ref(false)
 const fileList = ref<UploadUserFile[]>([])
 const importResult = ref<AftersalesApi.AftersalesImportRespVO | null>(null)
 
@@ -78,7 +82,13 @@ const open = () => {
 }
 
 const downloadTemplate = async () => {
-    await AftersalesApi.downloadAftersalesImportTemplate()
+    downloadLoading.value = true
+    try {
+        const res = await AftersalesApi.downloadAftersalesImportTemplate()
+        download.excel(res, '售后工单导入模板.xlsx')
+    } finally {
+        downloadLoading.value = false
+    }
 }
 
 const handleImport = async () => {

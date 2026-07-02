@@ -7,7 +7,7 @@
             label-width="100px"
             v-loading="formLoading"
         >
-            <el-form-item label="客户" prop="clueId">
+            <el-form-item label="订单" prop="orderIds">
                 <el-input
                     v-model="selectedOrderDisplay"
                     readonly
@@ -21,15 +21,8 @@
                     </template>
                 </el-input>
             </el-form-item>
-            <el-form-item label="工单类型" prop="ticketType">
-                <el-select v-model="formData.ticketType" class="!w-full">
-                    <el-option
-                        v-for="item in aftersalesTypeOptions"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value"
-                    />
-                </el-select>
+            <el-form-item label="工单来源" prop="source">
+                <el-input :model-value="sourceLabel" disabled />
             </el-form-item>
             <el-form-item label="优先级" prop="priority">
                 <el-select v-model="formData.priority" class="!w-full">
@@ -41,27 +34,6 @@
                     />
                 </el-select>
             </el-form-item>
-            <!-- <el-form-item label="退款方式" prop="refundMethod">
-                <el-input v-model="formData.refundMethod" placeholder="请输入退款方式" />
-            </el-form-item> -->
-            <!-- <el-form-item label="退款金额" prop="refundAmount">
-                <el-input-number
-                    v-model="formData.refundAmount"
-                    :min="0.01"
-                    :precision="2"
-                    class="!w-full"
-                />
-            </el-form-item> -->
-            <el-form-item label="处理人">
-                <el-input
-                    v-model="handlerUserName"
-                    readonly
-                    clearable
-                    placeholder="请选择处理人"
-                    @click="openUserSelect"
-                    @clear="clearHandler"
-                />
-            </el-form-item>
             <el-form-item label="申请原因" prop="reason">
                 <el-input
                     v-model="formData.reason"
@@ -72,7 +44,7 @@
                     placeholder="请输入申请原因"
                 />
             </el-form-item>
-            <el-form-item label="补充备注">
+            <el-form-item label="补充备注" prop="remark">
                 <el-input
                     v-model="formData.remark"
                     type="textarea"
@@ -82,25 +54,34 @@
                     placeholder="请输入补充备注"
                 />
             </el-form-item>
+            <el-form-item label="附件" prop="attachmentUrl">
+                <UploadFile
+                    v-model="formData.attachmentUrl"
+                    :limit="1"
+                    :file-size="20"
+                    :file-type="attachmentFileTypes"
+                    :is-show-tip="false"
+                />
+            </el-form-item>
         </el-form>
         <template #footer>
             <BaseButton type="primary" :loading="formLoading" @click="submitForm">确 定</BaseButton>
             <BaseButton @click="dialogVisible = false">取 消</BaseButton>
         </template>
     </Dialog>
-    <UserSelectForm ref="userSelectFormRef" @confirm="handleUserSelectConfirm" />
     <OrderSelectDialog ref="orderSelectDialogRef" @confirm="handleOrderConfirm" />
 </template>
 
 <script setup lang="ts">
 import { BaseButton } from '@/components/Button'
 import OrderSelectDialog from '@/components/OrderSelectDialog.vue'
-import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import * as AftersalesApi from '@/api/crm/aftersales'
 import * as OrderApi from '@/api/crm/order'
-import type { UserVO } from '@/api/system/user'
-import { useUserStore } from '@/store/modules/user'
-import { getAftersalesPriorityOptions, getAftersalesTypeOptions } from '../config'
+import {
+    AFTERSALES_SOURCE,
+    getAftersalesSourceLabel,
+    getAftersalesPriorityOptions
+} from '../config'
 
 defineOptions({ name: 'AftersalesForm' })
 
@@ -108,36 +89,58 @@ const message = useMessage()
 const dialogVisible = ref(false)
 const formLoading = ref(false)
 const formRef = ref()
-const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
 const orderSelectDialogRef = ref<InstanceType<typeof OrderSelectDialog>>()
-const handlerUserName = ref('')
 const selectedOrderDisplay = ref('')
+const selectedOrders = ref<OrderApi.OrderPageRespVO[]>([])
 const orderSelectClueId = ref<number>()
-const userStore = useUserStore()
-const aftersalesTypeOptions = computed(() => getAftersalesTypeOptions())
 const aftersalesPriorityOptions = computed(() => getAftersalesPriorityOptions())
+const attachmentFileTypes = [
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'ppt',
+    'pptx',
+    'txt',
+    'pdf',
+    'png',
+    'jpg',
+    'jpeg',
+    'zip',
+    'rar'
+]
 const formData = ref<AftersalesApi.AftersalesCreateReqVO>({
-    clueId: undefined as unknown as number,
-    orderId: undefined as unknown as number,
-    refundMethod: '原路返回',
-    ticketType: 2,
+    orderIds: [],
     priority: 2,
-    refundAmount: undefined,
+    source: AFTERSALES_SOURCE.MANUAL,
     reason: '',
     remark: '',
-    handlerUserId: undefined
+    attachmentUrl: ''
 })
+const sourceLabel = computed(() => getAftersalesSourceLabel(formData.value.source))
 
 const formRules = reactive({
-    clueId: [{ required: true, message: '请选择客户', trigger: 'change' }],
-    ticketType: [{ required: true, message: '请选择工单类型', trigger: 'change' }],
+    orderIds: [
+        {
+            required: true,
+            validator: (_rule: unknown, value: number[], callback: (error?: Error) => void) => {
+                if (value?.length) {
+                    callback()
+                    return
+                }
+                callback(new Error('请选择订单'))
+            },
+            trigger: 'change'
+        }
+    ],
     priority: [{ required: true, message: '请选择优先级', trigger: 'change' }],
-    refundMethod: [{ required: true, message: '请输入退款方式', trigger: 'blur' }],
+    source: [{ required: true, message: '请选择工单来源', trigger: 'change' }],
     reason: [
         { required: true, message: '请输入申请原因', trigger: 'blur' },
         { max: 500, message: '申请原因长度不能超过 500 个字符', trigger: 'blur' }
     ],
-    remark: [{ max: 500, message: '补充备注长度不能超过 500 个字符', trigger: 'blur' }]
+    remark: [{ max: 500, message: '补充备注长度不能超过 500 个字符', trigger: 'blur' }],
+    attachmentUrl: [{ max: 500, message: '附件长度不能超过 500 个字符', trigger: 'blur' }]
 })
 
 const emit = defineEmits(['success'])
@@ -148,6 +151,7 @@ interface AftersalesFormOpenOptions {
     orderNo?: string
     customerId?: string
     customerName?: string
+    source?: number
     orderFilterClueId?: number
 }
 
@@ -161,17 +165,20 @@ const buildOrderDisplay = (options: AftersalesFormOpenOptions) => {
     return parts.length ? parts.join(' / ') : buildCustomerDisplay(options)
 }
 
-const fillDefaultHandler = () => {
-    const currentUser = userStore.getUser
-    formData.value.handlerUserId = currentUser?.id || undefined
-    handlerUserName.value = currentUser?.nickname || ''
-}
-
 const open = (options: AftersalesFormOpenOptions = {}) => {
     dialogVisible.value = true
     resetForm()
-    formData.value.clueId = options.clueId as number
-    formData.value.orderId = options.orderId
+    formData.value.source = options.source || AFTERSALES_SOURCE.MANUAL
+    formData.value.orderIds = options.orderId ? [Number(options.orderId)] : []
+    selectedOrders.value = options.orderId
+        ? [
+              {
+                  id: Number(options.orderId),
+                  orderNo: options.orderNo || '',
+                  customerName: options.customerName || ''
+              } as OrderApi.OrderPageRespVO
+          ]
+        : []
     orderSelectClueId.value = options.orderFilterClueId || options.clueId
     selectedOrderDisplay.value = options.orderId
         ? buildOrderDisplay(options)
@@ -181,50 +188,61 @@ defineExpose({ open })
 
 const openOrderSelect = () => {
     orderSelectDialogRef.value?.open({
-        clueId: orderSelectClueId.value
+        clueId: orderSelectClueId.value,
+        multiple: true
     })
 }
 
-const handleOrderConfirm = (order: OrderApi.OrderDetailRespVO) => {
-    if (!order?.clueId) {
-        message.warning('该订单未关联客户，无法用于售后工单')
+const updateSelectedOrderDisplay = () => {
+    if (!selectedOrders.value.length) {
+        selectedOrderDisplay.value = ''
         return
     }
-    formData.value.orderId = order.id
-    formData.value.clueId = Number(order.clueId)
-    orderSelectClueId.value = Number(order.clueId)
-    selectedOrderDisplay.value = `${order.orderNo} / ${order.customerName || '--'}`
+    if (selectedOrders.value.length === 1) {
+        const order = selectedOrders.value[0]
+        selectedOrderDisplay.value = `${order.orderNo} / ${order.customerName || '--'}`
+        return
+    }
+    selectedOrderDisplay.value = `已选择 ${selectedOrders.value.length} 个订单：${selectedOrders.value
+        .map((item) => item.orderNo)
+        .filter(Boolean)
+        .slice(0, 3)
+        .join('、')}${selectedOrders.value.length > 3 ? ' 等' : ''}`
+}
+
+const handleOrderConfirm = (order: OrderApi.OrderDetailRespVO | OrderApi.OrderPageRespVO[]) => {
+    const orders = Array.isArray(order) ? order : [order]
+    const validOrders = orders.filter((item) => item?.id)
+    if (!validOrders.length) {
+        message.warning('请选择订单')
+        return
+    }
+    formData.value.orderIds = Array.from(new Set(validOrders.map((item) => Number(item.id))))
+    selectedOrders.value = validOrders as OrderApi.OrderPageRespVO[]
+    const firstClueId = (validOrders[0] as OrderApi.OrderDetailRespVO).clueId
+    if (firstClueId) {
+        orderSelectClueId.value = Number(firstClueId)
+    }
+    updateSelectedOrderDisplay()
+    formRef.value?.validateField?.('orderIds')
 }
 
 const clearSelectedOrder = () => {
-    formData.value.orderId = undefined as unknown as number
-    formData.value.clueId = undefined as unknown as number
+    formData.value.orderIds = []
+    selectedOrders.value = []
     selectedOrderDisplay.value = ''
-}
-
-const openUserSelect = () => {
-    const selectedList = formData.value.handlerUserId
-        ? [{ id: formData.value.handlerUserId, nickname: handlerUserName.value }]
-        : []
-    userSelectFormRef.value?.open(0, selectedList, { title: '选择处理人', multiple: false })
-}
-
-const handleUserSelectConfirm = (_id: any, userList: UserVO[]) => {
-    const user = userList?.[0]
-    formData.value.handlerUserId = user?.id
-    handlerUserName.value = user?.nickname || user?.username || ''
-}
-
-const clearHandler = () => {
-    formData.value.handlerUserId = undefined
-    handlerUserName.value = ''
 }
 
 const submitForm = async () => {
     await formRef.value.validate()
     formLoading.value = true
     try {
-        await AftersalesApi.createAftersales(formData.value)
+        await AftersalesApi.createAftersales({
+            ...formData.value,
+            reason: formData.value.reason.trim(),
+            remark: formData.value.remark?.trim() || undefined,
+            attachmentUrl: formData.value.attachmentUrl?.trim() || undefined
+        })
         message.success('新增成功')
         dialogVisible.value = false
         emit('success')
@@ -235,19 +253,16 @@ const submitForm = async () => {
 
 const resetForm = () => {
     formData.value = {
-        clueId: undefined as unknown as number,
-        orderId: undefined as unknown as number,
-        refundMethod: '原路返回',
-        ticketType: 2,
+        orderIds: [],
         priority: 2,
-        refundAmount: undefined,
+        source: AFTERSALES_SOURCE.MANUAL,
         reason: '',
         remark: '',
-        handlerUserId: undefined
+        attachmentUrl: ''
     }
     selectedOrderDisplay.value = ''
+    selectedOrders.value = []
     orderSelectClueId.value = undefined
-    fillDefaultHandler()
     formRef.value?.resetFields()
 }
 </script>

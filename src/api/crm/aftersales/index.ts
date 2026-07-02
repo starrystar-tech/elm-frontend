@@ -8,10 +8,17 @@ export interface AftersalesPageReqVO extends PageParam {
   customerId?: string
   orderId?: number
   orderNo?: string
-  complaintTagId?: number
-  ticketType?: number
+  complaintTagIds?: number[]
+  noComplaintTag?: boolean
   priority?: number
   status?: number
+  source?: number
+  campusId?: number
+  beginEnrollTime?: string
+  endEnrollTime?: string
+  installmentStatus?: number
+  finalPaymentChannel?: string
+  aftersalesResult?: number
   handlerUserId?: number
   deptId?: number
   beginCreateTime?: string
@@ -27,40 +34,79 @@ export interface AftersalesExportReqVO extends AftersalesPageReqVO {
   exportPlainMobile?: boolean
 }
 
+export interface AftersalesProcessLogRespVO {
+  handlerUserName?: string
+  processTime?: string
+  aftersalesResult?: number
+  aftersalesResultDesc?: string
+  remark?: string
+  refundAmount?: number
+  retainAmount?: number
+}
+
+export interface AftersalesHistoryTicketRespVO {
+  id: number
+  ticketNo?: string
+  orderId?: number
+  orderNo?: string
+  priority?: number
+  status?: number
+  statusDesc?: string
+  source?: number
+  sourceDesc?: string
+  handlerUserName?: string
+  processTime?: string
+  aftersalesResult?: number
+  aftersalesResultDesc?: string
+  reason?: string
+  createTime?: string
+}
+
 export interface AftersalesRespVO {
   id: number
   ticketNo: string
   clueId: number
-  customerId: string
-  customerName: string
-  customerMobile: string
-  ticketType: number
-  priority: number
-  status: number
-  refundAmount: number
+  customerId?: string
+  customerName?: string
+  customerMobile?: string
+  priority?: number
+  status?: number
+  source?: number
+  sourceDesc?: string
+  refundAmount?: number
+  retainAmount?: number
   refundMethod?: string
-  orderId: number
-  orderNo: string
+  orderId?: number
+  orderNo?: string
+  campusId?: number
+  campusName?: string
+  enrollTime?: string
+  installmentStatus?: number
+  finalPaymentChannel?: string
   handlerUserId?: number
   handlerUserName?: string
   receiveTime?: string
   processTime?: string
   processResult?: string
+  aftersalesResult?: number
+  aftersalesResultDesc?: string
   reason?: string
   remark?: string
-  createTime: string
+  complaintTags?: string[]
+  creatorName?: string
+  creatorDeptName?: string
+  processLogs?: AftersalesProcessLogRespVO[]
+  historyTickets?: AftersalesHistoryTicketRespVO[]
+  createTime?: string
 }
 
 export interface AftersalesCreateReqVO {
-  clueId: number
-  orderId?: number
-  refundMethod: string
-  ticketType: number
+  orderIds: number[]
   priority: number
-  refundAmount?: number
+  source: number
   reason: string
   remark?: string
-  handlerUserId?: number
+  attachmentUrl?: string
 }
 
 export interface AftersalesImportRespVO {
@@ -75,8 +121,10 @@ export interface AftersalesAssignReqVO {
 
 export interface AftersalesProcessReqVO {
   id: number
-  status: number
-  processResult: string
+  aftersalesResult?: number
+  processResult?: string
+  refundAmount?: number
+  retainAmount?: number
 }
 
 export interface AftersalesStatsRespVO {
@@ -114,7 +162,7 @@ export const getAftersales = async (id: number) => {
 }
 
 export const createAftersales = async (data: AftersalesCreateReqVO) => {
-  return await request.post<number>({ url: '/crm/aftersales/create', data })
+  return await request.post<number[]>({ url: '/crm/aftersales/create', data })
 }
 
 export const importAftersales = async (data: FormData) => {
@@ -122,7 +170,7 @@ export const importAftersales = async (data: FormData) => {
 }
 
 export const downloadAftersalesImportTemplate = async () => {
-  return await request.download({ url: '/crm/aftersales/import-template' })
+  return await request.download<Blob>({ url: '/crm/aftersales/import-template' })
 }
 
 export const claimAftersales = async (id: number) => {
@@ -140,6 +188,10 @@ export const assignAftersales = async (data: AftersalesAssignReqVO) => {
 
 export const processAftersales = async (data: AftersalesProcessReqVO) => {
   return await request.put<boolean>({ url: '/crm/aftersales/process', data })
+}
+
+export const repurchaseAftersales = async (id: number) => {
+  return await request.post<number>({ url: '/crm/aftersales/repurchase', params: { id } })
 }
 
 export const getAftersalesStatsPage = async (params: AftersalesPageReqVO) => {
