@@ -63,11 +63,11 @@ interface RuleViewItem {
 const RULE_META_MAP: Record<string, { ruleName: string; tailText: string; sort: number }> = {
     FIRST_CONSULT_TO_WAIT_VISIT: {
         ruleName: '首咨客户',
-        tailText: '天未回访，自动进入已回访',
+        tailText: '天未回访，自动进入待回访',
         sort: 10
     },
     WAIT_VISIT_TO_FIRST_POOL: {
-        ruleName: '已回访',
+        ruleName: '待回访',
         tailText: '天未回访，自动进入首咨公海',
         sort: 20
     },

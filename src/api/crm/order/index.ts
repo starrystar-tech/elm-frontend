@@ -206,6 +206,14 @@ export interface OrderPayConfirmReqVO {
   confirmRemark?: string
 }
 
+export interface OrderPayRecordUpdateReqVO {
+  id: number
+  payAmount: number
+  payMethod: string
+  payProofUrl?: string
+  remark?: string
+}
+
 export interface OrderPayRecordProofUpdateReqVO {
   id: number
   payProofUrl?: string
@@ -317,6 +325,10 @@ export const getPayConfirmPage = async (params: OrderPayRecordPageReqVO) => {
 
 export const confirmPayRecord = async (data: OrderPayConfirmReqVO) => {
   return await request.put<boolean>({ url: '/crm/order/pay-record/confirm', data })
+}
+
+export const updatePayRecord = async (data: OrderPayRecordUpdateReqVO) => {
+  return await request.put<boolean>({ url: '/crm/order/pay-record/update', data })
 }
 
 export const updatePayRecordProof = async (data: OrderPayRecordProofUpdateReqVO) => {

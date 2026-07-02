@@ -175,7 +175,7 @@ const searchSchema = reactive<FormSchema[]>([
             defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
             startPlaceholder: '开始时间',
             endPlaceholder: '结束时间',
-            style: { width: '260px' }
+            style: { width: '220px' }
         }
     },
     {
@@ -186,7 +186,7 @@ const searchSchema = reactive<FormSchema[]>([
             type: 'year',
             valueFormat: 'YYYY',
             placeholder: '请选择报名年份',
-            style: { width: '160px' }
+            style: { width: '220px' }
         }
     },
     {

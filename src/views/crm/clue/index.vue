@@ -344,8 +344,7 @@ const statusOptions = [
     { label: '跟进中', value: 2 },
     { label: '已成交', value: 3 },
     { label: '公海', value: 4 },
-    { label: '复购公海', value: 5 },
-    { label: '静默', value: 6 }
+    { label: '复购公海', value: 5 }
 ]
 const intentLevelOptions = getClueIntentLevelOptions()
 const assignModeOptions = [

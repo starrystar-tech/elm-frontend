@@ -378,6 +378,19 @@
                                         label="确认结果"
                                         min-width="140"
                                     />
+                                    <el-table-column label="操作" min-width="100">
+                                        <template #default="{ row }">
+                                            <el-button
+                                                v-if="row.confirmStatus === 10"
+                                                link
+                                                type="primary"
+                                                @click="handleEditPayRecord(row)"
+                                            >
+                                                修改
+                                            </el-button>
+                                            <span v-else>-</span>
+                                        </template>
+                                    </el-table-column>
                                 </el-table>
                             </el-tab-pane>
                             <el-tab-pane label="退款记录" name="refunds">
@@ -615,6 +628,10 @@ const handlePay = async () => {
         return
     }
     payDialogRef.value?.open(detail.value.id, formatAmount(remain))
+}
+
+const handleEditPayRecord = (row: OrderApi.OrderPayRecordRespVO) => {
+    payDialogRef.value?.open(row.orderId, undefined, row)
 }
 
 const handleRefund = async () => {

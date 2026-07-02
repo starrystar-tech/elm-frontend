@@ -1491,14 +1491,6 @@ const getTrackMobileLinesFromContent = (content?: string) => {
     }
 }
 
-const getFallbackTrackMobileLines = () =>
-    [
-        { key: 'mobile', value: props.customerBasicInfo?.mobile || props.clue.mobile },
-        { key: 'mobile2', value: props.customerBasicInfo?.mobile2 || props.clue.mobile2 }
-    ]
-        .map(({ key, value }) => (value ? `${TRACK_FIELD_LABELS[key]}：${value}` : ''))
-        .filter(Boolean)
-
 const ensureTrackMobileLines = (
     lines: string[],
     item: CustomerDetailApi.CustomerTrackRespVO
@@ -1507,10 +1499,7 @@ const ensureTrackMobileLines = (
     const hasMobileLine = normalizedLines.some((line) => parseTrackMobileLine(line))
     if (hasMobileLine) return normalizedLines
     const contentMobileLines = getTrackMobileLinesFromContent(item.content)
-    return [
-        ...normalizedLines,
-        ...(contentMobileLines.length ? contentMobileLines : getFallbackTrackMobileLines())
-    ]
+    return [...normalizedLines, ...contentMobileLines]
 }
 
 const buildTrackDisplayLines = (lines: string[]) =>

@@ -83,22 +83,6 @@
             <el-form-item label="静默原因" required>
                 <el-input v-model="silentForm.silentReason" placeholder="请输入静默原因" />
             </el-form-item>
-            <el-form-item label="静默天数" required>
-                <el-input-number
-                    v-model="silentForm.silentDays"
-                    :min="1"
-                    controls-position="right"
-                    style="width: 100%"
-                />
-            </el-form-item>
-            <el-form-item label="备注">
-                <el-input
-                    v-model="silentForm.remark"
-                    type="textarea"
-                    :rows="3"
-                    placeholder="请输入备注"
-                />
-            </el-form-item>
         </el-form>
         <template #footer>
             <el-button @click="silentDialogVisible = false">取消</el-button>
@@ -132,13 +116,14 @@ import * as DeptApi from '@/api/system/dept'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ClueMergeDialog from './components/ClueMergeDialog.vue'
 import ClueNameCell from './components/ClueNameCell.vue'
-import { buildOwnerDisplayName, prependUnassignedOwnerOption } from './listShared'
+import { buildAreaLabel, buildOwnerDisplayName, prependUnassignedOwnerOption } from './listShared'
 
 defineOptions({ name: 'CrmClueAllocation' })
 
 const message = useMessage()
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
 const userOptions = ref<{ label: string; value: number; deptId?: number }[]>([])
+const searchOwnerOptions = ref<{ label: string; value: number; deptId?: number }[]>([])
 const deptOptions = ref<DeptApi.DeptVO[]>([])
 const selectionList = ref<ClueApi.ClueVO[]>([])
 const assignDialogVisible = ref(false)
@@ -152,8 +137,7 @@ const silentForm = reactive({ silentReason: '', silentDays: 7, remark: '' })
 
 const statusOptions = [
     { label: '跟进中', value: 2 },
-    { label: '已成交', value: 3 },
-    { label: '静默', value: 6 }
+    { label: '已成交', value: 3 }
 ]
 const assignModeOptions = [
     { label: '自动', value: 1 },
@@ -323,6 +307,13 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'currentDepartmentName', label: '当前归属部门', width: '140px' },
     { field: 'firstAllocationOwnerName', label: '首次分配人', width: '120px' },
     { field: 'firstAllocationDepartmentName', label: '首次分配部门', width: '140px' },
+    {
+        field: 'region',
+        label: '地区',
+        minWidth: '160px',
+        slots: { default: (data) => <span>{buildAreaLabel(data.row)}</span> }
+    },
+    { field: 'clueSourceName', label: '来源', width: '130px' },
     { field: 'consultProjectName', label: '咨询项目', minWidth: '160px' },
     { field: 'assignModeName', label: '分配方式', width: '100px' },
     { field: 'allocationTypeName', label: '分配类型', minWidth: '130px' },
@@ -343,7 +334,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'intentLevelName', label: '意向度', width: '90px' },
     { field: 'todayCallCount', label: '当日外呼', width: '100px' },
     { field: 'todayConnectedCount', label: '当日接通', width: '100px' },
-    { field: 'orderCount', label: '订单数', width: '90px' },
+    { field: 'orderCount', label: '报名次数', width: '90px' },
     { field: 'allocationTime', label: '分配时间', minWidth: '170px', formatter: dateFormatter },
     { field: 'createTime', label: '创建时间', minWidth: '170px', formatter: dateFormatter },
     {
@@ -366,17 +357,16 @@ const loadOptions = async () => {
         UserApi.getSimpleUserList(),
         DeptApi.getSimpleDeptList()
     ])
-    userOptions.value = prependUnassignedOwnerOption(
-        (users || []).map((item) => ({
-            label: item.nickname || item.username,
-            value: item.id,
-            deptId: item.deptId
-        }))
-    )
+    userOptions.value = (users || []).map((item) => ({
+        label: item.nickname || item.username,
+        value: item.id,
+        deptId: item.deptId
+    }))
+    searchOwnerOptions.value = prependUnassignedOwnerOption(userOptions.value)
     deptOptions.value = depts || []
     const ownerField = searchSchema.find((item) => item.field === 'currentOwnerId')
     if (ownerField?.componentProps) {
-        ownerField.componentProps.options = userOptions.value
+        ownerField.componentProps.options = searchOwnerOptions.value
     }
 }
 

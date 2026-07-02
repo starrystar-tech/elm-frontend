@@ -89,6 +89,7 @@ const message = useMessage()
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
 const canExport = hasPermission(['crm:clue:silent:query'])
 const userOptions = ref<{ label: string; value: number; deptId?: number }[]>([])
+const searchOwnerOptions = ref<{ label: string; value: number; deptId?: number }[]>([])
 const deptOptions = ref<DeptApi.DeptVO[]>([])
 const selectionList = ref<ClueApi.ClueVO[]>([])
 const assignDialogVisible = ref(false)
@@ -271,17 +272,16 @@ const tableColumns = computed<TableColumn[]>(() => [
 
 const loadOptions = async () => {
     const [users, depts] = await Promise.all([UserApi.getSimpleUserList(), DeptApi.getSimpleDeptList()])
-    userOptions.value = prependUnassignedOwnerOption(
-        (users || []).map((item) => ({
-            label: item.nickname || item.username,
-            value: item.id,
-            deptId: item.deptId
-        }))
-    )
+    userOptions.value = (users || []).map((item) => ({
+        label: item.nickname || item.username,
+        value: item.id,
+        deptId: item.deptId
+    }))
+    searchOwnerOptions.value = prependUnassignedOwnerOption(userOptions.value)
     deptOptions.value = depts || []
     const ownerField = searchSchema.find((item) => item.field === 'currentOwnerId')
     if (ownerField?.componentProps) {
-        ownerField.componentProps.options = userOptions.value
+        ownerField.componentProps.options = searchOwnerOptions.value
     }
 }
 
