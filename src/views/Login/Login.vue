@@ -2,7 +2,25 @@
   <div :class="prefixCls" class="relative h-screen w-full flex flex-col">
     <!-- 顶部标题 -->
     <div class="z-10 flex items-center justify-between px-6 py-3 bg-gradient-to-r from-white via-white to-gray-50 shadow-sm">
-      <img src="@/assets/imgs/logo2.png" alt="logo" class="w-32" />
+      <div v-if="activeBrandConfig.loginSubtitle" class="flex items-center gap-3">
+        <img
+          :src="activeBrandConfig.logos.nav"
+          :alt="appStore.getTitle || activeBrandConfig.title"
+          class="h-10 w-10 shrink-0"
+        />
+        <div class="flex flex-col justify-center leading-none">
+          <span class="text-[22px] font-semibold text-[#111827]">{{ activeBrandConfig.title }}</span>
+          <span class="mt-1 text-[11px] font-semibold tracking-[0.08em] text-[#111827]">
+            {{ activeBrandConfig.loginSubtitle }}
+          </span>
+        </div>
+      </div>
+      <img
+        v-else
+        :src="activeBrandConfig.logos.login"
+        :alt="appStore.getTitle || activeBrandConfig.title"
+        class="w-32"
+      />
       <div class="flex items-center space-x-6">
         <a href="https://docs.bgwa.cn/" target="_blank" class="text-gray-600 hover:text-blue-500 transition-colors"
           >文档中心</a
@@ -66,14 +84,20 @@
     <!-- 版权栏 -->
     <div class="relative z-10 py-4">
       <div class="text-center text-xs text-gray-500">
-        <div class="mb-1"> Copyright © 2025-2026 www.bgwa.cn. All Rights Reserved </div>
-        <div>武汉百谷科技有限公司版权所有 鄂ICP备2022019819号-1</div>
+        <div
+          v-for="(line, index) in activeBrandConfig.copyrightLines"
+          :key="line"
+          :class="{ 'mb-1': index === 0 }"
+        >
+          {{ line }}
+        </div>
       </div>
     </div>
   </div>
 </template>
 <script lang="ts" setup>
 import { underlineToHump } from '@/utils'
+import { activeBrandConfig } from '@/config/brand'
 
 import { useDesign } from '@/hooks/web/useDesign'
 import { useAppStore } from '@/store/modules/app'

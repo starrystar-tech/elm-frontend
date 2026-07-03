@@ -219,19 +219,21 @@
                                 </el-button>
                             </div>
                             <div class="enroll-payment__detail">
-                                <el-form-item label="支付方式" :required="true">
+                                <el-form-item label="支付渠道" :required="true">
                                     <el-select
                                         v-model="record.payMethod"
                                         class="!w-full"
-                                        placeholder="请选择支付方式"
+                                        placeholder="请选择支付渠道"
                                     >
-                                        <el-option label="微信支付" value="微信支付" />
-                                        <el-option label="支付宝" value="支付宝" />
-                                        <el-option label="银行卡" value="银行卡" />
-                                        <el-option label="现金" value="现金" />
+                                        <el-option
+                                            v-for="item in PAY_METHOD_OPTIONS"
+                                            :key="item.value"
+                                            :label="item.label"
+                                            :value="item.value"
+                                        />
                                     </el-select>
                                 </el-form-item>
-                                <el-form-item label="支付金额" :required="true">
+                                <el-form-item label="支付金额（元）" :required="true">
                                     <el-input-number
                                         v-model="record.paidAmount"
                                         :min="0"
@@ -239,7 +241,7 @@
                                         class="!w-full"
                                     />
                                 </el-form-item>
-                                <el-form-item label="支付凭证" class="enroll-payment__detail-full">
+                                <el-form-item label="支付截图" class="enroll-payment__detail-full">
                                     <UploadImg
                                         v-model="record.payProofUrl"
                                         :drag="false"
@@ -249,8 +251,11 @@
                                         height="96px"
                                     />
                                 </el-form-item>
-                                <el-form-item label="备注" class="enroll-payment__detail-full">
-                                    <el-input v-model="record.payRemark" placeholder="请输入备注" />
+                                <el-form-item label="支付备注" class="enroll-payment__detail-full">
+                                    <el-input
+                                        v-model="record.payRemark"
+                                        placeholder="请输入支付备注"
+                                    />
                                 </el-form-item>
                             </div>
                         </div>
@@ -290,6 +295,7 @@ import CampusSelect from '@/components/CampusSelect.vue'
 import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
 import { isValidChineseIdCard, normalizeIdCardNo } from '@/utils/idCard'
 import { fenToYuan, yuanToFen } from '@/utils'
+import { PAY_METHOD_OPTIONS } from '@/views/order/utils'
 
 defineOptions({ name: 'ClueEnrollDialog' })
 

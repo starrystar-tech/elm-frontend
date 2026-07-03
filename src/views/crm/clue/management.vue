@@ -233,6 +233,7 @@ const releaseForm = reactive({
 })
 const searchForm = reactive<ManagerSearchParams>({})
 const currentSearchParams = ref<ManagerSearchParams>({})
+const showEnrollAction = false
 
 const searchSchema = reactive<FormSchema[]>([
     {
@@ -596,7 +597,9 @@ const handleTabChange = async () => {
 }
 
 const openDetail = (id: number) => {
-    detailRef.value?.open(id)
+    detailRef.value?.open(id, {
+        hideEnrollAction: !showEnrollAction
+    })
 }
 
 const openSmsDialog = () => {
@@ -620,10 +623,12 @@ const getMoreActions = (rowId: number) =>
                   label: '发短信'
               }
             : null,
-        {
-            command: 'enroll',
-            label: '报名'
-        },
+        showEnrollAction
+            ? {
+                  command: 'enroll',
+                  label: '报名'
+              }
+            : null,
         {
             command: 'assign',
             label: '分配'

@@ -9,8 +9,8 @@
       >
         <!-- 左上角的 logo + 系统标题 -->
         <div class="relative flex items-center text-white">
-          <img alt="" class="mr-10px h-41px w-150px" src="@/assets/imgs/logo-promotion.png" />
-          <span class="text-20px font-bold">{{ underlineToHump(appStore.getTitle) }}</span>
+          <img :src="activeBrandConfig.logos.auth" :alt="brandTitle" class="mr-10px h-41px w-150px" />
+          <span class="text-20px font-bold">{{ underlineToHump(brandTitle) }}</span>
         </div>
         <!-- 左边的背景图 + 欢迎语 -->
         <div class="h-[calc(100%-60px)] flex items-center justify-center">
@@ -35,8 +35,8 @@
           class="flex items-center justify-between text-white at-2xl:justify-end at-xl:justify-end"
         >
           <div class="flex items-center at-2xl:hidden at-xl:hidden">
-            <img alt="" class="mr-10px h-41px w-150px" src="@/assets/imgs/logo-promotion.png" />
-            <span class="text-20px font-bold">{{ underlineToHump(appStore.getTitle) }}</span>
+            <img :src="activeBrandConfig.logos.auth" :alt="brandTitle" class="mr-10px h-41px w-150px" />
+            <span class="text-20px font-bold">{{ underlineToHump(brandTitle) }}</span>
           </div>
           <div class="flex items-center justify-end space-x-10px h-48px">
             <ThemeSwitch />
@@ -151,6 +151,7 @@
 
 <script lang="ts" setup>
 import { underlineToHump } from '@/utils'
+import { activeBrandConfig } from '@/config/brand'
 
 import { ElLoading } from 'element-plus'
 
@@ -175,6 +176,7 @@ const route = useRoute()
 const appStore = useAppStore()
 const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('login')
+const brandTitle = computed(() => appStore.getTitle || activeBrandConfig.title)
 const iconHouse = useIcon({ icon: 'ep:house' })
 const iconAvatar = useIcon({ icon: 'ep:avatar' })
 const iconLock = useIcon({ icon: 'ep:lock' })
@@ -199,7 +201,7 @@ const loginData = reactive({
   captchaEnable: import.meta.env.VITE_APP_CAPTCHA_ENABLE !== 'false',
   tenantEnable: import.meta.env.VITE_APP_TENANT_ENABLE !== 'false',
   loginForm: {
-    tenantName: '百谷科技',
+    tenantName: activeBrandConfig.tenantName,
     username: 'admin',
     password: '',
     captchaVerification: '',

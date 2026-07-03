@@ -95,6 +95,7 @@
 <script lang="ts" setup>
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 
+import { activeBrandConfig } from '@/config/brand'
 import { useIcon } from '@/hooks/web/useIcon'
 
 import { removeVisitTenantId, setTenantId, setToken } from '@/utils/auth'
@@ -133,7 +134,7 @@ const loginData = reactive({
   },
   loginForm: {
     uuid: '',
-    tenantName: '百谷科技',
+    tenantName: activeBrandConfig.tenantName,
     mobileNumber: '',
     code: ''
   }

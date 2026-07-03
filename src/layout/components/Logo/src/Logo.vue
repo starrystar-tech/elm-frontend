@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref, unref, watch } from 'vue'
+import { activeBrandConfig } from '@/config/brand'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
-import logoImg from '@/assets/imgs/bgwa.png'
 
 defineOptions({ name: 'Logo' })
 
@@ -19,6 +19,7 @@ const layout = computed(() => appStore.getLayout)
 const collapse = computed(() => appStore.getCollapse)
 
 const isClassicCollapsed = computed(() => layout.value === 'classic' && collapse.value)
+const isTopHeaderLayout = computed(() => layout.value !== 'classic')
 
 const show = ref(!isClassicCollapsed.value)
 
@@ -77,12 +78,15 @@ watch(
         >
             <img
                 :class="[
-                    'h-[34px] w-[34px] shrink-0 rounded-10px object-cover shadow-[0_3px_12px_rgba(22,119,255,0.18)]',
+                    'h-[34px] w-[34px] shrink-0 object-cover',
                     {
+                        'rounded-10px shadow-[0_3px_12px_rgba(22,119,255,0.18)]':
+                            !isTopHeaderLayout,
+                        'rounded-0 shadow-none bg-transparent': isTopHeaderLayout,
                         'mr-10px': show && !isClassicCollapsed
                     }
                 ]"
-                :src="logoImg"
+                :src="activeBrandConfig.logos.nav"
             />
             <div
                 v-if="show"
@@ -108,7 +112,7 @@ watch(
 }
 
 .top-header-logo {
-    background: #fff;
+    background: transparent;
     box-shadow: none;
 }
 </style>

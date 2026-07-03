@@ -15,6 +15,7 @@
                     :clue-id="clueId"
                     :loading="loading"
                     :can-update="canUpdate"
+                    :hide-enroll-action="hideEnrollAction"
                     :log-list="logList"
                     :editing="editing"
                     :saving="saving"
@@ -166,10 +167,12 @@ const tagDialogVisible = ref(false)
 const tagForm = reactive({ tagIds: [] as number[] })
 const readonlyMode = ref(false)
 const allowReadonlyEditActions = ref(false)
+const hideEnrollAction = ref(false)
 
 type OpenOptions = {
     readonly?: boolean
     allowReadonlyEditActions?: boolean
+    hideEnrollAction?: boolean
 }
 
 const loadOptions = async () => {
@@ -474,6 +477,7 @@ const open = async (id: number, options: OpenOptions = {}) => {
     clueId.value = id
     readonlyMode.value = !!options.readonly
     allowReadonlyEditActions.value = !!options.allowReadonlyEditActions
+    hideEnrollAction.value = !!options.hideEnrollAction
     appointmentPagination.pageNo = 1
     orderPagination.pageNo = 1
     ticketPagination.pageNo = 1
