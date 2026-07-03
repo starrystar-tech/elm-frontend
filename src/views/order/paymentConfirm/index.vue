@@ -105,17 +105,18 @@ const {
     register: tableRegister
 } = useTable<OrderApi.OrderPayRecordRespVO>({
     getListApi: async (params) => {
-        const { payTimeRange = [], payAmountRange = [], ...rest } = params
+        const { payTimeRange = [], payAmountRange = [], confirmStatus, ...rest } = params
         return await OrderApi.getPayConfirmPage({
             ...rest,
+            confirmStatus:
+                confirmStatus === '' || confirmStatus === null || confirmStatus === undefined
+                    ? undefined
+                    : Number(confirmStatus),
             beginPayTime: payTimeRange[0],
             endPayTime: payTimeRange[1],
             minPayAmount: payAmountRange[0] ? Number(payAmountRange[0]) : undefined,
             maxPayAmount: payAmountRange[1] ? Number(payAmountRange[1]) : undefined
         })
-    },
-    defaultParams: {
-        confirmStatus: 10
     }
 })
 

@@ -36,7 +36,7 @@
                 <el-button type="primary" plain @click="handlePay">支付</el-button>
                 <el-button type="warning" plain @click="handleRefund">退款</el-button>
                 <el-button type="danger" plain @click="handleVoid">作废</el-button>
-                <el-button type="success" plain @click="handleRepurchase">订单复购</el-button>
+                <el-button type="success" plain @click="handleRepurchase">复购激活</el-button>
             </template>
         </DetailHeroCard>
 
@@ -554,9 +554,13 @@ const handleVoid = async () => {
 }
 
 const handleRepurchase = async () => {
-    await ElMessageBox.confirm('确认基于当前订单创建复购订单吗？', '提示', { type: 'warning' })
+    await ElMessageBox.confirm(
+        '确认激活当前订单复购吗？激活后客户将加入复购客户，不会生成新订单。',
+        '提示',
+        { type: 'warning' }
+    )
     await OrderApi.repurchaseOrder(detail.value.id)
-    message.success('复购订单已生成')
+    message.success('订单复购已激活')
     await loadDetail()
 }
 

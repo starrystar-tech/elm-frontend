@@ -16,7 +16,12 @@
         <el-col class="px-16px mt-16px">
             <el-tabs v-model="activeTabName">
                 <el-tab-pane label="基本信息" name="basicInfo">
-                    <CustomerDetailsInfo :clue="clue" />
+                    <CustomerDetailsInfo
+                        :clue="clue"
+                        :student-info="studentInfo"
+                        :order-records="orderRecords"
+                        :ticket-records="ticketRecords"
+                    />
                 </el-tab-pane>
             </el-tabs>
             <CustomerDetailRecords
@@ -66,6 +71,7 @@ import * as AftersalesApi from '@/api/crm/aftersales'
 import * as ClueApi from '@/api/crm/clue'
 import * as CustomerDetailApi from '@/api/crm/customerDetail'
 import * as OrderApi from '@/api/crm/order'
+import type * as StudentCenterApi from '@/api/crm/studentCenter'
 import type { OutboundCallRecordVO } from '@/api/system/call/record'
 import type * as SmsLogApi from '@/api/system/sms/smsLog'
 import CustomerForm from '@/views/crm/customer/CustomerForm.vue'
@@ -82,6 +88,7 @@ const emit = defineEmits<{
 const drawerVisible = ref(false)
 const clueId = ref(0)
 const clue = ref<ClueApi.ClueVO>({} as ClueApi.ClueVO)
+const studentInfo = ref<Partial<StudentCenterApi.StudentCenterPageRespVO>>()
 const loading = ref(false)
 const activeTabName = ref('basicInfo')
 const formRef = ref<InstanceType<typeof CustomerForm>>()
@@ -123,7 +130,7 @@ const loadAppointmentRecords = async () => {
         pageNo: appointmentPagination.pageNo,
         pageSize: appointmentPagination.pageSize
     })
-    appointments.value = pageResp?.list || []
+    appointments.value = Array.isArray(pageResp?.list) ? pageResp.list : []
     appointmentPagination.total = Number(pageResp?.total || 0)
     return appointments.value
 }
@@ -135,7 +142,7 @@ const loadOrderRecords = async () => {
         pageSize: orderPagination.pageSize,
         clueId: clueId.value
     })
-    orderRecords.value = pageResp?.list || []
+    orderRecords.value = Array.isArray(pageResp?.list) ? pageResp.list : []
     orderPagination.total = Number(pageResp?.total || 0)
     return orderRecords.value
 }
@@ -146,7 +153,7 @@ const loadTicketRecords = async () => {
         pageSize: ticketPagination.pageSize,
         clueId: clueId.value
     })
-    ticketRecords.value = pageResp?.list || []
+    ticketRecords.value = Array.isArray(pageResp?.list) ? pageResp.list : []
     ticketPagination.total = Number(pageResp?.total || 0)
     return ticketRecords.value
 }
@@ -158,7 +165,7 @@ const loadTrackRecords = async () => {
         pageNo: trackPagination.pageNo,
         pageSize: trackPagination.pageSize
     })
-    trackList.value = pageResp?.list || []
+    trackList.value = Array.isArray(pageResp?.list) ? pageResp.list : []
     trackPagination.total = Number(pageResp?.total || 0)
     return trackList.value
 }
@@ -177,7 +184,7 @@ const loadSmsRecords = async () => {
         pageSize: smsPagination.pageSize,
         clueId: clueId.value
     })
-    smsRecords.value = sortByCreateTimeDesc(pageResp?.list || [])
+    smsRecords.value = sortByCreateTimeDesc(Array.isArray(pageResp?.list) ? pageResp.list : [])
     smsPagination.total = Number(pageResp?.total || 0)
     return smsRecords.value
 }
@@ -189,7 +196,7 @@ const loadOutboundCallRecords = async () => {
         pageNo: outboundCallPagination.pageNo,
         pageSize: outboundCallPagination.pageSize
     })
-    outboundCallRecords.value = pageResp?.list || []
+    outboundCallRecords.value = Array.isArray(pageResp?.list) ? pageResp.list : []
     outboundCallPagination.total = Number(pageResp?.total || 0)
     return outboundCallRecords.value
 }
@@ -239,8 +246,9 @@ const handleFormSuccess = async () => {
     emit('refresh')
 }
 
-const open = async (id: number) => {
+const open = async (id: number, row?: Partial<StudentCenterApi.StudentCenterPageRespVO>) => {
     clueId.value = id
+    studentInfo.value = row
     appointmentPagination.pageNo = 1
     orderPagination.pageNo = 1
     ticketPagination.pageNo = 1

@@ -288,12 +288,7 @@
                                 </el-table-column>
                                 <el-table-column label="预约价格" min-width="120">
                                     <template #default="{ row }">
-                                        {{
-                                            row.appointmentPrice !== undefined &&
-                                            row.appointmentPrice !== null
-                                                ? row.appointmentPrice
-                                                : '--'
-                                        }}
+                                        {{ formatAmount(row.appointmentPrice) }}
                                     </template>
                                 </el-table-column>
                                 <el-table-column label="记录人" min-width="120">
@@ -716,7 +711,7 @@
                         label-position="right"
                         class="consult-form"
                     >
-                        <el-form-item label="是否有效" prop="consultResult" required>
+                        <el-form-item label="是否有效" prop="consultResult">
                             <el-radio-group v-model="consultForm.consultResult">
                                 <el-radio
                                     v-for="item in consultResultOptions"
@@ -731,7 +726,6 @@
                             v-if="showConsultType"
                             label="操作类型"
                             prop="consultType"
-                            required
                         >
                             <el-radio-group v-model="consultForm.consultType">
                                 <el-radio
@@ -747,7 +741,6 @@
                             v-if="showInvalidFields"
                             label="无效类型"
                             prop="invalidType"
-                            required
                         >
                             <el-select
                                 v-model="consultForm.invalidType"
@@ -769,7 +762,6 @@
                             label="无效原因"
                             prop="invalidReason"
                             class="is-full"
-                            required
                         >
                             <el-input
                                 v-model="consultForm.invalidReason"
@@ -782,7 +774,6 @@
                             v-if="showNotConnectedFields"
                             label="未接通原因"
                             prop="notConnectedReason"
-                            required
                         >
                             <el-select
                                 v-model="consultForm.notConnectedReason"
@@ -801,7 +792,7 @@
                         </el-form-item>
                         <el-row :gutter="20" v-if="showFollowUpFields">
                             <el-col :span="16">
-                                <el-form-item label="下次回访时间" prop="nextFollowTime" required>
+                                <el-form-item label="下次回访时间" prop="nextFollowTime">
                                     <el-date-picker
                                         v-model="consultForm.nextFollowTime"
                                         type="datetime"
@@ -863,7 +854,6 @@
                                     v-if="showAppointmentFields"
                                     label="商品选择"
                                     prop="productId"
-                                    required
                                 >
                                     <el-input
                                         :model-value="selectedConsultProductName"
@@ -876,7 +866,7 @@
                         </el-row>
                         <el-row :gutter="20" v-if="showAppointmentFields">
                             <el-col :span="12">
-                                <el-form-item label="预约时间" prop="appointmentTime" required>
+                                <el-form-item label="预约时间" prop="appointmentTime">
                                     <el-date-picker
                                         v-model="consultForm.appointmentTime"
                                         type="datetime"
@@ -896,7 +886,8 @@
                             <el-input-number
                                 v-model="consultForm.appointmentPrice"
                                 :min="0"
-                                :step="1"
+                                :precision="2"
+                                :step="0.01"
                                 controls-position="right"
                                 style="width: 100%"
                             />
@@ -1044,6 +1035,7 @@ import * as UserApi from '@/api/system/user'
 import { DICT_TYPE, getDictLabel, getIntDictOptions } from '@/utils/dict'
 import { resolveTimestamp } from '@/utils/formatTime'
 import { isValidChineseIdCard } from '@/utils/idCard'
+import { yuanToFen } from '@/utils'
 import { getAftersalesStatusLabel } from '@/views/aftersales/config'
 import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
 import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
@@ -1195,6 +1187,9 @@ const showFollowUpFields = computed(
 const showAppointmentFields = computed(
     () => Number(consultForm.consultResult) === 1 && Number(consultForm.consultType) === 2
 )
+const showNeedRemindFields = computed(
+    () => showFollowUpFields.value || showAppointmentFields.value
+)
 const showInvalidFields = computed(() => Number(consultForm.consultResult) === 2)
 const showNotConnectedFields = computed(() => Number(consultForm.consultResult) === 3)
 
@@ -1264,6 +1259,7 @@ const editRules = reactive({
 const consultRules = reactive({
     consultType: [
         {
+            required: true,
             validator: (_rule: any, value: number | undefined, callback: any) => {
                 if (showConsultType.value && !value) {
                     callback(new Error('请选择操作类型'))
@@ -1276,6 +1272,7 @@ const consultRules = reactive({
     ],
     consultResult: [
         {
+            required: true,
             validator: (_rule: any, value: number | undefined, callback: any) => {
                 if (!value) {
                     callback(new Error('请选择是否有效'))
@@ -1288,6 +1285,7 @@ const consultRules = reactive({
     ],
     nextFollowTime: [
         {
+            required: true,
             validator: (_rule: any, value: string | undefined, callback: any) => {
                 if (showFollowUpFields.value && !value) {
                     callback(new Error('请选择下次回访时间'))
@@ -1300,6 +1298,7 @@ const consultRules = reactive({
     ],
     appointmentTime: [
         {
+            required: true,
             validator: (_rule: any, value: string | undefined, callback: any) => {
                 if (showAppointmentFields.value && !value) {
                     callback(new Error('请选择预约时间'))
@@ -1312,6 +1311,7 @@ const consultRules = reactive({
     ],
     productId: [
         {
+            required: true,
             validator: (_rule: any, value: number | undefined, callback: any) => {
                 if (showAppointmentFields.value && !value) {
                     callback(new Error('请选择商品'))
@@ -1324,6 +1324,7 @@ const consultRules = reactive({
     ],
     invalidType: [
         {
+            required: true,
             validator: (_rule: any, value: number | undefined, callback: any) => {
                 if (showInvalidFields.value && !value) {
                     callback(new Error('请选择无效类型'))
@@ -1336,6 +1337,7 @@ const consultRules = reactive({
     ],
     invalidReason: [
         {
+            required: true,
             validator: (_rule: any, value: string | undefined, callback: any) => {
                 if (showInvalidFields.value && !String(value || '').trim()) {
                     callback(new Error('请输入无效原因'))
@@ -1348,6 +1350,7 @@ const consultRules = reactive({
     ],
     notConnectedReason: [
         {
+            required: true,
             validator: (_rule: any, value: number | undefined, callback: any) => {
                 if (showNotConnectedFields.value && !value) {
                     callback(new Error('请选择未接通原因'))
@@ -1373,6 +1376,12 @@ const formatDateTime = (value?: string | number | null) => {
 const formatConsultValue = (value: unknown) => {
     if (value === null || value === undefined || value === '') return ''
     return String(value)
+}
+
+const formatAppointmentPriceText = (value: unknown) => {
+    if (value === null || value === undefined || value === '') return ''
+    const numericValue = Number(value)
+    return Number.isFinite(numericValue) ? formatAmount(numericValue) : String(value)
 }
 
 const deptNameMap = ref<Record<number, string>>({})
@@ -1559,8 +1568,8 @@ const buildConsultTrackLines = (content?: string) => {
                 ? `商品分类编号：${parsed.productCategoryId}`
                 : '',
             formatConsultValue(parsed.productId) ? `商品编号：${parsed.productId}` : '',
-            formatConsultValue(parsed.appointmentPrice)
-                ? `预约价格：${parsed.appointmentPrice}`
+            formatAppointmentPriceText(parsed.appointmentPrice)
+                ? `预约价格：${formatAppointmentPriceText(parsed.appointmentPrice)}`
                 : '',
             parsed.appointmentTime ? `预约时间：${formatDateTime(parsed.appointmentTime)}` : '',
             parsed.nextFollowTime ? `下次回访时间：${formatDateTime(parsed.nextFollowTime)}` : '',
@@ -1899,11 +1908,16 @@ const submitConsult = async () => {
         projectId: showAppointmentFields.value ? consultForm.projectId : undefined,
         productCategoryId: showAppointmentFields.value ? consultForm.productCategoryId : undefined,
         productId: showAppointmentFields.value ? consultForm.productId : undefined,
-        appointmentPrice: showAppointmentFields.value ? consultForm.appointmentPrice : undefined,
+        appointmentPrice:
+            showAppointmentFields.value &&
+            consultForm.appointmentPrice !== undefined &&
+            consultForm.appointmentPrice !== null
+                ? yuanToFen(consultForm.appointmentPrice)
+                : undefined,
         appointmentTime:
             showAppointmentFields.value ? consultForm.appointmentTime || undefined : undefined,
         nextFollowTime: showFollowUpFields.value ? consultForm.nextFollowTime || undefined : undefined,
-        needRemind: showFollowUpFields.value ? consultForm.needRemind : undefined,
+        needRemind: showNeedRemindFields.value ? consultForm.needRemind : undefined,
         invalidType: showInvalidFields.value ? consultForm.invalidType : undefined,
         invalidReason: showInvalidFields.value ? consultForm.invalidReason.trim() || undefined : undefined,
         notConnectedReason: showNotConnectedFields.value ? consultForm.notConnectedReason : undefined,

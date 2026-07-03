@@ -19,7 +19,7 @@
 </template>
 
 <script lang="ts" setup>
-import * as ClueApi from '@/api/crm/clue'
+import * as StudentCenterApi from '@/api/crm/studentCenter'
 import HeadteacherSelect from '@/components/HeadteacherSelect.vue'
 
 const emit = defineEmits(['success'])
@@ -28,7 +28,7 @@ const message = useMessage()
 const dialogVisible = ref(false)
 const formLoading = ref(false)
 const formRef = ref()
-const clueIds = ref<number[]>([])
+const orderIds = ref<number[]>([])
 const formData = ref({
     headteacherUserId: undefined as number | undefined
 })
@@ -39,7 +39,7 @@ const formRules = reactive({
 const open = async (ids: number[]) => {
     dialogVisible.value = true
     resetForm()
-    clueIds.value = ids
+    orderIds.value = ids
 }
 
 const submitForm = async () => {
@@ -47,8 +47,8 @@ const submitForm = async () => {
     if (!valid) return
     formLoading.value = true
     try {
-        await ClueApi.batchUpdateHeadteacher({
-            clueIds: clueIds.value,
+        await StudentCenterApi.batchUpdateHeadteacher({
+            orderIds: orderIds.value,
             headteacherUserId: formData.value.headteacherUserId!
         })
         message.success('设置班主任成功')
@@ -60,7 +60,7 @@ const submitForm = async () => {
 }
 
 const resetForm = () => {
-    clueIds.value = []
+    orderIds.value = []
     formData.value = {
         headteacherUserId: undefined
     }

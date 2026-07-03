@@ -80,6 +80,11 @@ export interface StudentCenterUpdateReqVO {
     studentRemark?: string
 }
 
+export interface StudentCenterBatchUpdateHeadteacherReqVO {
+    orderIds: number[]
+    headteacherUserId: number
+}
+
 export interface StudentCourseStatsReqVO {
     beginEnrollTime: string
     endEnrollTime: string
@@ -118,11 +123,19 @@ export const STUDENT_COURSE_STATUS_OPTIONS = [
     { label: '已开课', value: 2 }
 ]
 
+export const STUDENT_INSTALLMENT_STATUS_OPTIONS = [
+    { label: '分期', value: 1 },
+    { label: '全款', value: 2 }
+]
+
 export const getStudentServiceStatusLabel = (value?: number) =>
     STUDENT_SERVICE_STATUS_OPTIONS.find((item) => item.value === Number(value))?.label || '--'
 
 export const getStudentCourseStatusLabel = (value?: number) =>
     STUDENT_COURSE_STATUS_OPTIONS.find((item) => item.value === Number(value))?.label || '--'
+
+export const getStudentInstallmentStatusLabel = (value?: number) =>
+    STUDENT_INSTALLMENT_STATUS_OPTIONS.find((item) => item.value === Number(value))?.label || '--'
 
 export const getMyStudentPage = (params: StudentCenterPageReqVO) => {
     return request.get<PageResult<StudentCenterPageRespVO>>({
@@ -146,16 +159,20 @@ export const updateStudent = (data: StudentCenterUpdateReqVO) => {
     return request.put<boolean>({ url: '/crm/student-center/update', data })
 }
 
+export const batchUpdateHeadteacher = (data: StudentCenterBatchUpdateHeadteacherReqVO) => {
+    return request.put<boolean>({ url: '/crm/student-center/batch-update-headteacher', data })
+}
+
 export const getStudentCourseStats = (params: StudentCourseStatsReqVO) => {
     return request.get<StudentCourseStatsRespVO[]>({
-        url: '/crm/student-center/stats/headteacher-student-course',
+        url: '/crm/student-center/stats/student-course',
         params
     })
 }
 
 export const getApplyProjectYearlyStats = (params: StudentProjectYearlyStatsReqVO) => {
     return request.get<StudentProjectYearlyStatsRespVO[]>({
-        url: '/crm/student-center/stats/headteacher-apply-project-yearly',
+        url: '/crm/student-center/stats/apply-project-yearly',
         params
     })
 }

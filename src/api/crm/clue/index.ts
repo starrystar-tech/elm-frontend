@@ -51,6 +51,21 @@ export interface ClueVO {
     currentDepartmentName?: string
     headteacherUserId?: number
     headteacherName?: string
+    applyLevel?: string
+    applySchool?: string
+    applyMajor?: string
+    applyProjectId?: number
+    applyProjectName?: string
+    installmentStatus?: number
+    finalPaymentChannel?: string
+    ownerDeptId?: number
+    ownerDeptName?: string
+    campusId?: number
+    campusName?: string
+    aftersalesStatus?: number
+    aftersalesResult?: number
+    householdProvince?: string
+    applyProvince?: string
     ownerUserId?: number
     ownerUserName?: string
     ownerUserDept?: string

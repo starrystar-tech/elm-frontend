@@ -27,11 +27,7 @@
                     </el-table-column>
                     <el-table-column label="预约价格" min-width="120">
                         <template #default="{ row }">
-                            {{
-                                row.appointmentPrice !== undefined && row.appointmentPrice !== null
-                                    ? row.appointmentPrice
-                                    : '--'
-                            }}
+                            {{ formatAmount(row.appointmentPrice) }}
                         </template>
                     </el-table-column>
                     <el-table-column label="记录人" min-width="120">
@@ -585,6 +581,12 @@ const formatConsultValue = (value: unknown) => {
     return String(value)
 }
 
+const formatAppointmentPriceText = (value: unknown) => {
+    if (value === null || value === undefined || value === '') return ''
+    const numericValue = Number(value)
+    return Number.isFinite(numericValue) ? formatAmount(numericValue) : String(value)
+}
+
 const formatTrackFieldValue = (key: string, value: unknown) => {
     if (value === null || value === undefined || value === '') return ''
     if (key === 'clueId' || key === 'clueIds') {
@@ -668,8 +670,8 @@ const buildConsultTrackLines = (content?: string) => {
                 ? `商品分类编号：${parsed.productCategoryId}`
                 : '',
             formatConsultValue(parsed.productId) ? `商品编号：${parsed.productId}` : '',
-            formatConsultValue(parsed.appointmentPrice)
-                ? `预约价格：${parsed.appointmentPrice}`
+            formatAppointmentPriceText(parsed.appointmentPrice)
+                ? `预约价格：${formatAppointmentPriceText(parsed.appointmentPrice)}`
                 : '',
             parsed.appointmentTime ? `预约时间：${formatDateTime(parsed.appointmentTime)}` : '',
             parsed.nextFollowTime ? `下次回访时间：${formatDateTime(parsed.nextFollowTime)}` : '',

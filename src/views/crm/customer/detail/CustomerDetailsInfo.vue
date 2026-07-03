@@ -50,6 +50,30 @@
                     }}</el-descriptions-item>
                 </el-descriptions>
             </el-collapse-item>
+            <el-collapse-item name="enrollInfo" class="p-10px">
+                <template #title>
+                    <span class="text-base font-bold">报考信息</span>
+                </template>
+                <el-descriptions :column="4">
+                    <el-descriptions-item label="班主任">{{ headteacherText }}</el-descriptions-item>
+                    <el-descriptions-item label="报名时间">{{ enrollTimeText }}</el-descriptions-item>
+                    <el-descriptions-item label="报考层次">{{ applyLevelText }}</el-descriptions-item>
+                    <el-descriptions-item label="报考院校">{{ applySchoolText }}</el-descriptions-item>
+                    <el-descriptions-item label="报考专业">{{ applyMajorText }}</el-descriptions-item>
+                    <el-descriptions-item label="报考项目">{{ applyProjectText }}</el-descriptions-item>
+                    <el-descriptions-item label="分期状态">{{ installmentStatusText }}</el-descriptions-item>
+                    <el-descriptions-item label="尾款渠道">{{ finalPaymentChannelText }}</el-descriptions-item>
+                    <el-descriptions-item label="报名分校">{{ campusNameText }}</el-descriptions-item>
+                    <el-descriptions-item label="售后状态">{{ aftersalesStatusText }}</el-descriptions-item>
+                    <el-descriptions-item label="售后结果">{{ aftersalesResultText }}</el-descriptions-item>
+                    <el-descriptions-item label="投诉标签">{{ complaintTagText }}</el-descriptions-item>
+                    <el-descriptions-item label="户籍省份">{{ householdProvinceText }}</el-descriptions-item>
+                    <el-descriptions-item label="报考省份">{{ applyProvinceText }}</el-descriptions-item>
+                    <el-descriptions-item label="服务状态">{{ serviceStatusText }}</el-descriptions-item>
+                    <el-descriptions-item label="开课状态">{{ courseStatusText }}</el-descriptions-item>
+                    <el-descriptions-item label="组别(归属人)">{{ ownerDeptText }}</el-descriptions-item>
+                </el-descriptions>
+            </el-collapse-item>
             <el-collapse-item name="systemInfo" class="p-10px">
                 <template #title>
                     <span class="text-base font-bold">系统信息</span>
@@ -63,7 +87,7 @@
                         clue.currentDepartmentName || '--'
                     }}</el-descriptions-item>
                     <el-descriptions-item label="创建时间">{{
-                        formatDate(clue.createTime) || '--'
+                        createTimeText
                     }}</el-descriptions-item>
                 </el-descriptions>
             </el-collapse-item>
@@ -72,16 +96,26 @@
 </template>
 
 <script lang="ts" setup>
+import type * as AftersalesApi from '@/api/crm/aftersales'
 import * as ClueApi from '@/api/crm/clue'
+import type * as OrderApi from '@/api/crm/order'
+import * as StudentCenterApi from '@/api/crm/studentCenter'
 import { formatDate } from '@/utils/formatTime'
+import {
+    getAftersalesResultLabel,
+    getAftersalesStatusLabel
+} from '@/views/aftersales/config'
 import { buildAreaLabel, buildOwnerDisplayName } from '@/views/crm/clue/listShared'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 
 const props = defineProps<{
     clue: ClueApi.ClueVO
+    studentInfo?: Partial<StudentCenterApi.StudentCenterPageRespVO>
+    orderRecords?: OrderApi.OrderPageRespVO[]
+    ticketRecords?: AftersalesApi.AftersalesRespVO[]
 }>()
 
-const activeNames = ref(['basicInfo', 'systemInfo'])
+const activeNames = ref(['basicInfo', 'enrollInfo', 'systemInfo'])
 
 const currentOwnerText = computed(() =>
     buildOwnerDisplayName(props.clue.currentOwnerName, props.clue.currentOwnerId)
@@ -141,4 +175,92 @@ const complaintTagText = computed(() => {
     const names = props.clue.complaintTagNames || []
     return names.length ? names.join('、') : '--'
 })
+
+const firstOrderRecord = computed(() => props.orderRecords?.[0])
+
+const latestTicketRecord = computed(() => {
+    const records = props.ticketRecords || []
+    if (!records.length) return undefined
+    return [...records].sort((a, b) => {
+        const timeA = new Date(a.processTime || a.createTime || 0).getTime()
+        const timeB = new Date(b.processTime || b.createTime || 0).getTime()
+        return timeB - timeA
+    })[0]
+})
+
+const getDisplayText = (...values: Array<string | number | null | undefined>) => {
+    for (const value of values) {
+        if (value === null || value === undefined) continue
+        const text = String(value).trim()
+        if (text) return text
+    }
+    return '--'
+}
+
+const applyLevelText = computed(() => getDisplayText(props.clue.applyLevel, props.studentInfo?.applyLevel))
+const applySchoolText = computed(() => getDisplayText(props.clue.applySchool, props.studentInfo?.applySchool))
+const applyMajorText = computed(() => getDisplayText(props.clue.applyMajor, props.studentInfo?.applyMajor))
+const applyProjectText = computed(() =>
+    getDisplayText(
+        props.clue.applyProjectName,
+        props.studentInfo?.applyProjectName,
+        props.studentInfo?.projectName,
+        firstOrderRecord.value?.projectName
+    )
+)
+const installmentStatusText = computed(() =>
+    StudentCenterApi.getStudentInstallmentStatusLabel(
+        props.clue.installmentStatus ??
+            props.studentInfo?.installmentStatus ??
+            firstOrderRecord.value?.installmentStatus
+    )
+)
+const finalPaymentChannelText = computed(() =>
+    getDisplayText(
+        props.clue.finalPaymentChannel,
+        props.studentInfo?.finalPaymentChannel,
+        firstOrderRecord.value?.finalPaymentChannel
+    )
+)
+const ownerDeptText = computed(() =>
+    getDisplayText(props.clue.ownerDeptName, props.studentInfo?.ownerDeptName, props.clue.currentDepartmentName)
+)
+const campusNameText = computed(() =>
+    getDisplayText(props.clue.campusName, props.studentInfo?.campusName, firstOrderRecord.value?.campusName)
+)
+const aftersalesStatusText = computed(() =>
+    getAftersalesStatusLabel(
+        props.clue.aftersalesStatus ??
+            props.studentInfo?.aftersalesStatus ??
+            latestTicketRecord.value?.status
+    )
+)
+const aftersalesResultText = computed(() =>
+    getAftersalesResultLabel(
+        props.clue.aftersalesResult ??
+            props.studentInfo?.aftersalesResult ??
+            latestTicketRecord.value?.aftersalesResult
+    )
+)
+const householdProvinceText = computed(() =>
+    getDisplayText(props.clue.householdProvince, props.studentInfo?.householdProvince)
+)
+const applyProvinceText = computed(() =>
+    getDisplayText(props.clue.applyProvince, props.studentInfo?.applyProvince)
+)
+const createTimeText = computed(() =>
+    props.clue.createTime ? formatDate(new Date(props.clue.createTime)) || '--' : '--'
+)
+const headteacherText = computed(() =>
+    getDisplayText(props.studentInfo?.headteacherUserName, props.clue.headteacherName)
+)
+const enrollTimeText = computed(() =>
+    getDisplayText(props.studentInfo?.enrollTime, firstOrderRecord.value?.enrollTime)
+)
+const serviceStatusText = computed(() =>
+    StudentCenterApi.getStudentServiceStatusLabel(props.studentInfo?.serviceStatus)
+)
+const courseStatusText = computed(() =>
+    StudentCenterApi.getStudentCourseStatusLabel(props.studentInfo?.courseStatus)
+)
 </script>

@@ -48,9 +48,9 @@
         </Search>
         <div class="action-btn-wrap flex items-center gap-2">
             <BaseButton plain @click="openExportDialog">导出</BaseButton>
-            <BaseButton type="primary" @click="handleBatchRepurchase">订单激活</BaseButton>
+            <BaseButton type="primary" @click="handleBatchRepurchase">复购激活</BaseButton>
             <el-tooltip
-                content="订单激活后，客户自动进入成单人复购列表，支持持续跟进与再次下单"
+                content="激活后客户将加入成单人复购列表，不会生成新订单"
                 placement="top"
             >
                 <Icon class="text-orange-400" icon="ep:question-filled" />
@@ -394,7 +394,7 @@ const handleBatchRepurchase = async () => {
     for (const row of selections) {
         await OrderApi.repurchaseOrder(row.id)
     }
-    message.success('复购订单已生成')
+    message.success('订单复购已激活')
     await tableMethods.getList()
 }
 

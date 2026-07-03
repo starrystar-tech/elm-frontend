@@ -63,7 +63,11 @@ import CustomerDetailDrawer from './detail/CustomerDetailDrawer.vue'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import { buildAreaLabel } from '@/views/crm/clue/listShared'
 import AftersalesForm from '@/views/aftersales/components/AftersalesForm.vue'
-import { AFTERSALES_SOURCE } from '@/views/aftersales/config'
+import {
+    AFTERSALES_SOURCE,
+    getAftersalesResultLabel,
+    getAftersalesStatusLabel
+} from '@/views/aftersales/config'
 import StudentEditForm from './StudentEditForm.vue'
 
 interface StudentSearchParams {
@@ -187,9 +191,9 @@ const syncSearchForm = (params: StudentSearchParams = {}) => {
     Object.assign(searchForm, params)
 }
 
-const openDetail = (clueId?: number) => {
-    if (!clueId) return
-    detailRef.value?.open(Number(clueId))
+const openDetail = (row?: StudentCenterApi.StudentCenterPageRespVO) => {
+    if (!row?.clueId) return
+    detailRef.value?.open(Number(row.clueId), row)
 }
 
 const registerTable = (table: any, elTable: any) => {
@@ -218,7 +222,7 @@ const handleSelectionChange = (rows: StudentCenterApi.StudentCenterPageRespVO[])
 }
 
 const openBatchHeadteacherForm = () => {
-    batchHeadteacherFormRef.value?.open(selectionList.value.map((item) => Number(item.clueId)))
+    batchHeadteacherFormRef.value?.open(selectionList.value.map((item) => Number(item.orderId)))
 }
 
 const handleBatchHeadteacherSuccess = async () => {
@@ -251,7 +255,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         fixed: 'left',
         slots: {
             default: (data) => (
-                <ElLink underline={false} type="primary" onClick={() => openDetail(data.row.clueId)}>
+                <ElLink underline={false} type="primary" onClick={() => openDetail(data.row)}>
                     {data.row.customerId || '--'}
                 </ElLink>
             )
@@ -300,6 +304,97 @@ const tableColumns = computed<TableColumn[]>(() => [
         }
     },
     {
+        field: 'applyLevel',
+        label: '报考层次',
+        minWidth: '120px',
+        showOverflowTooltip: true,
+        slots: { default: (data) => <span>{data.row.applyLevel || '--'}</span> }
+    },
+    {
+        field: 'applySchool',
+        label: '报考院校',
+        minWidth: '160px',
+        showOverflowTooltip: true,
+        slots: { default: (data) => <span>{data.row.applySchool || '--'}</span> }
+    },
+    {
+        field: 'applyMajor',
+        label: '报考专业',
+        minWidth: '160px',
+        showOverflowTooltip: true,
+        slots: { default: (data) => <span>{data.row.applyMajor || '--'}</span> }
+    },
+    {
+        field: 'applyProjectName',
+        label: '报考项目',
+        minWidth: '140px',
+        showOverflowTooltip: true,
+        slots: {
+            default: (data) => <span>{data.row.applyProjectName || data.row.projectName || '--'}</span>
+        }
+    },
+    {
+        field: 'installmentStatus',
+        label: '分期状态',
+        width: '100px',
+        slots: {
+            default: (data) => (
+                <span>{StudentCenterApi.getStudentInstallmentStatusLabel(data.row.installmentStatus)}</span>
+            )
+        }
+    },
+    {
+        field: 'finalPaymentChannel',
+        label: '尾款渠道',
+        minWidth: '140px',
+        showOverflowTooltip: true,
+        slots: { default: (data) => <span>{data.row.finalPaymentChannel || '--'}</span> }
+    },
+    {
+        field: 'ownerDeptName',
+        label: '组别(归属人)',
+        minWidth: '140px',
+        showOverflowTooltip: true,
+        slots: { default: (data) => <span>{data.row.ownerDeptName || '--'}</span> }
+    },
+    {
+        field: 'campusName',
+        label: '报名分校',
+        minWidth: '140px',
+        showOverflowTooltip: true,
+        slots: { default: (data) => <span>{data.row.campusName || '--'}</span> }
+    },
+    {
+        field: 'aftersalesStatus',
+        label: '售后状态',
+        width: '100px',
+        slots: {
+            default: (data) => <span>{getAftersalesStatusLabel(data.row.aftersalesStatus)}</span>
+        }
+    },
+    {
+        field: 'aftersalesResult',
+        label: '售后结果',
+        minWidth: '120px',
+        slots: {
+            default: (data) => <span>{getAftersalesResultLabel(data.row.aftersalesResult)}</span>
+        }
+    },
+    {
+        field: 'householdProvince',
+        label: '户籍省份',
+        minWidth: '120px',
+        showOverflowTooltip: true,
+        slots: { default: (data) => <span>{data.row.householdProvince || '--'}</span> }
+    },
+    {
+        field: 'applyProvince',
+        label: '报考省份',
+        minWidth: '120px',
+        showOverflowTooltip: true,
+        slots: { default: (data) => <span>{data.row.applyProvince || '--'}</span> }
+    },
+    {
         field: 'serviceStatus',
         label: '服务状态',
         width: '100px',
@@ -334,7 +429,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         slots: {
             default: (data) => (
                 <div class="flex items-center justify-center">
-                    <BaseButton link type="primary" onClick={() => openDetail(data.row.clueId)}>
+                    <BaseButton link type="primary" onClick={() => openDetail(data.row)}>
                         详情
                     </BaseButton>
                     <BaseButton link type="primary" onClick={() => openStudentEditForm(data.row)}>

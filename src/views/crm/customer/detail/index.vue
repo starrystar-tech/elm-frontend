@@ -10,7 +10,7 @@
         <el-col>
             <el-tabs v-model="activeTabName">
                 <el-tab-pane label="基本信息" name="basicInfo">
-                    <CustomerDetailsInfo :clue="clue" />
+                    <CustomerDetailsInfo :clue="clue" :order-records="orderRecords" :ticket-records="ticketRecords" />
                 </el-tab-pane>
             </el-tabs>
             <CustomerDetailRecords
@@ -116,7 +116,7 @@ const loadAppointmentRecords = async () => {
         pageNo: appointmentPagination.pageNo,
         pageSize: appointmentPagination.pageSize
     })
-    appointments.value = pageResp?.list || []
+    appointments.value = Array.isArray(pageResp?.list) ? pageResp.list : []
     appointmentPagination.total = Number(pageResp?.total || 0)
     return appointments.value
 }
@@ -128,7 +128,7 @@ const loadOrderRecords = async () => {
         pageSize: orderPagination.pageSize,
         clueId: clueId.value
     })
-    orderRecords.value = pageResp?.list || []
+    orderRecords.value = Array.isArray(pageResp?.list) ? pageResp.list : []
     orderPagination.total = Number(pageResp?.total || 0)
     return orderRecords.value
 }
@@ -139,7 +139,7 @@ const loadTicketRecords = async () => {
         pageSize: ticketPagination.pageSize,
         clueId: clueId.value
     })
-    ticketRecords.value = pageResp?.list || []
+    ticketRecords.value = Array.isArray(pageResp?.list) ? pageResp.list : []
     ticketPagination.total = Number(pageResp?.total || 0)
     return ticketRecords.value
 }
@@ -151,7 +151,7 @@ const loadTrackRecords = async () => {
         pageNo: trackPagination.pageNo,
         pageSize: trackPagination.pageSize
     })
-    trackList.value = pageResp?.list || []
+    trackList.value = Array.isArray(pageResp?.list) ? pageResp.list : []
     trackPagination.total = Number(pageResp?.total || 0)
     return trackList.value
 }
@@ -170,7 +170,7 @@ const loadSmsRecords = async () => {
         pageSize: smsPagination.pageSize,
         clueId: clueId.value
     })
-    smsRecords.value = sortByCreateTimeDesc(pageResp?.list || [])
+    smsRecords.value = sortByCreateTimeDesc(Array.isArray(pageResp?.list) ? pageResp.list : [])
     smsPagination.total = Number(pageResp?.total || 0)
     return smsRecords.value
 }
@@ -182,7 +182,7 @@ const loadOutboundCallRecords = async () => {
         pageNo: outboundCallPagination.pageNo,
         pageSize: outboundCallPagination.pageSize
     })
-    outboundCallRecords.value = pageResp?.list || []
+    outboundCallRecords.value = Array.isArray(pageResp?.list) ? pageResp.list : []
     outboundCallPagination.total = Number(pageResp?.total || 0)
     return outboundCallRecords.value
 }
