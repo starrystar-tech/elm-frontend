@@ -9,7 +9,11 @@
       >
         <!-- 左上角的 logo + 系统标题 -->
         <div class="relative flex items-center text-white">
-          <img :src="activeBrandConfig.logos.auth" :alt="brandTitle" class="mr-10px h-41px w-150px" />
+          <img
+            :src="activeBrandConfig.logos.auth"
+            :alt="brandTitle"
+            class="mr-10px h-41px w-150px object-contain"
+          />
           <span class="text-20px font-bold">{{ underlineToHump(brandTitle) }}</span>
         </div>
         <!-- 左边的背景图 + 欢迎语 -->
@@ -35,7 +39,11 @@
           class="flex items-center justify-between text-white at-2xl:justify-end at-xl:justify-end"
         >
           <div class="flex items-center at-2xl:hidden at-xl:hidden">
-            <img :src="activeBrandConfig.logos.auth" :alt="brandTitle" class="mr-10px h-41px w-150px" />
+            <img
+              :src="activeBrandConfig.logos.auth"
+              :alt="brandTitle"
+              class="mr-10px h-41px w-150px object-contain"
+            />
             <span class="text-20px font-bold">{{ underlineToHump(brandTitle) }}</span>
           </div>
           <div class="flex items-center justify-end space-x-10px h-48px">

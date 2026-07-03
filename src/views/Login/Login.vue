@@ -6,7 +6,7 @@
         <img
           :src="activeBrandConfig.logos.nav"
           :alt="appStore.getTitle || activeBrandConfig.title"
-          class="h-10 w-10 shrink-0"
+          class="h-10 w-10 shrink-0 object-contain"
         />
         <div class="flex flex-col justify-center leading-none">
           <span class="text-[22px] font-semibold text-[#111827]">{{ activeBrandConfig.title }}</span>
