@@ -243,8 +243,8 @@ const courseChartOptions = reactive<EChartsOption>({
     xAxis: { type: 'category' },
     yAxis: { type: 'value', name: '学员数' },
     series: [
-        { type: 'bar', name: '已开课' },
-        { type: 'bar', name: '未开课' }
+        { type: 'bar', name: '已开课', barMaxWidth: 34 },
+        { type: 'bar', name: '未开课', barMaxWidth: 34 }
     ]
 }) as EChartsOption
 
@@ -282,7 +282,7 @@ const projectChartOptions = reactive<EChartsOption>({
             overflow: 'truncate'
         }
     },
-    series: [{ type: 'bar', name: '服务学员数' }]
+    series: [{ type: 'bar', name: '服务学员数', barMaxWidth: 24 }]
 }) as EChartsOption
 
 const setDatasetSource = (option: EChartsOption, source: Record<string, unknown>[]) => {
