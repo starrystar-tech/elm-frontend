@@ -295,7 +295,7 @@
                             <el-option
                                 v-for="item in rootCategoryList"
                                 :key="item.id"
-                                :label="item.name"
+                                :label="item.label || item.name"
                                 :value="item.id!"
                             />
                         </el-select>
@@ -467,6 +467,45 @@ const outboundRouteList = ref([] as OutboundRouteApi.OutboundRouteVO[])
 const wecomMemberList = ref([] as WeworkContactApi.WeworkMemberSimpleVO[])
 const occupiedWecomKeys = ref<string[]>([])
 
+const formatCategoryLabel = (item: ProductCategoryApi.ProductCategoryVO) => {
+    return item.status === CommonStatusEnum.ENABLE ? item.name : `${item.name}（已下架）`
+}
+
+const toRootCategoryOption = (item: ProductCategoryApi.ProductCategoryVO) => ({
+    ...item,
+    label: formatCategoryLabel(item)
+})
+
+const appendMissingRootCategories = async (categoryIds: number[]) => {
+    if (!categoryIds.length) {
+        return
+    }
+    const existingIds = new Set(rootCategoryList.value.map((item) => Number(item.id)))
+    const missingIds = categoryIds.filter((id) => !existingIds.has(Number(id)))
+    if (!missingIds.length) {
+        return
+    }
+    const missingCategories = await Promise.all(
+        missingIds.map(async (id) => {
+            try {
+                return await ProductCategoryApi.getProductCategory(id)
+            } catch {
+                return null
+            }
+        })
+    )
+    const extraOptions = missingCategories
+        .filter(
+            (item): item is ProductCategoryApi.ProductCategoryVO =>
+                !!item && Number(item.level) === 1 && item.id !== undefined
+        )
+        .map(toRootCategoryOption)
+        .filter((item) => !existingIds.has(Number(item.id)))
+    if (extraOptions.length) {
+        rootCategoryList.value = [...rootCategoryList.value, ...extraOptions]
+    }
+}
+
 const corpOptions = computed(() => {
     const map = new Map<string, { corpId: string; corpName: string }>()
     wecomMemberList.value.forEach((item) => {
@@ -544,7 +583,9 @@ const open = async (type: string, id?: number, defaultDeptId?: number) => {
     weappList.value = weappData || []
     campusList.value = campusData || []
     areaTreeList.value = areaData || []
-    rootCategoryList.value = (categoryData || []).filter((item: any) => Number(item.level) === 1)
+    rootCategoryList.value = (categoryData || [])
+        .filter((item: ProductCategoryApi.ProductCategoryVO) => Number(item.level) === 1)
+        .map(toRootCategoryOption)
     outboundRouteList.value = routeData || []
     wecomMemberList.value = (wecomMembers || []).map((item: any) => ({
         corpId: item.corpId,
@@ -579,6 +620,7 @@ const open = async (type: string, id?: number, defaultDeptId?: number) => {
                 outboundRouteId: detail.outboundRouteId,
                 mobileCopyLimitTimes: detail.mobileCopyLimitTimes
             }
+            await appendMissingRootCategories(formData.value.categoryIds || [])
         } finally {
             formLoading.value = false
         }

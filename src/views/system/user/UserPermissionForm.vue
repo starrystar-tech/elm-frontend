@@ -57,7 +57,7 @@
                     <el-option
                         v-for="item in rootCategoryList"
                         :key="item.id"
-                        :label="item.name"
+                        :label="item.label || item.name"
                         :value="item.id!"
                     />
                 </el-select>
@@ -94,6 +94,7 @@ import * as AreaApi from '@/api/system/area'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as WeappApi from '@/api/system/weapp'
 import { compactAreaIds } from '@/utils/areaScope'
+import { CommonStatusEnum } from '@/utils/constants'
 import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
 
 defineOptions({ name: 'UserPermissionForm' })
@@ -107,6 +108,45 @@ const campusList = ref<CampusApi.CampusVO[]>([])
 const weappList = ref<WeappApi.WeappConfigVO[]>([])
 const areaTreeList = ref<any[]>([])
 const rootCategoryList = ref<any[]>([])
+
+const formatCategoryLabel = (item: ProductCategoryApi.ProductCategoryVO) => {
+    return item.status === CommonStatusEnum.ENABLE ? item.name : `${item.name}（已下架）`
+}
+
+const toRootCategoryOption = (item: ProductCategoryApi.ProductCategoryVO) => ({
+    ...item,
+    label: formatCategoryLabel(item)
+})
+
+const appendMissingRootCategories = async (categoryIds: number[]) => {
+    if (!categoryIds.length) {
+        return
+    }
+    const existingIds = new Set(rootCategoryList.value.map((item: any) => Number(item.id)))
+    const missingIds = categoryIds.filter((id) => !existingIds.has(Number(id)))
+    if (!missingIds.length) {
+        return
+    }
+    const missingCategories = await Promise.all(
+        missingIds.map(async (id) => {
+            try {
+                return await ProductCategoryApi.getProductCategory(id)
+            } catch {
+                return null
+            }
+        })
+    )
+    const extraOptions = missingCategories
+        .filter(
+            (item): item is ProductCategoryApi.ProductCategoryVO =>
+                !!item && Number(item.level) === 1 && item.id !== undefined
+        )
+        .map(toRootCategoryOption)
+        .filter((item) => !existingIds.has(Number(item.id)))
+    if (extraOptions.length) {
+        rootCategoryList.value = [...rootCategoryList.value, ...extraOptions]
+    }
+}
 
 const formData = ref({
     id: undefined as number | undefined,
@@ -133,9 +173,9 @@ const open = async (row: UserApi.UserVO) => {
         campusList.value = campusData || []
         areaTreeList.value = areaData || []
         weappList.value = weappData || []
-        rootCategoryList.value = (categoryData || []).filter(
-            (item: any) => Number(item.level) === 1
-        )
+        rootCategoryList.value = (categoryData || [])
+            .filter((item: ProductCategoryApi.ProductCategoryVO) => Number(item.level) === 1)
+            .map(toRootCategoryOption)
         formData.value = {
             id: detail.id,
             manageCompanyIds: detail.manageCompanyIds || [],
@@ -145,6 +185,7 @@ const open = async (row: UserApi.UserVO) => {
             permissionDeptIds: detail.permissionDeptIds || [],
             sessionArchiveDeptIds: detail.sessionArchiveDeptIds || []
         }
+        await appendMissingRootCategories(formData.value.categoryIds || [])
     } finally {
         loading.value = false
     }
