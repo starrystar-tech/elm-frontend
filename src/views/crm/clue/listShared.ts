@@ -107,6 +107,23 @@ export const buildOwnerDisplayName = (
   return Number(ownerId || 0) > 0 ? ownerName || fallback : '无归属人'
 }
 
+export const buildDeptOwnerDisplayName = (
+  deptName?: string | null,
+  ownerName?: string | null,
+  fallback = '--'
+) => {
+  const normalize = (value?: string | null) => {
+    const text = String(value || '').trim()
+    return text && text !== '--' ? text : ''
+  }
+  const deptText = normalize(deptName)
+  const ownerText = normalize(ownerName)
+  if (deptText && ownerText) {
+    return `${deptText}（${ownerText}）`
+  }
+  return deptText || ownerText || fallback
+}
+
 export const prependUnassignedOwnerOption = (options: UserOption[]) => {
   return [{ label: '无归属人', value: 0 }, ...options]
 }

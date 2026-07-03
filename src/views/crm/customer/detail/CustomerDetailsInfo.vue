@@ -105,7 +105,11 @@ import {
     getAftersalesResultLabel,
     getAftersalesStatusLabel
 } from '@/views/aftersales/config'
-import { buildAreaLabel, buildOwnerDisplayName } from '@/views/crm/clue/listShared'
+import {
+    buildAreaLabel,
+    buildDeptOwnerDisplayName,
+    buildOwnerDisplayName
+} from '@/views/crm/clue/listShared'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 
 const props = defineProps<{
@@ -223,7 +227,14 @@ const finalPaymentChannelText = computed(() =>
     )
 )
 const ownerDeptText = computed(() =>
-    getDisplayText(props.clue.ownerDeptName, props.studentInfo?.ownerDeptName, props.clue.currentDepartmentName)
+    buildDeptOwnerDisplayName(
+        getDisplayText(
+            props.clue.ownerDeptName,
+            props.studentInfo?.ownerDeptName,
+            props.clue.currentDepartmentName
+        ),
+        getDisplayText(props.studentInfo?.ownerUserName, firstOrderRecord.value?.ownerUserName, '')
+    )
 )
 const campusNameText = computed(() =>
     getDisplayText(props.clue.campusName, props.studentInfo?.campusName, firstOrderRecord.value?.campusName)

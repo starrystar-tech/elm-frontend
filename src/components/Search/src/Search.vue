@@ -379,6 +379,8 @@ const onEnterSearch = (event: KeyboardEvent) => {
   if (!target) return
   const tagName = target.tagName?.toUpperCase()
   if (tagName === 'TEXTAREA') return
+  event.preventDefault()
+  event.stopPropagation()
   search()
 }
 

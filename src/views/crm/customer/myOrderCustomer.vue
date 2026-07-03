@@ -47,7 +47,7 @@ import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import CustomerDetailDrawer from './detail/CustomerDetailDrawer.vue'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
-import { buildAreaLabel } from '@/views/crm/clue/listShared'
+import { buildAreaLabel, buildDeptOwnerDisplayName } from '@/views/crm/clue/listShared'
 import AftersalesForm from '@/views/aftersales/components/AftersalesForm.vue'
 import {
     AFTERSALES_SOURCE,
@@ -309,9 +309,15 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'ownerDeptName',
         label: '组别(归属人)',
-        minWidth: '140px',
+        minWidth: '190px',
         showOverflowTooltip: true,
-        slots: { default: (data) => <span>{data.row.ownerDeptName || '--'}</span> }
+        slots: {
+            default: (data) => (
+                <span>
+                    {buildDeptOwnerDisplayName(data.row.ownerDeptName, data.row.ownerUserName)}
+                </span>
+            )
+        }
     },
     {
         field: 'campusName',

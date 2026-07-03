@@ -53,13 +53,14 @@ export interface StudentCenterPageRespVO {
     finalPaymentChannel?: string
     ownerDeptId?: number
     ownerDeptName?: string
+    ownerUserName?: string
     campusId?: number
     campusName?: string
     payableAmount?: number
     paidAmount?: number
     refundAmount?: number
-    aftersalesStatus?: number
-    aftersalesResult?: number
+    aftersalesStatus?: number | null
+    aftersalesResult?: number | null
     householdProvince?: string
     applyProvince?: string
     serviceStatus?: number

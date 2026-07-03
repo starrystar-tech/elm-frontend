@@ -54,8 +54,8 @@ export const dateRangeDefaultTime = [
 export const getAftersalesPriorityLabel = (value?: number) =>
     value === undefined ? '--' : getDictLabel(DICT_TYPE.CRM_AFTERSALES_PRIORITY, value) || '--'
 
-export const getAftersalesStatusLabel = (value?: number) =>
-    value === undefined ? '--' : getOptionLabel(AFTERSALES_STATUS_OPTIONS, Number(value))
+export const getAftersalesStatusLabel = (value?: number | null) =>
+    value == null ? '--' : getOptionLabel(AFTERSALES_STATUS_OPTIONS, Number(value))
 
 export const getAftersalesSourceLabel = (value?: number) =>
     value === undefined ? '--' : getOptionLabel(AFTERSALES_SOURCE_OPTIONS, Number(value))
