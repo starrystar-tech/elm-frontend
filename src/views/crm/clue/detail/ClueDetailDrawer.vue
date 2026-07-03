@@ -52,6 +52,7 @@
                     :outbound-call-page-no="outboundCallPagination.pageNo"
                     :outbound-call-page-size="outboundCallPagination.pageSize"
                     :readonly="readonlyMode"
+                    :allow-readonly-edit-actions="allowReadonlyEditActions"
                     @edit="openForm"
                     @cancel-edit="cancelEdit"
                     @save="handleSave"
@@ -164,9 +165,11 @@ const smsPagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
 const tagDialogVisible = ref(false)
 const tagForm = reactive({ tagIds: [] as number[] })
 const readonlyMode = ref(false)
+const allowReadonlyEditActions = ref(false)
 
 type OpenOptions = {
     readonly?: boolean
+    allowReadonlyEditActions?: boolean
 }
 
 const loadOptions = async () => {
@@ -470,6 +473,7 @@ const submitTag = async () => {
 const open = async (id: number, options: OpenOptions = {}) => {
     clueId.value = id
     readonlyMode.value = !!options.readonly
+    allowReadonlyEditActions.value = !!options.allowReadonlyEditActions
     appointmentPagination.pageNo = 1
     orderPagination.pageNo = 1
     ticketPagination.pageNo = 1

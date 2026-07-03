@@ -444,6 +444,7 @@ const formRules = reactive<FormRules>({
     username: [{ required: true, message: '用户名称不能为空', trigger: 'blur' }],
     nickname: [{ required: true, message: '用户昵称不能为空', trigger: 'blur' }],
     password: [{ required: true, message: '用户密码不能为空', trigger: 'blur' }],
+    deptId: [{ required: true, message: '请选择归属部门', trigger: 'change' }],
     email: [{ type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }],
     mobile: [
         {
@@ -509,11 +510,14 @@ const removeWecomBindRow = (index: number) => {
     formData.value.wecomBindList.splice(index, 1)
 }
 
-const open = async (type: string, id?: number) => {
+const open = async (type: string, id?: number, defaultDeptId?: number) => {
     dialogVisible.value = true
     dialogTitle.value = type === 'update' ? '编辑用户' : t('action.' + type) + '用户'
     formType.value = type
     resetForm()
+    if (type === 'create' && defaultDeptId) {
+        formData.value.deptId = defaultDeptId
+    }
     formRenderKey.value += 1
 
     const [

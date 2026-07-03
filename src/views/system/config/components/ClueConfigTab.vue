@@ -10,7 +10,7 @@
                     <span>{{ item.tailText }}</span>
                 </div>
                 <div class="line-item">
-                    <span>累计外呼时长达到</span>
+                    <span>单次外呼时长达到</span>
                     <el-input-number
                         v-model="autoReturnVisitCallDurationSeconds"
                         :min="0"

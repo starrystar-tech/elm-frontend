@@ -270,7 +270,7 @@ const roleNameMap = computed(() => {
 })
 
 const openForm = (type: string, id?: number) => {
-    formRef.value?.open(type, id)
+    formRef.value?.open(type, id, type === 'create' ? deptId.value : undefined)
 }
 
 const handleImport = () => {

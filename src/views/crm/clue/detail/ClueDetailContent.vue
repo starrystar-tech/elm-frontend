@@ -25,8 +25,8 @@
                     <el-button plain @click="emit('sms')">短信</el-button>
                     <el-button v-if="!hideEnrollAction" plain @click="emit('enroll')">报名</el-button>
                     <el-button plain @click="emit('release')">释放</el-button>
-                    <el-button plain @click="emit('tag')">加标签</el-button>
                 </template>
+                <el-button v-if="showTagAction" plain @click="emit('tag')">加标签</el-button>
             </template>
         </DetailHeroCard>
 
@@ -35,7 +35,7 @@
                 <section class="clue-section" v-loading="loading">
                     <div class="clue-section__title">
                         <span>基本信息</span>
-                        <div v-if="canUpdate && !readonlyMode" class="clue-section__actions">
+                        <div v-if="canUpdate && showEditAction" class="clue-section__actions">
                             <template v-if="!editing">
                                 <el-button link type="primary" @click="emit('edit')"
                                     >编辑</el-button
@@ -1100,10 +1100,14 @@ const props = defineProps<{
     outboundCallPageSize?: number
     hideEnrollAction?: boolean
     readonly?: boolean
+    allowReadonlyEditActions?: boolean
 }>()
 
 const route = useRoute()
 const readonlyMode = computed(() => !!props.readonly)
+const allowReadonlyEditActions = computed(() => !!props.allowReadonlyEditActions)
+const showEditAction = computed(() => !readonlyMode.value || allowReadonlyEditActions.value)
+const showTagAction = computed(() => !readonlyMode.value || allowReadonlyEditActions.value)
 const hideEnrollAction = computed(
     () =>
         readonlyMode.value ||

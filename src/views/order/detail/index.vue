@@ -315,7 +315,7 @@
                             }}</template>
                         </el-table-column>
                         <el-table-column prop="confirmResult" label="确认结果" min-width="140" />
-                        <el-table-column label="操作" min-width="100">
+                        <el-table-column label="操作" min-width="100" fixed="right">
                             <template #default="{ row }">
                                 <el-button
                                     v-if="row.confirmStatus === 10"
