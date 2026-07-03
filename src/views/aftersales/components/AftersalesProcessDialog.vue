@@ -11,18 +11,18 @@
                     />
                 </el-select>
             </el-form-item>
-            <el-form-item v-if="formData.aftersalesResult === 3" label="退款金额" prop="refundAmount">
+            <el-form-item v-if="showRetainAmount" label="挽单金额" prop="retainAmount">
                 <el-input-number
-                    v-model="formData.refundAmount"
+                    v-model="formData.retainAmount"
                     :min="0"
                     :precision="2"
                     controls-position="right"
                     class="!w-full"
                 />
             </el-form-item>
-            <el-form-item v-if="formData.aftersalesResult === 2" label="挽单金额" prop="retainAmount">
+            <el-form-item v-if="showRefundAmount" label="退款金额" prop="refundAmount">
                 <el-input-number
-                    v-model="formData.retainAmount"
+                    v-model="formData.refundAmount"
                     :min="0"
                     :precision="2"
                     controls-position="right"
@@ -65,8 +65,39 @@ const formData = ref<AftersalesApi.AftersalesProcessReqVO>({
     refundAmount: undefined,
     retainAmount: undefined
 })
+const showRefundAmount = computed(() => formData.value.aftersalesResult === 3)
+const showRetainAmount = computed(() =>
+    formData.value.aftersalesResult === 2 || formData.value.aftersalesResult === 3
+)
+
+const validateRefundAmount = (_rule: any, value: number | undefined, callback: (error?: Error) => void) => {
+    if (!showRefundAmount.value) {
+        callback()
+        return
+    }
+    if (value === undefined || value === null) {
+        callback(new Error('请输入退款金额'))
+        return
+    }
+    callback()
+}
+
+const validateRetainAmount = (_rule: any, value: number | undefined, callback: (error?: Error) => void) => {
+    if (!showRetainAmount.value) {
+        callback()
+        return
+    }
+    if (value === undefined || value === null) {
+        callback(new Error('请输入挽单金额'))
+        return
+    }
+    callback()
+}
+
 const formRules = reactive({
     aftersalesResult: [{ required: true, message: '请选择处理结果', trigger: 'change' }],
+    refundAmount: [{ validator: validateRefundAmount, trigger: 'blur' }],
+    retainAmount: [{ validator: validateRetainAmount, trigger: 'blur' }],
     processResult: [{ max: 500, message: '备注长度不能超过 500 个字符', trigger: 'blur' }]
 })
 
@@ -85,6 +116,15 @@ const open = (row: AftersalesApi.AftersalesRespVO) => {
 }
 defineExpose({ open })
 
+watch(
+    () => formData.value.aftersalesResult,
+    () => {
+        nextTick(() => {
+            formRef.value?.clearValidate?.(['refundAmount', 'retainAmount'])
+        })
+    }
+)
+
 const submitForm = async () => {
     await formRef.value.validate()
     formLoading.value = true
@@ -93,8 +133,8 @@ const submitForm = async () => {
             id: formData.value.id,
             aftersalesResult: formData.value.aftersalesResult,
             processResult: formData.value.processResult?.trim() || undefined,
-            refundAmount: formData.value.aftersalesResult === 3 ? formData.value.refundAmount || 0 : undefined,
-            retainAmount: formData.value.aftersalesResult === 2 ? formData.value.retainAmount || 0 : undefined
+            refundAmount: showRefundAmount.value ? formData.value.refundAmount || 0 : undefined,
+            retainAmount: showRetainAmount.value ? formData.value.retainAmount || 0 : undefined
         })
         message.success('处理成功')
         dialogVisible.value = false
