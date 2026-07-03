@@ -52,7 +52,7 @@ export const BRAND_CONFIGS: Record<BrandKey, BrandConfig> = {
         },
         copyrightLines: [
             'Copyright © 2025-2026 fx01.cn. All Rights Reserved',
-            '武汉高谷教育科技有限责任公司版权所有 鄂ICP备2022019819号-1'
+            '武汉高谷教育科技有限责任公司版权所有 鄂ICP备2026033584号'
         ]
     }
 }

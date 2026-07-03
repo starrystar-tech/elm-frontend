@@ -78,7 +78,7 @@ watch(
         >
             <img
                 :class="[
-                    'h-[34px] w-[34px] shrink-0 object-cover',
+                    'block h-[34px] w-auto shrink-0 max-w-none',
                     {
                         'rounded-10px shadow-[0_3px_12px_rgba(22,119,255,0.18)]':
                             !isTopHeaderLayout,
