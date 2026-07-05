@@ -33,7 +33,9 @@
                                     formattedCallDuration
                                 }}</strong>
                             </div>
-                            <div class="status-hint">当前默认走 wss://sip.bgwa.cn:7443</div>
+                            <div class="status-hint">
+                                当前默认走 {{ defaultBrowserPhoneConfig.wsServer }}
+                            </div>
                         </div>
                     </div>
                 </el-card>
@@ -94,7 +96,7 @@
                                 <el-form-item label="WSS 地址">
                                     <el-input
                                         v-model="browserForm.wsServer"
-                                        placeholder="wss://sip.bgwa.cn"
+                                        :placeholder="defaultBrowserPhoneConfig.wsServer"
                                     />
                                 </el-form-item>
                             </el-col>
@@ -102,7 +104,7 @@
                                 <el-form-item label="SIP 域名">
                                     <el-input
                                         v-model="browserForm.domain"
-                                        placeholder="60.205.112.131"
+                                        :placeholder="defaultBrowserPhoneConfig.domain"
                                     />
                                 </el-form-item>
                             </el-col>
@@ -188,7 +190,8 @@
                                 挂断
                             </el-button>
                             <span class="soft-note">
-                                来电或通话没有声音时，优先检查浏览器麦克风权限、`sip.bgwa.cn`
+                                来电或通话没有声音时，优先检查浏览器麦克风权限、
+                                <code>{{ defaultSipHost }}</code>
                                 证书是否有效，以及 Nginx 到 `5066` 的反代是否正常。
                             </span>
                         </div>
@@ -304,6 +307,7 @@
 <script lang="ts" setup>
 import type { FormInstance, FormRules } from 'element-plus'
 import { testDialInternalCall, type CallTestDialReqVO, type CallTestDialRespVO } from '@/api/system/call'
+import { activeBrandConfig } from '@/config/brand'
 import { useBrowserPhone } from '@/hooks/web/useBrowserPhone'
 import { useUserStore } from '@/store/modules/user'
 
@@ -313,6 +317,14 @@ const userStore = useUserStore()
 const message = useMessage()
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
+const defaultBrowserPhoneConfig = activeBrandConfig.browserPhone
+const defaultSipHost = computed(() => {
+    try {
+        return new URL(defaultBrowserPhoneConfig.wsServer).hostname
+    } catch {
+        return defaultBrowserPhoneConfig.wsServer
+    }
+})
 
 const {
     profile,

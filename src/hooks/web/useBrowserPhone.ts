@@ -2,6 +2,7 @@ import { computed, reactive, ref, shallowRef } from 'vue'
 import { getUserProfile, type ProfileVO } from '@/api/system/user/profile'
 import { syncBrowserCallRecord, type BrowserCallRecordSyncReqVO } from '@/api/system/call'
 import { getOutboundCallRecord, type OutboundCallRecordVO } from '@/api/system/call/record'
+import { activeBrandConfig } from '@/config/brand'
 
 export type BrowserPhoneLogItem = {
     id: number
@@ -80,8 +81,8 @@ let browserRegisterWaiter:
 
 const profile = reactive<Partial<ProfileVO>>({})
 const browserForm = reactive({
-    wsServer: 'wss://sip.bgwa.cn:7443',
-    domain: '60.205.112.131',
+    wsServer: activeBrandConfig.browserPhone.wsServer,
+    domain: activeBrandConfig.browserPhone.domain,
     username: '',
     password: '',
     target: ''

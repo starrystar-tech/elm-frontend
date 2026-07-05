@@ -14,6 +14,30 @@ import topLevelAwait from 'vite-plugin-top-level-await'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons-ng'
 import UnoCSS from 'unocss/vite'
+import { activeBrandProfile } from '../../src/config/brand.shared'
+
+const BRAND_TITLE_PLACEHOLDER = '__BRAND_TITLE__'
+const BRAND_KEYWORDS_PLACEHOLDER = '__BRAND_KEYWORDS__'
+const BRAND_DESCRIPTION_PLACEHOLDER = '__BRAND_DESCRIPTION__'
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
+function createBrandHtmlPlugin() {
+  return {
+    name: 'brand-html-transform',
+    transformIndexHtml(html: string) {
+      return html
+        .replaceAll(BRAND_TITLE_PLACEHOLDER, escapeHtml(activeBrandProfile.title))
+        .replaceAll(BRAND_KEYWORDS_PLACEHOLDER, escapeHtml(activeBrandProfile.keywords))
+        .replaceAll(BRAND_DESCRIPTION_PLACEHOLDER, escapeHtml(activeBrandProfile.description))
+    }
+  }
+}
 
 export function createVitePlugins() {
   const root = process.cwd()
@@ -74,6 +98,7 @@ export function createVitePlugins() {
       iconDirs: [pathResolve('src/assets/svgs')],
       symbolId: 'icon-[dir]-[name]',
     }),
+    createBrandHtmlPlugin(),
     viteCompression({
       verbose: true, // 是否在控制台输出压缩结果
       disable: false, // 是否禁用
