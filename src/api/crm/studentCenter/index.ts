@@ -76,6 +76,8 @@ export interface StudentCenterPageRespVO {
 
 export interface StudentCenterUpdateReqVO {
     id: number
+    householdProvince?: string
+    applyProvince?: string
     serviceStatus?: number
     courseStatus?: number
     studentRemark?: string

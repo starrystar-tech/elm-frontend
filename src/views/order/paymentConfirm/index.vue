@@ -35,6 +35,7 @@ import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 defineOptions({ name: 'OrderPaymentConfirm' })
 
 const message = useMessage()
+const payConfirmSearchOptions = PAY_CONFIRM_STATUS_OPTIONS.filter((item) => item.value !== 0)
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
@@ -60,7 +61,7 @@ const searchSchema = computed<FormSchema[]>(() => [
         label: '确认状态',
         component: 'Select',
         componentProps: {
-            options: PAY_CONFIRM_STATUS_OPTIONS,
+            options: payConfirmSearchOptions,
             clearable: true,
             style: { width: '220px' }
         }
@@ -161,12 +162,6 @@ const renderPayProofCell = (url?: string) => {
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
-    // {
-    //     field: 'confirmStatus',
-    //     label: '确认状态',
-    //     minWidth: '100px',
-    //     formatter: (_r, _c, v) => getOptionLabel(PAY_CONFIRM_STATUS_OPTIONS, v)
-    // },
     // { field: 'confirmResult', label: '确认结果', minWidth: '160px' },
     { field: 'orderNo', label: '订单编号', minWidth: '160px' },
     { field: 'customerName', label: '姓名', minWidth: '100px' },
@@ -185,6 +180,12 @@ const tableColumns = computed<TableColumn[]>(() => [
                     warning: message.warning
                 })
         }
+    },
+    {
+        field: 'confirmStatus',
+        label: '确认状态',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => getOptionLabel(PAY_CONFIRM_STATUS_OPTIONS, v)
     },
     {
         field: 'payAmount',

@@ -7,6 +7,20 @@
             :rules="formRules"
             label-width="100px"
         >
+            <el-form-item label="户籍省份">
+                <el-input
+                    v-model="formData.householdProvince"
+                    clearable
+                    placeholder="请输入户籍省份"
+                />
+            </el-form-item>
+            <el-form-item label="报考省份">
+                <el-input
+                    v-model="formData.applyProvince"
+                    clearable
+                    placeholder="请输入报考省份"
+                />
+            </el-form-item>
             <el-form-item label="服务状态">
                 <el-select
                     v-model="formData.serviceStatus"
@@ -70,6 +84,8 @@ const formLoading = ref(false)
 const formRef = ref()
 const formData = reactive<StudentCenterApi.StudentCenterUpdateReqVO>({
     id: 0,
+    householdProvince: '',
+    applyProvince: '',
     serviceStatus: undefined,
     courseStatus: undefined,
     studentRemark: ''
@@ -81,6 +97,8 @@ const formRules = reactive({
 
 const open = (row: StudentCenterApi.StudentCenterPageRespVO) => {
     formData.id = Number(row.orderId)
+    formData.householdProvince = row.householdProvince || ''
+    formData.applyProvince = row.applyProvince || ''
     formData.serviceStatus =
         row.serviceStatus === null || row.serviceStatus === undefined
             ? undefined
@@ -101,6 +119,8 @@ const submitForm = async () => {
     try {
         await StudentCenterApi.updateStudent({
             id: formData.id,
+            householdProvince: formData.householdProvince?.trim() || '',
+            applyProvince: formData.applyProvince?.trim() || '',
             serviceStatus: formData.serviceStatus,
             courseStatus: formData.courseStatus,
             studentRemark: formData.studentRemark?.trim() || ''

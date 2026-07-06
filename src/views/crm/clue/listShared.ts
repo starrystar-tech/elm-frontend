@@ -113,7 +113,9 @@ export const buildDeptOwnerDisplayName = (
   fallback = '--'
 ) => {
   const normalize = (value?: string | null) => {
-    const text = String(value || '').trim()
+    const text = String(value || '')
+      .trim()
+      .replace(/\s*[\\/]\s*/g, '\\')
     return text && text !== '--' ? text : ''
   }
   const deptText = normalize(deptName)
