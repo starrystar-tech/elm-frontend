@@ -1,42 +1,41 @@
 <template>
-    <div>
-        <Search
-            :schema="engineSearchSchema"
-            :model="engineSearchForm"
-            @search="setEngineSearchParams"
-            @reset="setEngineSearchParams"
-        >
-            <template #callGroupId>
-                <CallGroupSelect
-                    v-model="engineSearchForm.callGroupId"
-                    placeholder="请选择呼叫组"
-                    style="width: 220px"
-                />
-            </template>
-            <template #sourceCode>
-                <SourceSelect
-                    v-model="engineSearchForm.sourceCode"
-                    placeholder="请选择来源"
-                    style="width: 220px"
-                />
-            </template>
-            <template #projectCode>
-                <ProjectSelect
-                    v-model="engineSearchForm.projectCode"
-                    placeholder="请选择项目"
-                    style="width: 220px"
-                />
-            </template>
-            <template #regionId>
-                <AreaSelect
-                    v-model="engineSearchForm.regionId"
-                    :data="areaTree"
-                    placeholder="请选择地区"
-                    style="width: 220px"
-                />
-            </template>
-        </Search>
-
+    <Search
+        :schema="engineSearchSchema"
+        :model="engineSearchForm"
+        @search="setEngineSearchParams"
+        @reset="setEngineSearchParams"
+    >
+        <template #callGroupId>
+            <CallGroupSelect
+                v-model="engineSearchForm.callGroupId"
+                placeholder="请选择呼叫组"
+                style="width: 220px"
+            />
+        </template>
+        <template #sourceCode>
+            <SourceSelect
+                v-model="engineSearchForm.sourceCode"
+                placeholder="请选择来源"
+                style="width: 220px"
+            />
+        </template>
+        <template #projectCode>
+            <ProjectSelect
+                v-model="engineSearchForm.projectCode"
+                placeholder="请选择项目"
+                style="width: 220px"
+            />
+        </template>
+        <template #regionId>
+            <AreaSelect
+                v-model="engineSearchForm.regionId"
+                :data="areaTree"
+                placeholder="请选择地区"
+                style="width: 220px"
+            />
+        </template>
+    </Search>
+    <div class="action-btn-wrap">
         <BaseButton
             type="primary"
             v-hasPermi="['system:allocation-engine:update']"
@@ -44,27 +43,27 @@
         >
             新增引擎
         </BaseButton>
-        <Table
-            v-model:currentPage="engineTableObject.currentPage"
-            v-model:pageSize="engineTableObject.pageSize"
-            :columns="engineColumns"
-            :data="engineTableObject.tableList"
-            :loading="engineTableObject.loading"
-            :pagination="{ total: engineTableObject.total }"
-            @register="engineTableRegister"
-        />
-
-        <EngineForm
-            v-model="engineDialogVisible"
-            :title="engineDialogTitle"
-            :loading="engineSaving"
-            :form-data="engineForm"
-            :rules="engineRules"
-            :user-level-options="userLevelOptions"
-            :area-tree="areaTree"
-            @submit="saveEngine"
-        />
     </div>
+    <Table
+        v-model:currentPage="engineTableObject.currentPage"
+        v-model:pageSize="engineTableObject.pageSize"
+        :columns="engineColumns"
+        :data="engineTableObject.tableList"
+        :loading="engineTableObject.loading"
+        :pagination="{ total: engineTableObject.total }"
+        @register="engineTableRegister"
+    />
+
+    <EngineForm
+        v-model="engineDialogVisible"
+        :title="engineDialogTitle"
+        :loading="engineSaving"
+        :form-data="engineForm"
+        :rules="engineRules"
+        :user-level-options="userLevelOptions"
+        :area-tree="areaTree"
+        @submit="saveEngine"
+    />
 </template>
 
 <script setup lang="tsx">

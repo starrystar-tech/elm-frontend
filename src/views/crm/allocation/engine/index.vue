@@ -1,10 +1,10 @@
 <template>
     <ContentWrap>
-        <el-tabs v-model="activeTab" class="list-tabs-compact" @tab-change="handleTabChange">
+        <!-- <el-tabs v-model="activeTab" class="list-tabs-compact" @tab-change="handleTabChange">
             <el-tab-pane label="分配引擎" name="engine" />
             <el-tab-pane label="复购公海" name="repurchase" />
-        </el-tabs>
-        <router-view class="tab-content-wrap" />
+        </el-tabs> -->
+        <router-view />
     </ContentWrap>
 </template>
 

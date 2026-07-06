@@ -50,6 +50,7 @@ const visible = ref(!props.expandField)
 const slotMode = computed(() => props.schema.length === 0 && !!slots.default)
 const searchBodyRef = ref<HTMLDivElement>()
 const searchOverflow = ref(false)
+const searchCanExpand = ref(false)
 const collapsedMaxHeight = ref(0)
 
 const formModel = ref<Recordable>(props.model)
@@ -62,8 +63,7 @@ const expandEnabled = computed(() => {
     props.showExpand ||
     props.expand ||
     !!props.expandField ||
-    searchOverflow.value ||
-    (props.schema.length > 5 && props.layout === 'inline')
+    searchCanExpand.value
   )
 })
 const fieldExpandEnabled = computed(() => unref(expandEnabled) && !!props.expandField)
@@ -286,9 +286,15 @@ const measureSearchRows = async () => {
   if (topValues.length <= 2) {
     if (unref(useExternalActionBar) && topValues.length === 2) {
       searchOverflow.value = true
+      searchCanExpand.value = false
+      collapsedMaxHeight.value = 0
+      if (!unref(fieldExpandEnabled)) {
+        visible.value = true
+      }
       return
     }
     searchOverflow.value = false
+    searchCanExpand.value = false
     collapsedMaxHeight.value = 0
     if (!unref(fieldExpandEnabled)) {
       visible.value = true
@@ -307,6 +313,7 @@ const measureSearchRows = async () => {
 
   collapsedMaxHeight.value = Math.ceil(secondRowBottom + 4)
   searchOverflow.value = true
+  searchCanExpand.value = true
   if (!unref(fieldExpandEnabled)) {
     visible.value = false
   }
