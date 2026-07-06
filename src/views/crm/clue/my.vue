@@ -311,6 +311,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'customerId',
         label: '客户编号',
         minWidth: '120px',
+        fixed: 'left',
         slots: {
             default: (data) => (
                 <ElLink
@@ -327,6 +328,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'mobile',
         label: '联系电话',
         width: '170px',
+        fixed: 'left',
         slots: {
             default: (data) =>
                 renderCopyMobileCell({

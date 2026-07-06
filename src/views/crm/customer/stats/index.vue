@@ -90,7 +90,7 @@
                 <el-col :span="12">
                     <el-card shadow="never">
                         <template #header>
-                            <div class="stats-section-title">报考项目年度服务学员统计</div>
+                            <div class="stats-section-title">报考项目服务学员统计</div>
                         </template>
                         <el-skeleton :loading="loading" animated>
                             <Echart :height="320" :options="projectChartOptions" />
@@ -133,7 +133,6 @@ defineOptions({ name: 'CrmCustomerStats' })
 
 interface StatsSearchParams {
     enrollTimes: string[]
-    enrollYear: string
     headteacherUserId?: number
     applyProjectId?: number
 }
@@ -152,7 +151,6 @@ const createDefaultSearchParams = (): StatsSearchParams => {
             formatDateTime(new Date(now.getFullYear(), 0, 1, 0, 0, 0)),
             formatDateTime(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59))
         ],
-        enrollYear: String(now.getFullYear()),
         headteacherUserId: undefined,
         applyProjectId: undefined
     }
@@ -171,21 +169,11 @@ const searchSchema = reactive<FormSchema[]>([
         component: 'DatePicker',
         componentProps: {
             type: 'daterange',
+            clearable: false,
             valueFormat: 'YYYY-MM-DD HH:mm:ss',
             defaultTime: [new Date('1 00:00:00'), new Date('1 23:59:59')],
             startPlaceholder: '开始时间',
             endPlaceholder: '结束时间',
-            style: { width: '220px' }
-        }
-    },
-    {
-        field: 'enrollYear',
-        label: '报名年份',
-        component: 'DatePicker',
-        componentProps: {
-            type: 'year',
-            valueFormat: 'YYYY',
-            placeholder: '请选择报名年份',
             style: { width: '220px' }
         }
     },
@@ -302,7 +290,8 @@ const buildCourseParams = (): StudentCenterApi.StudentCourseStatsReqVO => {
 }
 
 const buildProjectParams = (): StudentCenterApi.StudentProjectYearlyStatsReqVO => ({
-    enrollYear: Number(queryParams.enrollYear || new Date().getFullYear()),
+    beginEnrollTime: queryParams.enrollTimes?.[0],
+    endEnrollTime: queryParams.enrollTimes?.[1],
     headteacherUserId: queryParams.headteacherUserId || undefined,
     applyProjectId: queryParams.applyProjectId || undefined
 })

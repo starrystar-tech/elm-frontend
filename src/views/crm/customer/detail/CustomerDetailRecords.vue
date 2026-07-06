@@ -448,6 +448,37 @@ const CLAIM_SOURCE_LABELS: Record<number, string> = {
     3: '复购激活'
 }
 
+const FLOW_RECYCLE_RULE_META_MAP: Record<
+    string,
+    { fromLabel: string; toLabel: string; conditionLabel: string }
+> = {
+    FIRST_CONSULT_TO_WAIT_VISIT: {
+        fromLabel: '首咨客户',
+        toLabel: '待回访',
+        conditionLabel: '未回访'
+    },
+    WAIT_VISIT_TO_FIRST_POOL: {
+        fromLabel: '待回访',
+        toLabel: '首咨公海',
+        conditionLabel: '未回访'
+    },
+    VISITED_TO_FIRST_POOL: {
+        fromLabel: '回访客户',
+        toLabel: '首咨公海',
+        conditionLabel: '未再回访'
+    },
+    REPURCHASE_TO_REPURCHASE_POOL: {
+        fromLabel: '复购客户',
+        toLabel: '复购公海',
+        conditionLabel: '未成交'
+    },
+    PUBLIC_POOL_TO_FIRST_POOL: {
+        fromLabel: '公海客户',
+        toLabel: '首咨公海',
+        conditionLabel: '未回访'
+    }
+}
+
 const TRACK_FIELD_LABELS: Record<string, string> = {
     clueId: '客户编号',
     clueIds: '客户编号',
@@ -689,6 +720,44 @@ const buildConsultTrackLines = (content?: string) => {
     }
 }
 
+const buildRecycleTrackLines = (content?: string) => {
+    if (!content || !content.trim().startsWith('{')) {
+        return content ? [content] : []
+    }
+    try {
+        const parsed = JSON.parse(content)
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            return [content]
+        }
+        const normalizedParsed = parsed as Record<string, unknown>
+        const ruleCode = String(normalizedParsed.ruleCode || '')
+        const ruleName = String(normalizedParsed.ruleName || '')
+        const actionName = String(normalizedParsed.actionName || '')
+        const reason = String(normalizedParsed.reason || '')
+        const ruleMeta = FLOW_RECYCLE_RULE_META_MAP[ruleCode]
+        const daysValue = Number(normalizedParsed.days)
+        const daysText = Number.isFinite(daysValue) && daysValue > 0 ? `${daysValue}天` : ''
+        const stageText = ruleMeta ? `${ruleMeta.fromLabel}转为${ruleMeta.toLabel}` : ''
+        const ruleText = ruleMeta
+            ? `${ruleMeta.fromLabel}${daysText}${ruleMeta.conditionLabel}，自动进入${ruleMeta.toLabel}`
+            : ''
+        const triggerTime = formatDateTime(normalizedParsed.triggerTime as string | number | null)
+        const lines = [
+            actionName ? `回收动作：${actionName}` : '',
+            stageText ? `客户阶段：${stageText}` : '',
+            ruleText ? `流转规则：${ruleText}` : '',
+            !ruleText && ruleName ? `规则名称：${ruleName}` : '',
+            !ruleText && ruleCode ? `规则编码：${ruleCode}` : '',
+            !ruleText && daysText ? `触发条件：${daysText}` : '',
+            triggerTime !== '--' ? `触发时间：${triggerTime}` : '',
+            reason ? `回收原因：${reason}` : ''
+        ].filter(Boolean)
+        return lines.length ? lines : [content]
+    } catch {
+        return [content]
+    }
+}
+
 const buildJsonTrackLines = (content?: string) => {
     if (!content || !content.trim().startsWith('{')) {
         return content ? [content] : []
@@ -759,6 +828,19 @@ const buildJsonTrackLines = (content?: string) => {
     }
 }
 
+const buildTrackLinesByItem = (
+    item: Pick<CustomerDetailApi.CustomerTrackRespVO, 'type' | 'typeName'>,
+    content?: string
+) => {
+    if (item.type === 4 || item.typeName === '咨询信息') {
+        return buildConsultTrackLines(content)
+    }
+    if (item.type === 11 || item.typeName === '线索流转回收') {
+        return buildRecycleTrackLines(content)
+    }
+    return buildJsonTrackLines(content)
+}
+
 const loadTrackOptionMaps = async () => {
     try {
         const [depts, users, campuses] = await Promise.all([
@@ -793,17 +875,13 @@ const parsedTrackList = computed(() =>
                 if (rawContentLines.length === 1) {
                     const [singleLine] = rawContentLines
                     if (singleLine?.trim().startsWith('{')) {
-                        const parsedLines = item.type === 4 || item.typeName === '咨询信息'
-                            ? buildConsultTrackLines(singleLine)
-                            : buildJsonTrackLines(singleLine)
+                        const parsedLines = buildTrackLinesByItem(item, singleLine)
                         return ensureTrackMobileLines(parsedLines, item)
                     }
                 }
                 return ensureTrackMobileLines(rawContentLines, item)
             }
-            const parsedLines = item.type === 4 || item.typeName === '咨询信息'
-                ? buildConsultTrackLines(item.content)
-                : buildJsonTrackLines(item.content)
+            const parsedLines = buildTrackLinesByItem(item, item.content)
             return ensureTrackMobileLines(parsedLines, item)
         })()
         return {

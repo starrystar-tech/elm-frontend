@@ -103,7 +103,8 @@ export interface StudentCourseStatsRespVO {
 }
 
 export interface StudentProjectYearlyStatsReqVO {
-    enrollYear: number
+    beginEnrollTime: string
+    endEnrollTime: string
     headteacherUserId?: number
     applyProjectId?: number
 }

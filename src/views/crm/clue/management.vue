@@ -385,6 +385,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'customerId',
         label: '客户编号',
         minWidth: '120px',
+        fixed: 'left',
         slots: {
             default: (data) => (
                 <ElLink
@@ -401,6 +402,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'mobile',
         label: '联系电话',
         minWidth: '170px',
+        fixed: 'left',
         slots: {
             default: (data) => (
                 <MobileCopyInline clueId={Number(data.row.id)} mobile={data.row.mobile} />

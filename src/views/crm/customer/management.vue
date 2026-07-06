@@ -462,10 +462,10 @@ const tableColumns = computed<TableColumn[]>(() => [
 
 const loadFilterOptions = async () => {
     const [headteachers] = await Promise.all([HeadteacherApi.getHeadteacherSimpleList()])
-    headteacherOptions.value = (headteachers || []).map((item) => ({
+    headteacherOptions.value = [{ label: '无', value: 0 }].concat((headteachers || []).map((item) => ({
         label: item.nickname || item.username,
         value: item.id
-    }))
+    })))
     const headteacherField = searchSchema.find((item) => item.field === 'headteacherUserId')
     if (headteacherField?.componentProps) {
         headteacherField.componentProps.options = headteacherOptions.value

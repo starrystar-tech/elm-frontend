@@ -335,6 +335,7 @@ const tableColumns = computed<TableColumn[]>(() => [
         field: 'mobile',
         label: '联系电话',
         width: '170px',
+        fixed: 'left',
         slots: {
             default: (data) =>
                 renderCopyMobileCell({
