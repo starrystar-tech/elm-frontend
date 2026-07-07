@@ -275,7 +275,7 @@ const tableColumns = computed<TableColumn[]>(() => [
                     {canUpdate ? (
                         <BaseButton
                             link
-                            type={data.row.status === 1 ? 'warning' : 'success'}
+                            type={data.row.status === 1 ? 'primary' : 'primary'}
                             onClick={() => toggleStatus(data.row)}
                         >
                             {data.row.status === 1 ? '下架' : '上架'}

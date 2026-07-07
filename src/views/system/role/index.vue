@@ -189,7 +189,7 @@ const tableColumns = reactive<TableColumn[]>([
     {
         field: 'action',
         label: '操作',
-        width: '300px',
+        width: '220px',
         slots: {
             default: (data) => {
                 const row = data.row as RoleApi.RoleVO
@@ -207,15 +207,6 @@ const tableColumns = reactive<TableColumn[]>([
                         {canAssignMenu ? (
                             <BaseButton link type="primary" onClick={() => openAssignMenuForm(row)}>
                                 菜单权限
-                            </BaseButton>
-                        ) : null}
-                        {canAssignDataScope ? (
-                            <BaseButton
-                                link
-                                type="primary"
-                                onClick={() => openDataPermissionForm(row)}
-                            >
-                                数据权限
                             </BaseButton>
                         ) : null}
                         {canDelete ? (
