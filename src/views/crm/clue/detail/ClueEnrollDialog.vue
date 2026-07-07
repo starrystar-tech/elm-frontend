@@ -275,7 +275,7 @@
 
         <ProductSelectDialog
             v-model="productPickerVisible"
-            :consult-project-id="formData.consultProjectId"
+            :consult-project-id="validConsultProjectId"
             @select="appendProducts"
         />
     </Dialog>
@@ -459,6 +459,13 @@ const loadOptions = async () => {
     categoryOptions.value = categoryList.filter((item) => Number(item.parentId) > 0)
     optionsLoaded.value = true
 }
+
+const validConsultProjectId = computed(() => {
+    const projectId = formData.value.consultProjectId
+    if (!projectId) return undefined
+    const exists = projectOptions.value.some((item) => Number(item.id) === Number(projectId))
+    return exists ? projectId : undefined
+})
 
 const totalPayableAmount = computed(() =>
     selectedProducts.value.reduce((sum, item) => sum + Number(item.payableAmount || 0), 0)

@@ -74,7 +74,6 @@
                             />
                             <el-table-column prop="statusName" label="合同状态" min-width="120" />
                             <el-table-column prop="signTime" label="签署时间" min-width="180" />
-                            <el-table-column prop="revokeReason" label="撤销原因" min-width="160" />
                             <el-table-column label="操作" min-width="220" fixed="right">
                                 <template #default="{ row }">
                                     <el-button
@@ -567,7 +566,11 @@ const handlePreview = async (id: number) => {
 }
 
 const handleCancelSign = async (id: number) => {
-    await ElMessageBox.confirm('确认撤销当前签署任务吗？', '提示', { type: 'warning' })
+    await ElMessageBox.confirm('确认撤销当前签署任务吗？', '撤销签署', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+    })
     await ContractApi.cancelContractSign(id)
     message.success('撤销成功')
     await loadContractList()
@@ -575,20 +578,16 @@ const handleCancelSign = async (id: number) => {
 }
 
 const handleAbolish = async (row: ContractApi.ContractOrderProductRespVO) => {
-    const result = await ElMessageBox.prompt('请输入作废原因', '作废合同', {
+    await ElMessageBox.confirm('确认作废该合同吗？', '作废合同', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        inputPlaceholder: '请输入作废原因',
-        inputValue: '合同作废',
-        inputValidator: (value) => Boolean(String(value || '').trim()),
-        inputErrorMessage: '请输入作废原因',
         type: 'warning'
-    }).catch(() => undefined)
-    if (!result || !row.contractNo) return
+    })
+    if (!row.contractNo) return
 
     await ContractApi.abolishContract({
         contractId: row.contractNo,
-        reason: String(result.value || '').trim()
+        reason: undefined
     })
     message.success('作废成功')
     await loadContractList()

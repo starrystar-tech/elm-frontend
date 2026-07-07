@@ -11,6 +11,7 @@
                 <ProductTypeSelect
                     v-model="filterForm.consultProjectId"
                     placeholder="选择咨询项目"
+                    missing-label="该项目已下架，请选择其他项目"
                     @update:model-value="handleProjectChange"
                 />
                 <el-select

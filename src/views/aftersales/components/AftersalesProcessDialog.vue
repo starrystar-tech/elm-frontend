@@ -133,8 +133,8 @@ const submitForm = async () => {
             id: formData.value.id,
             aftersalesResult: formData.value.aftersalesResult,
             processResult: formData.value.processResult?.trim() || undefined,
-            refundAmount: showRefundAmount.value ? formData.value.refundAmount || 0 : undefined,
-            retainAmount: showRetainAmount.value ? formData.value.retainAmount || 0 : undefined
+            refundAmount: showRefundAmount.value ? Math.round((formData.value.refundAmount || 0) * 100) : undefined,
+            retainAmount: showRetainAmount.value ? Math.round((formData.value.retainAmount || 0) * 100) : undefined
         })
         message.success('处理成功')
         dialogVisible.value = false
