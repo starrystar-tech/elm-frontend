@@ -540,11 +540,11 @@ const resolveWeworkDisplay = (value?: string) => {
 }
 
 const resolveRangeStartTimestamp = (value?: string) => {
-    return value ? dayjs(value).startOf('minute').valueOf() : undefined
+    return value ? dayjs(value).startOf('minute').unix() : undefined
 }
 
 const resolveRangeEndTimestamp = (value?: string) => {
-    return value ? dayjs(value).endOf('minute').valueOf() : undefined
+    return value ? dayjs(value).endOf('minute').unix() : undefined
 }
 
 const formatChatTime = (value?: number) => {
@@ -598,7 +598,7 @@ const loadAuditPage = async () => {
             chatTimeText: formatChatTime(item.chatTime)
         }))
         if (isEmployee) {
-            employeeRows.value = rows
+            employeeRows.value = rows.filter((item) => item.archiveStatus === '已开启')
         } else {
             contentRows.value = rows
         }

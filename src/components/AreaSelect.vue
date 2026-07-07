@@ -4,6 +4,7 @@
         class="area-select"
         :data="innerData"
         :props="defaultProps"
+        popper-class="area-select-popper"
         node-key="id"
         value-key="id"
         :check-strictly="checkStrictly"
@@ -51,7 +52,7 @@ const includeAllNode = computed(() => props.includeAllNode ?? true)
 const checkStrictly = computed(() => props.checkStrictly ?? true)
 const showCheckedStrategy = computed(() => {
     if (props.showCheckedStrategy) return props.showCheckedStrategy
-    return multiple.value ? 'parent' : undefined
+    return multiple.value ? 'child' : undefined
 })
 const checkOnClickNode = computed(() => props.checkOnClickNode ?? true)
 const expandOnClickNode = computed(() => props.expandOnClickNode ?? false)
@@ -62,11 +63,22 @@ const model = computed({
     get: () => props.modelValue,
     set: (value: number | number[] | undefined) => {
         if (multiple.value && Array.isArray(value)) {
-            emit('update:modelValue', compactAreaIds(value, innerData.value || []))
+            const normalizedValue = compactAreaIds(value, innerData.value || [])
+            emit('update:modelValue', normalizedValue)
             return
         }
         emit('update:modelValue', value)
     }
+})
+
+const normalizedModelValue = computed(() => {
+    if (!multiple.value) {
+        return props.modelValue
+    }
+    if (!Array.isArray(props.modelValue)) {
+        return []
+    }
+    return compactAreaIds(props.modelValue, innerData.value || [])
 })
 
 const hasOnlyAllNode = (list: any[] = []) =>
@@ -85,6 +97,20 @@ watch(
         innerData.value = mergeAreaData(val || [])
     },
     { immediate: true, deep: true }
+)
+
+watch(
+    normalizedModelValue,
+    (value) => {
+        if (!multiple.value || !Array.isArray(value) || !Array.isArray(props.modelValue)) {
+            return
+        }
+        if (JSON.stringify(value) === JSON.stringify(props.modelValue)) {
+            return
+        }
+        emit('update:modelValue', value)
+    },
+    { deep: true }
 )
 
 const loadAreaTree = async () => {
@@ -107,5 +133,13 @@ onMounted(() => {
 <style scoped>
 .area-select {
     width: 100%;
+}
+
+:global(.area-select-popper .el-scrollbar) {
+    max-height: min(320px, 40vh);
+}
+
+:global(.area-select-popper .el-tree) {
+    max-height: min(320px, 40vh);
 }
 </style>

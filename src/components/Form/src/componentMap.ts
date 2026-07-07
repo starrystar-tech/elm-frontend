@@ -23,6 +23,10 @@ import { InputPassword } from '@/components/InputPassword'
 import AmountRangeInput from '@/components/AmountRangeInput.vue'
 import { Editor } from '@/components/Editor'
 import { UploadImg, UploadImgs, UploadFile } from '@/components/UploadFile'
+import AreaSelect from '@/components/AreaSelect.vue'
+import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
+import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
+import SourceSelect from '@/components/SourceSelect.vue'
 import { ComponentName } from '@/types/components'
 
 const componentMap: Recordable<Component, ComponentName> = {
@@ -51,7 +55,11 @@ const componentMap: Recordable<Component, ComponentName> = {
   Editor: Editor,
   UploadImg: UploadImg,
   UploadImgs: UploadImgs,
-  UploadFile: UploadFile
+  UploadFile: UploadFile,
+  AreaSelect: AreaSelect,
+  ProductTypeSelect: ProductTypeSelect,
+  DeptSelector: DeptSelector,
+  SourceSelect: SourceSelect
 }
 
 export { componentMap }

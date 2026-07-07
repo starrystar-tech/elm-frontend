@@ -216,8 +216,8 @@ watch(
 }
 
 .area-selector__value {
-    min-height: 32px;
-    padding: 4px 30px 4px 11px;
+    height: 32px;
+    padding: 0 30px 0 11px;
     border: 1px solid var(--el-border-color, #dcdfe6);
     border-radius: 4px;
     display: flex;
@@ -228,6 +228,7 @@ watch(
     cursor: pointer;
     background: var(--el-bg-color, #fff);
     transition: border-color 0.2s;
+    box-sizing: border-box;
 }
 
 .area-selector__value:hover {

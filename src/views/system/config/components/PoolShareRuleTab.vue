@@ -33,21 +33,7 @@
         >
             <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
                 <el-form-item label="选择部门" prop="ownerDeptIds">
-                    <el-select
-                        v-model="form.ownerDeptIds"
-                        multiple
-                        clearable
-                        filterable
-                        placeholder="请选择部门"
-                        :disabled="isEdit"
-                    >
-                        <el-option
-                            v-for="item in deptOptions"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value"
-                        />
-                    </el-select>
+                    <DeptSelector v-model="form.ownerDeptIds" multiple />
                 </el-form-item>
                 <el-form-item label="公海类型" prop="seaTypes">
                     <el-select
@@ -62,55 +48,16 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item label="共享部门" prop="sharedDeptIds">
-                    <el-select
-                        v-model="form.sharedDeptIds"
-                        multiple
-                        clearable
-                        filterable
-                        placeholder="请选择共享部门"
-                    >
-                        <el-option
-                            v-for="item in deptOptions"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value"
-                        />
-                    </el-select>
+                    <DeptSelector v-model="form.sharedDeptIds" multiple />
                 </el-form-item>
                 <el-form-item label="客户来源" prop="clueSourceIds">
-                    <el-select
-                        v-model="form.clueSourceIds"
-                        multiple
-                        clearable
-                        filterable
-                        placeholder="请选择客户来源"
-                    >
-                        <el-option
-                            v-for="item in sourceOptions"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value"
-                        />
-                    </el-select>
+                    <SourceSelect v-model="form.clueSourceIds" multiple use-id />
                 </el-form-item>
                 <el-form-item label="项目" prop="consultProjectIds">
-                    <el-select
-                        v-model="form.consultProjectIds"
-                        multiple
-                        clearable
-                        filterable
-                        placeholder="请选择项目"
-                    >
-                        <el-option
-                            v-for="item in projectOptions"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value"
-                        />
-                    </el-select>
+                    <ProductTypeSelect v-model="form.consultProjectIds" multiple />
                 </el-form-item>
                 <el-form-item label="地域" prop="areaIds">
-                    <AreaSelector v-model="form.areaIds" multiple />
+                    <AreaSelect v-model="form.areaIds" multiple />
                 </el-form-item>
                 <el-form-item label="状态">
                     <el-radio-group v-model="form.status">
@@ -134,13 +81,12 @@ import { useTable } from '@/hooks/web/useTable'
 import { Table, type TableColumn } from '@/components/Table'
 import { Search } from '@/components/Search'
 import { BaseButton } from '@/components/Button'
-import AreaSelector from '@/components/AreaSelector.vue'
+import AreaSelect from '@/components/AreaSelect.vue'
+import ProductTypeSelect from '@/components/ProductTypeSelect.vue'
+import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
+import SourceSelect from '@/components/SourceSelect.vue'
 import type { FormSchema } from '@/types/form'
 import * as PoolShareApi from '@/api/crm/poolshare'
-import * as DeptApi from '@/api/system/dept'
-import * as ClueSourceApi from '@/api/system/clueSource'
-import * as ProductCategoryApi from '@/api/crm/product/category'
-import * as AreaApi from '@/api/system/area'
 
 defineOptions({ name: 'PoolShareRuleTab' })
 
@@ -185,11 +131,6 @@ const form = reactive<Form>({
     status: 0
 })
 
-const deptOptions = ref<{ label: string; value: number }[]>([])
-const sourceOptions = ref<{ label: string; value: number }[]>([])
-const projectOptions = ref<{ label: string; value: number }[]>([])
-const areaOptions = ref<{ label: string; value: number }[]>([])
-
 const seaTypeOptions = [
     { label: '首咨公海', value: 1 },
     { label: '复购公海', value: 2 }
@@ -205,24 +146,18 @@ const searchSchema = reactive<FormSchema[]>([
     {
         field: 'ownerDeptId',
         label: '部门',
-        component: 'Select',
+        component: 'DeptSelector',
         componentProps: {
             placeholder: '请选择部门',
-            clearable: true,
-            filterable: true,
-            options: [],
             style: { width: '220px', minWidth: '220px' }
         }
     },
     {
         field: 'sharedDeptId',
         label: '共享部门',
-        component: 'Select',
+        component: 'DeptSelector',
         componentProps: {
             placeholder: '请选择共享部门',
-            clearable: true,
-            filterable: true,
-            options: [],
             style: { width: '220px', minWidth: '220px' }
         }
     },
@@ -240,36 +175,26 @@ const searchSchema = reactive<FormSchema[]>([
     {
         field: 'consultProjectId',
         label: '项目',
-        component: 'Select',
+        component: 'ProductTypeSelect',
         componentProps: {
             placeholder: '请选择项目',
-            clearable: true,
-            filterable: true,
-            options: [],
             style: { width: '220px', minWidth: '220px' }
         }
     },
     {
         field: 'clueSourceId',
         label: '来源',
-        component: 'Select',
+        component: 'SourceSelect',
         componentProps: {
-            placeholder: '请选择来源',
-            clearable: true,
-            filterable: true,
-            options: [],
+            useId: true,
             style: { width: '220px', minWidth: '220px' }
         }
     },
     {
         field: 'areaId',
         label: '地域',
-        component: 'Select',
+        component: 'AreaSelect',
         componentProps: {
-            placeholder: '请选择地域',
-            clearable: true,
-            filterable: true,
-            options: [],
             style: { width: '220px', minWidth: '220px' }
         }
     }
@@ -388,80 +313,6 @@ const tableColumns = reactive<TableColumn[]>([
     }
 ])
 
-const buildDeptOptions = (data: DeptApi.DeptVO[] = []): { label: string; value: number }[] => {
-    const result: { label: string; value: number }[] = []
-    const build = (items: any[], prefix = '') => {
-        items.forEach((item) => {
-            if (item.id !== undefined) {
-                result.push({ label: `${prefix}${item.name}`, value: Number(item.id) })
-                if (item?.children?.length) {
-                    build(item.children, `${prefix}${item.name}/`)
-                }
-            }
-        })
-    }
-    build(data)
-    return result
-}
-
-const buildSourceOptions = (
-    data: ClueSourceApi.ClueSourceVO[] = []
-): { label: string; value: number }[] => {
-    return data
-        .filter((item) => item.id !== undefined)
-        .map((item) => ({ label: item.name, value: Number(item.id) }))
-}
-
-const buildProjectOptions = (
-    data: ProductCategoryApi.ProductCategoryVO[] = []
-): { label: string; value: number }[] => {
-    return data
-        .filter((item) => item.id !== undefined)
-        .map((item) => ({ label: item.name, value: Number(item.id) }))
-}
-
-const buildAreaOptions = (data: any[] = []): { label: string; value: number }[] => {
-    const result: { label: string; value: number }[] = []
-    const walk = (nodes: any[], prefix = '') => {
-        nodes.forEach((item) => {
-            if (item.id !== undefined) {
-                result.push({ label: `${prefix}${item.name}`, value: Number(item.id) })
-                if (item.children && item.children.length) {
-                    walk(item.children, `${prefix}${item.name}/`)
-                }
-            }
-        })
-    }
-    walk(data)
-    return result
-}
-
-const updateSchemaOptions = (field: string, options: { label: string; value: number }[]) => {
-    const target = searchSchema.find((item) => item.field === field)
-    if (target?.componentProps) {
-        target.componentProps.options = options
-    }
-}
-
-const loadOptions = async () => {
-    const [deptData, sourceData, projectData, areaData] = await Promise.all([
-        DeptApi.getSimpleDeptList(),
-        ClueSourceApi.getEnabledClueSourceList(),
-        ProductCategoryApi.getProductCategorySimpleList(),
-        AreaApi.getAreaTree()
-    ])
-    deptOptions.value = buildDeptOptions(deptData)
-    sourceOptions.value = buildSourceOptions(sourceData)
-    projectOptions.value = buildProjectOptions(projectData)
-    areaOptions.value = buildAreaOptions(areaData)
-
-    updateSchemaOptions('ownerDeptId', deptOptions.value)
-    updateSchemaOptions('sharedDeptId', deptOptions.value)
-    updateSchemaOptions('consultProjectId', projectOptions.value)
-    updateSchemaOptions('clueSourceId', sourceOptions.value)
-    updateSchemaOptions('areaId', areaOptions.value)
-}
-
 const handleSearch = (params: SearchParams) => {
     Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -575,8 +426,7 @@ const handleSave = async () => {
     }
 }
 
-onMounted(async () => {
-    await loadOptions()
+onMounted(() => {
     tableMethods.getList()
 })
 </script>

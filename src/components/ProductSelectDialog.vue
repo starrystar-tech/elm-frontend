@@ -14,21 +14,15 @@
                     missing-label="该项目已下架，请选择其他项目"
                     @update:model-value="handleProjectChange"
                 />
-                <el-select
+                <ProductTypeSelect
                     v-model="filterForm.productCategoryId"
+                    :parent-id="filterForm.consultProjectId"
                     placeholder="选择商品分类"
                     class="product-picker__field"
                     clearable
                     :disabled="!filterForm.consultProjectId"
                     @change="handleCategoryChange"
-                >
-                    <el-option
-                        v-for="item in pickerCategoryOptions"
-                        :key="item.id"
-                        :label="item.name"
-                        :value="item.id"
-                    />
-                </el-select>
+                />
                 <el-input
                     v-model="filterForm.keyword"
                     placeholder="请输入商品名称/编号"
@@ -251,9 +245,9 @@ const handleProjectChange = (value?: number) => {
     }
 }
 
-const handleCategoryChange = (value?: number) => {
+const handleCategoryChange = (value?: ProductCategoryApi.ProductCategoryVO) => {
     const shouldReloadDirectly = pageNo.value === 1
-    filterForm.value.productCategoryId = value
+    filterForm.value.productCategoryId = value?.id
     pageNo.value = 1
     if (dialogVisible.value && shouldReloadDirectly) {
         loadProductOptions()

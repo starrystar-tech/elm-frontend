@@ -25,6 +25,10 @@ export type ComponentName =
   | 'UploadImg'
   | 'UploadImgs'
   | 'UploadFile'
+  | 'AreaSelect'
+  | 'ProductTypeSelect'
+  | 'DeptSelector'
+  | 'SourceSelect'
 
 export type ColProps = {
   span?: number
