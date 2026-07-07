@@ -5,6 +5,7 @@
             <el-tab-pane label="订单设置" name="order" />
             <el-tab-pane label="学员设置" name="student" />
             <el-tab-pane label="标签设置" name="tag" />
+            <el-tab-pane label="共享公海设置" name="poolshare" />
             <el-tab-pane label="其它设置" name="other" />
         </el-tabs>
 
@@ -20,12 +21,12 @@ import { ContentWrap } from '@/components/ContentWrap'
 
 defineOptions({ name: 'SystemConfig' })
 
-type TabType = 'clue' | 'order' | 'student' | 'tag' | 'other'
+type TabType = 'clue' | 'order' | 'student' | 'tag' | 'poolshare' | 'other'
 
 const route = useRoute()
 const router = useRouter()
 const activeTab = ref<TabType>('clue')
-const validTabs: TabType[] = ['clue', 'order', 'student', 'tag', 'other']
+const validTabs: TabType[] = ['clue', 'order', 'student', 'tag', 'poolshare', 'other']
 
 const normalizeTab = (tab?: unknown): TabType => {
   const value = String(tab || '') as TabType

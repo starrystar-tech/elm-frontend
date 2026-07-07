@@ -197,6 +197,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
                         }
                     },
                     {
+                        path: 'poolshare',
+                        component: () =>
+                            import('@/views/system/config/components/PoolShareRuleTab.vue'),
+                        name: 'SystemConfigPoolShare',
+                        meta: {
+                            hidden: true,
+                            canTo: true,
+                            noCache: true,
+                            activeMenu: '/system/config'
+                        }
+                    },
+                    {
                         path: 'other',
                         component: () =>
                             import('@/views/system/config/components/OtherConfigTab.vue'),
