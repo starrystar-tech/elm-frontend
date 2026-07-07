@@ -3,6 +3,7 @@
         v-model="dialogVisible"
         title="签署合同"
         class="order-contract-sign-dialog"
+        append-to-body
         width="780px"
     >
         <div v-loading="loading" class="order-contract-sign">
@@ -85,6 +86,14 @@
                                     </el-button>
                                     <el-button link type="primary" @click="handlePreview(row.id)">
                                         预览
+                                    </el-button>
+                                    <el-button
+                                        v-if="canAbolishContract(row)"
+                                        link
+                                        type="danger"
+                                        @click="handleAbolish(row)"
+                                    >
+                                        作废
                                     </el-button>
                                     <el-button
                                         v-if="canCancelContract(row.status)"
@@ -231,6 +240,8 @@ const activeContract = computed(() =>
 
 const canContinueContract = (status?: number) => status === 1
 const canCancelContract = (status?: number) => status === 1
+const canAbolishContract = (row: ContractApi.ContractOrderProductRespVO) =>
+    Boolean(row.contractNo) && Number(row.status) === 4
 
 const normalizeVariableName = (value?: string) =>
     String(value || '')
@@ -254,7 +265,10 @@ const formatValue = (value: unknown) => {
 }
 
 const formatDownloadFileName = (value: string) =>
-    value.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, '').trim()
+    value
+        .replace(/[\\/:*?"<>|]/g, '-')
+        .replace(/\s+/g, '')
+        .trim()
 
 const formatFenAmount = (value: unknown) => {
     if (value === null || value === undefined || value === '') return ''
@@ -415,9 +429,10 @@ const resolvePlainMobile = async (mobileField: 'mobile' | 'mobile2') => {
 
 const fillPlainMobileVariables = async (fields: ContractApi.ContractVariableVO[]) => {
     if (!fields.length || !orderDetail.value.clueId) return
-    const mobileFields = fields.filter((field) =>
-        matchVariableAlias(field.variableName, mobileAliases) &&
-        !matchVariableAlias(field.variableName, mobile2Aliases)
+    const mobileFields = fields.filter(
+        (field) =>
+            matchVariableAlias(field.variableName, mobileAliases) &&
+            !matchVariableAlias(field.variableName, mobile2Aliases)
     )
     const mobile2Fields = fields.filter((field) =>
         matchVariableAlias(field.variableName, mobile2Aliases)
@@ -555,6 +570,27 @@ const handleCancelSign = async (id: number) => {
     await ElMessageBox.confirm('确认撤销当前签署任务吗？', '提示', { type: 'warning' })
     await ContractApi.cancelContractSign(id)
     message.success('撤销成功')
+    await loadContractList()
+    emit('success')
+}
+
+const handleAbolish = async (row: ContractApi.ContractOrderProductRespVO) => {
+    const result = await ElMessageBox.prompt('请输入作废原因', '作废合同', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        inputPlaceholder: '请输入作废原因',
+        inputValue: '合同作废',
+        inputValidator: (value) => Boolean(String(value || '').trim()),
+        inputErrorMessage: '请输入作废原因',
+        type: 'warning'
+    }).catch(() => undefined)
+    if (!result || !row.contractNo) return
+
+    await ContractApi.abolishContract({
+        contractId: row.contractNo,
+        reason: String(result.value || '').trim()
+    })
+    message.success('作废成功')
     await loadContractList()
     emit('success')
 }

@@ -1,5 +1,5 @@
 <template>
-    <Dialog v-model="dialogVisible" :title="title" width="960px">
+    <Dialog v-model="dialogVisible" :title="title" width="960px" append-to-body>
         <el-form ref="formRef" :model="localForm" :rules="rules" label-width="160px">
             <el-form-item label="引擎名称" prop="engineName">
                 <el-input v-model="localForm.engineName" placeholder="请输入引擎名称" />
@@ -233,7 +233,9 @@ const changeEnableWeightLimit = () => {
 }
 
 const selectedApplicableLevels = computed(() => {
-    const levelMap = new Map((props.userLevelOptions || []).map((item: any) => [item.value, item.label]))
+    const levelMap = new Map(
+        (props.userLevelOptions || []).map((item: any) => [item.value, item.label])
+    )
     return (localForm.value.applicableLevelList || []).map((value: string) => ({
         value,
         label: levelMap.get(value) || value
@@ -242,7 +244,9 @@ const selectedApplicableLevels = computed(() => {
 
 const syncWeightLimitsWithApplicableLevels = () => {
     const selectedLevels = localForm.value.applicableLevelList || []
-    const currentLimits = Array.isArray(localForm.value.weightLimits) ? localForm.value.weightLimits : []
+    const currentLimits = Array.isArray(localForm.value.weightLimits)
+        ? localForm.value.weightLimits
+        : []
     const currentMap = new Map(currentLimits.map((item: any) => [item.userLevel, item]))
     localForm.value.weightLimits = selectedLevels.map((level: string) => {
         const current = currentMap.get(level)

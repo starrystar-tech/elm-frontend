@@ -7,9 +7,8 @@ import gaoguFavicon from '@/assets/imgs/logo/gaogu-favicon.ico'
 import gaoguLoginLogo from '@/assets/imgs/logo/gaogu-login-logo.png'
 import gaoguNavLogo from '@/assets/imgs/logo/gaogu-nav-logo.png'
 import {
-    ACTIVE_BRAND_KEY,
     BRAND_PROFILE_CONFIGS,
-    activeBrandProfile,
+    resolveBrandKey,
     type BrandKey,
     type BrandProfile
 } from './brand.shared'
@@ -56,6 +55,8 @@ export const BRAND_CONFIGS: Record<BrandKey, BrandConfig> = {
     }
 }
 
+export const ACTIVE_BRAND_KEY: BrandKey = resolveBrandKey(import.meta.env.VITE_APP_BRAND)
+export const activeBrandProfile = BRAND_PROFILE_CONFIGS[ACTIVE_BRAND_KEY]
 export const activeBrandConfig = BRAND_CONFIGS[ACTIVE_BRAND_KEY]
 
 const setMetaContent = (name: string, content: string) => {

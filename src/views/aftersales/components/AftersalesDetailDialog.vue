@@ -59,10 +59,10 @@
                     }}</el-descriptions-item>
                     <el-descriptions-item label="处理结果">{{ resultLabel }}</el-descriptions-item>
                     <el-descriptions-item label="退款金额">
-                        ￥{{ formatAftersalesAmount(detail?.refundAmount) }}
+                        ￥{{ formatAftersalesCentAmount(detail?.refundAmount) }}
                     </el-descriptions-item>
                     <el-descriptions-item label="挽单金额">
-                        ￥{{ formatAftersalesAmount(detail?.retainAmount) }}
+                        ￥{{ formatAftersalesCentAmount(detail?.retainAmount) }}
                     </el-descriptions-item>
                     <el-descriptions-item label="投诉标签" :span="2">{{
                         formatComplaintTags(detail?.complaintTags)
@@ -73,6 +73,26 @@
                     <el-descriptions-item label="补充备注" :span="2">{{
                         detail?.remark || '--'
                     }}</el-descriptions-item>
+                    <el-descriptions-item label="工单附件" :span="2">
+                        <div v-if="detail?.attachmentUrl" class="aftersales-detail-attachment">
+                            <el-link
+                                :href="detail.attachmentUrl"
+                                :underline="false"
+                                target="_blank"
+                                type="primary"
+                            >
+                                {{ attachmentName }}
+                            </el-link>
+                            <el-link
+                                :underline="false"
+                                type="primary"
+                                @click="handleDownloadAttachment"
+                            >
+                                下载
+                            </el-link>
+                        </div>
+                        <span v-else>--</span>
+                    </el-descriptions-item>
                     <el-descriptions-item label="最后处理备注" :span="2">{{
                         detail?.processResult || '--'
                     }}</el-descriptions-item>
@@ -103,13 +123,10 @@
                         {{ formatDateTime(row.createTime) }}
                     </template>
                 </el-table-column>
-                <el-table-column label="操作" width="120" fixed="right">
+                <el-table-column label="操作" width="80" fixed="right">
                     <template #default="{ row }">
                         <el-button link type="primary" @click="handlePreviewContract(row)">
                             查看
-                        </el-button>
-                        <el-button link type="primary" @click="handleDownloadContract(row)">
-                            下载
                         </el-button>
                     </template>
                 </el-table-column>
@@ -127,9 +144,7 @@
             >
                 <el-table-column label="工单号" min-width="150" show-overflow-tooltip>
                     <template #default="{ row }">
-                        <el-button link type="primary" @click="open(row.id)">
-                            {{ row.ticketNo || '--' }}
-                        </el-button>
+                        <span>{{ row.ticketNo || '--' }}</span>
                     </template>
                 </el-table-column>
                 <el-table-column prop="orderNo" label="关联订单号" min-width="150" show-overflow-tooltip />
@@ -172,10 +187,16 @@
                                 {{ log.aftersalesResultDesc || '--' }}
                             </el-tag>
                         </div>
-                        <div class="aftersales-log-card__row">
+                        <div
+                            v-if="shouldShowLogRefundAmount(log.aftersalesResult)"
+                            class="aftersales-log-card__row"
+                        >
                             退款金额：￥{{ formatAftersalesCentAmount(log.refundAmount) }}
                         </div>
-                        <div class="aftersales-log-card__row">
+                        <div
+                            v-if="shouldShowLogRetainAmount(log.aftersalesResult)"
+                            class="aftersales-log-card__row"
+                        >
                             挽回金额：￥{{ formatAftersalesCentAmount(log.retainAmount) }}
                         </div>
                         <div v-if="log.remark" class="aftersales-log-card__row">
@@ -192,6 +213,7 @@
 <script setup lang="ts">
 import * as AftersalesApi from '@/api/crm/aftersales'
 import * as ContractApi from '@/api/system/contract'
+import { getFileNameFromUrl } from '@/utils/file'
 import { formatDate } from '@/utils/formatTime'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 import {
@@ -200,7 +222,6 @@ import {
     getAftersalesSourceLabel,
     getAftersalesResultLabel,
     getAftersalesInstallmentStatusLabel,
-    formatAftersalesAmount,
     formatAftersalesCentAmount,
     formatComplaintTags
 } from '../config'
@@ -221,9 +242,9 @@ const resultLabel = computed(() => getAftersalesResultLabel(detail.value?.afters
 const installmentStatusLabel = computed(() =>
     getAftersalesInstallmentStatusLabel(detail.value?.installmentStatus)
 )
-
-const formatDownloadFileName = (value: string) =>
-    value.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, '').trim()
+const attachmentName = computed(() =>
+    detail.value?.attachmentUrl ? getFileNameFromUrl(detail.value.attachmentUrl) : '--'
+)
 
 const getContractStatusLabel = (value?: number) => {
     const statusMap: Record<number, string> = {
@@ -264,18 +285,42 @@ const handlePreviewContract = async (row: ContractApi.ContractPageRespVO) => {
     window.open(url, '_blank')
 }
 
-const handleDownloadContract = async (row: ContractApi.ContractPageRespVO) => {
-    const url = await ContractApi.getContractDownloadUrl(row.id)
-    if (!url) {
-        message.warning('未获取到合同下载链接')
-        return
-    }
+const triggerBrowserDownload = (url: string, fileName: string) => {
     const link = document.createElement('a')
     link.href = url
-    link.target = '_blank'
-    link.download = `${formatDownloadFileName(row.contractNo || row.docTitle || 'contract') || 'contract'}.pdf`
+    link.download = fileName
+    link.rel = 'noopener'
+    document.body.appendChild(link)
     link.click()
+    document.body.removeChild(link)
 }
+
+const handleDownloadAttachment = () => {
+    const url = detail.value?.attachmentUrl
+    if (!url) {
+        message.warning('未获取到附件下载链接')
+        return
+    }
+    const fileName = attachmentName.value || 'attachment'
+    fetch(url, { credentials: 'include' })
+        .then(async (response) => {
+            if (!response.ok) {
+                throw new Error(`download failed: ${response.status}`)
+            }
+            const blob = await response.blob()
+            const blobUrl = URL.createObjectURL(blob)
+            triggerBrowserDownload(blobUrl, fileName)
+            window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+        })
+        .catch(() => {
+            message.error('附件下载失败，请稍后重试')
+        })
+}
+
+const shouldShowLogRefundAmount = (aftersalesResult?: number) => Number(aftersalesResult) === 3
+
+const shouldShowLogRetainAmount = (aftersalesResult?: number) =>
+    [2, 3].includes(Number(aftersalesResult))
 
 const message = useMessage()
 
@@ -374,6 +419,13 @@ defineExpose({ open })
     :deep(.el-table__empty-block) {
         min-height: 72px;
     }
+}
+
+.aftersales-detail-attachment {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 22px;
 }
 
 .aftersales-detail-timeline {

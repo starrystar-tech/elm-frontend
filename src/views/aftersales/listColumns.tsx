@@ -6,7 +6,7 @@ import type * as AftersalesApi from '@/api/crm/aftersales'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 import {
-    formatAftersalesAmount,
+    formatAftersalesCentAmount,
     formatComplaintTags,
     getAftersalesInstallmentStatusLabel,
     getAftersalesPriorityLabel,
@@ -21,9 +21,11 @@ interface BuildAftersalesColumnsOptions {
         warning: (message: string) => void
     }
     openDetail?: (id: number) => void
+    signContract?: (row: AftersalesApi.AftersalesRespVO) => void
     openProcess?: (row: AftersalesApi.AftersalesRespVO) => void
     claim?: (row: AftersalesApi.AftersalesRespVO) => void
     repurchase?: (row: AftersalesApi.AftersalesRespVO) => void
+    showSignContract?: (row: AftersalesApi.AftersalesRespVO) => boolean
     showProcess?: (row: AftersalesApi.AftersalesRespVO) => boolean
     showClaim?: (row: AftersalesApi.AftersalesRespVO) => boolean
     showRepurchase?: (row: AftersalesApi.AftersalesRespVO) => boolean
@@ -32,10 +34,16 @@ interface BuildAftersalesColumnsOptions {
 
 const defaultShowProcess = () => true
 const defaultShowClaim = () => true
+const defaultShowSignContract = (row: AftersalesApi.AftersalesRespVO) => !!row.orderId
 const defaultShowRepurchase = (row: AftersalesApi.AftersalesRespVO) => !!row.orderId
 
 export const buildAftersalesColumns = (options: BuildAftersalesColumnsOptions): TableColumn[] => {
-    const hasAction = options.openDetail || options.openProcess || options.claim || options.repurchase
+    const hasAction =
+        options.openDetail ||
+        options.signContract ||
+        options.openProcess ||
+        options.claim ||
+        options.repurchase
     const canClaim = hasPermission(['crm:aftersales:claim'])
 
     const columns: TableColumn[] = [
@@ -129,13 +137,13 @@ export const buildAftersalesColumns = (options: BuildAftersalesColumnsOptions): 
             field: 'refundAmount',
             label: '退款金额',
             minWidth: '110px',
-            slots: { default: (data) => <span>￥{formatAftersalesAmount(data.row.refundAmount)}</span> }
+            slots: { default: (data) => <span>￥{formatAftersalesCentAmount(data.row.refundAmount)}</span> }
         },
         {
             field: 'retainAmount',
             label: '挽单金额',
             minWidth: '110px',
-            slots: { default: (data) => <span>￥{formatAftersalesAmount(data.row.retainAmount)}</span> }
+            slots: { default: (data) => <span>￥{formatAftersalesCentAmount(data.row.retainAmount)}</span> }
         },
         { field: 'processResult', label: '处理备注', minWidth: '160px', showOverflowTooltip: true },
         { field: 'creatorName', label: '提交人', minWidth: '110px' },
@@ -160,6 +168,16 @@ export const buildAftersalesColumns = (options: BuildAftersalesColumnsOptions): 
                         {options.openDetail ? (
                             <BaseButton link type="primary" onClick={() => options.openDetail?.(row.id)}>
                                 查看
+                            </BaseButton>
+                        ) : null}
+                        {options.signContract &&
+                        (options.showSignContract || defaultShowSignContract)(row) ? (
+                            <BaseButton
+                                link
+                                type="primary"
+                                onClick={() => options.signContract?.(row)}
+                            >
+                                签署合同
                             </BaseButton>
                         ) : null}
                         {canClaim && options.claim && (options.showClaim || defaultShowClaim)(row) ? (

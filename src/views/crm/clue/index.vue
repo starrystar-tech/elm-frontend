@@ -187,9 +187,9 @@
                     />
                 </el-select>
             </el-form-item>
-            <div class="mt-4px text-12px text-[var(--el-text-color-secondary)]">
+            <!-- <div class="mt-4px text-12px text-[var(--el-text-color-secondary)]">
                 增量打标，不会覆盖已有投诉标签关系
-            </div>
+            </div> -->
         </el-form>
         <template #footer>
             <el-button @click="complaintTagDialogVisible = false">取消</el-button>

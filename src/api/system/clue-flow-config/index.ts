@@ -1,5 +1,21 @@
 import request from '@/config/axios'
 
+export interface ClueFlowRuleConditionOptionVO {
+  id: number
+  name: string
+}
+
+export type ClueFlowDateValue = string | number[]
+
+export interface ClueFlowRuleConditionVO {
+  campusIds?: number[]
+  projectIds?: number[]
+  signStartDate?: ClueFlowDateValue
+  signEndDate?: ClueFlowDateValue
+  campuses?: ClueFlowRuleConditionOptionVO[]
+  projects?: ClueFlowRuleConditionOptionVO[]
+}
+
 export interface ClueFlowRuleVO {
   ruleCode: string
   ruleGroup?: string
@@ -9,6 +25,7 @@ export interface ClueFlowRuleVO {
   targetCode?: string
   sort?: number
   remark?: string
+  condition?: ClueFlowRuleConditionVO | null
 }
 
 export interface ClueFlowConfigVO {
@@ -19,9 +36,23 @@ export interface ClueFlowConfigVO {
   updateTime?: Date
 }
 
+export interface ClueFlowRuleConditionSaveReqVO {
+  campusIds?: number[]
+  projectIds?: number[]
+  signStartDate?: string
+  signEndDate?: string
+}
+
+export interface ClueFlowRuleSaveReqVO {
+  ruleCode: string
+  enabled: boolean
+  days?: number
+  condition?: ClueFlowRuleConditionSaveReqVO
+}
+
 export interface ClueFlowConfigSaveReqVO {
   autoReturnVisitCallDurationSeconds?: number
-  rules: Array<Pick<ClueFlowRuleVO, 'ruleCode' | 'enabled' | 'days'>>
+  rules: ClueFlowRuleSaveReqVO[]
 }
 
 export const getClueFlowConfig = () => {

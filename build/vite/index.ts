@@ -14,7 +14,7 @@ import topLevelAwait from 'vite-plugin-top-level-await'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons-ng'
 import UnoCSS from 'unocss/vite'
-import { activeBrandProfile } from '../../src/config/brand.shared'
+import { BRAND_PROFILE_CONFIGS, resolveBrandKey } from '../../src/config/brand.shared'
 
 const BRAND_TITLE_PLACEHOLDER = '__BRAND_TITLE__'
 const BRAND_KEYWORDS_PLACEHOLDER = '__BRAND_KEYWORDS__'
@@ -31,6 +31,7 @@ function createBrandHtmlPlugin() {
   return {
     name: 'brand-html-transform',
     transformIndexHtml(html: string) {
+      const activeBrandProfile = BRAND_PROFILE_CONFIGS[resolveBrandKey(process.env.VITE_APP_BRAND)]
       return html
         .replaceAll(BRAND_TITLE_PLACEHOLDER, escapeHtml(activeBrandProfile.title))
         .replaceAll(BRAND_KEYWORDS_PLACEHOLDER, escapeHtml(activeBrandProfile.keywords))

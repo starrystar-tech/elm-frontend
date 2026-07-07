@@ -1,4 +1,6 @@
 export type BrandKey = 'baigu' | 'gaogu'
+export const DEFAULT_BRAND_KEY: BrandKey = 'baigu'
+export const BRAND_KEYS = ['baigu', 'gaogu'] as const
 
 export interface BrandProfile {
     key: BrandKey
@@ -36,7 +38,12 @@ export const BRAND_PROFILE_CONFIGS: Record<BrandKey, BrandProfile> = {
     }
 }
 
-// 切换品牌时，在这里改成 'baigu' 或 'gaogu'
-export const ACTIVE_BRAND_KEY: BrandKey = 'baigu'
+const normalizeBrandKey = (value?: string | null) => String(value || '').trim().toLowerCase()
 
-export const activeBrandProfile = BRAND_PROFILE_CONFIGS[ACTIVE_BRAND_KEY]
+export const isBrandKey = (value?: string | null): value is BrandKey =>
+    (BRAND_KEYS as readonly string[]).includes(normalizeBrandKey(value))
+
+export const resolveBrandKey = (value?: string | null): BrandKey => {
+    const normalizedBrandKey = normalizeBrandKey(value)
+    return isBrandKey(normalizedBrandKey) ? normalizedBrandKey : DEFAULT_BRAND_KEY
+}

@@ -7,12 +7,12 @@
             @reset="handleResetSearch"
         />
         <div class="action-btn-wrap flex items-center gap-2">
-            <BaseButton v-hasPermi="['crm:aftersales:create']" type="primary" @click="openCreate">
+            <!-- <BaseButton v-hasPermi="['crm:aftersales:create']" type="primary" @click="openCreate">
                 新增工单
             </BaseButton>
             <BaseButton v-hasPermi="['crm:aftersales:import']" plain @click="openImport">
                 批量导入
-            </BaseButton>
+            </BaseButton> -->
             <BaseButton v-hasPermi="['crm:aftersales:assign']" @click="openAssign">
                 分配处理人
             </BaseButton>
@@ -32,7 +32,6 @@
         />
         <AftersalesForm ref="formRef" @success="tableMethods.getList()" />
         <AftersalesAssignDialog ref="assignRef" @success="tableMethods.getList()" />
-        <AftersalesProcessDialog ref="processRef" @success="tableMethods.getList()" />
         <AftersalesDetailDialog ref="detailRef" />
         <AftersalesImportDialog ref="importRef" @success="tableMethods.getList()" />
         <ExportTaskDialog ref="exportDialogRef" @success="handleExportSuccess" />
@@ -52,10 +51,9 @@ import * as AftersalesApi from '@/api/crm/aftersales'
 import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
 import * as ComplaintTagApi from '@/api/system/complaintTag'
 import * as CampusApi from '@/api/system/campus'
-import { AFTERSALES_SOURCE, buildBaseSearchSchema, buildPageParams } from '../config'
+import { buildBaseSearchSchema, buildPageParams } from '../config'
 import AftersalesForm from '../components/AftersalesForm.vue'
 import AftersalesAssignDialog from '../components/AftersalesAssignDialog.vue'
-import AftersalesProcessDialog from '../components/AftersalesProcessDialog.vue'
 import AftersalesDetailDialog from '../components/AftersalesDetailDialog.vue'
 import AftersalesImportDialog from './AftersalesImportDialog.vue'
 import ExportTaskDialog from '@/views/crm/clue/components/ExportTaskDialog.vue'
@@ -67,7 +65,6 @@ const message = useMessage()
 const route = useRoute()
 const formRef = ref()
 const assignRef = ref()
-const processRef = ref()
 const detailRef = ref()
 const importRef = ref<InstanceType<typeof AftersalesImportDialog>>()
 const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
@@ -135,10 +132,6 @@ const initSearchFormFromRoute = () => {
     }
 }
 
-const openCreate = () => formRef.value.open({ source: AFTERSALES_SOURCE.MANUAL })
-
-const openImport = () => importRef.value?.open()
-
 const openAssign = async () => {
     const selections = await tableMethods.getSelections()
     if (!selections.length) {
@@ -178,33 +171,13 @@ onBeforeUnmount(() => {
     }
 })
 
-const openProcess = (row: AftersalesApi.AftersalesRespVO) => {
-    processRef.value.open(row)
-}
-
 const openDetail = (id: number) => detailRef.value.open(id)
-
-const handleRepurchase = async (row: AftersalesApi.AftersalesRespVO) => {
-    if (!row.orderId) {
-        message.warning('该工单未关联订单，无法激活')
-        return
-    }
-    await message.confirm(
-        `确认激活售后订单“${row.orderNo || row.ticketNo}”吗？`,
-        '提示'
-    )
-    await AftersalesApi.repurchaseAftersales(Number(row.orderId))
-    message.success('激活成功')
-    await tableMethods.getList()
-}
 
 const tableColumns = computed<TableColumn[]>(() =>
     buildAftersalesColumns({
         message,
         openDetail,
-        openProcess,
-        repurchase: handleRepurchase,
-        actionWidth: '200px'
+        actionWidth: '90px'
     })
 )
 

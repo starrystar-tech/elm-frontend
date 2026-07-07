@@ -115,7 +115,6 @@ const tableColumns = computed<TableColumn[]>(() => [
     { field: 'deptName', label: '所在部门', minWidth: '140px' },
     { field: 'totalCount', label: '工单总数', minWidth: '100px' },
     { field: 'finishedCount', label: '已完成', minWidth: '100px' },
-    { field: 'pendingCount', label: '待处理', minWidth: '100px' },
     { field: 'processingCount', label: '处理中', minWidth: '100px' }
 ])
 

@@ -47,12 +47,16 @@ const hiddenPoolSearchFields = [
     'receiveTimeRange',
     'processTimeRange'
 ]
-const hiddenPoolTableFields = [
-    'aftersalesResult',
-    'enrollTime',
-    'installmentStatus',
-    'finalPaymentChannel',
-    'receiveTime'
+const visiblePoolTableFields = [
+    'ticketNo',
+    'customerId',
+    'orderNo',
+    'customerName',
+    'customerMobile',
+    'campusName',
+    'source',
+    'priority',
+    'action'
 ]
 
 const searchSchema = computed<FormSchema[]>(() =>
@@ -95,7 +99,7 @@ const tableColumns = computed<TableColumn[]>(() =>
         message,
         claim,
         actionWidth: '80px'
-    }).filter((item) => !hiddenPoolTableFields.includes(item.field))
+    }).filter((item) => visiblePoolTableFields.includes(item.field))
 )
 
 onMounted(async () => {

@@ -92,6 +92,7 @@ export interface AftersalesRespVO {
   aftersalesResultDesc?: string
   reason?: string
   remark?: string
+  attachmentUrl?: string
   complaintTags?: string[]
   creatorName?: string
   creatorDeptName?: string
