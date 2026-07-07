@@ -79,8 +79,8 @@ export const getContractListByOrderProduct = (params: ContractOrderProductReqVO)
   return request.get<ContractOrderProductRespVO[]>({ url: '/system/contract/list-by-order-product', params })
 }
 
-export const getContractListByClue = (clueId: number) => {
-  return request.get<ContractPageRespVO[]>({ url: '/system/contract/list-by-clue', params: { clueId } })
+export const getContractListByClue = (clueId: number, orderNo?: string) => {
+  return request.get<ContractPageRespVO[]>({ url: '/system/contract/list-by-clue', params: { clueId, orderNo } })
 }
 
 export const getContractPreviewUrl = (id: number) => {

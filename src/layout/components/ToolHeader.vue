@@ -57,6 +57,9 @@ const hasTenantVisitPermission = computed(
     () => import.meta.env.VITE_APP_TENANT_ENABLE === 'true' && checkPermi(['system:tenant:visit'])
 )
 const hasExportTaskPermission = computed(() => checkPermi(['system:export-task:query']))
+const hasOtherSettingConfigPermission = computed(() =>
+    checkPermi(['crm:other-setting-config:query'])
+)
 
 export default defineComponent({
     name: 'ToolHeader',
@@ -233,7 +236,9 @@ export default defineComponent({
             try {
                 const [routeList, otherConfig] = await Promise.all([
                     getOutboundRouteSimpleList(),
-                    getOtherSettingConfig(),
+                    hasOtherSettingConfigPermission.value
+                        ? getOtherSettingConfig()
+                        : Promise.resolve(undefined),
                     reloadProfile()
                 ])
                 outboundRouteOptions.value = routeList || []

@@ -47,6 +47,10 @@
                     </el-select>
                     <el-input v-model="customerKeyword" placeholder="请输入客户" />
                 </div>
+                <div class="filter-actions">
+                    <el-button type="primary" @click="handleSearch">查询</el-button>
+                    <el-button @click="handleReset">重置</el-button>
+                </div>
 
                 <div class="chart-grid">
                     <div class="chart-card">
@@ -358,6 +362,7 @@ import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import * as WeworkChatApi from '@/api/crm/wework/chat'
 import { useTagsViewStore } from '@/store/modules/tagsView'
+import { resolveTimestamp } from '@/utils/formatTime'
 
 const activeTab = ref<'word' | 'behavior' | 'setting'>('word')
 const selectedCorpId = ref('')
@@ -433,7 +438,7 @@ const trendData = computed(() => detailData.value.trendList.slice(0, 8))
 const tableRows = computed(() =>
     detailData.value.rows.map((item) => ({
         ...item,
-        timeText: item.msgTime ? dayjs.unix(item.msgTime).format('YYYY-MM-DD HH:mm:ss') : '-'
+        timeText: resolveTimestamp(item.msgTime)?.format('YYYY-MM-DD HH:mm:ss') || '-'
     }))
 )
 const dominantLabel = computed(
@@ -510,6 +515,18 @@ const loadAnalysisDetail = async () => {
     } finally {
         loading.value = false
     }
+}
+
+const handleSearch = async () => {
+    await loadAnalysisDetail()
+}
+
+const handleReset = async () => {
+    dateRange.value = []
+    keyword.value = ''
+    senderType.value = ''
+    customerKeyword.value = ''
+    await loadAnalysisDetail()
 }
 
 const loadMonitorSetting = async () => {
@@ -627,7 +644,7 @@ const handleDeleteSensitiveWord = async (id: number) => {
     await loadMonitorSetting()
 }
 
-watch([selectedCorpId, dateRange], loadAnalysisDetail)
+watch(selectedCorpId, loadAnalysisDetail)
 watch(activeTab, async () => {
     if (activeTab.value === 'setting') {
         await loadMonitorSetting()
@@ -697,6 +714,12 @@ onMounted(async () => {
 .filter-row {
     display: grid;
     grid-template-columns: 280px 1fr 160px 200px;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.filter-actions {
+    display: flex;
+    justify-content: flex-end;
     gap: 12px;
     margin-bottom: 16px;
 }

@@ -265,12 +265,12 @@ const getContractStatusType = (value?: number) => {
     return undefined
 }
 
-const loadContracts = async (clueId?: number) => {
+const loadContracts = async (clueId?: number, orderNo?: string) => {
     contractList.value = []
     if (!clueId) return
     contractLoading.value = true
     try {
-        contractList.value = await ContractApi.getContractListByClue(Number(clueId))
+        contractList.value = await ContractApi.getContractListByClue(Number(clueId), orderNo)
     } finally {
         contractLoading.value = false
     }
@@ -334,7 +334,7 @@ const open = async (id: number) => {
     } finally {
         loading.value = false
     }
-    await loadContracts(detail.value?.clueId)
+    await loadContracts(detail.value?.clueId, detail.value?.orderNo)
 }
 defineExpose({ open })
 </script>
