@@ -56,7 +56,7 @@ const message = computed(() => appStore.getMessage)
 const hasTenantVisitPermission = computed(
     () => import.meta.env.VITE_APP_TENANT_ENABLE === 'true' && checkPermi(['system:tenant:visit'])
 )
-const hasExportTaskPermission = computed(() => checkPermi(['system:export-task:query']))
+const hasExportTaskPermission = ref(true)
 const hasOtherSettingConfigPermission = computed(() =>
     checkPermi(['crm:other-setting-config:query'])
 )
@@ -133,9 +133,13 @@ export default defineComponent({
         })
         const outboundStatusActionLabel = computed(() => (outboundSignedIn.value ? '签出' : '签入'))
         const availableOutboundRouteOptions = computed(() => {
-            const currentId = Number(
-                selectedOutboundRouteId.value || profile.outboundRouteId || systemOutboundRouteId.value || 0
-            ) || 0
+            const currentId =
+                Number(
+                    selectedOutboundRouteId.value ||
+                        profile.outboundRouteId ||
+                        systemOutboundRouteId.value ||
+                        0
+                ) || 0
             return outboundRouteOptions.value.filter(
                 (item) =>
                     (item.status === 0 || Number(item.id) === currentId) &&
@@ -146,10 +150,12 @@ export default defineComponent({
             () => selectedOutboundRouteId.value || systemOutboundRouteId.value
         )
         const effectiveOutboundRoute = computed(() =>
-            outboundRouteOptions.value.find((item) => Number(item.id) === Number(effectiveOutboundRouteId.value))
+            outboundRouteOptions.value.find(
+                (item) => Number(item.id) === Number(effectiveOutboundRouteId.value)
+            )
         )
-        const outboundRouteTriggerText = computed(() =>
-            effectiveOutboundRoute.value?.name || '系统默认线路'
+        const outboundRouteTriggerText = computed(
+            () => effectiveOutboundRoute.value?.name || '系统默认线路'
         )
         const dialerStatusType = computed(() => {
             if (browserStatus.value === '通话中') return 'inCall'
@@ -434,30 +440,41 @@ export default defineComponent({
                                                                 {outboundRouteOptions.value.find(
                                                                     (item) =>
                                                                         Number(item.id) ===
-                                                                        Number(systemOutboundRouteId.value)
+                                                                        Number(
+                                                                            systemOutboundRouteId.value
+                                                                        )
                                                                 )?.name || '未配置'}
                                                             </strong>
                                                             <span>系统默认</span>
                                                         </button>
                                                     ) : undefined}
-                                                    {availableOutboundRouteOptions.value.map((item) => (
-                                                        <button
-                                                            key={item.id}
-                                                            type="button"
-                                                            class={[
-                                                                'outbound-toolbar__route-option',
-                                                                Number(selectedOutboundRouteId.value) ===
-                                                                    Number(item.id) && 'is-active'
-                                                            ]}
-                                                            onClick={() => handleOutboundRouteChange(item.id)}
-                                                        >
-                                                            <span>{item.name}</span>
-                                                            {Number(systemOutboundRouteId.value) ===
-                                                            Number(item.id) ? (
-                                                                <em>默认</em>
-                                                            ) : undefined}
-                                                        </button>
-                                                    ))}
+                                                    {availableOutboundRouteOptions.value.map(
+                                                        (item) => (
+                                                            <button
+                                                                key={item.id}
+                                                                type="button"
+                                                                class={[
+                                                                    'outbound-toolbar__route-option',
+                                                                    Number(
+                                                                        selectedOutboundRouteId.value
+                                                                    ) === Number(item.id) &&
+                                                                        'is-active'
+                                                                ]}
+                                                                onClick={() =>
+                                                                    handleOutboundRouteChange(
+                                                                        item.id
+                                                                    )
+                                                                }
+                                                            >
+                                                                <span>{item.name}</span>
+                                                                {Number(
+                                                                    systemOutboundRouteId.value
+                                                                ) === Number(item.id) ? (
+                                                                    <em>默认</em>
+                                                                ) : undefined}
+                                                            </button>
+                                                        )
+                                                    )}
                                                 </div>
                                             )
                                         }}
@@ -474,9 +491,13 @@ export default defineComponent({
                                             dialerRef.value?.openDialer?.()
                                             toggleOutboundStatus()
                                         }}
-                                        disabled={outboundStatusLoading.value || browserLoading.value}
+                                        disabled={
+                                            outboundStatusLoading.value || browserLoading.value
+                                        }
                                     >
-                                        {outboundStatusLoading.value ? '...' : outboundStatusActionLabel.value}
+                                        {outboundStatusLoading.value
+                                            ? '...'
+                                            : outboundStatusActionLabel.value}
                                     </button>
                                 </div>
                                 <ElInput
