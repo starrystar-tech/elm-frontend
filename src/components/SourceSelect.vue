@@ -6,7 +6,7 @@
     :placeholder="placeholder"
     @change="handleChange"
   >
-    <el-option v-if="multiple" :key="-1" label="全部" :value="-1" />
+    <el-option v-if="multiple && showAllOption" :key="-1" label="全部" :value="-1" />
     <template v-if="useId">
       <el-option v-for="item in options" :key="item.id" :label="item.name" :value="item.id as number" />
     </template>
@@ -24,6 +24,7 @@ const props = defineProps<{
   placeholder?: string
   multiple?: boolean
   useId?: boolean
+  showAllOption?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -32,6 +33,7 @@ const emit = defineEmits<{
 
 const multiple = computed(() => props.multiple ?? false)
 const useId = computed(() => props.useId ?? false)
+const showAllOption = computed(() => props.showAllOption ?? true)
 const placeholder = computed(() => props.placeholder || '请选择来源')
 
 const options = ref<ClueSourceApi.ClueSourceVO[]>([])

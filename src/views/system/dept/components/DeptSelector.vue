@@ -30,6 +30,7 @@
                 check-strictly
                 default-expand-all
                 style="max-height: 420px; overflow: auto"
+                @check="handleCheck"
             />
             <template #footer>
                 <el-button @click="visible = false">取消</el-button>
@@ -50,6 +51,7 @@ const props = defineProps<{
     modelValue?: number | number[]
     multiple?: boolean
     placeholder?: string
+    includeRoot?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -82,7 +84,7 @@ const loadDept = async () => {
     if (loaded.value) return
     const res = await DeptApi.getSimpleDeptList()
     const tree = handleTree(res)
-    deptList.value = [{ id: 0, name: '顶级部门', children: tree } as any]
+    deptList.value = props.includeRoot === false ? tree : [{ id: 0, name: '顶级部门', children: tree } as any]
     loaded.value = true
 }
 
@@ -99,8 +101,18 @@ const remove = (id: number) => {
     }
 }
 
+const handleCheck = (data: any, checkedInfo: { checkedKeys?: number[] }) => {
+    if (props.multiple) {
+        return
+    }
+    const checkedKeys = checkedInfo?.checkedKeys || []
+    treeRef.value?.setCheckedKeys(checkedKeys.includes(data.id) ? [data.id] : [])
+}
+
 const confirm = () => {
-    const ids = treeRef.value?.getCheckedKeys() || []
+    const ids = (treeRef.value?.getCheckedKeys() || []).filter(
+        (id: number) => props.includeRoot !== false || id !== 0
+    )
     if (props.multiple) {
         emit('update:modelValue', ids as number[])
     } else {

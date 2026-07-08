@@ -43,9 +43,12 @@ export interface CrmCluePoolShareRuleCreateReqVO {
 
 export interface CrmCluePoolShareRuleUpdateReqVO {
     id: number
-    ownerDeptId: number
-    seaType: number
+    ownerDeptId?: number
+    ownerDeptIds: number[]
+    seaType?: number
+    seaTypes: number[]
     sharedDeptIds: number[]
+    status?: number
     clueSourceIds?: number[]
     consultProjectIds?: number[]
     areaIds?: number[]

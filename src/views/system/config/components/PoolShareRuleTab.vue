@@ -32,13 +32,12 @@
             append-to-body
         >
             <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-                <el-form-item label="选择部门" prop="ownerDeptIds">
-                    <DeptSelector v-model="form.ownerDeptIds" multiple />
+                <el-form-item label="选择部门" prop="ownerDeptId">
+                    <DeptSelector v-model="form.ownerDeptId" :include-root="false" />
                 </el-form-item>
-                <el-form-item label="公海类型" prop="seaTypes">
+                <el-form-item label="公海类型" prop="seaType">
                     <el-select
-                        v-model="form.seaTypes"
-                        multiple
+                        v-model="form.seaType"
                         clearable
                         placeholder="请选择公海类型"
                         :disabled="isEdit"
@@ -48,10 +47,15 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item label="共享部门" prop="sharedDeptIds">
-                    <DeptSelector v-model="form.sharedDeptIds" multiple />
+                    <DeptSelector v-model="form.sharedDeptIds" multiple :include-root="false" />
                 </el-form-item>
                 <el-form-item label="客户来源" prop="clueSourceIds">
-                    <SourceSelect v-model="form.clueSourceIds" multiple use-id />
+                    <SourceSelect
+                        v-model="form.clueSourceIds"
+                        multiple
+                        use-id
+                        :show-all-option="false"
+                    />
                 </el-form-item>
                 <el-form-item label="项目" prop="consultProjectIds">
                     <ProductTypeSelect v-model="form.consultProjectIds" multiple />
@@ -101,8 +105,8 @@ interface SearchParams {
 
 interface Form {
     id?: number
-    ownerDeptIds: number[]
-    seaTypes: number[]
+    ownerDeptId?: number
+    seaType?: number
     sharedDeptIds: number[]
     clueSourceIds: number[]
     consultProjectIds: number[]
@@ -122,8 +126,8 @@ const formRef = ref()
 
 const searchForm = reactive<SearchParams>({})
 const form = reactive<Form>({
-    ownerDeptIds: [],
-    seaTypes: [],
+    ownerDeptId: undefined,
+    seaType: undefined,
     sharedDeptIds: [],
     clueSourceIds: [],
     consultProjectIds: [],
@@ -137,8 +141,8 @@ const seaTypeOptions = [
 ]
 
 const rules = reactive({
-    ownerDeptIds: [{ required: true, message: '请选择部门', trigger: 'change' }],
-    seaTypes: [{ required: true, message: '请选择公海类型', trigger: 'change' }],
+    ownerDeptId: [{ required: true, message: '请选择部门', trigger: 'change' }],
+    seaType: [{ required: true, message: '请选择公海类型', trigger: 'change' }],
     sharedDeptIds: [{ required: true, message: '请选择共享部门', trigger: 'change' }]
 })
 
@@ -332,14 +336,18 @@ const handleResetSearch = () => {
 const resetForm = () => {
     Object.assign(form, {
         id: undefined,
-        ownerDeptIds: [],
-        seaTypes: [],
+        ownerDeptId: undefined,
+        seaType: undefined,
         sharedDeptIds: [],
         clueSourceIds: [],
         consultProjectIds: [],
         areaIds: [],
         status: 0
     })
+}
+
+const normalizeIdList = (values: number[]) => {
+    return [...new Set((values || []).filter((value) => Number(value) > 0))]
 }
 
 const openForm = (type: 'create' | 'update', id?: number) => {
@@ -355,8 +363,8 @@ const loadFormData = async (id: number) => {
     const data = await PoolShareApi.getCluePoolShareRule(id)
     Object.assign(form, {
         id: data.id,
-        ownerDeptIds: data.ownerDeptId ? [data.ownerDeptId] : [],
-        seaTypes: data.seaType ? [data.seaType] : [],
+        ownerDeptId: data.ownerDeptId,
+        seaType: data.seaType,
         sharedDeptIds: [...(data.sharedDeptIds || [])],
         clueSourceIds: [...(data.clueSourceIds || [])],
         consultProjectIds: [...(data.consultProjectIds || [])],
@@ -391,30 +399,47 @@ const handleSave = async () => {
 
     saving.value = true
     try {
+        const ownerDeptIds = form.ownerDeptId ? [form.ownerDeptId] : []
+        const seaTypes = form.seaType ? [form.seaType] : []
+        const sharedDeptIds = normalizeIdList(form.sharedDeptIds)
+        const clueSourceIds = normalizeIdList(form.clueSourceIds)
+        const consultProjectIds = normalizeIdList(form.consultProjectIds)
+        const areaIds = [...new Set((form.areaIds || []).filter((value) => Number(value) !== 0))]
+        if (!ownerDeptIds.length) {
+            message.error('请选择部门')
+            return
+        }
+        if (!sharedDeptIds.length) {
+            message.error('请选择共享部门')
+            return
+        }
+        if (!seaTypes.length) {
+            message.error('请选择公海类型')
+            return
+        }
         if (isEdit.value && form.id) {
             const payload: PoolShareApi.CrmCluePoolShareRuleUpdateReqVO = {
                 id: form.id,
-                ownerDeptId: form.ownerDeptIds[0] || 0,
-                seaType: form.seaTypes[0] || 0,
-                sharedDeptIds: form.sharedDeptIds,
-                clueSourceIds: form.clueSourceIds.length ? form.clueSourceIds : undefined,
-                consultProjectIds: form.consultProjectIds.length
-                    ? form.consultProjectIds
-                    : undefined,
-                areaIds: form.areaIds.length ? form.areaIds : undefined
+                ownerDeptId: ownerDeptIds[0],
+                ownerDeptIds,
+                seaType: seaTypes[0],
+                seaTypes,
+                sharedDeptIds,
+                status: form.status,
+                clueSourceIds: clueSourceIds.length ? clueSourceIds : undefined,
+                consultProjectIds: consultProjectIds.length ? consultProjectIds : undefined,
+                areaIds: areaIds.length ? areaIds : undefined
             }
             await PoolShareApi.updateCluePoolShareRule(payload)
         } else {
             const payload: PoolShareApi.CrmCluePoolShareRuleCreateReqVO = {
-                ownerDeptIds: form.ownerDeptIds,
+                ownerDeptIds,
                 status: form.status,
-                seaTypes: form.seaTypes,
-                sharedDeptIds: form.sharedDeptIds,
-                clueSourceIds: form.clueSourceIds.length ? form.clueSourceIds : undefined,
-                consultProjectIds: form.consultProjectIds.length
-                    ? form.consultProjectIds
-                    : undefined,
-                areaIds: form.areaIds.length ? form.areaIds : undefined
+                seaTypes,
+                sharedDeptIds,
+                clueSourceIds: clueSourceIds.length ? clueSourceIds : undefined,
+                consultProjectIds: consultProjectIds.length ? consultProjectIds : undefined,
+                areaIds: areaIds.length ? areaIds : undefined
             }
             await PoolShareApi.createCluePoolShareRule(payload)
         }
