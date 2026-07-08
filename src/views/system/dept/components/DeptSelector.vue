@@ -1,6 +1,10 @@
 <template>
     <div class="dept-selector">
-        <div class="dept-selector__value" @click="visible = true">
+        <div
+            class="dept-selector__value"
+            :class="{ 'is-disabled': disabled }"
+            @click="openSelector"
+        >
             <span v-if="!selectedLabels.length" class="dept-selector__placeholder">{{
                 placeholder
             }}</span>
@@ -10,7 +14,7 @@
                     :key="item.id"
                     size="small"
                     type="info"
-                    closable
+                    :closable="!disabled"
                     disable-transitions
                     @close.stop="remove(item.id)"
                 >
@@ -52,6 +56,7 @@ const props = defineProps<{
     multiple?: boolean
     placeholder?: string
     includeRoot?: boolean
+    disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -62,6 +67,7 @@ const visible = ref(false)
 const treeRef = ref()
 const deptList = ref<Tree[]>([])
 const loaded = ref(false)
+const disabled = computed(() => props.disabled ?? false)
 const modelIds = computed<number[]>(() => {
     if (props.multiple) return Array.isArray(props.modelValue) ? props.modelValue : []
     if (props.modelValue === 0 || props.modelValue) return [props.modelValue as number]
@@ -88,7 +94,17 @@ const loadDept = async () => {
     loaded.value = true
 }
 
+const openSelector = () => {
+    if (disabled.value) {
+        return
+    }
+    visible.value = true
+}
+
 const remove = (id: number) => {
+    if (disabled.value) {
+        return
+    }
     if (props.multiple) {
         emit(
             'update:modelValue',
@@ -110,6 +126,10 @@ const handleCheck = (data: any, checkedInfo: { checkedKeys?: number[] }) => {
 }
 
 const confirm = () => {
+    if (disabled.value) {
+        visible.value = false
+        return
+    }
     const ids = (treeRef.value?.getCheckedKeys() || []).filter(
         (id: number) => props.includeRoot !== false || id !== 0
     )
@@ -166,6 +186,16 @@ const placeholder = computed(() => props.placeholder || '请选择部门')
 
 .dept-selector__value:hover {
     border-color: var(--el-border-color-hover, #c0c4cc);
+}
+
+.dept-selector__value.is-disabled {
+    cursor: not-allowed;
+    background: var(--el-disabled-bg-color, #f5f7fa);
+    color: var(--el-disabled-text-color, #a8abb2);
+}
+
+.dept-selector__value.is-disabled:hover {
+    border-color: var(--el-border-color, #dcdfe6);
 }
 
 .dept-selector__value:focus-within,

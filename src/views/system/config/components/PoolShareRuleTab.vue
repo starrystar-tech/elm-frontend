@@ -33,7 +33,11 @@
         >
             <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
                 <el-form-item label="选择部门" prop="ownerDeptId">
-                    <DeptSelector v-model="form.ownerDeptId" :include-root="false" />
+                    <DeptSelector
+                        v-model="form.ownerDeptId"
+                        :include-root="false"
+                        :disabled="isEdit"
+                    />
                 </el-form-item>
                 <el-form-item label="公海类型" prop="seaType">
                     <el-select
