@@ -115,8 +115,8 @@ const {
                     : Number(confirmStatus),
             beginPayTime: payTimeRange[0],
             endPayTime: payTimeRange[1],
-            minPayAmount: payAmountRange[0] ? Number(payAmountRange[0]) : undefined,
-            maxPayAmount: payAmountRange[1] ? Number(payAmountRange[1]) : undefined
+            minPayAmount: payAmountRange[0] ? Math.round(Number(payAmountRange[0]) * 100) : undefined,
+            maxPayAmount: payAmountRange[1] ? Math.round(Number(payAmountRange[1]) * 100) : undefined
         })
     }
 })

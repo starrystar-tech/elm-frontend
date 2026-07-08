@@ -223,8 +223,8 @@ const {
             endRefundTime: refundTimeRange[1],
             beginCreateTime: createTimeRange[0],
             endCreateTime: createTimeRange[1],
-            minRefundAmount: refundAmountRange[0] ? Number(refundAmountRange[0]) : undefined,
-            maxRefundAmount: refundAmountRange[1] ? Number(refundAmountRange[1]) : undefined
+            minRefundAmount: refundAmountRange[0] ? Math.round(Number(refundAmountRange[0]) * 100) : undefined,
+            maxRefundAmount: refundAmountRange[1] ? Math.round(Number(refundAmountRange[1]) * 100) : undefined
         })
     }
 })

@@ -364,8 +364,8 @@ const setSearchParams = (params: Recordable) => {
     } = params
     tableMethods.setSearchParams({
         ...rest,
-        minPaidAmount: paidAmountRange[0] ? Number(paidAmountRange[0]) : undefined,
-        maxPaidAmount: paidAmountRange[1] ? Number(paidAmountRange[1]) : undefined,
+        minPaidAmount: paidAmountRange[0] ? Math.round(Number(paidAmountRange[0]) * 100) : undefined,
+        maxPaidAmount: paidAmountRange[1] ? Math.round(Number(paidAmountRange[1]) * 100) : undefined,
         beginEnrollTime: enrollTimeRange[0],
         endEnrollTime: enrollTimeRange[1],
         beginExpireTime: expireTimeRange[0],
@@ -488,8 +488,8 @@ const openExportDialog = () => {
             } = currentSearchParams.value || {}
             await OrderApi.createOrderExportTask({
                 ...rest,
-                minPaidAmount: paidAmountRange[0] ? Number(paidAmountRange[0]) : undefined,
-                maxPaidAmount: paidAmountRange[1] ? Number(paidAmountRange[1]) : undefined,
+                minPaidAmount: paidAmountRange[0] ? Math.round(Number(paidAmountRange[0]) * 100) : undefined,
+                maxPaidAmount: paidAmountRange[1] ? Math.round(Number(paidAmountRange[1]) * 100) : undefined,
                 beginEnrollTime: enrollTimeRange[0],
                 endEnrollTime: enrollTimeRange[1],
                 beginExpireTime: expireTimeRange[0],
