@@ -15,10 +15,10 @@
                 @search="setSearchParams"
                 @reset="setSearchParams"
             />
-            <div class="action-btn-wrap">
-                <BaseButton type="primary" :loading="syncLoading" @click="handleSync"
-                    >同步企微客户</BaseButton
-                >
+            <div class="action-btn-wrap" v-if="canSync">
+                <BaseButton type="primary" :loading="syncLoading" @click="handleSync">
+                    同步企微客户
+                </BaseButton>
             </div>
             <Table
                 v-model:currentPage="tableObject.currentPage"
@@ -50,6 +50,7 @@ import { DictTag } from '@/components/DictTag'
 import type { SearchExpose } from '@/components/Search'
 import type { FormSchema } from '@/types/form'
 import { useTable } from '@/hooks/web/useTable'
+import { hasPermission } from '@/directives/permission/hasPermi'
 import * as WeworkContactApi from '@/api/crm/wework/contact'
 import * as WeappApi from '@/api/system/weapp'
 import ClueDetailDrawer from '@/views/crm/clue/detail/ClueDetailDrawer.vue'
@@ -59,6 +60,7 @@ import ClueNameCell from '@/views/crm/clue/components/ClueNameCell.vue'
 defineOptions({ name: 'CrmWeworkContact' })
 
 const message = useMessage()
+const canSync = hasPermission(['crm:wework-contact:sync'])
 const route = useRoute()
 const searchRef = ref<SearchExpose>()
 const syncLoading = ref(false)
