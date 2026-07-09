@@ -37,6 +37,7 @@
             <div class="flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
                 <div class="flex gap-8px flex-wrap">
                     <BaseButton
+                        v-if="canBatchClaim"
                         type="primary"
                         :disabled="selectionList.length === 0"
                         @click="handleBatchClaim()"
@@ -44,6 +45,7 @@
                         批量领取
                     </BaseButton>
                     <BaseButton
+                        v-if="canBatchAssign"
                         plain
                         :disabled="selectionList.length === 0"
                         @click="assignDialogVisible = true"
@@ -116,6 +118,7 @@ import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
 import type { DeptVO } from '@/api/system/dept'
+import { hasPermission } from '@/directives/permission/hasPermi'
 import { renderCopyMobileCell } from './mobileCopy'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import {
@@ -149,6 +152,8 @@ interface PublicSeaSearchParams {
 }
 
 const message = useMessage()
+const canBatchClaim = hasPermission(['crm:clue:public-sea:claim'])
+const canBatchAssign = hasPermission(['crm:clue:public-sea:assign'])
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
 const activeTab = ref('1')
 const selectionList = ref<ClueApi.PublicSeaPageRespVO[]>([])
