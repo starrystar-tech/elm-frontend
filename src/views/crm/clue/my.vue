@@ -46,6 +46,7 @@
                     批量发短信
                 </BaseButton>
                 <BaseButton
+                    v-if="showReleaseActions"
                     type="primary"
                     :disabled="selectionList.length === 0"
                     @click="releaseDialogVisible = true"
@@ -166,6 +167,8 @@ const counts = reactive({
     returnedCount: 0
 })
 const totalCount = computed(() => Number(counts.totalCount || 0))
+const isSeaTab = computed(() => activeTab.value === 'SEA')
+const showReleaseActions = computed(() => isSeaTab.value)
 const releaseDialogVisible = ref(false)
 const releaseForm = reactive({
     reason: ''
@@ -522,13 +525,17 @@ const initSearchFormFromRoute = () => {
 
 const handleTabChange = async () => {
     selectionList.value = []
+    releaseDialogVisible.value = false
+    releaseForm.reason = ''
     searchForm.areaId = undefined
     searchForm.consultProjectId = undefined
     tableMethods.setSearchParams(buildSearchParams({}))
 }
 
 const openDetail = (id: number) => {
-    detailRef.value?.open(id)
+    detailRef.value?.open(id, {
+        hideReleaseAction: true
+    })
 }
 
 const openSmsDialog = () => {
@@ -558,7 +565,7 @@ const getMoreActions = (rowId: number) =>
             type: 'danger' as const
         }
     ].filter((item): item is { command: string; label: string; type?: 'danger' } =>
-        Boolean(item && rowId)
+        Boolean(item && rowId && (item.command !== 'release' || showReleaseActions.value))
     )
 
 const handleMoreCommand = async (command: string, rowId: number) => {
@@ -593,6 +600,10 @@ const resetTableSelection = async () => {
 }
 
 const handleRelease = async (ids?: number[]) => {
+    if (!showReleaseActions.value) {
+        message.warning('仅公海客户支持释放')
+        return
+    }
     const clueIds = ids || selectionList.value.map((item) => Number(item.id))
     if (!clueIds.length) {
         message.warning('请选择要释放的客户')

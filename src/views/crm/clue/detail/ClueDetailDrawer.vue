@@ -54,6 +54,7 @@
                     :outbound-call-page-size="outboundCallPagination.pageSize"
                     :readonly="readonlyMode"
                     :allow-readonly-edit-actions="allowReadonlyEditActions"
+                    :hide-release-action="hideReleaseAction"
                     @edit="openForm"
                     @cancel-edit="cancelEdit"
                     @save="handleSave"
@@ -168,11 +169,13 @@ const tagForm = reactive({ tagIds: [] as number[] })
 const readonlyMode = ref(false)
 const allowReadonlyEditActions = ref(false)
 const hideEnrollAction = ref(false)
+const hideReleaseAction = ref(false)
 
 type OpenOptions = {
     readonly?: boolean
     allowReadonlyEditActions?: boolean
     hideEnrollAction?: boolean
+    hideReleaseAction?: boolean
 }
 
 const loadOptions = async () => {
@@ -478,6 +481,7 @@ const open = async (id: number, options: OpenOptions = {}) => {
     readonlyMode.value = !!options.readonly
     allowReadonlyEditActions.value = !!options.allowReadonlyEditActions
     hideEnrollAction.value = !!options.hideEnrollAction
+    hideReleaseAction.value = !!options.hideReleaseAction
     appointmentPagination.pageNo = 1
     orderPagination.pageNo = 1
     ticketPagination.pageNo = 1

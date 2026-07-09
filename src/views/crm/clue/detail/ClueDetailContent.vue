@@ -24,7 +24,9 @@
                     </el-button>
                     <el-button plain @click="emit('sms')">短信</el-button>
                     <el-button v-if="!hideEnrollAction" plain @click="emit('enroll')">报名</el-button>
-                    <el-button plain @click="emit('release')">释放</el-button>
+                    <el-button v-if="!hideReleaseAction" plain @click="emit('release')">
+                        释放
+                    </el-button>
                 </template>
                 <el-button v-if="showTagAction" plain @click="emit('tag')">加标签</el-button>
             </template>
@@ -1091,6 +1093,7 @@ const props = defineProps<{
     outboundCallPageNo?: number
     outboundCallPageSize?: number
     hideEnrollAction?: boolean
+    hideReleaseAction?: boolean
     readonly?: boolean
     allowReadonlyEditActions?: boolean
 }>()
@@ -1107,6 +1110,7 @@ const hideEnrollAction = computed(
         route.name === 'CrmCustomerDetail' ||
         route.path.startsWith('/crm/customer')
 )
+const hideReleaseAction = computed(() => readonlyMode.value || !!props.hideReleaseAction)
 
 const emit = defineEmits<{
     edit: []

@@ -1,552 +1,374 @@
 <template>
-    <div class="seat-page">
-        <div class="seat-page__stats">
-            <div class="seat-stat">
-                <span class="seat-stat__label">员工总数</span>
-                <strong class="seat-stat__value">{{ stats.total }}</strong>
-            </div>
-            <div class="seat-stat seat-stat--green">
-                <span class="seat-stat__label">已绑定坐席</span>
-                <strong class="seat-stat__value">{{ stats.bound }}</strong>
-            </div>
-            <div class="seat-stat seat-stat--orange">
-                <span class="seat-stat__label">待绑定坐席</span>
-                <strong class="seat-stat__value">{{ stats.unbound }}</strong>
-            </div>
-        </div>
-
-        <ContentWrap>
-            <Search :model="searchParams" @search="setSearchParams" @reset="resetSearchParams">
-                <el-form-item label="员工" prop="userId">
-                    <el-input
-                        v-model="selectedUserName"
-                        clearable
-                        placeholder="请选择员工"
-                        style="width: 220px"
-                        @click="openUserSelect"
-                        @clear="clearSelectedUser"
-                    />
-                </el-form-item>
-                <el-form-item label="所属部门" prop="deptId">
-                    <DeptSelector
-                        v-model="searchParams.deptId"
-                        placeholder="请选择所属部门"
-                        style="width: 220px"
-                    />
-                </el-form-item>
-                <el-form-item label="绑定状态" prop="bindStatus">
-                    <el-select
-                        v-model="searchParams.bindStatus"
-                        clearable
-                        placeholder="请选择绑定状态"
-                        style="width: 220px"
-                    >
-                        <el-option label="已绑定" value="bound" />
-                        <el-option label="未绑定" value="unbound" />
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="线路" prop="outboundRouteId">
-                    <OutboundRouteSelect
-                        v-model="searchParams.outboundRouteId"
-                        placeholder="请选择线路"
-                        style="width: 220px"
-                        @change="handleRouteChange"
-                    />
-                </el-form-item>
-                <el-form-item label-width="0">
-                    <el-button type="primary" @click="setSearchParams(searchParams)">
-                        <Icon class="mr-5px" icon="ep:search" />
-                        查询
-                    </el-button>
-                    <el-button @click="resetSearchParams">
-                        <Icon class="mr-5px" icon="ep:refresh" />
-                        重置
-                    </el-button>
-                </el-form-item>
-            </Search>
-            <Table
-                v-model:currentPage="tableObject.currentPage"
-                v-model:pageSize="tableObject.pageSize"
-                :columns="tableColumns"
-                :data="filteredTableList"
-                :loading="tableObject.loading"
-                :pagination="{ total: filteredTableTotal }"
-                @register="tableRegister"
-            />
-        </ContentWrap>
-
-        <Dialog v-model="dialogVisible" :title="dialogTitle" width="520px">
-            <el-form
-                ref="formRef"
-                v-loading="dialogLoading"
-                :model="formData"
-                :rules="formRules"
-                label-width="100px"
-            >
-                <el-form-item label="员工姓名">
-                    <el-input :model-value="formData.nickname" disabled />
-                </el-form-item>
-                <el-form-item label="登录账号">
-                    <el-input :model-value="formData.username" disabled />
-                </el-form-item>
-                <el-form-item label="所属部门">
-                    <el-input :model-value="formData.deptName" disabled />
-                </el-form-item>
-                <!-- <el-form-item label="呼叫工号">
-                    <el-input :model-value="formData.callNo || '--'" disabled />
-                </el-form-item> -->
-                <el-form-item label="坐席" prop="callExt">
-                    <el-input
-                        v-model="formData.callExt"
-                        maxlength="32"
-                        clearable
-                        placeholder="请输入坐席，例如 1001"
-                    />
-                </el-form-item>
-                <el-form-item label="外显号码" prop="callerDisplayNumber">
-                    <el-input
-                        v-model="formData.callerDisplayNumber"
-                        maxlength="32"
-                        clearable
-                        placeholder="请输入外显号码"
-                    />
-                </el-form-item>
-                <el-form-item label="坐席密码" prop="callPassword">
-                    <el-input
-                        v-model="formData.callPassword"
-                        type="password"
-                        maxlength="64"
-                        clearable
-                        placeholder="请输入坐席密码"
-                    />
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <el-button @click="dialogVisible = false">取消</el-button>
-                <el-button type="primary" :loading="dialogSaving" @click="handleSubmit">
-                    保存
-                </el-button>
-            </template>
-        </Dialog>
-        <UserSelectForm ref="userSelectFormRef" @confirm="handleUserSelectConfirm" />
+  <div class="seat-manage-page">
+    <div class="seat-manage-page__stats">
+      <div class="seat-stat-card">
+        <span class="seat-stat-card__label">坐席总数</span>
+        <strong class="seat-stat-card__value">{{ stats.total }}</strong>
+      </div>
+      <div class="seat-stat-card seat-stat-card--using">
+        <span class="seat-stat-card__label">使用中</span>
+        <strong class="seat-stat-card__value">{{ stats.inUse }}</strong>
+      </div>
+      <div class="seat-stat-card seat-stat-card--idle">
+        <span class="seat-stat-card__label">空闲</span>
+        <strong class="seat-stat-card__value">{{ stats.idle }}</strong>
+      </div>
+      <div class="seat-stat-card seat-stat-card--disabled">
+        <span class="seat-stat-card__label">停用</span>
+        <strong class="seat-stat-card__value">{{ stats.disabled }}</strong>
+      </div>
     </div>
+
+    <ContentWrap>
+      <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
+      <div class="mb-10px">
+        <BaseButton v-if="canUpdate" type="primary" @click="openForm('create')">新增坐席</BaseButton>
+      </div>
+      <Table
+        v-model:currentPage="tableObject.currentPage"
+        v-model:pageSize="tableObject.pageSize"
+        :columns="tableColumns"
+        :data="tableObject.tableList"
+        :loading="tableObject.loading"
+        :pagination="{ total: tableObject.total }"
+        stripe
+        show-overflow-tooltip
+        @register="tableRegister"
+      />
+    </ContentWrap>
+
+    <Dialog v-model="dialogVisible" :title="dialogTitle" width="560px">
+      <el-form
+        ref="formRef"
+        v-loading="dialogLoading"
+        :model="formData"
+        :rules="formRules"
+        label-width="110px"
+      >
+        <el-form-item label="坐席分机" prop="seatExt">
+          <el-input v-model="formData.seatExt" clearable maxlength="64" placeholder="请输入坐席分机" />
+        </el-form-item>
+        <el-form-item label="SIP 密码" prop="sipPassword">
+          <el-input v-model="formData.sipPassword" clearable maxlength="128" placeholder="请输入 SIP 密码" />
+        </el-form-item>
+        <el-form-item label="语音信箱密码" prop="voicemailPassword">
+          <el-input
+            v-model="formData.voicemailPassword"
+            clearable
+            maxlength="128"
+            placeholder="请输入语音信箱密码"
+          />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="formData.status">
+            <el-radio :value="0">启用</el-radio>
+            <el-radio :value="1">停用</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="备注" prop="remark">
+          <el-input
+            v-model="formData.remark"
+            :rows="3"
+            maxlength="255"
+            placeholder="请输入备注"
+            show-word-limit
+            type="textarea"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="dialogSaving" @click="handleSubmit">保存</el-button>
+      </template>
+    </Dialog>
+  </div>
 </template>
 
 <script setup lang="tsx">
 import { computed, onMounted, reactive, ref } from 'vue'
-import type { FormRules } from 'element-plus'
+import { ElTag, type FormRules } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
-import * as UserApi from '@/api/system/user'
-import type { UserVO } from '@/api/system/user'
+import * as CallSeatApi from '@/api/system/call/seat'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
-import OutboundRouteSelect from '@/components/OutboundRouteSelect.vue'
 import { useTable } from '@/hooks/web/useTable'
-import UserSelectForm from '@/components/UserSelectForm/index.vue'
-import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
-import type { OutboundRouteVO } from '@/api/system/call/router'
+import type { FormSchema } from '@/types/form'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'CrmCallSeat' })
 
-interface SeatSearchParams {
-    userId?: number
-    deptId?: number
-    bindStatus?: 'bound' | 'unbound'
-    outboundRouteId?: number
-}
+const canQuery = hasPermission(['system:user:query'])
+const canUpdate = hasPermission(['system:user:update'])
 
 const message = useMessage()
 const formRef = ref()
 const dialogVisible = ref(false)
 const dialogLoading = ref(false)
 const dialogSaving = ref(false)
-const dialogTitle = ref('绑定坐席')
-const selectedUserName = ref('')
-const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
-const selectedRoute = ref<OutboundRouteVO>()
+const dialogTitle = ref('新增坐席')
 
-const searchParams = reactive<SeatSearchParams>({})
-const currentUserDetail = ref<UserApi.UserVO | null>(null)
-const formData = reactive({
-    id: undefined as number | undefined,
-    nickname: '',
-    username: '',
-    deptName: '',
-    callNo: '',
-    callExt: '',
-    callPassword: '',
-    callerDisplayNumber: ''
+const stats = reactive<CallSeatApi.CallSeatStatsVO>({
+  total: 0,
+  inUse: 0,
+  idle: 0,
+  disabled: 0
+})
+
+const formData = reactive<CallSeatApi.CallSeatVO>({
+  id: undefined,
+  seatExt: '',
+  sipPassword: '',
+  voicemailPassword: '',
+  status: 0,
+  remark: ''
 })
 
 const formRules = reactive<FormRules>({
-    callExt: [
-        {
-            pattern: /^\d+$/,
-            message: '坐席只能输入数字',
-            trigger: 'blur'
-        }
-    ]
-})
-
-const buildPageParams = (params: SeatSearchParams = {}) => {
-    const nextParams: Record<string, any> = {
-        deptId: params.deptId,
-        userId: params.userId
+  seatExt: [
+    { required: true, message: '请输入坐席分机', trigger: 'blur' },
+    {
+      pattern: /^[A-Za-z0-9._@-]+$/,
+      message: '坐席分机仅支持字母、数字、点、下划线、中划线和 @',
+      trigger: 'blur'
     }
-    if (params.bindStatus === 'bound') {
-        nextParams.hasCallExt = true
+  ],
+  sipPassword: [{ required: true, message: '请输入 SIP 密码', trigger: 'blur' }],
+  status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+})
+
+const searchSchema = reactive<FormSchema[]>([
+  {
+    field: 'keyword',
+    label: '关键字',
+    component: 'Input',
+    componentProps: { placeholder: '请输入坐席分机/备注', clearable: true, style: { width: '240px' } }
+  },
+  {
+    field: 'status',
+    label: '状态',
+    component: 'Select',
+    componentProps: {
+      clearable: true,
+      placeholder: '请选择状态',
+      style: { width: '220px' },
+      options: [
+        { label: '启用', value: 0 },
+        { label: '停用', value: 1 }
+      ]
     }
-    if (params.bindStatus === 'unbound') {
-        nextParams.hasCallExt = false
-    }
-    return nextParams
-}
+  }
+])
 
-const {
-    tableObject,
-    tableMethods,
-    register: tableRegister
-} = useTable<UserApi.UserVO>({
-    getListApi: UserApi.getUserPage
+const { tableObject, tableMethods, register: tableRegister } = useTable<CallSeatApi.CallSeatVO>({
+  getListApi: async (params) => await CallSeatApi.getCallSeatPage(params),
+  delListApi: async (id) => await CallSeatApi.deleteCallSeat(id as number)
 })
 
-const stats = reactive({
-    total: 0,
-    bound: 0,
-    unbound: 0
-})
-
-const filteredTableList = computed(() => {
-    const prefix = String(selectedRoute.value?.numberPrefix || '').trim()
-    if (!prefix) return tableObject.tableList
-    return tableObject.tableList.filter((item) => {
-        const displayNumber = String(item.callerDisplayNumber || '').trim()
-        return displayNumber.startsWith(prefix)
-    })
-})
-
-const filteredTableTotal = computed(() => {
-    const prefix = String(selectedRoute.value?.numberPrefix || '').trim()
-    return prefix ? filteredTableList.value.length : tableObject.total
-})
-
-const loadGlobalStats = async () => {
-    const result = await UserApi.getUserCallSeatStats()
-    stats.total = Number(result?.total || 0)
-    stats.bound = Number(result?.bound || 0)
-    stats.unbound = Number(result?.unbound || 0)
+const setSearchParams = (params: Recordable = {}) => {
+  tableMethods.setSearchParams({
+    keyword: params.keyword,
+    status: params.status
+  })
 }
 
-const setSearchParams = (params: SeatSearchParams) => {
-    searchParams.userId = params.userId
-    searchParams.deptId = params.deptId
-    searchParams.bindStatus = params.bindStatus
-    searchParams.outboundRouteId = params.outboundRouteId
-    tableMethods.setSearchParams(buildPageParams(params))
+const loadStats = async () => {
+  if (!canQuery) return
+  const result = await CallSeatApi.getCallSeatStats()
+  stats.total = Number(result?.total || 0)
+  stats.inUse = Number(result?.inUse || 0)
+  stats.idle = Number(result?.idle || 0)
+  stats.disabled = Number(result?.disabled || 0)
 }
 
-const resetSearchParams = () => {
-    clearSelectedUser()
-    searchParams.deptId = undefined
-    searchParams.bindStatus = undefined
-    searchParams.outboundRouteId = undefined
-    selectedRoute.value = undefined
-    tableMethods.setSearchParams(buildPageParams({}))
+const resetFormData = () => {
+  formData.id = undefined
+  formData.seatExt = ''
+  formData.sipPassword = ''
+  formData.voicemailPassword = ''
+  formData.status = 0
+  formData.remark = ''
 }
 
-const textCell = (value?: string | number) => {
-    if (value === null || value === undefined) return '--'
-    const text = String(value).trim()
-    return text || '--'
-}
-
-const openUserSelect = () => {
-    const selectedList = searchParams.userId
-        ? [{ id: searchParams.userId, nickname: selectedUserName.value }]
-        : []
-    userSelectFormRef.value?.open(0, selectedList, { title: '选择员工', multiple: false })
-}
-
-const handleUserSelectConfirm = (_id: any, userList: UserVO[]) => {
-    const user = userList?.[0]
-    searchParams.userId = user?.id
-    selectedUserName.value = user?.nickname || user?.username || ''
-}
-
-const clearSelectedUser = () => {
-    searchParams.userId = undefined
-    selectedUserName.value = ''
-}
-
-const handleRouteChange = (_value: number | undefined, route?: OutboundRouteVO) => {
-    selectedRoute.value = route
-}
-
-const resetDialog = () => {
-    currentUserDetail.value = null
-    formData.id = undefined
-    formData.nickname = ''
-    formData.username = ''
-    formData.deptName = ''
-    formData.callNo = ''
-    formData.callExt = ''
-    formData.callPassword = ''
-    formData.callerDisplayNumber = ''
-    formRef.value?.resetFields?.()
-}
-
-const openBindDialog = async (row: UserApi.UserVO) => {
-    dialogTitle.value = row.callExt ? '修改坐席' : '绑定坐席'
-    dialogVisible.value = true
-    dialogLoading.value = true
-    resetDialog()
-    try {
-        const detail = await UserApi.getUser(row.id)
-        currentUserDetail.value = detail
-        formData.id = detail.id
-        formData.nickname = detail.nickname || ''
-        formData.username = detail.username || ''
-        formData.deptName = detail.deptName || ''
-        formData.callNo = detail.callNo || ''
-        formData.callExt = detail.callExt || ''
-        formData.callPassword = detail.callPassword || ''
-        formData.callerDisplayNumber = detail.callerDisplayNumber || ''
-    } finally {
-        dialogLoading.value = false
-    }
-}
-
-const handleClearSeat = async (row: UserApi.UserVO) => {
-    const detail = await UserApi.getUser(row.id)
-    await message.confirm(`确认清空“${row.nickname}”的坐席吗？`)
-    await UserApi.updateUser({
-        ...detail,
-        callExt: '',
-        callPassword: '',
-        callerDisplayNumber: ''
-    })
-    message.success('已清空坐席')
-    await tableMethods.getList()
-    await loadGlobalStats()
+const openForm = async (type: 'create' | 'update', id?: number) => {
+  resetFormData()
+  dialogVisible.value = true
+  dialogTitle.value = type === 'create' ? '新增坐席' : '编辑坐席'
+  formRef.value?.clearValidate()
+  if (type !== 'update' || !id) return
+  dialogLoading.value = true
+  try {
+    const data = await CallSeatApi.getCallSeat(id)
+    formData.id = data.id
+    formData.seatExt = data.seatExt
+    formData.sipPassword = data.sipPassword
+    formData.voicemailPassword = data.voicemailPassword || ''
+    formData.status = data.status
+    formData.remark = data.remark || ''
+  } finally {
+    dialogLoading.value = false
+  }
 }
 
 const handleSubmit = async () => {
-    const valid = await formRef.value?.validate?.()
-    if (!valid || !currentUserDetail.value) return
-    dialogSaving.value = true
-    try {
-        await UserApi.updateUser({
-            ...currentUserDetail.value,
-            callExt: formData.callExt.trim(),
-            callPassword: formData.callPassword.trim(),
-            callerDisplayNumber: formData.callerDisplayNumber.trim()
-        })
-        message.success('坐席绑定已保存')
-        dialogVisible.value = false
-        await tableMethods.getList()
-        await loadGlobalStats()
-    } finally {
-        dialogSaving.value = false
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid) return
+  dialogSaving.value = true
+  try {
+    const payload: CallSeatApi.CallSeatVO = {
+      id: formData.id,
+      seatExt: formData.seatExt.trim(),
+      sipPassword: formData.sipPassword.trim(),
+      voicemailPassword: formData.voicemailPassword?.trim() || undefined,
+      status: formData.status,
+      remark: formData.remark?.trim() || undefined
     }
+    if (payload.id) {
+      await CallSeatApi.updateCallSeat(payload)
+      message.success('修改成功')
+    } else {
+      await CallSeatApi.createCallSeat(payload)
+      message.success('新增成功')
+    }
+    dialogVisible.value = false
+    await tableMethods.getList()
+    await loadStats()
+  } finally {
+    dialogSaving.value = false
+  }
+}
+
+const handleDelete = async (id: number) => {
+  await tableMethods.delList(id, false)
+  await loadStats()
+}
+
+const statusLabel = (row: CallSeatApi.CallSeatVO) => {
+  if (row.status === 1) return '停用'
+  return row.inUse ? '使用中' : '空闲'
+}
+
+const statusType = (row: CallSeatApi.CallSeatVO) => {
+  if (row.status === 1) return 'info'
+  return row.inUse ? 'success' : 'warning'
+}
+
+const currentUserText = (row: CallSeatApi.CallSeatVO) => {
+  const parts = [row.currentUserName, row.currentUserAccount, row.currentDeptName].filter(Boolean)
+  return parts.length ? parts.join(' / ') : '--'
 }
 
 const tableColumns = computed<TableColumn[]>(() => [
-    { field: 'nickname', label: '员工姓名', minWidth: 120, fixed: 'left' },
-    { field: 'username', label: '登录账号', minWidth: 130 },
-    {
-        field: 'deptName',
-        label: '所属部门',
-        minWidth: 140,
-        formatter: (_, __, value) => textCell(value)
-    },
-    {
-        field: 'mobile',
-        label: '手机号',
-        minWidth: 140,
-        formatter: (_, __, value) => textCell(value)
-    },
-    // {
-    //     field: 'callNo',
-    //     label: '呼叫工号',
-    //     width: 110,
-    //     formatter: (_, __, value) => textCell(value)
-    // },
-    {
-        field: 'callExt',
-        label: '坐席',
-        width: 120,
-        slots: {
-            default: (data) =>
-                data.row.callExt ? (
-                    <span class="seat-tag seat-tag--bound">{data.row.callExt}</span>
-                ) : (
-                    <span class="seat-tag seat-tag--empty">未绑定</span>
-                )
-        }
-    },
-    {
-        field: 'callerDisplayNumber',
-        label: '外显号码',
-        minWidth: 140,
-        formatter: (_, __, value) => textCell(value)
-    },
-    { field: 'createTime', label: '创建时间', minWidth: 170, formatter: dateFormatter },
-    {
-        field: 'action',
-        label: '操作',
-        width: 170,
-        fixed: 'right',
-        slots: {
-            default: (data) => (
-                <>
-                    <BaseButton link type="primary" onClick={() => openBindDialog(data.row)}>
-                        {data.row.callExt ? '修改' : '绑定'}
-                    </BaseButton>
-                    {data.row.callExt ? (
-                        <BaseButton link type="danger" onClick={() => handleClearSeat(data.row)}>
-                            清空
-                        </BaseButton>
-                    ) : null}
-                </>
-            )
-        }
+  { field: 'seatExt', label: '坐席分机', minWidth: 120 },
+  { field: 'sipPassword', label: 'SIP 密码', minWidth: 180 },
+  { field: 'voicemailPassword', label: '语音信箱密码', minWidth: 180 },
+  {
+    field: 'statusText',
+    label: '状态',
+    width: 110,
+    slots: {
+      default: ({ row }) => <ElTag type={statusType(row)}>{statusLabel(row)}</ElTag>
     }
+  },
+  {
+    field: 'currentUserName',
+    label: '当前使用人',
+    minWidth: 220,
+    slots: {
+      default: ({ row }) => currentUserText(row)
+    }
+  },
+  { field: 'currentCallerDisplayNumber', label: '外显号码', minWidth: 140, formatter: (_r, _c, value) => value || '--' },
+  { field: 'remark', label: '备注', minWidth: 180, formatter: (_r, _c, value) => value || '--' },
+  { field: 'createTime', label: '创建时间', width: 180, formatter: dateFormatter },
+  {
+    field: 'action',
+    label: '操作',
+    width: 180,
+    fixed: 'right',
+    slots: {
+      default: ({ row }) => (
+        <>
+          {canUpdate ? (
+            <BaseButton link type="primary" onClick={() => openForm('update', row.id)}>
+              编辑
+            </BaseButton>
+          ) : null}
+          {canUpdate ? (
+            <BaseButton link type="danger" onClick={() => handleDelete(row.id)}>
+              删除
+            </BaseButton>
+          ) : null}
+        </>
+      )
+    }
+  }
 ])
 
 onMounted(async () => {
-    await Promise.all([tableMethods.getList(), loadGlobalStats()])
+  if (canQuery) {
+    await tableMethods.getList()
+    await loadStats()
+  }
 })
 </script>
 
 <style scoped>
-.seat-page {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+.seat-manage-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.seat-page__hero {
-    overflow: hidden;
-    border: 1px solid rgba(15, 23, 42, 0.06);
-    background:
-        radial-gradient(circle at top right, rgba(249, 115, 22, 0.18), transparent 28%),
-        linear-gradient(135deg, #fff8ef 0%, #ffffff 42%, #f6fbff 100%);
+.seat-manage-page__stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.seat-page__hero-main {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
+.seat-stat-card {
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.seat-page__eyebrow {
-    font-size: 12px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #c2410c;
-    font-weight: 600;
-    margin-bottom: 10px;
+.seat-stat-card__label {
+  font-size: 13px;
+  color: #606266;
 }
 
-.seat-page__title {
-    margin: 0;
-    font-size: 28px;
-    line-height: 1.15;
-    color: #111827;
+.seat-stat-card__value {
+  font-size: 28px;
+  line-height: 1;
+  color: #303133;
 }
 
-.seat-page__subtitle {
-    margin: 10px 0 0;
-    max-width: 720px;
-    color: #4b5563;
-    line-height: 1.7;
+.seat-stat-card--using .seat-stat-card__value {
+  color: #67c23a;
 }
 
-.seat-page__tips {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
+.seat-stat-card--idle .seat-stat-card__value {
+  color: #e6a23c;
 }
 
-.seat-page__tip-card {
-    min-width: 150px;
-    padding: 14px 16px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+.seat-stat-card--disabled .seat-stat-card__value {
+  color: #909399;
 }
 
-.seat-page__tip-label {
-    font-size: 12px;
-    color: #64748b;
+@media (max-width: 1200px) {
+  .seat-manage-page__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.seat-page__stats {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-}
-
-.seat-stat {
-    padding: 18px 20px;
-    border-radius: 18px;
-    background: #ffffff;
-    border: 1px solid rgba(148, 163, 184, 0.14);
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-}
-
-.seat-stat--green {
-    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
-}
-
-.seat-stat--orange {
-    background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
-}
-
-.seat-stat__label {
-    display: block;
-    font-size: 13px;
-    color: #64748b;
-    margin-bottom: 8px;
-}
-
-.seat-stat__value {
-    font-size: 28px;
-    color: #0f172a;
-}
-
-.seat-tag {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 64px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.seat-tag--bound {
-    color: #166534;
-    background: #dcfce7;
-}
-
-.seat-tag--empty {
-    color: #b45309;
-    background: #ffedd5;
-}
-
-@media (max-width: 900px) {
-    .seat-page__stats {
-        grid-template-columns: 1fr;
-    }
+@media (max-width: 768px) {
+  .seat-manage-page__stats {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
 }
 </style>
