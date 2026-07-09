@@ -1420,6 +1420,16 @@ const makeBrowserCall = async (options?: {
         traceBrowserStep('CALL_SENT', `target=${target}`)
         addBrowserLog(`已向 ${target} 发起网页呼叫`)
     } catch (error: any) {
+        if (isBrowserPeerClosedError(error)) {
+            const caller = currentBrowserCaller.value || browserForm.username.trim()
+            const callee = currentBrowserCallee.value || displayTarget
+            traceBrowserStep(
+                'CALL_PEER_CLOSED_IGNORED',
+                `call-start race ignored; ${describeBrowserError(error)}`
+            )
+            handleBrowserCallEnded('call-peer-closed', caller, callee)
+            return
+        }
         stopOutgoingWaitingTone()
         clearOutboundRecordStatusPolling()
         activeCall.value = false
