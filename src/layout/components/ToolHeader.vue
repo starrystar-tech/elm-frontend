@@ -14,7 +14,7 @@ import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
 import { checkPermi } from '@/utils/permission'
 import { getExportTaskReminderSummary, markExportTaskCenterViewed } from '@/api/system/exportTask'
-import { getOtherSettingConfig } from '@/api/crm/otherSettingConfig'
+import { getOutboundDefaultRouteId } from '@/api/crm/otherSettingConfig'
 import { updateUserOutboundStatus, updateUserProfile } from '@/api/system/user/profile'
 import { getOutboundRouteSimpleList, type OutboundRouteVO } from '@/api/system/call/router'
 import { useBrowserPhone } from '@/hooks/web/useBrowserPhone'
@@ -57,9 +57,6 @@ const hasTenantVisitPermission = computed(
     () => import.meta.env.VITE_APP_TENANT_ENABLE === 'true' && checkPermi(['system:tenant:visit'])
 )
 const hasExportTaskPermission = ref(true)
-const hasOtherSettingConfigPermission = computed(() =>
-    checkPermi(['crm:other-setting-config:query'])
-)
 
 export default defineComponent({
     name: 'ToolHeader',
@@ -240,15 +237,13 @@ export default defineComponent({
 
         const loadOutboundProfile = async () => {
             try {
-                const [routeList, otherConfig] = await Promise.all([
+                const [routeList, defaultRouteId] = await Promise.all([
                     getOutboundRouteSimpleList(),
-                    hasOtherSettingConfigPermission.value
-                        ? getOtherSettingConfig()
-                        : Promise.resolve(undefined),
+                    getOutboundDefaultRouteId(),
                     reloadProfile()
                 ])
                 outboundRouteOptions.value = routeList || []
-                systemOutboundRouteId.value = otherConfig?.outboundRouteId
+                systemOutboundRouteId.value = defaultRouteId || undefined
                 outboundStatus.value = profile.outboundStatus === 1 ? 1 : 0
                 selectedOutboundRouteId.value = profile.outboundRouteId
                 const seat = resolveSeatExtension()

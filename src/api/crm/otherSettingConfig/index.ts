@@ -44,6 +44,10 @@ export const getOtherSettingConfig = async () => {
   return await request.get<OtherSettingConfigVO>({ url: '/crm/other-setting-config/get' })
 }
 
+export const getOutboundDefaultRouteId = async () => {
+  return await request.get<number>({ url: '/crm/other-setting-config/outbound-default-route' })
+}
+
 export const saveOtherSettingConfig = async (data: OtherSettingConfigVO) => {
   return await request.put<boolean>({ url: '/crm/other-setting-config/save', data })
 }

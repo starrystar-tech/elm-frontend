@@ -113,7 +113,25 @@
                         </el-radio-group>
                     </el-form-item>
                 </el-col>
-                <el-col :span="12" />
+                <el-col :span="12">
+                    <el-form-item label="角色" prop="roleIds">
+                        <el-select
+                            v-model="formData.roleIds"
+                            multiple
+                            clearable
+                            collapse-tags
+                            collapse-tags-tooltip
+                            placeholder="请选择角色"
+                        >
+                            <el-option
+                                v-for="item in roleList"
+                                :key="item.id"
+                                :label="item.name"
+                                :value="item.id"
+                            />
+                        </el-select>
+                    </el-form-item>
+                </el-col>
             </el-row>
             <!-- <el-row>
                 <el-col :span="12">
@@ -334,6 +352,7 @@ import { DICT_TYPE, getIntDictOptions, getStrDictOptions } from '@/utils/dict'
 import { CommonStatusEnum } from '@/utils/constants'
 import { defaultProps, handleTree } from '@/utils/tree'
 import * as DeptApi from '@/api/system/dept'
+import * as RoleApi from '@/api/system/role'
 import * as UserApi from '@/api/system/user'
 import * as WeappApi from '@/api/system/weapp'
 import * as WeworkContactApi from '@/api/crm/wework/contact'
@@ -395,6 +414,7 @@ const formRules = reactive<FormRules>({
     username: [{ required: true, message: '用户名称不能为空', trigger: 'blur' }],
     nickname: [{ required: true, message: '用户昵称不能为空', trigger: 'blur' }],
     password: [{ required: true, message: '用户密码不能为空', trigger: 'blur' }],
+    roleIds: [{ required: true, type: 'array', min: 1, message: '请选择角色', trigger: 'change' }],
     deptId: [{ required: true, message: '请选择归属部门', trigger: 'change' }],
     email: [{ type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }],
     mobile: [
@@ -409,6 +429,7 @@ const formRules = reactive<FormRules>({
 
 const formRef = ref()
 const deptList = ref<Tree[]>([])
+const roleList = ref([] as RoleApi.RoleVO[])
 const weappList = ref([] as WeappApi.WeappConfigVO[])
 const campusList = ref([] as CampusApi.CampusVO[])
 const areaTreeList = ref<Tree[]>([])
@@ -510,6 +531,7 @@ const open = async (type: string, id?: number, defaultDeptId?: number) => {
 
     const [
         deptData,
+        roleData,
         weappData,
         wecomMembers,
         campusData,
@@ -517,6 +539,7 @@ const open = async (type: string, id?: number, defaultDeptId?: number) => {
         categoryData
     ] = await Promise.all([
         DeptApi.getSimpleDeptList(),
+        RoleApi.getSimpleRoleList(),
         WeappApi.getWeappConfigList(),
         WeworkContactApi.getWeworkMemberSimpleList(),
         CampusApi.getSimpleCampusList(),
@@ -524,6 +547,7 @@ const open = async (type: string, id?: number, defaultDeptId?: number) => {
         ProductCategoryApi.getProductCategorySimpleList()
     ])
     deptList.value = handleTree(deptData)
+    roleList.value = roleData || []
     weappList.value = weappData || []
     campusList.value = campusData || []
     areaTreeList.value = areaData || []
