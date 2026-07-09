@@ -342,7 +342,6 @@ const handleClearSeat = async (row: UserApi.UserVO) => {
     await UserApi.updateUser({
         ...detail,
         callExt: '',
-        callPassword: '',
         callerDisplayNumber: ''
     })
     message.success('已清空坐席')
@@ -358,7 +357,6 @@ const handleSubmit = async () => {
         await UserApi.updateUser({
             ...currentUserDetail.value,
             callExt: formData.callExt.trim(),
-            callPassword: undefined,
             callerDisplayNumber: formData.callerDisplayNumber.trim()
         })
         message.success('坐席绑定已保存')
