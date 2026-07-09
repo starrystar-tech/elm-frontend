@@ -76,7 +76,7 @@ const SYNC_STATUS_FAILED = 2
 
 const handleViewDetail = (row: WeworkContactApi.WeworkContactVO) => {
     if (row.clueId) {
-        detailRef.value?.open(row.clueId)
+        detailRef.value?.open(row.clueId, { readonly: true })
     }
 }
 
