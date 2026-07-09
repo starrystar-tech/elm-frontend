@@ -1,12 +1,10 @@
-import { getOtherSettingConfig } from '@/api/crm/otherSettingConfig'
+import { getOutboundDefaultRouteId } from '@/api/crm/otherSettingConfig'
 import { getOutboundRouteSimpleList } from '@/api/system/call/router'
 import { useBrowserPhone } from '@/hooks/web/useBrowserPhone'
-import { checkPermi } from '@/utils/permission'
 
 export const useOutboundDial = () => {
     const message = useMessage()
     const dialing = ref(false)
-    const canQueryOtherSettingConfig = checkPermi(['crm:other-setting-config:query'])
     const {
         profile,
         browserRegistered,
@@ -33,13 +31,12 @@ export const useOutboundDial = () => {
 
         dialing.value = true
         try {
-            const routeList = await getOutboundRouteSimpleList()
+            const [routeList, defaultRouteId] = await Promise.all([
+                getOutboundRouteSimpleList(),
+                getOutboundDefaultRouteId()
+            ])
             const userRouteId = Number(profile.outboundRouteId || 0) || undefined
-            const config =
-                userRouteId || !canQueryOtherSettingConfig
-                    ? undefined
-                    : await getOtherSettingConfig()
-            const targetRouteId = userRouteId || config?.outboundRouteId
+            const targetRouteId = userRouteId || Number(defaultRouteId || 0) || undefined
             if (!targetRouteId) {
                 message.warning('当前未选择外呼线路，请联系管理员配置线路')
                 return
