@@ -301,6 +301,14 @@ const handleReset = async (params: Recordable) => {
     setSearchParams(params)
 }
 
+const toCentAmount = (value: unknown) => {
+    if (value === '' || value === undefined || value === null) {
+        return undefined
+    }
+    const amount = Number(value)
+    return Number.isNaN(amount) ? undefined : Math.round(amount * 100)
+}
+
 const setSearchParams = (params: Recordable) => {
     currentSearchParams.value = { ...params }
     const {
@@ -312,8 +320,8 @@ const setSearchParams = (params: Recordable) => {
     } = params
     tableMethods.setSearchParams({
         ...rest,
-        minPaidAmount: paidAmountRange[0] ? Number(paidAmountRange[0]) : undefined,
-        maxPaidAmount: paidAmountRange[1] ? Number(paidAmountRange[1]) : undefined,
+        minPaidAmount: toCentAmount(paidAmountRange[0]),
+        maxPaidAmount: toCentAmount(paidAmountRange[1]),
         beginEnrollTime: enrollTimeRange[0],
         endEnrollTime: enrollTimeRange[1],
         beginExpireTime: expireTimeRange[0],
@@ -412,8 +420,8 @@ const openExportDialog = () => {
             } = currentSearchParams.value || {}
             await OrderApi.createMyOrderExportTask({
                 ...rest,
-                minPaidAmount: paidAmountRange[0] ? Number(paidAmountRange[0]) : undefined,
-                maxPaidAmount: paidAmountRange[1] ? Number(paidAmountRange[1]) : undefined,
+                minPaidAmount: toCentAmount(paidAmountRange[0]),
+                maxPaidAmount: toCentAmount(paidAmountRange[1]),
                 beginEnrollTime: enrollTimeRange[0],
                 endEnrollTime: enrollTimeRange[1],
                 beginExpireTime: expireTimeRange[0],
