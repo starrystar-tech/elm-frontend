@@ -106,23 +106,6 @@
 
             <el-row>
                 <el-col :span="12">
-                    <el-form-item label="管理企业" prop="manageCompanyIds">
-                        <el-select
-                            v-model="formData.manageCompanyIds"
-                            multiple
-                            clearable
-                            placeholder="请选择管理企业"
-                        >
-                            <el-option
-                                v-for="item in weappList"
-                                :key="item.id"
-                                :label="item.companyName || item.appName || item.corpId"
-                                :value="item.id!"
-                            />
-                        </el-select>
-                    </el-form-item>
-                </el-col>
-                <el-col :span="12">
                     <el-form-item label="状态" prop="status">
                         <el-radio-group v-model="formData.status">
                             <el-radio :value="0">启用</el-radio>
@@ -130,6 +113,7 @@
                         </el-radio-group>
                     </el-form-item>
                 </el-col>
+                <el-col :span="12" />
             </el-row>
             <!-- <el-row>
                 <el-col :span="12">
@@ -156,18 +140,7 @@
                         />
                     </el-form-item>
                 </el-col>
-                <el-col :span="12">
-                    <el-form-item label="岗位">
-                        <el-select v-model="formData.postIds" multiple placeholder="请选择岗位">
-                            <el-option
-                                v-for="item in postList"
-                                :key="item.id"
-                                :label="item.name"
-                                :value="item.id!"
-                            />
-                        </el-select>
-                    </el-form-item>
-                </el-col>
+                <el-col :span="12" />
             </el-row>
 
             <el-row>
@@ -213,26 +186,6 @@
                         />
                     </el-form-item>
                 </el-col>
-            </el-row>
-
-            <el-row>
-                <el-col :span="12">
-                    <el-form-item label="外呼线路">
-                        <el-select
-                            v-model="formData.outboundRouteId"
-                            clearable
-                            placeholder="请选择外呼线路"
-                        >
-                            <el-option
-                                v-for="item in outboundRouteList"
-                                :key="item.id"
-                                :label="item.status === 1 ? `${item.name}（已禁用）` : item.name"
-                                :value="item.id!"
-                            />
-                        </el-select>
-                    </el-form-item>
-                </el-col>
-                <el-col :span="12" />
             </el-row>
 
             <el-row>
@@ -380,7 +333,6 @@
 import { DICT_TYPE, getIntDictOptions, getStrDictOptions } from '@/utils/dict'
 import { CommonStatusEnum } from '@/utils/constants'
 import { defaultProps, handleTree } from '@/utils/tree'
-import * as PostApi from '@/api/system/post'
 import * as DeptApi from '@/api/system/dept'
 import * as UserApi from '@/api/system/user'
 import * as WeappApi from '@/api/system/weapp'
@@ -388,7 +340,6 @@ import * as WeworkContactApi from '@/api/crm/wework/contact'
 import * as CampusApi from '@/api/system/campus'
 import * as AreaApi from '@/api/system/area'
 import * as ProductCategoryApi from '@/api/crm/product/category'
-import * as OutboundRouteApi from '@/api/system/call/router'
 import WeworkAccountSelector from './components/WeworkAccountSelector.vue'
 import UserLevelSelect from '@/components/UserLevelSelect.vue'
 import AreaSelect from '@/components/AreaSelect.vue'
@@ -458,12 +409,10 @@ const formRules = reactive<FormRules>({
 
 const formRef = ref()
 const deptList = ref<Tree[]>([])
-const postList = ref([] as PostApi.PostVO[])
 const weappList = ref([] as WeappApi.WeappConfigVO[])
 const campusList = ref([] as CampusApi.CampusVO[])
 const areaTreeList = ref<Tree[]>([])
 const rootCategoryList = ref<any[]>([])
-const outboundRouteList = ref([] as OutboundRouteApi.OutboundRouteVO[])
 const wecomMemberList = ref([] as WeworkContactApi.WeworkMemberSimpleVO[])
 const occupiedWecomKeys = ref<string[]>([])
 
@@ -561,32 +510,26 @@ const open = async (type: string, id?: number, defaultDeptId?: number) => {
 
     const [
         deptData,
-        postData,
         weappData,
         wecomMembers,
         campusData,
         areaData,
-        categoryData,
-        routeData
+        categoryData
     ] = await Promise.all([
         DeptApi.getSimpleDeptList(),
-        PostApi.getSimplePostList(),
         WeappApi.getWeappConfigList(),
         WeworkContactApi.getWeworkMemberSimpleList(),
         CampusApi.getSimpleCampusList(),
         AreaApi.getAreaTree(),
-        ProductCategoryApi.getProductCategorySimpleList(),
-        OutboundRouteApi.getOutboundRouteSimpleList()
+        ProductCategoryApi.getProductCategorySimpleList()
     ])
     deptList.value = handleTree(deptData)
-    postList.value = postData
     weappList.value = weappData || []
     campusList.value = campusData || []
     areaTreeList.value = areaData || []
     rootCategoryList.value = (categoryData || [])
         .filter((item: ProductCategoryApi.ProductCategoryVO) => Number(item.level) === 1)
         .map(toRootCategoryOption)
-    outboundRouteList.value = routeData || []
     wecomMemberList.value = (wecomMembers || []).map((item: any) => ({
         corpId: item.corpId,
         corpName: item.corpName || item.corpId,

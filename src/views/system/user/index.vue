@@ -532,14 +532,8 @@ const tableColumns = reactive<TableColumn[]>([
         }
     },
     {
-        field: 'companyName',
-        label: '管理企业',
-        minWidth: 140,
-        formatter: (_, __, value) => textCell(value)
-    },
-    {
         field: 'wechatBindInfo',
-        label: '绑定企业',
+        label: '绑定企微',
         minWidth: 220,
         slots: {
             default: (data) => {

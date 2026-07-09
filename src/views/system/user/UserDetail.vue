@@ -38,10 +38,7 @@
                     <DictTag :type="DICT_TYPE.COMMON_STATUS" :value="userDetail.status" />
                 </el-descriptions-item>
                 <el-descriptions-item label="到期时间">{{ formatExpireTime }}</el-descriptions-item>
-                <el-descriptions-item label="管理企业" :span="2">{{
-                    text(userDetail.companyName)
-                }}</el-descriptions-item>
-                <el-descriptions-item label="绑定企业" :span="2">
+                <el-descriptions-item label="绑定企微" :span="2">
                     <div v-if="bindItems.length" class="system-user-detail-drawer__bind-list">
                         <div
                             v-for="(item, idx) in bindItems"

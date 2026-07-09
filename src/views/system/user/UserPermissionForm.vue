@@ -4,22 +4,6 @@
             <el-form-item label="用户">
                 <span>{{ currentUser?.nickname || '--' }}</span>
             </el-form-item>
-            <el-form-item label="管理公司">
-                <el-select
-                    v-model="formData.manageCompanyIds"
-                    multiple
-                    clearable
-                    collapse-tags
-                    collapse-tags-tooltip
-                >
-                    <el-option
-                        v-for="item in weappList"
-                        :key="item.id"
-                        :label="item.companyName || item.appName || item.corpId"
-                        :value="item.id!"
-                    />
-                </el-select>
-            </el-form-item>
             <el-form-item label="校区权限">
                 <el-select
                     v-model="formData.campusIds"
@@ -92,7 +76,6 @@ import * as UserApi from '@/api/system/user'
 import * as CampusApi from '@/api/system/campus'
 import * as AreaApi from '@/api/system/area'
 import * as ProductCategoryApi from '@/api/crm/product/category'
-import * as WeappApi from '@/api/system/weapp'
 import { compactAreaIds } from '@/utils/areaScope'
 import { CommonStatusEnum } from '@/utils/constants'
 import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
@@ -105,7 +88,6 @@ const dialogVisible = ref(false)
 const loading = ref(false)
 const currentUser = ref<UserApi.UserVO>()
 const campusList = ref<CampusApi.CampusVO[]>([])
-const weappList = ref<WeappApi.WeappConfigVO[]>([])
 const areaTreeList = ref<any[]>([])
 const rootCategoryList = ref<any[]>([])
 
@@ -163,16 +145,14 @@ const open = async (row: UserApi.UserVO) => {
     loading.value = true
     currentUser.value = row
     try {
-        const [detail, campusData, areaData, categoryData, weappData] = await Promise.all([
+        const [detail, campusData, areaData, categoryData] = await Promise.all([
             UserApi.getUser(row.id),
             CampusApi.getSimpleCampusList(),
             AreaApi.getAreaTree(),
-            ProductCategoryApi.getProductCategorySimpleList(),
-            WeappApi.getWeappConfigList()
+            ProductCategoryApi.getProductCategorySimpleList()
         ])
         campusList.value = campusData || []
         areaTreeList.value = areaData || []
-        weappList.value = weappData || []
         rootCategoryList.value = (categoryData || [])
             .filter((item: ProductCategoryApi.ProductCategoryVO) => Number(item.level) === 1)
             .map(toRootCategoryOption)
