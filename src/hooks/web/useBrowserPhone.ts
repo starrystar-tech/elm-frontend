@@ -1589,6 +1589,8 @@ export const useBrowserPhone = () => {
         logs,
         incomingToastVisible,
         incomingToastCaller,
+        currentBrowserCaller,
+        currentBrowserCallee,
         incomingRingEnableRequired,
         incomingRingBlockedReason,
         remoteAudioRef,

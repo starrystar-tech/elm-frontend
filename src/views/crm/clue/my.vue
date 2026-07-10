@@ -37,6 +37,9 @@
                 </template>
             </Search>
             <div class="action-btn-wrap">
+                <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">
+                    新增
+                </BaseButton>
                 <BaseButton
                     v-if="canSmsSend"
                     plain
@@ -70,6 +73,7 @@
         </div>
     </ContentWrap>
 
+    <ClueForm ref="formRef" @success="handleDetailRefresh" />
     <ClueDetailDrawer ref="detailRef" @refresh="handleDetailRefresh" />
     <ClueSmsDialog ref="smsDialogRef" @success="handleSmsSuccess" />
     <ClueEnrollDialog ref="enrollRef" @success="handleDetailRefresh" />
@@ -109,6 +113,7 @@ import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import { renderCopyMobileCell } from './mobileCopy'
+import ClueForm from './ClueForm.vue'
 import ClueSmsDialog from './ClueSmsDialog.vue'
 import ClueDetailDrawer from './detail/ClueDetailDrawer.vue'
 import ClueEnrollDialog from './detail/ClueEnrollDialog.vue'
@@ -147,7 +152,9 @@ interface MyClueSearchParams {
 
 const message = useMessage()
 const route = useRoute()
+const canCreate = hasPermission(['crm:clue:create'])
 const canSmsSend = hasPermission(['crm:clue:sms:send'])
+const formRef = ref<InstanceType<typeof ClueForm>>()
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
 const smsDialogRef = ref<InstanceType<typeof ClueSmsDialog>>()
 const enrollRef = ref<InstanceType<typeof ClueEnrollDialog>>()
@@ -536,6 +543,10 @@ const openDetail = (id: number) => {
     detailRef.value?.open(id, {
         hideReleaseAction: true
     })
+}
+
+const openForm = (type: 'create' | 'update', id?: number) => {
+    formRef.value?.open(type, id)
 }
 
 const openSmsDialog = () => {

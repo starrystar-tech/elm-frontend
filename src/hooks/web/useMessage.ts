@@ -1,5 +1,8 @@
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { useI18n } from './useI18n'
+
+const topMessageOffset = 72
+
 export const useMessage = () => {
   const { t } = useI18n()
   return {
@@ -13,7 +16,10 @@ export const useMessage = () => {
     },
     // 成功消息
     success(content: string) {
-      ElMessage.success(content)
+      ElMessage.success({
+        message: content,
+        offset: topMessageOffset
+      })
     },
     // 警告消息
     warning(content: string) {
