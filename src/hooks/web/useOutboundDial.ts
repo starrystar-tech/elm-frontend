@@ -32,6 +32,11 @@ export const useOutboundDial = (options?: {
             message.warning('请输入正确的号码')
             return
         }
+        const callerDisplayNumber = String(profile.callerDisplayNumber || '').trim()
+        if (!callerDisplayNumber) {
+            message.warning('当前员工未绑定外显号码，请联系管理员配置后再外呼')
+            return
+        }
 
         dialing.value = true
         try {
@@ -65,7 +70,8 @@ export const useOutboundDial = (options?: {
             await makeBrowserCall({
                 dialTarget: `${routePrefix}${targetMobile}`,
                 displayTarget: targetMobile,
-                outboundRouteId: currentRoute.id
+                outboundRouteId: currentRoute.id,
+                callerDisplayNumber
             })
         } catch (error: any) {
             message.error(error?.message || '发起外呼失败')

@@ -1362,6 +1362,7 @@ const makeBrowserCall = async (options?: {
     dialTarget?: string
     displayTarget?: string
     outboundRouteId?: number
+    callerDisplayNumber?: string
 }) => {
     if (!browserRegistered.value || !browserClient.value) {
         traceBrowserStep('CALL_BLOCKED', '浏览器分机未注册或客户端未初始化', 'danger')
@@ -1402,17 +1403,21 @@ const makeBrowserCall = async (options?: {
         await syncBrowserRecord(
             {
                 event: 'start',
-                caller: browserForm.username.trim(),
+                caller: options?.callerDisplayNumber || browserForm.username.trim(),
                 callee: displayTarget,
                 outboundRouteId: options?.outboundRouteId
             },
             { timeoutMs: 5000 }
         )
         startOutboundRecordStatusPolling()
+        const extraHeaders = [
+            browserRecordId.value ? `X-CRM-Record-Id: ${browserRecordId.value}` : '',
+            options?.callerDisplayNumber
+                ? `X-CRM-Caller-Display-Number: ${options.callerDisplayNumber}`
+                : ''
+        ].filter(Boolean)
         const callPromise = browserClient.value.call(`sip:${target}@${browserForm.domain.trim()}`, {
-            extraHeaders: browserRecordId.value
-                ? [`X-CRM-Record-Id: ${browserRecordId.value}`]
-                : undefined
+            extraHeaders: extraHeaders.length > 0 ? extraHeaders : undefined
         })
         attachSessionTerminationListener(getCurrentBrowserSession())
         await callPromise
