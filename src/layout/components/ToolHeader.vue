@@ -91,7 +91,10 @@ export default defineComponent({
             applyBrowserPhoneCredentials,
             reloadProfile
         } = useBrowserPhone()
-        const { dialing: outboundDialing, dialOutboundMobile } = useOutboundDial()
+        const { dialing: outboundDialing, dialOutboundMobile } = useOutboundDial({
+            selectedOutboundRouteId,
+            systemOutboundRouteId
+        })
 
         const resolveSeatExtension = () => {
             const seat = String(profile.callExt || profile.callNo || '').trim()
@@ -271,12 +274,14 @@ export default defineComponent({
             }
             outboundRouteSaving.value = true
             try {
-                const nextValue = value && value !== systemOutboundRouteId.value ? value : undefined
-                await updateUserProfile({ outboundRouteId: nextValue })
-                profile.outboundRouteId = nextValue
+                const nextValue = value || undefined
+                if (nextValue !== profile.outboundRouteId) {
+                    await updateUserProfile({ outboundRouteId: nextValue })
+                    profile.outboundRouteId = nextValue
+                }
                 selectedOutboundRouteId.value = nextValue
                 outboundRoutePopoverVisible.value = false
-                messageApi.success(nextValue ? '外呼线路已切换' : '已切换为系统默认线路')
+                messageApi.success('外呼线路已切换')
             } catch (error: any) {
                 selectedOutboundRouteId.value = profile.outboundRouteId
                 messageApi.error(error?.message || '更新外呼线路失败')
@@ -422,7 +427,8 @@ export default defineComponent({
                                                             type="button"
                                                             class={[
                                                                 'outbound-toolbar__route-option',
-                                                                !selectedOutboundRouteId.value &&
+                                                                Number(selectedOutboundRouteId.value) ===
+                                                                    Number(systemOutboundRouteId.value) &&
                                                                     'is-active'
                                                             ]}
                                                             onClick={() =>

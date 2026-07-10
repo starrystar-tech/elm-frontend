@@ -1,8 +1,12 @@
+import type { Ref } from 'vue'
 import { getOutboundDefaultRouteId } from '@/api/crm/otherSettingConfig'
 import { getOutboundRouteSimpleList } from '@/api/system/call/router'
 import { useBrowserPhone } from '@/hooks/web/useBrowserPhone'
 
-export const useOutboundDial = () => {
+export const useOutboundDial = (options?: {
+    selectedOutboundRouteId?: Ref<number | undefined>
+    systemOutboundRouteId?: Ref<number | undefined>
+}) => {
     const message = useMessage()
     const dialing = ref(false)
     const {
@@ -35,8 +39,12 @@ export const useOutboundDial = () => {
                 getOutboundRouteSimpleList(),
                 getOutboundDefaultRouteId()
             ])
+            const currentSelectedRouteId = options?.selectedOutboundRouteId?.value
+            const currentSystemRouteId =
+                options?.systemOutboundRouteId?.value || Number(defaultRouteId || 0) || undefined
             const userRouteId = Number(profile.outboundRouteId || 0) || undefined
-            const targetRouteId = userRouteId || Number(defaultRouteId || 0) || undefined
+            const targetRouteId =
+                currentSelectedRouteId || userRouteId || currentSystemRouteId || undefined
             if (!targetRouteId) {
                 message.warning('当前未选择外呼线路，请联系管理员配置线路')
                 return
