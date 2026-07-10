@@ -2,28 +2,42 @@ import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { useI18n } from './useI18n'
 
 const topMessageOffset = 72
+const topMessageZIndex = 6001
 
 export const useMessage = () => {
   const { t } = useI18n()
   return {
     // 消息提示
     info(content: string) {
-      ElMessage.info(content)
+      ElMessage.info({
+        message: content,
+        offset: topMessageOffset,
+        zIndex: topMessageZIndex
+      })
     },
     // 错误消息
     error(content: string) {
-      ElMessage.error(content)
+      ElMessage.error({
+        message: content,
+        offset: topMessageOffset,
+        zIndex: topMessageZIndex
+      })
     },
     // 成功消息
     success(content: string) {
       ElMessage.success({
         message: content,
-        offset: topMessageOffset
+        offset: topMessageOffset,
+        zIndex: topMessageZIndex
       })
     },
     // 警告消息
     warning(content: string) {
-      ElMessage.warning(content)
+      ElMessage.warning({
+        message: content,
+        offset: topMessageOffset,
+        zIndex: topMessageZIndex
+      })
     },
     // 弹出提示
     alert(content: string) {

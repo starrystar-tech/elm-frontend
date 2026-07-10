@@ -3,6 +3,10 @@
 @use './theme.scss';
 @use 'element-plus/theme-chalk/dark/css-vars.css';
 
+.el-message {
+    z-index: 7000 !important;
+}
+
 .el-message.el-message--success {
     --el-message-bg-color: #eef9e9;
     --el-message-border-color: rgba(139, 207, 106, 0.45);
