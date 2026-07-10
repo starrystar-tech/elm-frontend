@@ -50,7 +50,6 @@
                         v-model="searchParams.outboundRouteId"
                         placeholder="请选择线路"
                         style="width: 220px"
-                        @change="handleRouteChange"
                     />
                 </el-form-item>
                 <el-form-item label-width="0">
@@ -68,9 +67,9 @@
                 v-model:currentPage="tableObject.currentPage"
                 v-model:pageSize="tableObject.pageSize"
                 :columns="tableColumns"
-                :data="filteredTableList"
+                :data="tableObject.tableList"
                 :loading="tableObject.loading"
-                :pagination="{ total: filteredTableTotal }"
+                :pagination="{ total: tableObject.total }"
                 @register="tableRegister"
             />
         </ContentWrap>
@@ -147,7 +146,7 @@ import OutboundRouteSelect from '@/components/OutboundRouteSelect.vue'
 import { useTable } from '@/hooks/web/useTable'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
-import type { OutboundRouteVO } from '@/api/system/call/router'
+import * as OutboundRouteApi from '@/api/system/call/router'
 
 defineOptions({ name: 'CrmCallSeat' })
 
@@ -166,8 +165,8 @@ const dialogSaving = ref(false)
 const dialogTitle = ref('绑定坐席')
 const selectedUserName = ref('')
 const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
-const selectedRoute = ref<OutboundRouteVO>()
 const seatOptions = ref<CallSeatApi.CallSeatVO[]>([])
+const routeOptions = ref<OutboundRouteApi.OutboundRouteVO[]>([])
 
 const searchParams = reactive<SeatSearchParams>({})
 const currentUserDetail = ref<UserApi.UserVO | null>(null)
@@ -194,6 +193,7 @@ const buildPageParams = (params: SeatSearchParams = {}) => {
     if (params.bindStatus === 'unbound') {
         nextParams.hasCallExt = false
     }
+    nextParams.outboundRouteId = params.outboundRouteId
     return nextParams
 }
 
@@ -211,19 +211,14 @@ const stats = reactive({
     unbound: 0
 })
 
-const filteredTableList = computed(() => {
-    const prefix = String(selectedRoute.value?.numberPrefix || '').trim()
-    if (!prefix) return tableObject.tableList
-    return tableObject.tableList.filter((item) => {
-        const displayNumber = String(item.callerDisplayNumber || '').trim()
-        return displayNumber.startsWith(prefix)
-    })
-})
-
-const filteredTableTotal = computed(() => {
-    const prefix = String(selectedRoute.value?.numberPrefix || '').trim()
-    return prefix ? filteredTableList.value.length : tableObject.total
-})
+const routeNameMap = computed(() =>
+    routeOptions.value.reduce<Record<number, string>>((acc, item) => {
+        if (item.id !== undefined) {
+            acc[item.id] = item.numberPrefix ? `${item.name}（${item.numberPrefix}）` : item.name
+        }
+        return acc
+    }, {})
+)
 
 const loadGlobalStats = async () => {
     const result = await UserApi.getUserCallSeatStats()
@@ -234,6 +229,10 @@ const loadGlobalStats = async () => {
 
 const loadSeatOptions = async () => {
     seatOptions.value = await CallSeatApi.getCallSeatSimpleList()
+}
+
+const loadRouteOptions = async () => {
+    routeOptions.value = (await OutboundRouteApi.getOutboundRouteSimpleList()) || []
 }
 
 const setSearchParams = (params: SeatSearchParams) => {
@@ -249,7 +248,6 @@ const resetSearchParams = () => {
     searchParams.deptId = undefined
     searchParams.bindStatus = undefined
     searchParams.outboundRouteId = undefined
-    selectedRoute.value = undefined
     tableMethods.setSearchParams(buildPageParams({}))
 }
 
@@ -275,10 +273,6 @@ const handleUserSelectConfirm = (_id: any, userList: UserVO[]) => {
 const clearSelectedUser = () => {
     searchParams.userId = undefined
     selectedUserName.value = ''
-}
-
-const handleRouteChange = (_value: number | undefined, route?: OutboundRouteVO) => {
-    selectedRoute.value = route
 }
 
 const resetDialog = () => {
@@ -336,28 +330,17 @@ const openBindDialog = async (row: UserApi.UserVO) => {
     }
 }
 
-const handleClearSeat = async (row: UserApi.UserVO) => {
-    const detail = await UserApi.getUser(row.id)
-    await message.confirm(`确认清空“${row.nickname}”的坐席吗？`)
-    await UserApi.updateUser({
-        ...detail,
-        callExt: '',
-        callerDisplayNumber: ''
-    })
-    message.success('已清空坐席')
-    await tableMethods.getList()
-    await loadGlobalStats()
-}
-
 const handleSubmit = async () => {
     const valid = await formRef.value?.validate?.()
     if (!valid || !currentUserDetail.value) return
     dialogSaving.value = true
     try {
+        const callExt = String(formData.callExt || '').trim()
+        const callerDisplayNumber = String(formData.callerDisplayNumber || '').trim()
         await UserApi.updateUser({
             ...currentUserDetail.value,
-            callExt: formData.callExt.trim(),
-            callerDisplayNumber: formData.callerDisplayNumber.trim()
+            callExt,
+            callerDisplayNumber
         })
         message.success('坐席绑定已保存')
         dialogVisible.value = false
@@ -408,31 +391,31 @@ const tableColumns = computed<TableColumn[]>(() => [
         minWidth: 140,
         formatter: (_, __, value) => textCell(value)
     },
+    {
+        field: 'outboundRouteId',
+        label: '线路',
+        minWidth: 180,
+        formatter: (row) =>
+            row.outboundRouteId ? textCell(routeNameMap.value[row.outboundRouteId]) : '--'
+    },
     { field: 'createTime', label: '创建时间', minWidth: 170, formatter: dateFormatter },
     {
         field: 'action',
         label: '操作',
-        width: 170,
+        width: 120,
         fixed: 'right',
         slots: {
             default: (data) => (
-                <>
-                    <BaseButton link type="primary" onClick={() => openBindDialog(data.row)}>
-                        {data.row.callExt ? '修改' : '绑定'}
-                    </BaseButton>
-                    {data.row.callExt ? (
-                        <BaseButton link type="danger" onClick={() => handleClearSeat(data.row)}>
-                            清空
-                        </BaseButton>
-                    ) : null}
-                </>
+                <BaseButton link type="primary" onClick={() => openBindDialog(data.row)}>
+                    {data.row.callExt ? '修改' : '绑定'}
+                </BaseButton>
             )
         }
     }
 ])
 
 onMounted(async () => {
-    await Promise.all([tableMethods.getList(), loadGlobalStats()])
+    await Promise.all([tableMethods.getList(), loadGlobalStats(), loadRouteOptions()])
 })
 </script>
 
