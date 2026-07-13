@@ -93,13 +93,8 @@ export const updateUserPermission = (data: UserVO) => {
 }
 
 // 删除用户
-export const deleteUser = (id: number) => {
-  return request.delete({ url: '/system/user/delete?id=' + id })
-}
-
-// 批量删除用户
-export const deleteUserList = (ids: number[]) => {
-  return request.delete({ url: '/system/user/delete-list', params: { ids: ids.join(',') } })
+export const deleteUser = (id: number, inheritUserId?: number) => {
+  return request.delete({ url: '/system/user/delete', params: { id, inheritUserId } })
 }
 
 // 导出用户

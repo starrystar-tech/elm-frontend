@@ -254,16 +254,23 @@ const open = async (id: number, selectedList?: any[], options?: UserSelectOption
     resetForm()
     dialogTitle.value = options?.title || '人员选择'
     multiple.value = options?.multiple ?? false
-
-    const deptData = await DeptApi.getSimpleDeptList()
-    deptSourceList.value = deptData
-    userList.value = await UserApi.getSimpleUserList()
-    deptTree.value = buildDeptUserTree(deptData, userList.value)
     selectedUserIdList.value = (selectedList?.map((item: any) => item.id) || []).slice(
         0,
         multiple.value ? undefined : 1
     )
     dialogVisible.value = true
+    formLoading.value = true
+    try {
+        const [deptData, users] = await Promise.all([
+            DeptApi.getSimpleDeptList(),
+            UserApi.getSimpleUserList()
+        ])
+        deptSourceList.value = deptData
+        userList.value = users
+        deptTree.value = buildDeptUserTree(deptData, users)
+    } finally {
+        formLoading.value = false
+    }
 }
 
 const setSelectedUsers = (ids: number[]) => {

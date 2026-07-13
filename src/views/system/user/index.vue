@@ -21,14 +21,6 @@
                         导出
                     </BaseButton>
                     <BaseButton
-                        v-if="canDelete"
-                        type="danger"
-                        :disabled="checkedIds.length === 0"
-                        @click="handleDeleteBatch"
-                    >
-                        批量删除
-                    </BaseButton>
-                    <BaseButton
                         v-if="canUpdate"
                         plain
                         :disabled="checkedIds.length === 0"
@@ -129,6 +121,7 @@
     <UserAssignRoleForm ref="assignRoleFormRef" @success="tableMethods.getList" />
     <UserPermissionForm ref="permissionFormRef" @success="tableMethods.getList" />
     <DeptPermissionForm ref="deptPermissionFormRef" @success="handleDeptPermissionSuccess" />
+    <UserSelectForm ref="deleteUserSelectFormRef" @confirm="handleDeleteInheritUserConfirm" />
 
     <Dialog v-model="batchUpdateVisible" title="批量修改复制次数" width="420px">
         <el-form :model="batchUpdateForm" label-width="120px">
@@ -187,6 +180,7 @@ import UserAssignRoleForm from './UserAssignRoleForm.vue'
 import UserPermissionForm from './UserPermissionForm.vue'
 import DeptPermissionForm from './DeptPermissionForm.vue'
 import DeptTree from './DeptTree.vue'
+import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
@@ -259,6 +253,8 @@ const importFormRef = ref<InstanceType<typeof UserImportForm>>()
 const assignRoleFormRef = ref<InstanceType<typeof UserAssignRoleForm>>()
 const permissionFormRef = ref<InstanceType<typeof UserPermissionForm>>()
 const deptPermissionFormRef = ref<InstanceType<typeof DeptPermissionForm>>()
+const deleteUserSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
+const pendingDeleteUser = ref<UserApi.UserVO | null>(null)
 const currentDeptPermission = ref<DeptApi.DeptVO | null>(null)
 const roleList = ref<RoleApi.RoleVO[]>([])
 const roleNameMap = computed(() => {
@@ -323,7 +319,6 @@ const {
     register: tableRegister
 } = useTable<UserApi.UserVO>({
     getListApi: async (params) => await UserApi.getUserPage({ ...params, deptId: deptId.value }),
-    delListApi: async (id) => await UserApi.deleteUser(id as number),
     exportListApi: async (params) => await UserApi.exportUser({ ...params, deptId: deptId.value })
 })
 
@@ -388,19 +383,38 @@ const handleExport = async () => {
     await tableMethods.exportList('用户数据.xls')
 }
 
-const handleDelete = async (id: number) => {
-    await tableMethods.delList(id, false)
+const handleDelete = async (row: UserApi.UserVO) => {
+    pendingDeleteUser.value = row
+    deleteUserSelectFormRef.value?.open(row.id, [], {
+        title: '选择继承用户',
+        multiple: false
+    })
 }
 
 const handleRowCheckboxChange = (rows: UserApi.UserVO[]) => {
     checkedIds.value = rows.map((row) => row.id)
 }
 
-const handleDeleteBatch = async () => {
+const handleDeleteInheritUserConfirm = async (_id: any, userList: UserApi.UserVO[]) => {
+    const deleteUser = pendingDeleteUser.value
+    const inheritUser = userList?.[0]
+    if (!deleteUser) {
+        return
+    }
+    if (!inheritUser?.id) {
+        message.warning('请选择继承用户')
+        return
+    }
+    if (inheritUser.id === deleteUser.id) {
+        message.warning('继承用户不能选择被删除用户')
+        return
+    }
     try {
-        await message.delConfirm()
-        await UserApi.deleteUserList(checkedIds.value)
-        checkedIds.value = []
+        await message.confirm(
+            `确认删除"${deleteUser.nickname || deleteUser.username}"，并由"${inheritUser.nickname || inheritUser.username}"继承相关数据吗?`
+        )
+        await UserApi.deleteUser(deleteUser.id, inheritUser.id)
+        pendingDeleteUser.value = null
         message.success('删除成功')
         await tableMethods.getList()
     } catch {}
@@ -445,7 +459,7 @@ const handleResetPwd = async (row: UserApi.UserVO) => {
 const handleCommand = (command: string, row: UserApi.UserVO) => {
     switch (command) {
         case 'handleDelete':
-            handleDelete(row.id)
+            handleDelete(row)
             break
         case 'handleResetPwd':
             handleResetPwd(row)
