@@ -22,7 +22,7 @@
     <ContentWrap>
       <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
       <div class="mb-10px">
-        <BaseButton v-if="canUpdate" type="primary" @click="openForm('create')">新增坐席</BaseButton>
+        <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增坐席</BaseButton>
       </div>
       <Table
         v-model:currentPage="tableObject.currentPage"
@@ -99,8 +99,10 @@ import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'CrmCallSeat' })
 
-const canQuery = hasPermission(['system:user:query'])
-const canUpdate = hasPermission(['system:user:update'])
+const canQuery = hasPermission(['system:call-seat:query'])
+const canCreate = hasPermission(['system:call-seat:create'])
+const canUpdate = hasPermission(['system:call-seat:update'])
+const canDelete = hasPermission(['system:call-seat:delete'])
 
 const message = useMessage()
 const formRef = ref()
@@ -295,7 +297,7 @@ const tableColumns = computed<TableColumn[]>(() => [
               编辑
             </BaseButton>
           ) : null}
-          {canUpdate ? (
+          {canDelete ? (
             <BaseButton link type="danger" onClick={() => handleDelete(row.id)}>
               删除
             </BaseButton>

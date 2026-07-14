@@ -59,6 +59,7 @@ import RefundAuditDialog from './RefundAuditDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import type { UserVO } from '@/api/system/user'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'OrderRefund' })
 
@@ -80,6 +81,8 @@ const defaultSearchForm = {
 }
 const searchForm = reactive<Recordable>({ ...defaultSearchForm })
 const creatorDisplayName = ref('')
+const canViewRefund = hasPermission(['crm:order-refund:query'])
+const canAuditRefund = hasPermission(['crm:order-refund:audit'])
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
@@ -300,15 +303,18 @@ const tableColumns = computed<TableColumn[]>(() => [
         slots: {
             default: (data) => {
                 const row = data.row as OrderApi.OrderRefundRespVO
-                return row.refundStatus === 0 ? (
-                    <BaseButton link type="primary" onClick={() => openAudit(row, false)}>
-                        审核
-                    </BaseButton>
-                ) : (
+                if (row.refundStatus === 0) {
+                    return canAuditRefund ? (
+                        <BaseButton link type="primary" onClick={() => openAudit(row, false)}>
+                            审核
+                        </BaseButton>
+                    ) : null
+                }
+                return canViewRefund ? (
                     <BaseButton link type="primary" onClick={() => openAudit(row, true)}>
                         查看
                     </BaseButton>
-                )
+                ) : null
             }
         }
     }

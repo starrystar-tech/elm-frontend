@@ -75,8 +75,11 @@
             <BaseButton v-hasPermi="['crm:order:export']" plain @click="openExportDialog"
                 >导出</BaseButton
             >
-            <BaseButton @click="handleBatchRepurchase">复购激活</BaseButton>
+            <BaseButton v-hasPermi="['crm:order:repurchase']" @click="handleBatchRepurchase"
+                >复购激活</BaseButton
+            >
             <el-tooltip
+                v-if="canRepurchaseOrder"
                 content="激活后客户将加入成单人复购列表，不会生成新订单"
                 placement="top"
             >
@@ -156,6 +159,10 @@ const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
 const aftersalesFormRef = ref<InstanceType<typeof AftersalesForm>>()
 const currentSearchParams = ref<Recordable>({})
 const canCreateAftersales = hasPermission(['crm:aftersales:create'])
+const canRepurchaseOrder = hasPermission(['crm:order:repurchase'])
+const canSignContractOrder = hasPermission(['crm:order:sign-contract'])
+const canRefundOrder = hasPermission(['crm:order-refund:create'])
+const canVoidOrder = hasPermission(['crm:order:void'])
 const defaultSearchForm = {
     mobile: '',
     customer: '',
@@ -533,7 +540,7 @@ const getMoreActions = (row: OrderApi.OrderPageRespVO) =>
         {
             command: 'contractSign',
             label: '签署合同',
-            show: canSignContract(row)
+            show: canSignContractOrder && canSignContract(row)
         },
         {
             command: 'pay',
@@ -543,13 +550,13 @@ const getMoreActions = (row: OrderApi.OrderPageRespVO) =>
         {
             command: 'refund',
             label: '退款',
-            show: getRefundableAmount(row.paidAmount, row.refundAmount) > 0,
+            show: canRefundOrder && getRefundableAmount(row.paidAmount, row.refundAmount) > 0,
             type: 'danger' as const
         },
         {
             command: 'void',
             label: '作废',
-            show: row.orderStatus !== 30,
+            show: canVoidOrder && row.orderStatus !== 30,
             type: 'danger' as const
         }
     ].filter((item) => item.show)

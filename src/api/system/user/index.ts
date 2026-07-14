@@ -84,6 +84,14 @@ export const updateUser = (data: UserVO) => {
   return request.put({ url: '/system/user/update', data })
 }
 
+export const bindUserCallSeat = (data: {
+  id?: number
+  callExt?: string
+  callerDisplayNumber?: string
+}) => {
+  return request.put({ url: '/system/user/bind-call-seat', data })
+}
+
 export const batchUpdateUser = (data: UserBatchUpdateReqVO) => {
   return request.put({ url: '/system/user/batch-update', data })
 }

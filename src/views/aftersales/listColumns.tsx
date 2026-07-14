@@ -29,6 +29,10 @@ interface BuildAftersalesColumnsOptions {
     showProcess?: (row: AftersalesApi.AftersalesRespVO) => boolean
     showClaim?: (row: AftersalesApi.AftersalesRespVO) => boolean
     showRepurchase?: (row: AftersalesApi.AftersalesRespVO) => boolean
+    canOpenDetail?: boolean
+    canSignContract?: boolean
+    canProcess?: boolean
+    canRepurchase?: boolean
     actionWidth?: string
 }
 
@@ -45,6 +49,10 @@ export const buildAftersalesColumns = (options: BuildAftersalesColumnsOptions): 
         options.claim ||
         options.repurchase
     const canClaim = hasPermission(['crm:aftersales:claim'])
+    const canOpenDetail = true 
+    const canSignContract = options.canSignContract ?? true
+    const canProcess = options.canProcess ?? true
+    const canRepurchase = options.canRepurchase ?? true
 
     const columns: TableColumn[] = [
         {
@@ -165,12 +173,13 @@ export const buildAftersalesColumns = (options: BuildAftersalesColumnsOptions): 
                 const row = data.row as AftersalesApi.AftersalesRespVO
                 return (
                     <>
-                        {options.openDetail ? (
+                        {canOpenDetail && options.openDetail ? (
                             <BaseButton link type="primary" onClick={() => options.openDetail?.(row.id)}>
                                 查看
                             </BaseButton>
                         ) : null}
-                        {options.signContract &&
+                        {canSignContract &&
+                        options.signContract &&
                         (options.showSignContract || defaultShowSignContract)(row) ? (
                             <BaseButton
                                 link
@@ -189,12 +198,16 @@ export const buildAftersalesColumns = (options: BuildAftersalesColumnsOptions): 
                                 领取
                             </BaseButton>
                         ) : null}
-                        {options.openProcess && (options.showProcess || defaultShowProcess)(row) ? (
+                        {canProcess &&
+                        options.openProcess &&
+                        (options.showProcess || defaultShowProcess)(row) ? (
                             <BaseButton link type="primary" onClick={() => options.openProcess?.(row)}>
                                 处理
                             </BaseButton>
                         ) : null}
-                        {options.repurchase && (options.showRepurchase || defaultShowRepurchase)(row) ? (
+                        {canRepurchase &&
+                        options.repurchase &&
+                        (options.showRepurchase || defaultShowRepurchase)(row) ? (
                             <BaseButton link type="primary" onClick={() => options.repurchase?.(row)}>
                                 激活
                             </BaseButton>

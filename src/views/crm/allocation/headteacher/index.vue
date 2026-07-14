@@ -1,7 +1,7 @@
 <template>
     <ContentWrap>
         <div class="action-btn-wrap">
-            <BaseButton type="primary" @click="openForm('create')">新增</BaseButton>
+            <BaseButton v-if="canCreate" type="primary" @click="openForm('create')">新增</BaseButton>
         </div>
         <Table
             v-model:currentPage="tableObject.currentPage"
@@ -24,12 +24,16 @@ import { useTable } from '@/hooks/web/useTable'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import { hasPermission } from '@/directives/permission/hasPermi'
 import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
 import HeadteacherForm from './HeadteacherForm.vue'
 
 defineOptions({ name: 'CrmHeadteacherAllocation' })
 
 const message = useMessage()
+const canCreate = hasPermission(['crm:headteacher:create'])
+const canUpdate = hasPermission(['crm:headteacher:update'])
+const canDelete = hasPermission(['crm:headteacher:delete'])
 const formRef = ref<InstanceType<typeof HeadteacherForm>>()
 
 const {
@@ -107,12 +111,20 @@ const tableColumns = computed<TableColumn[]>(() => [
         slots: {
             default: (data) => (
                 <>
-                    <BaseButton link type="primary" onClick={() => openForm('update', data.row)}>
-                        编辑
-                    </BaseButton>
-                    <BaseButton link type="danger" onClick={() => handleDelete(data.row.id)}>
-                        删除
-                    </BaseButton>
+                    {canUpdate ? (
+                        <BaseButton
+                            link
+                            type="primary"
+                            onClick={() => openForm('update', data.row)}
+                        >
+                            编辑
+                        </BaseButton>
+                    ) : null}
+                    {canDelete ? (
+                        <BaseButton link type="danger" onClick={() => handleDelete(data.row.id)}>
+                            删除
+                        </BaseButton>
+                    ) : null}
                 </>
             )
         }

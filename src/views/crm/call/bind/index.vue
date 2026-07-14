@@ -147,6 +147,7 @@ import { useTable } from '@/hooks/web/useTable'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import DeptSelector from '@/views/system/dept/components/DeptSelector.vue'
 import * as OutboundRouteApi from '@/api/system/call/router'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'CrmCallSeat' })
 
@@ -158,6 +159,7 @@ interface SeatSearchParams {
 }
 
 const message = useMessage()
+const canBind = hasPermission(['system:call-seat:bind'])
 const formRef = ref()
 const dialogVisible = ref(false)
 const dialogLoading = ref(false)
@@ -337,8 +339,8 @@ const handleSubmit = async () => {
     try {
         const callExt = String(formData.callExt || '').trim()
         const callerDisplayNumber = String(formData.callerDisplayNumber || '').trim()
-        await UserApi.updateUser({
-            ...currentUserDetail.value,
+        await UserApi.bindUserCallSeat({
+            id: currentUserDetail.value.id,
             callExt,
             callerDisplayNumber
         })
@@ -406,9 +408,13 @@ const tableColumns = computed<TableColumn[]>(() => [
         fixed: 'right',
         slots: {
             default: (data) => (
-                <BaseButton link type="primary" onClick={() => openBindDialog(data.row)}>
-                    {data.row.callExt ? '修改' : '绑定'}
-                </BaseButton>
+                <>
+                    {canBind ? (
+                        <BaseButton link type="primary" onClick={() => openBindDialog(data.row)}>
+                            {data.row.callExt ? '修改' : '绑定'}
+                        </BaseButton>
+                    ) : null}
+                </>
             )
         }
     }

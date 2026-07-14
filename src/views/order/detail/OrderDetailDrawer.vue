@@ -23,13 +23,19 @@
                             <span>订单归属：{{ orderOwnerText }}</span>
                         </template>
                         <template #actions>
-                            <el-button plain :disabled="!canSignContract" @click="handleContractSign()"
+                            <el-button
+                                v-if="canSignContractOrder"
+                                plain
+                                :disabled="!canSignContract"
+                                @click="handleContractSign()"
                                 >签署合同</el-button
                             >
                             <el-button plain @click="handlePay">支付</el-button>
-                            <el-button plain @click="handleRefund">退款</el-button>
-                            <el-button plain @click="handleVoid">作废</el-button>
-                            <el-button plain @click="handleRepurchase">复购激活</el-button>
+                            <el-button v-if="canRefundOrder" plain @click="handleRefund">退款</el-button>
+                            <el-button v-if="canVoidOrder" plain @click="handleVoid">作废</el-button>
+                            <el-button v-if="canRepurchaseOrder" plain @click="handleRepurchase"
+                                >复购激活</el-button
+                            >
                         </template>
                     </DetailHeroCard>
                     <ContentWrap class="mb-16px">
@@ -288,6 +294,7 @@
                                     <el-table-column label="操作" min-width="120" fixed="right">
                                         <template #default="{ row }">
                                             <el-button
+                                                v-if="canSignContractOrder"
                                                 link
                                                 type="success"
                                                 :disabled="!canSignContract"
@@ -481,6 +488,7 @@ import {
     getOptionLabel,
     getRemainingAmount
 } from '../utils'
+import { hasPermission } from '@/directives/permission/hasPermi'
 
 defineOptions({ name: 'OrderDetailDrawer' })
 
@@ -494,6 +502,10 @@ const detail = ref<OrderApi.OrderDetailRespVO>({ items: [], payRecords: [], refu
 const consultBasicInfo = ref<CustomerDetailApi.CustomerBasicInfoRespVO>()
 const consultAppointments = ref<CustomerDetailApi.CustomerAppointmentRespVO[]>([])
 const activeTab = ref('student')
+const canRepurchaseOrder = hasPermission(['crm:order:repurchase'])
+const canSignContractOrder = hasPermission(['crm:order:sign-contract'])
+const canRefundOrder = hasPermission(['crm:order-refund:create'])
+const canVoidOrder = hasPermission(['crm:order:void'])
 const orderAvatarText = computed(() => (detail.value.customerName || '订').slice(0, 1))
 const firstProduct = computed(() => detail.value.items?.[0] || ({} as OrderApi.OrderItemRespVO))
 

@@ -187,7 +187,8 @@ const getList = async () => {
 }
 
 const setSearchParams = async (params: Recordable) => {
-    Object.assign(queryParams, params)
+    queryParams.name = params?.name || undefined
+    queryParams.status = params?.status
     await getList()
 }
 
