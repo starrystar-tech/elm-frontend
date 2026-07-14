@@ -134,7 +134,13 @@
                         :key="field.id || field.variableName"
                         :label="field.variableName"
                     >
+                        <ProvinceSelect
+                            v-if="isProvinceVariable(field.variableName)"
+                            v-model="variableForm[field.variableName]"
+                            placeholder="请选择省份"
+                        />
                         <el-input
+                            v-else
                             v-model="variableForm[field.variableName]"
                             :placeholder="`请输入${field.variableName}`"
                             clearable
@@ -197,6 +203,7 @@ import * as ClueApi from '@/api/crm/clue'
 import * as OrderApi from '@/api/crm/order'
 import * as ContractApi from '@/api/system/contract'
 import * as TemplateApi from '@/api/system/contract/template'
+import ProvinceSelect from '@/components/ProvinceSelect.vue'
 import { fenToYuan } from '@/utils'
 import { buildAreaLabel } from '@/views/crm/clue/listShared'
 import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
@@ -247,6 +254,11 @@ const normalizeVariableName = (value?: string) =>
         .trim()
         .toLowerCase()
         .replace(/[\s_:/\\\-()（）【】\[\]{}，,。．、]/g, '')
+
+const isProvinceVariable = (value?: string) => {
+    const text = String(value || '').trim().toLowerCase()
+    return text.includes('省份') || text.includes('province')
+}
 
 const matchVariableAlias = (variableName: string, aliases: string[]) => {
     const normalized = normalizeVariableName(variableName)

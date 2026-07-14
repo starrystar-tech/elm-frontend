@@ -45,13 +45,15 @@
                     >
                         批量停用
                     </BaseButton>
-                    <!-- <el-alert
-                        title="已报名的客户不占用名额上限"
-                        type="warning"
-                        effect="light"
-                        :closable="false"
-                        class="limit-tip-alert"
-                    /> -->
+                    <div class="limit-tip-alert">
+                        <el-alert
+                            title="已报名的客户不占用名额上限"
+                            type="warning"
+                            effect="light"
+                            :closable="false"
+                            
+                        />
+                    </div>
                 </div>
                 <Table
                     v-model:currentPage="tableObject.currentPage"

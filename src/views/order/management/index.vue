@@ -136,13 +136,19 @@ import OrderContractSignDialog from '../detail/OrderContractSignDialog.vue'
 import OrderPayDialog from '../components/OrderPayDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import { buildDeptOwnerDisplayName } from '@/views/crm/clue/listShared'
 import BatchUpdateOwnerDialog from './BatchUpdateOwnerDialog.vue'
 import ExportTaskDialog from '@/views/crm/clue/components/ExportTaskDialog.vue'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import type { UserVO } from '@/api/system/user'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import AftersalesForm from '@/views/aftersales/components/AftersalesForm.vue'
-import { AFTERSALES_SOURCE } from '@/views/aftersales/config'
+import {
+    AFTERSALES_SOURCE,
+    getAftersalesResultLabel,
+    getAftersalesStatusLabel
+} from '@/views/aftersales/config'
+import * as StudentCenterApi from '@/api/crm/studentCenter'
 
 defineOptions({ name: 'OrderManagement' })
 
@@ -159,6 +165,8 @@ const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
 const aftersalesFormRef = ref<InstanceType<typeof AftersalesForm>>()
 const currentSearchParams = ref<Recordable>({})
 const canCreateAftersales = hasPermission(['crm:aftersales:create'])
+const ownerDeptLabel = (row: OrderApi.OrderPageRespVO) =>
+    buildDeptOwnerDisplayName(row.ownerDeptName, row.ownerUserName)
 const canRepurchaseOrder = hasPermission(['crm:order:repurchase'])
 const canSignContractOrder = hasPermission(['crm:order:sign-contract'])
 const canRefundOrder = hasPermission(['crm:order-refund:create'])
@@ -679,8 +687,34 @@ const tableColumns = computed<TableColumn[]>(() => [
         formatter: (_r, _c, v) => formatAmount(v)
     },
     { field: 'campusName', label: '报名分校', minWidth: '120px' },
-    { field: 'ownerUserName', label: '订单归属人', minWidth: '110px' },
+    {
+        field: 'ownerUserName',
+        label: '订单归属人(组别)',
+        minWidth: '160px',
+        showOverflowTooltip: true,
+        slots: {
+            default: (data) => <span>{ownerDeptLabel(data.row)}</span>
+        }
+    },
     { field: 'cardOwnerUserName', label: '名片归属', minWidth: '110px' },
+    {
+        field: 'aftersalesStatus',
+        label: '售后状态',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => getAftersalesStatusLabel(v)
+    },
+    {
+        field: 'aftersalesResult',
+        label: '售后结果',
+        minWidth: '120px',
+        formatter: (_r, _c, v) => getAftersalesResultLabel(v)
+    },
+    {
+        field: 'courseStatus',
+        label: '开课状态',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => StudentCenterApi.getStudentCourseStatusLabel(v)
+    },
     { field: 'remark', label: '备注', minWidth: '140px', showOverflowTooltip: true },
     {
         field: 'creatorName',

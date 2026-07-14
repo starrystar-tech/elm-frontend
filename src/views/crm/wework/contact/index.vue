@@ -61,6 +61,7 @@ defineOptions({ name: 'CrmWeworkContact' })
 
 const message = useMessage()
 const canSync = hasPermission(['crm:wework-contact:sync'])
+const canUpdate = hasPermission(['crm:wework-contact:update'])
 const route = useRoute()
 const searchRef = ref<SearchExpose>()
 const syncLoading = ref(false)
@@ -473,7 +474,7 @@ const tableColumns = reactive<TableColumn[]>([
                         </BaseButton>
                     )
                 }
-                if (!hasPhone.value) {
+                if (!hasPhone.value && canUpdate) {
                     actions.push(
                         <BaseButton
                             key="remark"

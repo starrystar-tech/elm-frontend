@@ -39,8 +39,9 @@
                 <AreaSelector
                     v-model="formData.scopeValueIds"
                     multiple
+                    select-level="province"
                     :include-all-node="false"
-                    placeholder="请选择区域"
+                    placeholder="请选择省份"
                 />
             </el-form-item>
         </el-form>

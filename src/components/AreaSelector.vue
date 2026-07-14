@@ -20,7 +20,7 @@
             <el-icon class="area-selector__arrow"><ArrowDown /></el-icon>
         </div>
 
-        <Dialog v-model="visible" title="选择区域" width="560px">
+        <Dialog v-model="visible" :title="dialogTitle" width="560px">
             <el-tree
                 ref="treeRef"
                 :data="areaList"
@@ -52,6 +52,7 @@ const props = defineProps<{
     multiple?: boolean
     includeAllNode?: boolean
     placeholder?: string
+    selectLevel?: 'all' | 'province'
 }>()
 
 const emit = defineEmits<{
@@ -72,13 +73,35 @@ const loaded = ref(false)
 
 const multiple = computed(() => props.multiple ?? false)
 const includeAllNode = computed(() => props.includeAllNode ?? true)
-const placeholder = computed(() => props.placeholder || '请选择区域')
+const selectLevel = computed(() => props.selectLevel || 'all')
+const placeholder = computed(() =>
+    props.placeholder || (selectLevel.value === 'province' ? '请选择省份' : '请选择区域')
+)
+const dialogTitle = computed(() => (selectLevel.value === 'province' ? '选择省份' : '选择区域'))
 
 const mergeAreaData = (data: any[] = []) => {
     const list = Array.isArray(data) ? data : []
     if (!includeAllNode.value) return list
     if (list.some((item) => Number(item?.id) === -1)) return list
     return [createAllAreaNode(), ...list]
+}
+
+const stripChildren = (nodes: any[] = []) =>
+    nodes.map((node) => ({
+        ...node,
+        children: [],
+        leaf: true
+    }))
+
+const resolveProvinceNodes = (nodes: any[] = []) => {
+    const normalizedNodes = Array.isArray(nodes) ? nodes : []
+    const rootNode = normalizedNodes.find((item) =>
+        ['中国', '全国', '全球'].includes(String(item?.name || '').trim())
+    )
+    const provinceNodes = Array.isArray(rootNode?.children) && rootNode.children.length
+        ? rootNode.children
+        : normalizedNodes
+    return stripChildren(provinceNodes)
 }
 
 const buildAreaMaps = () => {
@@ -155,7 +178,11 @@ const selectedLabels = computed(() => {
 const loadArea = async () => {
     if (loaded.value) return
     const res = await AreaApi.getAreaTree()
-    areaList.value = mergeAreaData((res || []) as any[])
+    const areaTree = (res || []) as any[]
+    areaList.value =
+        selectLevel.value === 'province'
+            ? mergeAreaData(resolveProvinceNodes(areaTree))
+            : mergeAreaData(areaTree)
     loaded.value = true
 }
 

@@ -49,7 +49,7 @@
                     批量发短信
                 </BaseButton>
                 <BaseButton
-                    v-if="showReleaseActions"
+                    v-if="showReleaseActions && canRelease"
                     type="primary"
                     :disabled="selectionList.length === 0"
                     @click="releaseDialogVisible = true"
@@ -154,6 +154,7 @@ const message = useMessage()
 const route = useRoute()
 const canCreate = hasPermission(['crm:clue:create'])
 const canSmsSend = hasPermission(['crm:clue:sms:send'])
+const canRelease = hasPermission(['crm:my-clue:release'])
 const formRef = ref<InstanceType<typeof ClueForm>>()
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
 const smsDialogRef = ref<InstanceType<typeof ClueSmsDialog>>()
@@ -576,7 +577,11 @@ const getMoreActions = (rowId: number) =>
             type: 'danger' as const
         }
     ].filter((item): item is { command: string; label: string; type?: 'danger' } =>
-        Boolean(item && rowId && (item.command !== 'release' || showReleaseActions.value))
+        Boolean(
+            item &&
+                rowId &&
+                (item.command !== 'release' || (showReleaseActions.value && canRelease))
+        )
     )
 
 const handleMoreCommand = async (command: string, rowId: number) => {

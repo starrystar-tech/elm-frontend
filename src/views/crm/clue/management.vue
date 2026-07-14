@@ -40,6 +40,7 @@
             <div class="action-btn-wrap">
                 <div class="flex gap-8px flex-wrap">
                     <BaseButton
+                        v-if="canAssign"
                         type="primary"
                         :disabled="selectionList.length === 0"
                         @click="openAssignDialog()"
@@ -47,6 +48,7 @@
                         批量分配
                     </BaseButton>
                     <BaseButton
+                        v-if="canRelease"
                         plain
                         :disabled="selectionList.length === 0"
                         @click="releaseDialogVisible = true"
@@ -197,7 +199,9 @@ interface ManagerSearchParams {
 }
 
 const message = useMessage()
-const canExport = hasPermission(['crm:clue-management:query'])
+const canAssign = hasPermission(['crm:clue-management:assign'])
+const canRelease = hasPermission(['crm:clue-management:release'])
+const canExport = hasPermission(['crm:clue-management:export'])
 const canSmsSend = hasPermission(['crm:clue:sms:send'])
 const canComplaintTagImport = hasPermission(['crm:clue:complaint-tag:import'])
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
@@ -631,15 +635,19 @@ const getMoreActions = (rowId: number) =>
                   label: '报名'
               }
             : null,
-        {
-            command: 'assign',
-            label: '分配'
-        },
-        {
-            command: 'release',
-            label: '释放',
-            type: 'danger' as const
-        }
+        canAssign
+            ? {
+                  command: 'assign',
+                  label: '分配'
+              }
+            : null,
+        canRelease
+            ? {
+                  command: 'release',
+                  label: '释放',
+                  type: 'danger' as const
+              }
+            : null
     ].filter((item): item is { command: string; label: string; type?: 'danger' } =>
         Boolean(item && rowId)
     )

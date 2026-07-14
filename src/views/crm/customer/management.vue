@@ -17,6 +17,7 @@
         </Search>
         <div class="mb-12px flex items-center justify-between action-btn-wrap">
             <BaseButton
+                v-hasPermi="['crm:student:management:headteacher']"
                 type="primary"
                 :disabled="selectionList.length === 0"
                 @click="openBatchHeadteacherForm"
@@ -90,6 +91,7 @@ const searchForm = reactive<StudentSearchParams>({})
 const selectionList = ref<StudentCenterApi.StudentCenterPageRespVO[]>([])
 const headteacherOptions = ref<{ label: string; value: number }[]>([])
 const canCreateAftersales = hasPermission(['crm:aftersales:create'])
+const canEditManagedStudent = hasPermission(['crm:student:management:update'])
 const searchSchema = reactive<FormSchema[]>([
     {
         field: 'mobile',
@@ -438,9 +440,11 @@ const tableColumns = computed<TableColumn[]>(() => [
                     <BaseButton link type="primary" onClick={() => openDetail(data.row)}>
                         详情
                     </BaseButton>
-                    <BaseButton link type="primary" onClick={() => openStudentEditForm(data.row)}>
-                        编辑
-                    </BaseButton>
+                    {canEditManagedStudent ? (
+                        <BaseButton link type="primary" onClick={() => openStudentEditForm(data.row)}>
+                            编辑
+                        </BaseButton>
+                    ) : null}
                     {canCreateAftersales ? (
                         <BaseButton
                             link

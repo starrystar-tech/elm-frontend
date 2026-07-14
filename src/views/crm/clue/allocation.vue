@@ -18,17 +18,23 @@
         <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
             <div class="flex gap-8px flex-wrap">
                 <BaseButton
+                    v-if="canAssign"
                     type="primary"
                     :disabled="selectionList.length === 0"
                     @click="assignDialogVisible = true"
                     >批量分配</BaseButton
                 >
                 <BaseButton
+                    v-if="canSilent"
                     :disabled="selectionList.length === 0"
                     @click="silentDialogVisible = true"
                     >批量静默</BaseButton
                 >
-                <BaseButton :disabled="selectionList.length !== 2" plain @click="openMergeDialog"
+                <BaseButton
+                    v-if="canMerge"
+                    :disabled="selectionList.length !== 2"
+                    plain
+                    @click="openMergeDialog"
                     >合并</BaseButton
                 >
             </div>
@@ -108,6 +114,7 @@ import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
 import AllocationTypeSelect from '@/components/AllocationTypeSelect.vue'
 import { useTable } from '@/hooks/web/useTable'
+import { hasPermission } from '@/directives/permission/hasPermi'
 import type { FormSchema } from '@/types/form'
 import * as ClueApi from '@/api/crm/clue'
 import { renderCopyMobileCell } from './mobileCopy'
@@ -121,6 +128,9 @@ import { buildAreaLabel, buildOwnerDisplayName, prependUnassignedOwnerOption } f
 defineOptions({ name: 'CrmClueAllocation' })
 
 const message = useMessage()
+const canAssign = hasPermission(['crm:clue:allocation:assign'])
+const canSilent = hasPermission(['crm:clue:allocation:silent'])
+const canMerge = hasPermission(['crm:clue:allocation:merge'])
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
 const userOptions = ref<{ label: string; value: number; deptId?: number }[]>([])
 const searchOwnerOptions = ref<{ label: string; value: number; deptId?: number }[]>([])

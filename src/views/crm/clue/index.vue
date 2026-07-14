@@ -33,22 +33,29 @@
 
         <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
             <div class="flex gap-4px flex-wrap">
-                <BaseButton plain :disabled="selectionList.length !== 2" @click="openMergeDialog"
+                <BaseButton
+                    v-if="canMerge"
+                    plain
+                    :disabled="selectionList.length !== 2"
+                    @click="openMergeDialog"
                     >合并</BaseButton
                 >
                 <BaseButton
+                    v-if="canAssignModeUpdate"
                     plain
                     :disabled="selectionList.length === 0"
                     @click="assignModeDialogVisible = true"
                     >修改分配方式</BaseButton
                 >
                 <BaseButton
+                    v-if="canSilentUpdate"
                     plain
                     :disabled="selectionList.length === 0"
                     @click="silentDialogVisible = true"
                     >静默</BaseButton
                 >
                 <BaseButton
+                    v-if="canTagUpdate"
                     plain
                     :disabled="selectionList.length === 0"
                     @click="tagDialogVisible = true"
@@ -73,7 +80,9 @@
                 <BaseButton v-if="canCreate" type="primary" @click="openForm('create')"
                     >新增</BaseButton
                 >
-                <BaseButton plain @click="importDialogVisible = true">批量导入</BaseButton>
+                <BaseButton v-if="canImport" plain @click="importDialogVisible = true"
+                    >批量导入</BaseButton
+                >
                 <BaseButton v-if="canComplaintTagImport" plain @click="openComplaintImportDialog"
                     >投诉标签导入</BaseButton
                 >
@@ -304,6 +313,11 @@ const message = useMessage()
 const route = useRoute()
 const canCreate = hasPermission(['crm:clue:create'])
 const canExport = hasPermission(['crm:clue:export'])
+const canMerge = hasPermission(['crm:clue:merge:update'])
+const canAssignModeUpdate = hasPermission(['crm:clue:assign-mode:update'])
+const canSilentUpdate = hasPermission(['crm:clue:silent:update'])
+const canTagUpdate = hasPermission(['crm:clue:tag:update'])
+const canImport = hasPermission(['crm:clue-import:create'])
 const canSmsSend = hasPermission(['crm:clue:sms:send'])
 const canComplaintTagUpdate = hasPermission(['crm:clue:complaint-tag:update'])
 const canComplaintTagImport = hasPermission(['crm:clue:complaint-tag:import'])

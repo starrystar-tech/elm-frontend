@@ -128,7 +128,10 @@
                     <div class="setting-card">
                         <div class="setting-card-header">
                             <h3 class="setting-card-title">敏感词管理</h3>
-                            <el-button type="primary" @click="openSensitiveWordDialog()"
+                            <el-button
+                                v-if="canCreateWeworkChat"
+                                type="primary"
+                                @click="openSensitiveWordDialog()"
                                 >新建敏感词</el-button
                             >
                         </div>
@@ -155,12 +158,14 @@
                             <el-table-column label="操作" width="140">
                                 <template #default="{ row }">
                                     <el-button
+                                        v-if="canUpdateWeworkChat"
                                         link
                                         type="primary"
                                         @click="openSensitiveWordDialog(row)"
                                         >编辑</el-button
                                     >
                                     <el-button
+                                        v-if="canDeleteWeworkChat"
                                         link
                                         type="danger"
                                         @click="handleDeleteSensitiveWord(row.id)"
@@ -175,6 +180,7 @@
                         <div class="setting-card-header">
                             <h3 class="setting-card-title">敏感行为管理</h3>
                             <el-button
+                                v-if="canUpdateWeworkChat"
                                 type="primary"
                                 :loading="savingSetting"
                                 @click="saveBehaviorSetting"
@@ -361,6 +367,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import * as WeworkChatApi from '@/api/crm/wework/chat'
+import { hasPermission } from '@/directives/permission/hasPermi'
 import { useTagsViewStore } from '@/store/modules/tagsView'
 import { resolveTimestamp } from '@/utils/formatTime'
 
@@ -377,6 +384,9 @@ const savingWord = ref(false)
 const message = useMessage()
 const router = useRouter()
 const tagsViewStore = useTagsViewStore()
+const canCreateWeworkChat = hasPermission(['crm:wework-chat:create'])
+const canUpdateWeworkChat = hasPermission(['crm:wework-chat:update'])
+const canDeleteWeworkChat = hasPermission(['crm:wework-chat:delete'])
 const corpList = ref<WeworkChatApi.WeworkChatAnalysisDetailRespVO['corpList']>([])
 const detailData = ref<WeworkChatApi.WeworkChatAnalysisDetailRespVO>({
     corpList: [],

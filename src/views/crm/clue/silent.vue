@@ -5,12 +5,17 @@
         <div class="mb-12px flex items-center justify-between gap-12px flex-wrap action-btn-wrap">
             <div class="flex gap-8px flex-wrap">
                 <BaseButton
+                    v-if="canAssign"
                     type="primary"
                     :disabled="selectionList.length === 0"
                     @click="assignDialogVisible = true"
                     >批量分配</BaseButton
                 >
-                <BaseButton :disabled="selectionList.length === 0" plain @click="handleBackToPublicSea"
+                <BaseButton
+                    v-if="canBackToPublicSea"
+                    :disabled="selectionList.length === 0"
+                    plain
+                    @click="handleBackToPublicSea"
                     >一键回公海</BaseButton
                 >
                 <BaseButton v-if="canExport" plain @click="openExportDialog">导出</BaseButton>
@@ -87,7 +92,9 @@ defineOptions({ name: 'CrmClueSilent' })
 
 const message = useMessage()
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
-const canExport = hasPermission(['crm:clue:silent:query'])
+const canAssign = hasPermission(['crm:clue:silent:assign'])
+const canBackToPublicSea = hasPermission(['crm:clue:silent:back-to-public-sea'])
+const canExport = hasPermission(['crm:clue:silent:export'])
 const userOptions = ref<{ label: string; value: number; deptId?: number }[]>([])
 const searchOwnerOptions = ref<{ label: string; value: number; deptId?: number }[]>([])
 const deptOptions = ref<DeptApi.DeptVO[]>([])

@@ -24,15 +24,29 @@ import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { dateFormatter } from '@/utils/formatTime'
 import * as OrderApi from '@/api/crm/order'
-import { PAY_METHOD_OPTIONS, PAY_STATUS_OPTIONS, formatAmount, getOptionLabel } from '../utils'
+import {
+    ORDER_STATUS_OPTIONS,
+    PAY_METHOD_OPTIONS,
+    PAY_STATUS_OPTIONS,
+    formatAmount,
+    getOptionLabel
+} from '../utils'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import { buildDeptOwnerDisplayName } from '@/views/crm/clue/listShared'
 import { BaseButton } from '@/components/Button'
 import PayProofDialog from './PayProofDialog.vue'
+import {
+    getAftersalesResultLabel,
+    getAftersalesStatusLabel
+} from '@/views/aftersales/config'
+import * as StudentCenterApi from '@/api/crm/studentCenter'
 
 defineOptions({ name: 'OrderPayRecord' })
 
 const message = useMessage()
 const payProofDialogRef = ref<InstanceType<typeof PayProofDialog>>()
+const ownerDeptLabel = (row: OrderApi.OrderPayRecordRespVO) =>
+    buildDeptOwnerDisplayName(row.ownerDeptName, row.ownerUserName)
 
 const searchSchema = computed<FormSchema[]>(() => [
     {
@@ -156,6 +170,39 @@ const tableColumns = computed<TableColumn[]>(() => [
         label: '支付金额',
         minWidth: '100px',
         formatter: (_r, _c, v) => formatAmount(v)
+    },
+    {
+        field: 'orderStatus',
+        label: '订单状态',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => getOptionLabel(ORDER_STATUS_OPTIONS, v)
+    },
+    {
+        field: 'ownerUserName',
+        label: '订单归属人(组别)',
+        minWidth: '160px',
+        showOverflowTooltip: true,
+        slots: {
+            default: (data) => <span>{ownerDeptLabel(data.row)}</span>
+        }
+    },
+    {
+        field: 'aftersalesStatus',
+        label: '售后状态',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => getAftersalesStatusLabel(v)
+    },
+    {
+        field: 'aftersalesResult',
+        label: '售后结果',
+        minWidth: '120px',
+        formatter: (_r, _c, v) => getAftersalesResultLabel(v)
+    },
+    {
+        field: 'courseStatus',
+        label: '开课状态',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => StudentCenterApi.getStudentCourseStatusLabel(v)
     },
     { field: 'payMethod', label: '支付方式', minWidth: '100px' },
     {

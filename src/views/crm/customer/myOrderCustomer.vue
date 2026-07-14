@@ -73,6 +73,8 @@ const studentEditFormRef = ref<InstanceType<typeof StudentEditForm>>()
 const searchForm = reactive<StudentSearchParams>({})
 const message = useMessage()
 const canCreateAftersales = hasPermission(['crm:aftersales:create'])
+const canEditMyStudent = hasPermission(['crm:student:my:update'])
+const canRepurchaseMyStudent = hasPermission(['crm:student:my:repurchase'])
 const searchSchema = reactive<FormSchema[]>([
     {
         field: 'mobile',
@@ -394,12 +396,16 @@ const tableColumns = computed<TableColumn[]>(() => [
                     <BaseButton link type="primary" onClick={() => openDetail(data.row)}>
                         详情
                     </BaseButton>
-                    <BaseButton link type="primary" onClick={() => openStudentEditForm(data.row)}>
-                        编辑
-                    </BaseButton>
-                    <BaseButton link type="primary" onClick={() => handleRepurchase(data.row)}>
-                        激活
-                    </BaseButton>
+                    {canEditMyStudent ? (
+                        <BaseButton link type="primary" onClick={() => openStudentEditForm(data.row)}>
+                            编辑
+                        </BaseButton>
+                    ) : null}
+                    {canRepurchaseMyStudent ? (
+                        <BaseButton link type="primary" onClick={() => handleRepurchase(data.row)}>
+                            激活
+                        </BaseButton>
+                    ) : null}
                     {canCreateAftersales ? (
                         <BaseButton
                             link

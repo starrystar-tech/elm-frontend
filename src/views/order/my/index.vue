@@ -47,9 +47,17 @@
             </template>
         </Search>
         <div class="action-btn-wrap flex items-center gap-2">
-            <BaseButton plain @click="openExportDialog">导出</BaseButton>
-            <BaseButton type="primary" @click="handleBatchRepurchase">复购激活</BaseButton>
+            <BaseButton v-hasPermi="['crm:order:my-export']" plain @click="openExportDialog"
+                >导出</BaseButton
+            >
+            <BaseButton
+                v-hasPermi="['crm:order:my-repurchase']"
+                type="primary"
+                @click="handleBatchRepurchase"
+                >复购激活</BaseButton
+            >
             <el-tooltip
+                v-if="canMyRepurchaseOrder"
                 content="激活后客户将加入成单人复购列表，不会生成新订单"
                 placement="top"
             >
@@ -105,12 +113,18 @@ import OrderContractSignDialog from '../detail/OrderContractSignDialog.vue'
 import OrderPayDialog from '../components/OrderPayDialog.vue'
 import RefundDialog from '../refund/RefundDialog.vue'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
+import { buildDeptOwnerDisplayName } from '@/views/crm/clue/listShared'
 import ExportTaskDialog from '@/views/crm/clue/components/ExportTaskDialog.vue'
 import UserSelectForm from '@/components/UserSelectForm/index.vue'
 import type { UserVO } from '@/api/system/user'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import AftersalesForm from '@/views/aftersales/components/AftersalesForm.vue'
-import { AFTERSALES_SOURCE } from '@/views/aftersales/config'
+import {
+    AFTERSALES_SOURCE,
+    getAftersalesResultLabel,
+    getAftersalesStatusLabel
+} from '@/views/aftersales/config'
+import * as StudentCenterApi from '@/api/crm/studentCenter'
 
 defineOptions({ name: 'OrderMy' })
 
@@ -126,6 +140,12 @@ const userSelectFormRef = ref<InstanceType<typeof UserSelectForm>>()
 const aftersalesFormRef = ref<InstanceType<typeof AftersalesForm>>()
 const currentSearchParams = ref<Recordable>({})
 const canCreateAftersales = hasPermission(['crm:aftersales:create'])
+const canMyRepurchaseOrder = hasPermission(['crm:order:my-repurchase'])
+const canMySignContractOrder = hasPermission(['crm:order:my-sign-contract'])
+const canMyRefundOrder = hasPermission(['crm:order:my-refund'])
+const canMyVoidOrder = hasPermission(['crm:order:my-void'])
+const ownerDeptLabel = (row: OrderApi.OrderPageRespVO) =>
+    buildDeptOwnerDisplayName(row.ownerDeptName, row.ownerUserName)
 const defaultSearchForm = {
     mobile: '',
     customer: '',
@@ -465,7 +485,7 @@ const getMoreActions = (row: OrderApi.OrderPageRespVO) =>
         {
             command: 'contractSign',
             label: '签署合同',
-            show: canSignContract(row)
+            show: canMySignContractOrder && canSignContract(row)
         },
         {
             command: 'pay',
@@ -475,13 +495,13 @@ const getMoreActions = (row: OrderApi.OrderPageRespVO) =>
         {
             command: 'refund',
             label: '退款',
-            show: getRefundableAmount(row.paidAmount, row.refundAmount) > 0,
+            show: canMyRefundOrder && getRefundableAmount(row.paidAmount, row.refundAmount) > 0,
             type: 'warning' as const
         },
         {
             command: 'void',
             label: '作废',
-            show: row.orderStatus !== 30,
+            show: canMyVoidOrder && row.orderStatus !== 30,
             type: 'danger' as const
         }
     ].filter((item) => item.show)
@@ -604,7 +624,34 @@ const tableColumns = computed<TableColumn[]>(() => [
         formatter: (_r, _c, v) => formatAmount(v)
     },
     { field: 'campusName', label: '报名分校', minWidth: '120px' },
+    {
+        field: 'ownerUserName',
+        label: '订单归属人(组别)',
+        minWidth: '160px',
+        showOverflowTooltip: true,
+        slots: {
+            default: (data) => <span>{ownerDeptLabel(data.row)}</span>
+        }
+    },
     { field: 'cardOwnerUserName', label: '名片归属', minWidth: '110px' },
+    {
+        field: 'aftersalesStatus',
+        label: '售后状态',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => getAftersalesStatusLabel(v)
+    },
+    {
+        field: 'aftersalesResult',
+        label: '售后结果',
+        minWidth: '120px',
+        formatter: (_r, _c, v) => getAftersalesResultLabel(v)
+    },
+    {
+        field: 'courseStatus',
+        label: '开课状态',
+        minWidth: '100px',
+        formatter: (_r, _c, v) => StudentCenterApi.getStudentCourseStatusLabel(v)
+    },
     { field: 'remark', label: '备注', minWidth: '140px', showOverflowTooltip: true },
     {
         field: 'creatorName',

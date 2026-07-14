@@ -37,8 +37,13 @@ export interface OrderPageRespVO {
   paidAmount: number
   refundAmount: number
   campusName: string
+  ownerDeptId?: number
+  ownerDeptName?: string
   ownerUserName: string
   cardOwnerUserName: string
+  aftersalesStatus?: number
+  aftersalesResult?: number
+  courseStatus?: number
   remark: string
   creator: string
   creatorName?: string
@@ -82,6 +87,13 @@ export interface OrderPayRecordRespVO {
   channelPayNo?: string
   payProofUrl?: string
   remark?: string
+  orderStatus?: number
+  ownerDeptId?: number
+  ownerDeptName?: string
+  ownerUserName?: string
+  aftersalesStatus?: number
+  aftersalesResult?: number
+  courseStatus?: number
   confirmStatus: number
   confirmResult?: string
   confirmUserId?: number
