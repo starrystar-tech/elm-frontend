@@ -171,6 +171,7 @@
 
                 <div class="claim-panel-footer">
                     <div class="flex gap-8px flex-wrap">
+                        <BaseButton type="primary" @click="handleSearch">查询</BaseButton>
                         <BaseButton @click="handleResetSearch">清空条件</BaseButton>
                         <BaseButton
                             v-if="canBatchClaim"
@@ -363,8 +364,24 @@ const handleBatchClaim = async (claimMode: ClueApi.PublicSeaClaimMode) => {
         claimMode,
         ...buildQueryParams(currentParams)
     }
-    await ClueApi.claimPublicSea(payload)
-    message.success('领取成功')
+    const result = await ClueApi.claimPublicSea(payload)
+    const requestedCount = Number(result?.requestedCount || 0)
+    const allowedCount = Number(result?.allowedCount || 0)
+    const claimedCount = Number(result?.claimedCount || 0)
+
+    if (claimedCount <= 0) {
+        if (claimMode !== 'SPECIFIED' && allowedCount <= 0) {
+            message.warning('今日领取额度已用完')
+        } else if (requestedCount <= 0) {
+            message.warning('当前条件下暂无可领取线索')
+        } else {
+            message.warning('未领取到线索')
+        }
+        await Promise.all([loadCounts(currentParams), loadClaimSummary()])
+        return
+    }
+
+    message.success(`领取成功，共领取 ${claimedCount} 条`)
     await Promise.all([loadCounts(currentParams), loadClaimSummary()])
 }
 

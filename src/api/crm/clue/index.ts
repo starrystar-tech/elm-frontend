@@ -330,6 +330,12 @@ export interface PublicSeaClaimReqVO extends Omit<PublicSeaPageReqVO, 'pageNo' |
     clueIds?: number[]
 }
 
+export interface PublicSeaClaimRespVO {
+    requestedCount?: number
+    allowedCount?: number
+    claimedCount?: number
+}
+
 export interface PublicSeaAssignReqVO {
     seaType: number
     clueIds: number[]
@@ -721,7 +727,7 @@ export const getPublicSeaClaimSummary = async (seaType: number) => {
 }
 
 export const claimPublicSea = async (data: PublicSeaClaimReqVO) => {
-    return await request.put({ url: '/crm/clue/public-sea/claim', data })
+    return await request.put<PublicSeaClaimRespVO>({ url: '/crm/clue/public-sea/claim', data })
 }
 
 export const assignPublicSea = async (data: PublicSeaAssignReqVO) => {

@@ -1,5 +1,8 @@
 import { ElMessage } from 'element-plus'
 
+const copyToastOffset = 88
+const copyToastZIndex = 6001
+
 export const resolveClueIdForCopy = async ({ row, getDetail }) => {
     if (row?.clueId) {
         return Number(row.clueId)
@@ -26,7 +29,11 @@ export const buildCopySuccessMessage = (result) => {
 }
 
 export const showCopyMobileSuccessMessage = (message) => {
-    ElMessage.success(message)
+    ElMessage.success({
+        message,
+        offset: copyToastOffset,
+        zIndex: copyToastZIndex
+    })
 }
 
 export const copyMobileByClueId = async ({

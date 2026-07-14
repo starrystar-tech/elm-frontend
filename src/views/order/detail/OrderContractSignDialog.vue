@@ -38,7 +38,10 @@
                             </div>
                             <div class="order-contract-sign__item">
                                 <span class="label">手机号：</span>
-                                <span>{{ displayCustomerMobile }}</span>
+                                <MobileCopyInline
+                                    :clue-id="orderDetail.clueId"
+                                    :mobile="orderDetail.customerMobile"
+                                />
                             </div>
                             <div class="order-contract-sign__item">
                                 <span class="label">报名分校：</span>
@@ -203,6 +206,7 @@ import * as TemplateApi from '@/api/system/contract/template'
 import ProvinceSelect from '@/components/ProvinceSelect.vue'
 import { fenToYuan } from '@/utils'
 import { buildAreaLabel } from '@/views/crm/clue/listShared'
+import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 
 defineOptions({ name: 'OrderContractSignDialog' })
 
@@ -235,13 +239,6 @@ const selectedOrderItem = computed(() =>
     (orderDetail.value.items || []).find((item) => item.id === selectedOrderItemId.value)
 )
 const shouldShowProductSelector = computed(() => (orderDetail.value.items || []).length > 1)
-const displayCustomerMobile = computed(() => {
-    const clueId = Number(orderDetail.value.clueId || clueDetail.value?.id || 0)
-    if (clueId && plainMobileCache[String(clueId)]) {
-        return plainMobileCache[String(clueId)]
-    }
-    return orderDetail.value.customerMobile || '-'
-})
 
 const activeContract = computed(() =>
     contractList.value.find((item) => canContinueContract(item.status))
@@ -655,7 +652,6 @@ const open = async (
         }
         orderDetail.value = detail
         clueDetail.value = detail.clueId ? await ClueApi.getClue(Number(detail.clueId)) : null
-        await resolvePlainMobile('mobile')
         const items = detail.items || []
         activeTab.value = 'order'
         selectedOrderItemId.value =

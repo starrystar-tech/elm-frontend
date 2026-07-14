@@ -71,6 +71,10 @@ defineOptions({ name: 'AftersalesMy' })
 const message = useMessage()
 const route = useRoute()
 const canComplaintTagUpdate = hasPermission(['crm:clue:complaint-tag:update'])
+const canOpenDetail = hasPermission(['crm:aftersales:query'])
+const canSignContract = hasPermission(['crm:aftersales:sign-contract'])
+const canProcess = hasPermission(['crm:aftersales:process'])
+const canRepurchase = hasPermission(['crm:aftersales:repurchase'])
 const complaintTagOptions = ref<{ label: string; value: number }[]>([])
 const campusOptions = ref<{ label: string; value: number }[]>([])
 const formRef = ref()
@@ -181,6 +185,10 @@ const tableColumns = computed<TableColumn[]>(() =>
         signContract: openContractSign,
         openProcess,
         repurchase: handleRepurchase,
+        canOpenDetail,
+        canSignContract,
+        canProcess,
+        canRepurchase,
         actionWidth: '260px'
     })
 )

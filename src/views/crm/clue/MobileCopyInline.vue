@@ -39,17 +39,14 @@ const props = defineProps<{
 const message = useMessage()
 
 const handleCopy = async () => {
-    if (!props.mobile) {
-        return
-    }
     if (!props.clueId && props.copyDirectApi) {
-        const result = await props.copyDirectApi(props.mobile)
+        const result = await props.copyDirectApi(props.mobile!)
         await navigator.clipboard.writeText(result.mobile)
         showCopyMobileSuccessMessage(buildCopySuccessMessage(result))
         return
     }
     if (props.directCopy || !props.clueId) {
-        await navigator.clipboard.writeText(props.mobile)
+        await navigator.clipboard.writeText(props.mobile!)
         showCopyMobileSuccessMessage('复制成功')
         return
     }

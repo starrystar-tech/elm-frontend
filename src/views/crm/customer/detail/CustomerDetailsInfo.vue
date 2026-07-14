@@ -100,7 +100,7 @@ import type * as AftersalesApi from '@/api/crm/aftersales'
 import * as ClueApi from '@/api/crm/clue'
 import type * as OrderApi from '@/api/crm/order'
 import * as StudentCenterApi from '@/api/crm/studentCenter'
-import { formatDate } from '@/utils/formatTime'
+import { formatDate, resolveTimestamp } from '@/utils/formatTime'
 import {
     getAftersalesResultLabel,
     getAftersalesStatusLabel
@@ -201,6 +201,19 @@ const getDisplayText = (...values: Array<string | number | null | undefined>) =>
     return '--'
 }
 
+const getDisplayDateTimeText = (...values: Array<string | number | null | undefined>) => {
+    for (const value of values) {
+        if (value === null || value === undefined || value === '') continue
+        const parsed = resolveTimestamp(value)
+        if (parsed) {
+            return parsed.format('YYYY-MM-DD HH:mm:ss')
+        }
+        const text = String(value).trim()
+        if (text) return text
+    }
+    return '--'
+}
+
 const applyLevelText = computed(() => getDisplayText(props.clue.applyLevel, props.studentInfo?.applyLevel))
 const applySchoolText = computed(() => getDisplayText(props.clue.applySchool, props.studentInfo?.applySchool))
 const applyMajorText = computed(() => getDisplayText(props.clue.applyMajor, props.studentInfo?.applyMajor))
@@ -266,7 +279,7 @@ const headteacherText = computed(() =>
     getDisplayText(props.studentInfo?.headteacherUserName, props.clue.headteacherName)
 )
 const enrollTimeText = computed(() =>
-    getDisplayText(props.studentInfo?.enrollTime, firstOrderRecord.value?.enrollTime)
+    getDisplayDateTimeText(props.studentInfo?.enrollTime, firstOrderRecord.value?.enrollTime)
 )
 const serviceStatusText = computed(() =>
     StudentCenterApi.getStudentServiceStatusLabel(props.studentInfo?.serviceStatus)

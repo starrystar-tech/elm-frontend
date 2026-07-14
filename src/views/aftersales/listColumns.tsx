@@ -49,7 +49,7 @@ export const buildAftersalesColumns = (options: BuildAftersalesColumnsOptions): 
         options.claim ||
         options.repurchase
     const canClaim = hasPermission(['crm:aftersales:claim'])
-    const canOpenDetail = true 
+    const canOpenDetail = options.canOpenDetail ?? true
     const canSignContract = options.canSignContract ?? true
     const canProcess = options.canProcess ?? true
     const canRepurchase = options.canRepurchase ?? true
