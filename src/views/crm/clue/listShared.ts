@@ -121,9 +121,9 @@ export const buildDeptOwnerDisplayName = (
   const deptText = normalize(deptName)
   const ownerText = normalize(ownerName)
   if (deptText && ownerText) {
-    return `${deptText}（${ownerText}）`
+    return `${ownerText}（${deptText}）`
   }
-  return deptText || ownerText || fallback
+  return ownerText || deptText || fallback
 }
 
 export const prependUnassignedOwnerOption = (options: UserOption[]) => {
