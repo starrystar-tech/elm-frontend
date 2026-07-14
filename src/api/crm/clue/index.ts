@@ -322,12 +322,17 @@ export interface PublicSeaClaimSummaryRespVO {
     remainingCount?: number
 }
 
-export interface PublicSeaClaimReqVO {
+export type PublicSeaClaimMode = 'ALL' | 'TWENTY' | 'SPECIFIED'
+
+export interface PublicSeaClaimReqVO extends Omit<PublicSeaPageReqVO, 'pageNo' | 'pageSize'> {
     seaType: number
-    clueIds: number[]
+    claimMode: PublicSeaClaimMode
+    clueIds?: number[]
 }
 
-export interface PublicSeaAssignReqVO extends PublicSeaClaimReqVO {
+export interface PublicSeaAssignReqVO {
+    seaType: number
+    clueIds: number[]
     ownerId: number
     departmentId: number
 }
@@ -700,8 +705,8 @@ export const getPublicSeaPage = async (params: PublicSeaPageReqVO) => {
     return await request.get({ url: '/crm/clue/public-sea/page', params })
 }
 
-export const getPublicSeaCounts = async () => {
-    return await request.get<PublicSeaCountRespVO>({ url: '/crm/clue/public-sea/counts' })
+export const getPublicSeaCounts = async (params?: Omit<PublicSeaPageReqVO, 'pageNo' | 'pageSize'>) => {
+    return await request.get<PublicSeaCountRespVO>({ url: '/crm/clue/public-sea/counts', params })
 }
 
 export const getPublicSeaClaimSummary = async (seaType: number) => {

@@ -4,6 +4,9 @@
         :clue-id="clueId"
         :loading="loading"
         :can-update="canUpdate"
+        :can-sms-action="canSmsSend"
+        :can-tag-action="canTagUpdate"
+        :can-release-action="canRelease"
         :log-list="logList"
         @edit="openForm"
         @sms="handleSms"
@@ -29,6 +32,11 @@ const clueId = ref(0)
 const loading = ref(true)
 const message = useMessage()
 const canUpdate = hasPermission(['crm:clue:basic-info:update'])
+const canSmsSend = hasPermission(['crm:clue:sms:send'])
+const canTagUpdate = hasPermission(['crm:clue:tag:update'])
+const canMyClueRelease = hasPermission(['crm:my-clue:release'])
+const canClueManagementRelease = hasPermission(['crm:clue-management:release'])
+const canRelease = computed(() => canMyClueRelease || canClueManagementRelease)
 
 const formRef = ref<InstanceType<typeof ClueForm>>()
 const smsDialogRef = ref<InstanceType<typeof ClueSmsDialog>>()

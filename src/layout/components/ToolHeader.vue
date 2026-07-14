@@ -104,12 +104,13 @@ export default defineComponent({
         const ensureSeatBound = async () => {
             await reloadProfile()
             const seat = resolveSeatExtension()
-            if (!seat) {
+            const seatPassword = String(profile.callPassword || '').trim()
+            if (!seat || !seatPassword) {
                 throw new Error('当前未绑定坐席，请联系管理员绑定坐席')
             }
             applyBrowserPhoneCredentials({
                 username: seat,
-                password: String(profile.callPassword || '').trim()
+                password: seatPassword
             })
             return seat
         }
@@ -260,7 +261,7 @@ export default defineComponent({
                     !browserRegistered.value &&
                     !browserLoading.value
                 ) {
-                    await connectBrowserPhone()
+                    await connectBrowserPhone({ silentError: true })
                 }
             } catch (error) {
                 console.warn('[ToolHeader] load outbound profile failed', error)
@@ -299,7 +300,7 @@ export default defineComponent({
             try {
                 if (nextStatus === 1) {
                     await ensureSeatBound()
-                    await connectBrowserPhone()
+                    await connectBrowserPhone({ silentError: true, throwOnError: true })
                     await updateUserOutboundStatus({ outboundStatus: nextStatus })
                 } else {
                     await disconnectBrowserPhone(true)

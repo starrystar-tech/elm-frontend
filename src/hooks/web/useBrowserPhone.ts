@@ -1262,7 +1262,7 @@ const createBrowserClient = async () => {
     return client
 }
 
-const connectBrowserPhone = async () => {
+const connectBrowserPhone = async (options?: { silentError?: boolean; throwOnError?: boolean }) => {
     browserLoading.value = true
     browserConnecting.value = true
     try {
@@ -1308,8 +1308,13 @@ const connectBrowserPhone = async () => {
             'danger'
         )
         addBrowserLog(errorMessage, '失败', 'danger')
-        message.error(errorMessage)
+        if (!options?.silentError) {
+            message.error(errorMessage)
+        }
         if (browserClient.value) await disconnectBrowserPhone(true)
+        if (options?.throwOnError) {
+            throw new Error(errorMessage)
+        }
     } finally {
         browserConnecting.value = false
         browserLoading.value = false

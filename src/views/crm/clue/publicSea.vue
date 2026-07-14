@@ -167,6 +167,7 @@ const publicSeaCounts = reactive({
     repurchaseCount: 0
 })
 const searchForm = reactive<PublicSeaSearchParams>({})
+const appliedSearchParams = ref<PublicSeaSearchParams>({})
 const claimSummary = reactive<ClueApi.PublicSeaClaimSummaryRespVO>({
     unlimited: false,
     dailyLimit: 0,
@@ -444,6 +445,21 @@ const buildSearchParams = (params: PublicSeaSearchParams) => {
     }
 }
 
+const sanitizeParams = <T extends Record<string, any>>(params: T) => {
+    return Object.fromEntries(
+        Object.entries(params).filter(([, value]) => {
+            if (value === undefined || value === null || value === '') return false
+            if (Array.isArray(value) && value.length === 0) return false
+            return true
+        })
+    ) as Partial<T>
+}
+
+const buildQueryParams = (params: PublicSeaSearchParams) => {
+    const { seaType, ...rest } = buildSearchParams(params)
+    return sanitizeParams(rest)
+}
+
 const loadPageOptions = async () => {
     await loadClueListOptions({
         schema: searchSchema,
@@ -455,8 +471,8 @@ const loadPageOptions = async () => {
     })
 }
 
-const loadCounts = async () => {
-    const data = await ClueApi.getPublicSeaCounts()
+const loadCounts = async (params: PublicSeaSearchParams = {}) => {
+    const data = await ClueApi.getPublicSeaCounts(buildQueryParams(params))
     publicSeaCounts.firstConsultCount = Number(data?.firstConsultCount || 0)
     publicSeaCounts.repurchaseCount = Number(data?.repurchaseCount || 0)
 }
@@ -487,18 +503,25 @@ const resetSearchForm = () => {
 }
 
 const handleSearch = (params: PublicSeaSearchParams) => {
-    tableMethods.setSearchParams(buildSearchParams(collectSearchParams(params)))
+    const merged = collectSearchParams(params)
+    appliedSearchParams.value = { ...merged }
+    tableMethods.setSearchParams(buildSearchParams(merged))
+    void loadCounts(merged)
 }
 
 const handleResetSearch = () => {
     resetSearchForm()
+    appliedSearchParams.value = {}
     tableMethods.setSearchParams(buildSearchParams({}))
+    void loadCounts({})
 }
 
 const handleTabChange = async () => {
     selectionList.value = []
     searchForm.areaId = undefined
     searchForm.consultProjectId = undefined
+    appliedSearchParams.value = {}
+    await loadCounts({})
     await loadClaimSummary()
     tableMethods.setSearchParams(buildSearchParams({}))
 }
@@ -508,7 +531,7 @@ const openDetail = (id: number) => {
 }
 
 const handleDetailRefresh = async () => {
-    await Promise.all([tableMethods.getList(), loadCounts(), loadClaimSummary()])
+    await Promise.all([tableMethods.getList(), loadCounts(appliedSearchParams.value), loadClaimSummary()])
 }
 
 const resetTableSelection = async () => {
@@ -526,13 +549,19 @@ const handleBatchClaim = async (ids?: number[]) => {
     }
     await ClueApi.claimPublicSea({
         seaType: getSeaType(),
-        clueIds
+        claimMode: 'SPECIFIED',
+        clueIds,
+        ...buildQueryParams(appliedSearchParams.value)
     })
     message.success('领取成功')
     if (!ids) {
         await resetTableSelection()
     }
-    await Promise.all([tableMethods.getList(), loadCounts(), loadClaimSummary()])
+    await Promise.all([
+        tableMethods.getList(),
+        loadCounts(appliedSearchParams.value),
+        loadClaimSummary()
+    ])
     if (!ids) {
         await resetTableSelection()
     }
@@ -558,12 +587,17 @@ const handleBatchAssign = async () => {
     assignDialogVisible.value = false
     assignForm.ownerId = undefined
     await resetTableSelection()
-    await Promise.all([tableMethods.getList(), loadCounts(), loadClaimSummary()])
+    await Promise.all([
+        tableMethods.getList(),
+        loadCounts(appliedSearchParams.value),
+        loadClaimSummary()
+    ])
     await resetTableSelection()
 }
 
 onMounted(async () => {
-    await Promise.all([loadPageOptions(), loadCounts(), loadClaimSummary()])
+    appliedSearchParams.value = {}
+    await Promise.all([loadPageOptions(), loadCounts({}), loadClaimSummary()])
     tableMethods.setSearchParams(buildSearchParams(collectSearchParams(searchForm)))
 })
 </script>

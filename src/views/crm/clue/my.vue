@@ -154,6 +154,7 @@ const message = useMessage()
 const route = useRoute()
 const canCreate = hasPermission(['crm:clue:create'])
 const canSmsSend = hasPermission(['crm:clue:sms:send'])
+const canEnroll = hasPermission(['crm:clue:basic-info:update'])
 const canRelease = hasPermission(['crm:my-clue:release'])
 const formRef = ref<InstanceType<typeof ClueForm>>()
 const detailRef = ref<InstanceType<typeof ClueDetailDrawer>>()
@@ -567,10 +568,12 @@ const getMoreActions = (rowId: number) =>
                   label: '发短信'
               }
             : null,
-        {
-            command: 'enroll',
-            label: '报名'
-        },
+        canEnroll
+            ? {
+                  command: 'enroll',
+                  label: '报名'
+              }
+            : null,
         {
             command: 'release',
             label: '释放',

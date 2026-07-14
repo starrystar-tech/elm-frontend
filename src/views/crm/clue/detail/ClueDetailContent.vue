@@ -22,9 +22,13 @@
                     <el-button plain :loading="outboundDialing" @click="handleOutboundCall">
                         外呼
                     </el-button>
-                    <el-button plain @click="emit('sms')">短信</el-button>
-                    <el-button v-if="!hideEnrollAction" plain @click="emit('enroll')">报名</el-button>
-                    <el-button v-if="!hideReleaseAction" plain @click="emit('release')">
+                    <el-button v-if="canSmsAction" plain @click="emit('sms')">
+                        短信
+                    </el-button>
+                    <el-button v-if="showEnrollAction" plain @click="emit('enroll')">
+                        报名
+                    </el-button>
+                    <el-button v-if="showReleaseAction" plain @click="emit('release')">
                         释放
                     </el-button>
                 </template>
@@ -1096,13 +1100,23 @@ const props = defineProps<{
     hideReleaseAction?: boolean
     readonly?: boolean
     allowReadonlyEditActions?: boolean
+    canEnrollAction?: boolean
+    canSmsAction?: boolean
+    canTagAction?: boolean
+    canReleaseAction?: boolean
 }>()
 
 const route = useRoute()
 const readonlyMode = computed(() => !!props.readonly)
 const allowReadonlyEditActions = computed(() => !!props.allowReadonlyEditActions)
 const showEditAction = computed(() => !readonlyMode.value || allowReadonlyEditActions.value)
-const showTagAction = computed(() => !readonlyMode.value || allowReadonlyEditActions.value)
+const canEnrollAction = computed(() => props.canEnrollAction !== false)
+const canSmsAction = computed(() => props.canSmsAction !== false)
+const canTagAction = computed(() => props.canTagAction !== false)
+const canReleaseAction = computed(() => props.canReleaseAction !== false)
+const showTagAction = computed(
+    () => canTagAction.value && (!readonlyMode.value || allowReadonlyEditActions.value)
+)
 const hideEnrollAction = computed(
     () =>
         readonlyMode.value ||
@@ -1110,7 +1124,9 @@ const hideEnrollAction = computed(
         route.name === 'CrmCustomerDetail' ||
         route.path.startsWith('/crm/customer')
 )
+const showEnrollAction = computed(() => canEnrollAction.value && !hideEnrollAction.value)
 const hideReleaseAction = computed(() => readonlyMode.value || !!props.hideReleaseAction)
+const showReleaseAction = computed(() => canReleaseAction.value && !hideReleaseAction.value)
 
 const emit = defineEmits<{
     edit: []

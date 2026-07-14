@@ -15,6 +15,10 @@
                     :clue-id="clueId"
                     :loading="loading"
                     :can-update="canUpdate"
+                    :can-enroll-action="canEnrollAction"
+                    :can-sms-action="canSmsSend"
+                    :can-tag-action="canTagUpdate"
+                    :can-release-action="canRelease"
                     :hide-enroll-action="hideEnrollAction"
                     :log-list="logList"
                     :editing="editing"
@@ -140,7 +144,12 @@ const editing = ref(false)
 const clue = ref<ClueApi.ClueVO>({})
 const logList = ref<OperateLogVO[]>([])
 const canUpdate = hasPermission(['crm:clue:basic-info:update'])
-const canClueManagementRelease = hasPermission(['crm:clue-management:query'])
+const canEnrollAction = hasPermission(['crm:clue:basic-info:update'])
+const canSmsSend = hasPermission(['crm:clue:sms:send'])
+const canTagUpdate = hasPermission(['crm:clue:tag:update'])
+const canMyClueRelease = hasPermission(['crm:my-clue:release'])
+const canClueManagementRelease = hasPermission(['crm:clue-management:release'])
+const canRelease = computed(() => canMyClueRelease || canClueManagementRelease)
 const enrollRef = ref<InstanceType<typeof ClueEnrollDialog>>()
 const smsDialogRef = ref<InstanceType<typeof ClueSmsDialog>>()
 const message = useMessage()
