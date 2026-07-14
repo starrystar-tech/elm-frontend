@@ -38,10 +38,7 @@
                             </div>
                             <div class="order-contract-sign__item">
                                 <span class="label">手机号：</span>
-                                <MobileCopyInline
-                                    :clue-id="orderDetail.clueId"
-                                    :mobile="orderDetail.customerMobile"
-                                />
+                                <span>{{ displayCustomerMobile }}</span>
                             </div>
                             <div class="order-contract-sign__item">
                                 <span class="label">报名分校：</span>
@@ -206,7 +203,6 @@ import * as TemplateApi from '@/api/system/contract/template'
 import ProvinceSelect from '@/components/ProvinceSelect.vue'
 import { fenToYuan } from '@/utils'
 import { buildAreaLabel } from '@/views/crm/clue/listShared'
-import MobileCopyInline from '@/views/crm/clue/MobileCopyInline.vue'
 
 defineOptions({ name: 'OrderContractSignDialog' })
 
@@ -239,6 +235,13 @@ const selectedOrderItem = computed(() =>
     (orderDetail.value.items || []).find((item) => item.id === selectedOrderItemId.value)
 )
 const shouldShowProductSelector = computed(() => (orderDetail.value.items || []).length > 1)
+const displayCustomerMobile = computed(() => {
+    const clueId = Number(orderDetail.value.clueId || clueDetail.value?.id || 0)
+    if (clueId && plainMobileCache[String(clueId)]) {
+        return plainMobileCache[String(clueId)]
+    }
+    return orderDetail.value.customerMobile || '-'
+})
 
 const activeContract = computed(() =>
     contractList.value.find((item) => canContinueContract(item.status))
@@ -428,13 +431,15 @@ const resetVariableForm = (fields: ContractApi.ContractVariableVO[]) => {
 
 const resolvePlainMobile = async (mobileField: 'mobile' | 'mobile2') => {
     const clueId = orderDetail.value.clueId || clueDetail.value?.id
+    if (mobileField !== 'mobile') {
+        return clueDetail.value?.mobile2 || orderDetail.value.customerMobile2 || ''
+    }
     if (!clueId) return ''
-    const cacheKey = `${clueId}:${mobileField}`
+    const cacheKey = String(clueId)
     if (plainMobileCache[cacheKey]) {
         return plainMobileCache[cacheKey]
     }
-    const result = await ClueApi.copyClueMobile(Number(clueId), mobileField)
-    plainMobileCache[cacheKey] = result?.mobile || ''
+    plainMobileCache[cacheKey] = (await ClueApi.getClueMobile(Number(clueId))) || ''
     return plainMobileCache[cacheKey]
 }
 
@@ -650,6 +655,7 @@ const open = async (
         }
         orderDetail.value = detail
         clueDetail.value = detail.clueId ? await ClueApi.getClue(Number(detail.clueId)) : null
+        await resolvePlainMobile('mobile')
         const items = detail.items || []
         activeTab.value = 'order'
         selectedOrderItemId.value =

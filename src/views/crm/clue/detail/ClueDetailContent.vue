@@ -240,7 +240,7 @@
                         >
                             <label>{{ item.label }}</label>
                             <div v-if="item.label === '手机号'">
-                                <MobileCopyInline :clue-id="clue.id" :mobile="clue.mobile" />
+                                {{ displayPrimaryMobileText }}
                             </div>
                             <div v-else-if="item.label === '手机号2'">
                                 <MobileCopyInline
@@ -1175,6 +1175,10 @@ const ownerText = computed(() => {
 })
 
 const weworkCustomerCard = computed(() => props.weworkContacts?.[0])
+const plainPrimaryMobile = ref('')
+const displayPrimaryMobileText = computed(
+    () => plainPrimaryMobile.value || props.clue.mobile || '--'
+)
 
 const weworkStaffCards = computed(() =>
     (props.weworkContacts || []).flatMap((contact) =>
@@ -1185,9 +1189,19 @@ const weworkStaffCards = computed(() =>
     )
 )
 
+const loadPrimaryMobile = async () => {
+    plainPrimaryMobile.value = ''
+    if (!props.clueId) return
+    try {
+        plainPrimaryMobile.value = (await ClueApi.getClueMobile(props.clueId)) || ''
+    } catch (error) {
+        console.warn('[ClueDetailContent] load primary mobile failed', error)
+    }
+}
+
 const handleOutboundCall = async () => {
-    const result = await ClueApi.copyClueMobile(props.clueId, 'mobile')
-    await dialOutboundMobile(result?.mobile)
+    const mobile = plainPrimaryMobile.value || (await ClueApi.getClueMobile(props.clueId))
+    await dialOutboundMobile(mobile)
 }
 
 const selectedConsultProductName = computed(() => {
@@ -1916,6 +1930,14 @@ watch(
             ])
         })
     }
+)
+
+watch(
+    () => props.clueId,
+    () => {
+        loadPrimaryMobile()
+    },
+    { immediate: true }
 )
 
 watch(

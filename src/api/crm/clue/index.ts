@@ -561,6 +561,10 @@ export const getClue = async (id: number) => {
     return await request.get<ClueVO>({ url: '/crm/clue/get', params: { id } })
 }
 
+export const getClueMobile = async (clueId: number) => {
+    return await request.get<string>({ url: '/crm/clue/mobile', params: { clueId } })
+}
+
 export const createClue = async (data: ClueCreateReqVO) => {
     return await request.post({ url: '/crm/clue/create', data })
 }

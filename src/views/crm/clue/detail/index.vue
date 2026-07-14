@@ -4,6 +4,7 @@
         :clue-id="clueId"
         :loading="loading"
         :can-update="canUpdate"
+        :can-enroll-action="canEnrollAction"
         :can-sms-action="canSmsSend"
         :can-tag-action="canTagUpdate"
         :can-release-action="canRelease"
@@ -32,6 +33,7 @@ const clueId = ref(0)
 const loading = ref(true)
 const message = useMessage()
 const canUpdate = hasPermission(['crm:clue:basic-info:update'])
+const canEnrollAction = hasPermission(['crm:clue:enroll:update'])
 const canSmsSend = hasPermission(['crm:clue:sms:send'])
 const canTagUpdate = hasPermission(['crm:clue:tag:update'])
 const canMyClueRelease = hasPermission(['crm:my-clue:release'])
