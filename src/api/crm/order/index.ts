@@ -2,6 +2,7 @@ import request from '@/config/axios'
 
 export interface OrderPageReqVO extends PageParam {
   clueId?: number
+  scene?: string
   customer?: string
   mobile?: string
   orderNo?: string

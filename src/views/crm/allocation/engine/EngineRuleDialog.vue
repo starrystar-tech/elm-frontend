@@ -40,6 +40,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import SourceSelect from '@/components/SourceSelect.vue'
 import ProjectSelect from '@/components/ProjectSelect.vue'
+import { normalizeAreaIdsToProvinceCity, pruneAreaTreeToProvinceCity } from '@/utils/areaScope'
 
 const props = defineProps<{
     modelValue: boolean
@@ -65,10 +66,11 @@ const formData = reactive<Recordable>({
     regionIds: []
 })
 
-const areaOptions = computed(() => [
-    { id: -1, name: '全国', children: [] },
-    ...(props.areaTree || []).filter((item) => Number(item?.id) !== -1)
-])
+const normalizedAreaTree = computed(() =>
+    pruneAreaTreeToProvinceCity((props.areaTree || []).filter((item) => Number(item?.id) !== -1))
+)
+
+const areaOptions = computed(() => [{ id: -1, name: '全国', children: [] }, ...normalizedAreaTree.value])
 
 const areaCascaderProps = {
     value: 'id',
@@ -82,11 +84,12 @@ const areaCascaderProps = {
 const formRules = {}
 
 const resetFormData = () => {
-    const regionIds = Array.isArray(props.value?.regionIds)
+    const rawRegionIds = Array.isArray(props.value?.regionIds)
         ? props.value.regionIds
         : props.value?.regionId
           ? [props.value.regionId]
           : []
+    const regionIds = normalizeAreaIdsToProvinceCity(rawRegionIds, props.areaTree || [])
     Object.assign(formData, {
         sourceCode: props.value?.sourceCode || '',
         projectCode: props.value?.projectCode || '',
@@ -101,7 +104,10 @@ const handleSubmit = async () => {
         dialogVisible.value = false
         return
     }
-    const regionIds = (formData.regionIds || []) as number[]
+    const regionIds = normalizeAreaIdsToProvinceCity(
+        (formData.regionIds || []) as number[],
+        props.areaTree || []
+    )
     emit(
         'confirm',
         regionIds.length

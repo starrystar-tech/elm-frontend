@@ -45,7 +45,11 @@
                         <div class="payment-record-detail__card-title">第 {{ index + 1 }} 条</div>
                         <el-descriptions :column="2" border>
                             <el-descriptions-item label="支付渠道">
-                                {{ record.payMethod || '-' }}
+                                {{
+                                    getDictLabel(DICT_TYPE.PAY_CHANNEL_CODE, record.payMethod) ||
+                                    record.payMethod ||
+                                    '-'
+                                }}
                             </el-descriptions-item>
                             <el-descriptions-item label="支付金额">
                                 {{ formatDisplayAmount(record.payAmount) }}
@@ -67,9 +71,6 @@
                             </el-descriptions-item>
                             <el-descriptions-item label="确认结果" :span="2">
                                 {{ record.confirmResult || '-' }}
-                            </el-descriptions-item>
-                            <el-descriptions-item label="确认备注" :span="2">
-                                {{ record.confirmRemark || '-' }}
                             </el-descriptions-item>
                             <el-descriptions-item label="支付截图" :span="2">
                                 <div class="payment-record-detail__proof">
@@ -98,6 +99,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { DICT_TYPE, getDictLabel } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import * as OrderApi from '@/api/crm/order'
 import {

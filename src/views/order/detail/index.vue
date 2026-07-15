@@ -280,7 +280,13 @@
                 </el-tab-pane>
                 <el-tab-pane label="支付记录" name="pays">
                     <el-table :data="detail.payRecords || []" border>
-                        <el-table-column prop="payMethod" label="支付方式" min-width="120" />
+                        <el-table-column prop="payMethod" label="支付方式" min-width="120">
+                            <template #default="{ row }">{{
+                                getDictLabel(DICT_TYPE.PAY_CHANNEL_CODE, row.payMethod) ||
+                                row.payMethod ||
+                                '-'
+                            }}</template>
+                        </el-table-column>
                         <el-table-column prop="payAmount" label="支付金额" min-width="100">
                             <template #default="{ row }">{{
                                 formatAmount(row.payAmount)

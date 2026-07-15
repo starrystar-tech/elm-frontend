@@ -87,6 +87,7 @@ import * as ContractApi from '@/api/system/contract'
 import { Qrcode } from '@/components/Qrcode'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import { resolveTimestamp } from '@/utils/formatTime'
+import { fenToYuan } from '@/utils'
 
 defineOptions({ name: 'CustomerContractRecords' })
 
@@ -123,7 +124,7 @@ const formatPayFee = (value?: number | null) => {
     if (value === null || value === undefined) return '--'
     const numericValue = Number(value)
     if (!Number.isFinite(numericValue)) return String(value)
-    return (numericValue / 1000).toFixed(2)
+    return fenToYuan(numericValue)
 }
 
 const getContractTypeLabel = (value?: number) => {

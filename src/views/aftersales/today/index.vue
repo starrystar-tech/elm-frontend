@@ -112,6 +112,10 @@ const openContractSign = async (row: AftersalesApi.AftersalesRespVO) => {
     }
     contractSignRef.value?.open(orderDetail)
 }
+
+const showSignContract = (row: AftersalesApi.AftersalesRespVO) =>
+    !!row.orderId && Number(row.aftersalesResult) === 3
+
 const openComplaintTagDialog = () =>
     complaintTagDialogRef.value?.open(selectionList.value.map((item) => Number(item.clueId)))
 
@@ -154,6 +158,7 @@ const tableColumns = computed<TableColumn[]>(() =>
         message,
         openDetail,
         signContract: openContractSign,
+        showSignContract,
         openProcess,
         repurchase: handleRepurchase,
         canOpenDetail,

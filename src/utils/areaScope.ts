@@ -74,3 +74,60 @@ export const compactAreaIds = (selectedIds: number[], areaTree: any[]): number[]
 
   return Array.from(new Set((areaTree || []).flatMap((node) => walkNode(node).ids)))
 }
+
+const ROOT_NAMES = ['中国', '全国', '全球']
+
+const isChinaRootNode = (node: any) => ROOT_NAMES.includes(String(node?.name || '').trim())
+
+const getProvinceCityMaxDepth = (areaTree: any[]) =>
+  (areaTree || []).some((node) => isChinaRootNode(node)) ? 2 : 1
+
+export const pruneAreaTreeToProvinceCity = (areaTree: any[]): any[] => {
+  const maxDepth = getProvinceCityMaxDepth(areaTree)
+
+  const walk = (nodes: any[], depth = 0): any[] =>
+    (nodes || []).map((node) => {
+      const children = Array.isArray(node?.children) ? node.children : []
+      const nextChildren = depth >= maxDepth ? [] : walk(children, depth + 1)
+      return {
+        ...node,
+        children: nextChildren,
+        leaf: nextChildren.length === 0
+      }
+    })
+
+  return walk(areaTree || [])
+}
+
+export const normalizeAreaIdsToProvinceCity = (selectedIds: number[], areaTree: any[]): number[] => {
+  if (!selectedIds?.length) return []
+  const maxDepth = getProvinceCityMaxDepth(areaTree)
+  const retainedIdMap = new Map<number, number>()
+
+  const walk = (nodes: any[], depth = 0, retainedAncestorId?: number) => {
+    ;(nodes || []).forEach((node) => {
+      const id = Number(node?.id)
+      if (!Number.isFinite(id)) return
+      const currentRetainedId = depth <= maxDepth ? id : retainedAncestorId
+      if (currentRetainedId !== undefined) {
+        retainedIdMap.set(id, currentRetainedId)
+      }
+      const children = Array.isArray(node?.children) ? node.children : []
+      if (children.length) {
+        walk(children, depth + 1, currentRetainedId)
+      }
+    })
+  }
+
+  walk(areaTree || [])
+
+  const normalizedIds = selectedIds
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id))
+    .map((id) => retainedIdMap.get(id) ?? id)
+
+  return compactAreaIds(
+    Array.from(new Set(normalizedIds)),
+    pruneAreaTreeToProvinceCity(areaTree)
+  )
+}

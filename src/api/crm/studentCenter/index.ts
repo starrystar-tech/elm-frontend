@@ -159,6 +159,10 @@ export const myRepurchase = (id: number) => {
     return request.post<number>({ url: '/crm/student-center/my-repurchase', params: { id } })
 }
 
+export const repurchase = (id: number) => {
+    return request.post<number>({ url: '/crm/student-center/repurchase', params: { id } })
+}
+
 export const updateStudent = (data: StudentCenterUpdateReqVO) => {
     return request.put<boolean>({ url: '/crm/student-center/update', data })
 }

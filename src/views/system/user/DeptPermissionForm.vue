@@ -30,7 +30,7 @@
                 </el-radio-group>
             </el-form-item>
             <el-form-item>
-                <el-button type="primary" :loading="saving.campus" @click="submitCampus"
+                <el-button type="primary" plain :loading="saving.campus" @click="submitCampus"
                     >保存校区权限</el-button
                 >
             </el-form-item>
@@ -55,7 +55,7 @@
                 </el-radio-group>
             </el-form-item>
             <el-form-item>
-                <el-button type="primary" :loading="saving.area" @click="submitArea"
+                <el-button type="primary" plain :loading="saving.area" @click="submitArea"
                     >保存地区权限</el-button
                 >
             </el-form-item>
@@ -85,7 +85,7 @@
                 </el-radio-group>
             </el-form-item>
             <el-form-item>
-                <el-button type="primary" :loading="saving.category" @click="submitCategory"
+                <el-button type="primary" plain :loading="saving.category" @click="submitCategory"
                     >保存项目权限</el-button
                 >
             </el-form-item>
@@ -102,7 +102,7 @@ import * as CampusApi from '@/api/system/campus'
 import * as AreaApi from '@/api/system/area'
 import * as ProductCategoryApi from '@/api/crm/product/category'
 import * as DeptApi from '@/api/system/dept'
-import { normalizeAreaIds } from '@/utils/areaScope'
+import { normalizeAreaIdsToProvinceCity, pruneAreaTreeToProvinceCity } from '@/utils/areaScope'
 
 defineOptions({ name: 'DeptPermissionForm' })
 const emit = defineEmits(['success'])
@@ -113,6 +113,7 @@ const loading = ref(false)
 const currentDept = ref<{ id: number; name: string }>()
 const campusList = ref<CampusApi.CampusVO[]>([])
 const areaTreeList = ref<any[]>([])
+const rawAreaTreeList = ref<any[]>([])
 const rootCategoryList = ref<any[]>([])
 
 const saving = ref({
@@ -143,14 +144,15 @@ const open = async (dept: { id: number; name: string }) => {
             ProductCategoryApi.getProductCategorySimpleList()
         ])
         campusList.value = campusData || []
-        areaTreeList.value = areaData || []
+        rawAreaTreeList.value = areaData || []
+        areaTreeList.value = pruneAreaTreeToProvinceCity(rawAreaTreeList.value)
         rootCategoryList.value = (categoryData || []).filter(
             (item: any) => Number(item.level) === 1
         )
         formData.value = {
             deptId: dept.id,
             campusIds: detail.campusIds || [],
-            areaIds: detail.areaIds || [],
+            areaIds: normalizeAreaIdsToProvinceCity(detail.areaIds || [], rawAreaTreeList.value),
             categoryIds: detail.categoryIds || [],
             campusSyncChildren: false,
             areaSyncChildren: false,
@@ -183,7 +185,10 @@ const submitArea = async () => {
     try {
         await DeptApi.updateDeptAreaScope({
             deptId: formData.value.deptId,
-            areaIds: normalizeAreaIds(formData.value.areaIds || [], areaTreeList.value as any[]),
+            areaIds: normalizeAreaIdsToProvinceCity(
+                formData.value.areaIds || [],
+                rawAreaTreeList.value as any[]
+            ),
             syncChildren: formData.value.areaSyncChildren
         })
         message.success('地区权限设置成功')

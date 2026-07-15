@@ -89,8 +89,9 @@ const setSearchParams = (params: Recordable) => {
 const open = async (options: OrderSelectOpenOptions = {}) => {
     dialogVisible.value = true
     multiple.value = !!options.multiple
+    const { multiple: _multiple, ...searchOptions } = options
     baseSearchParams.value = {
-        clueId: options.clueId
+        ...searchOptions
     }
     await tableMethods.clearSelection()
     tableMethods.setSearchParams({

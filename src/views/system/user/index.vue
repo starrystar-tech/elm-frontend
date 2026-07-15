@@ -5,7 +5,10 @@
                 class="system-user-page__panel system-user-page__panel--left"
                 :body-style="{ padding: '0px', height: '100%' }"
             >
-                <DeptTree @node-click="handleDeptNodeClick" />
+                <DeptTree
+                    @node-click="handleDeptNodeClick"
+                    @permission-click="handleDeptPermissionClick"
+                />
             </ContentWrap>
         </el-col>
         <el-col :span="19" :xs="24" class="system-user-page__col system-user-page__col--right">
@@ -13,108 +16,47 @@
                 class="system-user-page__panel system-user-page__panel--right"
                 :body-style="{ padding: '0px', height: '100%' }"
             >
-                <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
-                <div class="action-btn-wrap">
-                    <BaseButton v-if="canCreate" type="primary" @click="openForm('create')"
-                        >新增</BaseButton
-                    >
-                    <BaseButton
-                        v-if="canExport"
-                        plain
-                        :loading="exportLoading"
-                        @click="handleExport"
-                    >
-                        导出
-                    </BaseButton>
-                    <BaseButton
-                        v-if="canUpdate"
-                        plain
-                        :disabled="checkedIds.length === 0"
-                        @click="openBatchUpdateForm"
-                    >
-                        批量修改复制次数
-                    </BaseButton>
-                    <!-- <BaseButton plain @click="handleSetDeptPermission">设置部门权限</BaseButton> -->
-                </div>
-
-                <Table
-                    v-model:currentPage="tableObject.currentPage"
-                    v-model:pageSize="tableObject.pageSize"
-                    :columns="tableColumns"
-                    :data="tableObject.tableList"
-                    :loading="tableObject.loading"
-                    :pagination="{ total: tableObject.total }"
-                    selection
-                    @register="tableRegister"
-                    @selection-change="handleRowCheckboxChange"
-                />
-                <div v-if="currentDeptPermission" class="permission-panel">
-                    <div class="permission-header">
-                        <div class="title">部门权限 - {{ currentDeptPermission.name }}</div>
-                        <BaseButton type="primary" plain @click="openDeptPermissionForm"
-                            >修改部门权限</BaseButton
+                <div class="system-user-page__table-section">
+                    <Search
+                        :schema="searchSchema"
+                        @reset="setSearchParams"
+                        @search="setSearchParams"
+                    />
+                    <div class="action-btn-wrap">
+                        <BaseButton v-if="canCreate" type="primary" @click="openForm('create')"
+                            >新增</BaseButton
                         >
+                        <BaseButton
+                            v-if="canExport"
+                            plain
+                            :loading="exportLoading"
+                            @click="handleExport"
+                        >
+                            导出
+                        </BaseButton>
+                        <BaseButton
+                            v-if="canUpdate"
+                            plain
+                            :disabled="checkedIds.length === 0"
+                            @click="openBatchUpdateForm"
+                        >
+                            批量修改复制次数
+                        </BaseButton>
                     </div>
-                    <div class="scope-block">
-                        <div class="scope-block__label">校区权限</div>
-                        <div class="scope-block__content">
-                            <template v-if="currentDeptPermission.campuses?.length">
-                                <span
-                                    v-for="item in currentDeptPermission.campuses"
-                                    :key="`campus-${item.id}`"
-                                    class="scope-tag scope-tag--green"
-                                >
-                                    {{ item.name }}
-                                </span>
-                            </template>
-                            <span v-else class="scope-empty">--</span>
-                        </div>
-                    </div>
-                    <div class="scope-block">
-                        <div class="scope-block__label">管辖地域</div>
-                        <div class="scope-block__content">
-                            <template v-if="areaGroupRows.length">
-                                <div
-                                    v-for="group in areaGroupRows"
-                                    :key="`area-group-${group.parent}`"
-                                    class="scope-area-group"
-                                >
-                                    <div class="scope-area-group__name">{{ group.parent }}</div>
-                                    <div class="scope-area-group__tags">
-                                        <span
-                                            v-for="item in group.list"
-                                            :key="`area-${item.id}`"
-                                            class="scope-tag scope-tag--blue"
-                                        >
-                                            {{ item.name }}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div
-                                    v-if="areaGroups.length > areaGroupRows.length"
-                                    class="scope-more"
-                                    @click="areaExpanded = !areaExpanded"
-                                >
-                                    {{ areaExpanded ? '收起' : '展开更多' }}
-                                </div>
-                            </template>
-                            <span v-else class="scope-empty">--</span>
-                        </div>
-                    </div>
-                    <div class="scope-block">
-                        <div class="scope-block__label">管辖产品</div>
-                        <div class="scope-block__content">
-                            <template v-if="currentDeptPermission.categories?.length">
-                                <span
-                                    v-for="item in currentDeptPermission.categories"
-                                    :key="`category-${item.id}`"
-                                    class="scope-tag scope-tag--orange"
-                                >
-                                    {{ item.name }}
-                                </span>
-                            </template>
-                            <span v-else class="scope-empty">--</span>
-                        </div>
+
+                    <div class="system-user-page__table-wrap">
+                        <Table
+                            v-model:currentPage="tableObject.currentPage"
+                            v-model:pageSize="tableObject.pageSize"
+                            :columns="tableColumns"
+                            :data="tableObject.tableList"
+                            :loading="tableObject.loading"
+                            :pagination="{ total: tableObject.total }"
+                            :height="360"
+                            selection
+                            @register="tableRegister"
+                            @selection-change="handleRowCheckboxChange"
+                        />
                     </div>
                 </div>
             </ContentWrap>
@@ -170,7 +112,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { ElDropdown, ElDropdownItem, ElDropdownMenu, ElButton, ElSwitch } from 'element-plus'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { checkPermi } from '@/utils/permission'
@@ -191,7 +133,6 @@ import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
-import { DictTag } from '@/components/DictTag'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
@@ -320,6 +261,7 @@ const openDeptPermissionForm = () => {
 }
 
 const {
+    elTableRef,
     tableObject,
     tableMethods,
     register: tableRegister
@@ -351,7 +293,27 @@ const handleDeptNodeClick = async (row: any) => {
         currentDeptPermission.value = null
     }
     tableMethods.setSearchParams({ deptId: deptId.value })
+    await nextTick()
+    elTableRef.value?.doLayout()
 }
+
+const handleDeptPermissionClick = async (row: any) => {
+    if (!row?.id) {
+        message.warning('请选择部门')
+        return
+    }
+    deptId.value = row.id
+    currentDeptPermission.value = await DeptApi.getDept(row.id)
+    openDeptPermissionForm()
+}
+
+watch(
+    () => tableObject.tableList.length,
+    async () => {
+        await nextTick()
+        elTableRef.value?.doLayout()
+    }
+)
 
 const handleToggleShowAll = async (val: boolean) => {
     if (val) {
@@ -359,10 +321,6 @@ const handleToggleShowAll = async (val: boolean) => {
         return
     }
     tableMethods.setSearchParams({ deptId: deptId.value, status: CommonStatusEnum.ENABLE })
-}
-
-const handleSetDeptPermission = () => {
-    openDeptPermissionForm()
 }
 
 const handleDeptPermissionSuccess = async () => {
@@ -490,26 +448,6 @@ const getRoleNames = (row: UserApi.UserVO) => {
             .join('、') || '--'
     )
 }
-const areaExpanded = ref(false)
-const areaGroups = computed(() => {
-    const areaList = currentDeptPermission.value?.areas || []
-    const groupMap = new Map<string, { parent: string; list: any[] }>()
-    areaList.forEach((item: any) => {
-        const parent = item.parentName || '其他'
-        if (!groupMap.has(parent)) {
-            groupMap.set(parent, { parent, list: [] })
-        }
-        groupMap.get(parent)!.list.push({
-            id: item.id,
-            name: item.name || item.displayName || item.id
-        })
-    })
-    return Array.from(groupMap.values())
-})
-const areaGroupRows = computed(() =>
-    areaExpanded.value ? areaGroups.value : areaGroups.value.slice(0, 2)
-)
-
 const tableColumns = reactive<TableColumn[]>([
     { field: 'nickname', label: '姓名', minWidth: 100, fixed: 'left' },
     { field: 'username', label: '登录账号', minWidth: 130, fixed: 'left' },
@@ -745,8 +683,24 @@ onMounted(async () => {
 .system-user-page__panel--right {
     :deep(.content-wrap-stack) {
         height: 100%;
+        display: flex;
+        flex-direction: column;
         overflow: auto;
         padding-right: 2px;
+    }
+}
+
+.system-user-page__table-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.system-user-page__table-wrap {
+    min-height: 320px;
+
+    :deep(.crm-soft-table-wrap) {
+        min-height: 320px;
     }
 }
 
@@ -763,99 +717,4 @@ onMounted(async () => {
     }
 }
 
-.permission-panel {
-    margin-top: 16px;
-    border-top: 1px solid var(--el-border-color-lighter);
-    padding: 14px;
-}
-
-.permission-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-
-    .title {
-        font-size: 14px;
-        font-weight: 600;
-    }
-}
-
-.scope-block {
-    border-top: 1px solid var(--el-border-color-lighter);
-    padding: 14px 0;
-}
-
-.scope-block:first-of-type {
-    border-top: none;
-}
-
-.scope-block__label {
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-    margin-bottom: 10px;
-}
-
-.scope-block__content {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.scope-tag {
-    display: inline-flex;
-    align-items: center;
-    height: 28px;
-    padding: 0 10px;
-    border-radius: 14px;
-    font-size: 12px;
-    border: 1px solid transparent;
-}
-
-.scope-tag--green {
-    color: #52a822;
-    background: #f2faeb;
-    border-color: #9ed972;
-}
-
-.scope-tag--blue {
-    color: #2a6df5;
-    background: #eef4ff;
-    border-color: #a9c4ff;
-}
-
-.scope-tag--orange {
-    color: #d97706;
-    background: #fff6e8;
-    border-color: #f6c37a;
-}
-
-.scope-empty {
-    color: var(--el-text-color-secondary);
-}
-
-.scope-area-group {
-    width: 100%;
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.scope-area-group__name {
-    min-width: 56px;
-    color: var(--el-text-color-primary);
-}
-
-.scope-area-group__tags {
-    flex: 1;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.scope-more {
-    cursor: pointer;
-    color: var(--el-color-primary);
-    font-size: 12px;
-}
 </style>

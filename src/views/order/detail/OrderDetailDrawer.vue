@@ -312,7 +312,13 @@
                                         prop="payMethod"
                                         label="支付方式"
                                         min-width="120"
-                                    />
+                                    >
+                                        <template #default="{ row }">{{
+                                            getDictLabel(DICT_TYPE.PAY_CHANNEL_CODE, row.payMethod) ||
+                                            row.payMethod ||
+                                            '-'
+                                        }}</template>
+                                    </el-table-column>
                                     <el-table-column
                                         prop="payAmount"
                                         label="支付金额"

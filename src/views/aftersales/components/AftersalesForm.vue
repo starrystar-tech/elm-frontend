@@ -188,6 +188,7 @@ defineExpose({ open })
 
 const openOrderSelect = () => {
     orderSelectDialogRef.value?.open({
+        scene: 'aftersales_create',
         clueId: orderSelectClueId.value,
         multiple: true
     })

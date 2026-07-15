@@ -28,6 +28,16 @@
                 <template #default="{ data }">
                     <div class="system-user-dept-tree__node" :title="data.name">
                         <span class="system-user-dept-tree__node-label">{{ data.name }}</span>
+                        <el-tooltip content="部门权限" placement="top">
+                            <el-button
+                                class="system-user-dept-tree__node-action"
+                                link
+                                type="primary"
+                                @click.stop="handlePermissionClick(data)"
+                            >
+                                <Icon icon="ep:setting" />
+                            </el-button>
+                        </el-tooltip>
                     </div>
                 </template>
             </el-tree>
@@ -79,7 +89,11 @@ const handleNodeClick = async (row: { [key: string]: any }, treeNode: any) => {
         currentNode = null
     }
 }
-const emits = defineEmits(['node-click'])
+const handlePermissionClick = (row: { [key: string]: any }) => {
+    emits('permission-click', row)
+}
+
+const emits = defineEmits(['node-click', 'permission-click'])
 
 /** 监听deptName */
 watch(deptName, (val) => {
@@ -137,6 +151,7 @@ onMounted(async () => {
     min-width: 0;
     display: flex;
     align-items: center;
+    gap: 8px;
     padding-right: 8px;
 }
 
@@ -145,6 +160,14 @@ onMounted(async () => {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+.system-user-dept-tree__node-action {
+    flex-shrink: 0;
+    padding: 2px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
 }
 
 .system-user-dept-tree {
@@ -159,6 +182,10 @@ onMounted(async () => {
         border-radius: 8px;
         margin-bottom: 4px;
         padding-right: 6px;
+
+        &:hover .system-user-dept-tree__node-action {
+            opacity: 1;
+        }
     }
 
     :deep(.el-tree-node:focus > .el-tree-node__content) {
@@ -169,6 +196,10 @@ onMounted(async () => {
         background: #eef4ff;
         color: var(--el-color-primary);
         font-weight: 600;
+
+        .system-user-dept-tree__node-action {
+            opacity: 1;
+        }
     }
 
     :deep(.el-tree-node__expand-icon) {

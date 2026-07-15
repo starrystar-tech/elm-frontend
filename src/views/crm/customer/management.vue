@@ -51,7 +51,6 @@ import { ElLink } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import * as StudentCenterApi from '@/api/crm/studentCenter'
 import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
-import * as OrderApi from '@/api/crm/order'
 import AreaSelect from '@/components/AreaSelect.vue'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
@@ -249,7 +248,7 @@ const handleStudentEditSuccess = async () => {
 
 const handleRepurchase = async (row: StudentCenterApi.StudentCenterPageRespVO) => {
     await message.confirm(`确认激活学员“${row.customerName || row.customerId || row.orderNo}”吗？`)
-    await OrderApi.repurchaseOrder(Number(row.orderId))
+    await StudentCenterApi.repurchase(Number(row.orderId))
     message.success('激活成功')
     await tableMethods.getList()
 }

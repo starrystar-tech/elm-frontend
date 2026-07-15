@@ -22,6 +22,7 @@ import { ContentWrap } from '@/components/ContentWrap'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { BaseButton } from '@/components/Button'
+import { DictTag } from '@/components/DictTag'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { dateFormatter } from '@/utils/formatTime'
@@ -268,7 +269,16 @@ const tableColumns = computed<TableColumn[]>(() => [
         minWidth: '100px',
         formatter: (_r, _c, v) => StudentCenterApi.getStudentCourseStatusLabel(v)
     },
-    { field: 'payMethod', label: '支付方式', minWidth: '100px' },
+    {
+        field: 'payMethod',
+        label: '支付方式',
+        minWidth: '100px',
+        slots: {
+            default: (data) => (
+                <DictTag type={DICT_TYPE.PAY_CHANNEL_CODE} value={data.row.payMethod} />
+            )
+        }
+    },
     {
         field: 'payProofUrl',
         label: '支付凭证',
