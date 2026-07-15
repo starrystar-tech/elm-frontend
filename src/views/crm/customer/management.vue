@@ -51,11 +51,13 @@ import { ElLink } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import * as StudentCenterApi from '@/api/crm/studentCenter'
 import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
+import * as OrderApi from '@/api/crm/order'
 import AreaSelect from '@/components/AreaSelect.vue'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import { useMessage } from '@/hooks/web/useMessage'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
@@ -88,10 +90,12 @@ const detailRef = ref<InstanceType<typeof CustomerDetailDrawer>>()
 const aftersalesFormRef = ref<InstanceType<typeof AftersalesForm>>()
 const studentEditFormRef = ref<InstanceType<typeof StudentEditForm>>()
 const searchForm = reactive<StudentSearchParams>({})
+const message = useMessage()
 const selectionList = ref<StudentCenterApi.StudentCenterPageRespVO[]>([])
 const headteacherOptions = ref<{ label: string; value: number }[]>([])
 const canCreateAftersales = hasPermission(['crm:aftersales:create'])
 const canEditManagedStudent = hasPermission(['crm:student:management:update'])
+const canRepurchaseManagedStudent = hasPermission(['crm:order:repurchase'])
 const searchSchema = reactive<FormSchema[]>([
     {
         field: 'mobile',
@@ -240,6 +244,13 @@ const openStudentEditForm = (row: StudentCenterApi.StudentCenterPageRespVO) => {
 }
 
 const handleStudentEditSuccess = async () => {
+    await tableMethods.getList()
+}
+
+const handleRepurchase = async (row: StudentCenterApi.StudentCenterPageRespVO) => {
+    await message.confirm(`确认激活学员“${row.customerName || row.customerId || row.orderNo}”吗？`)
+    await OrderApi.repurchaseOrder(Number(row.orderId))
+    message.success('激活成功')
     await tableMethods.getList()
 }
 
@@ -432,7 +443,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'action',
         label: '操作',
-        width: '220px',
+        width: '280px',
         fixed: 'right',
         slots: {
             default: (data) => (
@@ -443,6 +454,11 @@ const tableColumns = computed<TableColumn[]>(() => [
                     {canEditManagedStudent ? (
                         <BaseButton link type="primary" onClick={() => openStudentEditForm(data.row)}>
                             编辑
+                        </BaseButton>
+                    ) : null}
+                    {canRepurchaseManagedStudent ? (
+                        <BaseButton link type="primary" onClick={() => handleRepurchase(data.row)}>
+                            激活
                         </BaseButton>
                     ) : null}
                     {canCreateAftersales ? (

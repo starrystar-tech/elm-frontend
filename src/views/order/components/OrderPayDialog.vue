@@ -14,7 +14,7 @@
                     class="!w-full"
                 >
                     <el-option
-                        v-for="item in PAY_METHOD_OPTIONS"
+                        v-for="item in payMethodOptions"
                         :key="item.value"
                         :label="item.label"
                         :value="item.value"
@@ -55,7 +55,8 @@
 <script setup lang="ts">
 import { UploadImg } from '@/components/UploadFile'
 import * as OrderApi from '@/api/crm/order'
-import { formatAmount, PAY_METHOD_OPTIONS } from '../utils'
+import { formatAmount } from '../utils'
+import { DICT_TYPE, getStrDictOptions } from '@/utils/dict'
 
 defineOptions({ name: 'OrderPayDialog' })
 
@@ -69,9 +70,11 @@ const formRef = ref()
 const message = useMessage()
 const dialogTitle = ref('订单支付')
 const editingRecordId = ref<number>()
+const payMethodOptions = computed(() => getStrDictOptions(DICT_TYPE.PAY_CHANNEL_CODE))
+const getDefaultPayMethod = () => payMethodOptions.value[0]?.value || ''
 const formData = ref({
     orderId: undefined as number | undefined,
-    payMethod: '微信支付',
+    payMethod: getDefaultPayMethod(),
     payAmount: '',
     payProofUrl: '',
     remark: ''
@@ -104,7 +107,7 @@ const resetForm = () => {
     editingRecordId.value = undefined
     formData.value = {
         orderId: undefined,
-        payMethod: '微信支付',
+        payMethod: getDefaultPayMethod(),
         payAmount: '',
         payProofUrl: '',
         remark: ''
@@ -123,7 +126,7 @@ const open = (
     if (record) {
         dialogTitle.value = '修改支付记录'
         editingRecordId.value = record.id
-        formData.value.payMethod = record.payMethod || '微信支付'
+        formData.value.payMethod = record.payMethod || getDefaultPayMethod()
         formData.value.payAmount = formatAmount(record.payAmount)
         formData.value.payProofUrl = record.payProofUrl || ''
         formData.value.remark = record.remark || ''

@@ -32,7 +32,7 @@
                             >
                             <el-button plain @click="handlePay">支付</el-button>
                             <el-button v-if="canRefundOrder" plain @click="handleRefund">退款</el-button>
-                            <el-button v-if="canVoidOrder" plain @click="handleVoid">作废</el-button>
+                            <el-button v-if="canShowVoidOrder" plain @click="handleVoid">作废</el-button>
                             <el-button v-if="canRepurchaseOrder" plain @click="handleRepurchase"
                                 >复购激活</el-button
                             >
@@ -506,6 +506,11 @@ const canRepurchaseOrder = hasPermission(['crm:order:repurchase', 'crm:order:my-
 const canSignContractOrder = hasPermission(['crm:order:sign-contract', 'crm:order:my-sign-contract'])
 const canRefundOrder = hasPermission(['crm:order-refund:create', 'crm:order:my-refund'])
 const canVoidOrder = hasPermission(['crm:order:void', 'crm:order:my-void'])
+const canShowVoidOrder = computed(() => {
+    if (!canVoidOrder) return false
+    if (detail.value.orderStatus !== 0) return false
+    return !(detail.value.payRecords || []).some((item) => item.confirmStatus === 20)
+})
 const orderAvatarText = computed(() => (detail.value.customerName || '订').slice(0, 1))
 const firstProduct = computed(() => detail.value.items?.[0] || ({} as OrderApi.OrderItemRespVO))
 

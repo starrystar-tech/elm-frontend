@@ -91,6 +91,7 @@ export interface OrderPayRecordRespVO {
   ownerDeptId?: number
   ownerDeptName?: string
   ownerUserName?: string
+  hasContractInfo?: boolean
   aftersalesStatus?: number
   aftersalesResult?: number
   courseStatus?: number

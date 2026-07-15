@@ -8,17 +8,15 @@
             label-width="100px"
         >
             <el-form-item label="户籍省份">
-                <el-input
+                <ProvinceSelect
                     v-model="formData.householdProvince"
-                    clearable
-                    placeholder="请输入户籍省份"
+                    placeholder="请选择户籍省份"
                 />
             </el-form-item>
             <el-form-item label="报考省份">
-                <el-input
+                <ProvinceSelect
                     v-model="formData.applyProvince"
-                    clearable
-                    placeholder="请输入报考省份"
+                    placeholder="请选择报考省份"
                 />
             </el-form-item>
             <el-form-item label="服务状态">
@@ -71,6 +69,7 @@
 
 <script setup lang="ts">
 import * as StudentCenterApi from '@/api/crm/studentCenter'
+import ProvinceSelect from '@/components/ProvinceSelect.vue'
 
 defineOptions({ name: 'StudentEditForm' })
 

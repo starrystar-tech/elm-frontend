@@ -45,15 +45,6 @@ export const REFUND_TYPE_OPTIONS = [
     { label: '退费', value: 2 }
 ]
 
-export const PAY_METHOD_OPTIONS = [
-    '微信支付',
-    '支付宝支付',
-    '银联支付',
-    '现金',
-    'POS机',
-    '银行转账'
-].map((item) => ({ label: item, value: item }))
-
 export const getOptionLabel = (
     options: { label: string; value: string | number }[],
     value?: string | number

@@ -226,7 +226,7 @@
                                         placeholder="请选择支付渠道"
                                     >
                                         <el-option
-                                            v-for="item in PAY_METHOD_OPTIONS"
+                                            v-for="item in payMethodOptions"
                                             :key="item.value"
                                             :label="item.label"
                                             :value="item.value"
@@ -295,7 +295,7 @@ import CampusSelect from '@/components/CampusSelect.vue'
 import ProductSelectDialog from '@/components/ProductSelectDialog.vue'
 import { isValidChineseIdCard, normalizeIdCardNo } from '@/utils/idCard'
 import { fenToYuan, yuanToFen } from '@/utils'
-import { PAY_METHOD_OPTIONS } from '@/views/order/utils'
+import { DICT_TYPE, getStrDictOptions } from '@/utils/dict'
 
 defineOptions({ name: 'ClueEnrollDialog' })
 
@@ -346,6 +346,8 @@ type EnrollProductItem = {
     categoryPath?: string
     projectName?: string
 }
+
+const payMethodOptions = computed(() => getStrDictOptions(DICT_TYPE.PAY_CHANNEL_CODE))
 
 type EnrollPayRecordItem = {
     key: string

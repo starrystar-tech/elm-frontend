@@ -1,12 +1,18 @@
 <template>
-    <el-row :gutter="15">
-        <el-col :span="5" :xs="24">
-            <ContentWrap>
+    <el-row :gutter="15" class="system-user-page">
+        <el-col :span="5" :xs="24" class="system-user-page__col system-user-page__col--left">
+            <ContentWrap
+                class="system-user-page__panel system-user-page__panel--left"
+                :body-style="{ padding: '0px', height: '100%' }"
+            >
                 <DeptTree @node-click="handleDeptNodeClick" />
             </ContentWrap>
         </el-col>
-        <el-col :span="19" :xs="24">
-            <ContentWrap>
+        <el-col :span="19" :xs="24" class="system-user-page__col system-user-page__col--right">
+            <ContentWrap
+                class="system-user-page__panel system-user-page__panel--right"
+                :body-style="{ padding: '0px', height: '100%' }"
+            >
                 <Search :schema="searchSchema" @reset="setSearchParams" @search="setSearchParams" />
                 <div class="action-btn-wrap">
                     <BaseButton v-if="canCreate" type="primary" @click="openForm('create')"
@@ -704,6 +710,46 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
+.system-user-page {
+    height: calc(100vh - 156px);
+    min-height: 640px;
+}
+
+.system-user-page__col {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+}
+
+.system-user-page__panel {
+    flex: 1;
+    min-height: 0;
+    margin-bottom: 0 !important;
+
+    :deep(.el-card) {
+        height: 100%;
+    }
+
+    :deep(.el-card__body) {
+        height: 100%;
+        min-height: 0;
+    }
+}
+
+.system-user-page__panel--left {
+    :deep(.content-wrap-stack) {
+        height: 100%;
+    }
+}
+
+.system-user-page__panel--right {
+    :deep(.content-wrap-stack) {
+        height: 100%;
+        overflow: auto;
+        padding-right: 2px;
+    }
+}
+
 .top-action-row {
     display: flex;
     align-items: center;

@@ -11,10 +11,12 @@
             @register="tableRegister"
         />
     </ContentWrap>
+    <PaymentRecordDetailDialog ref="detailDialogRef" />
+    <PaymentContractInfoDialog ref="contractDialogRef" />
 </template>
 
 <script setup lang="tsx">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElImage, ElMessageBox } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
 import { Search } from '@/components/Search'
@@ -23,10 +25,10 @@ import { BaseButton } from '@/components/Button'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { dateFormatter } from '@/utils/formatTime'
+import { DICT_TYPE, getStrDictOptions } from '@/utils/dict'
 import * as OrderApi from '@/api/crm/order'
 import {
     ORDER_STATUS_OPTIONS,
-    PAY_METHOD_OPTIONS,
     PAY_CONFIRM_STATUS_OPTIONS,
     formatAmount,
     getOptionLabel
@@ -38,10 +40,14 @@ import {
     getAftersalesStatusLabel
 } from '@/views/aftersales/config'
 import * as StudentCenterApi from '@/api/crm/studentCenter'
+import PaymentRecordDetailDialog from './PaymentRecordDetailDialog.vue'
+import PaymentContractInfoDialog from './PaymentContractInfoDialog.vue'
 
 defineOptions({ name: 'OrderPaymentConfirm' })
 
 const message = useMessage()
+const detailDialogRef = ref<InstanceType<typeof PaymentRecordDetailDialog>>()
+const contractDialogRef = ref<InstanceType<typeof PaymentContractInfoDialog>>()
 const payConfirmSearchOptions = PAY_CONFIRM_STATUS_OPTIONS.filter((item) => item.value !== 0)
 const ownerDeptLabel = (row: OrderApi.OrderPayRecordRespVO) =>
     buildDeptOwnerDisplayName(row.ownerDeptName, row.ownerUserName)
@@ -85,7 +91,11 @@ const searchSchema = computed<FormSchema[]>(() => [
         field: 'payMethod',
         label: '支付方式',
         component: 'Select',
-        componentProps: { options: PAY_METHOD_OPTIONS, clearable: true, style: { width: '220px' } }
+        componentProps: {
+            options: getStrDictOptions(DICT_TYPE.PAY_CHANNEL_CODE),
+            clearable: true,
+            style: { width: '220px' }
+        }
     },
     {
         field: 'payTimeRange',
@@ -116,7 +126,7 @@ const {
 } = useTable<OrderApi.OrderPayRecordRespVO>({
     getListApi: async (params) => {
         const { payTimeRange = [], payAmountRange = [], confirmStatus, ...rest } = params
-        return await OrderApi.getPayConfirmPage({
+        const pageResult = await OrderApi.getPayConfirmPage({
             ...rest,
             confirmStatus:
                 confirmStatus === '' || confirmStatus === null || confirmStatus === undefined
@@ -127,6 +137,7 @@ const {
             minPayAmount: payAmountRange[0] ? Math.round(Number(payAmountRange[0]) * 100) : undefined,
             maxPayAmount: payAmountRange[1] ? Math.round(Number(payAmountRange[1]) * 100) : undefined
         })
+        return pageResult
     }
 })
 
@@ -155,6 +166,19 @@ const audit = async (row: OrderApi.OrderPayRecordRespVO, confirmStatus: number) 
     })
     message.success(confirmStatus === 20 ? '审核通过' : '已驳回')
     await tableMethods.getList()
+}
+
+const openPayRecordDetail = (row: OrderApi.OrderPayRecordRespVO) => {
+    if (!row?.orderId) return
+    detailDialogRef.value?.open(Number(row.orderId))
+}
+
+const canShowContractInfo = (row: OrderApi.OrderPayRecordRespVO) =>
+    Boolean(row?.orderId && row.hasContractInfo)
+
+const openContractInfo = (row: OrderApi.OrderPayRecordRespVO) => {
+    if (!row?.orderId) return
+    contractDialogRef.value?.open(Number(row.orderId))
 }
 
 const renderPayProofCell = (url?: string) => {
@@ -195,6 +219,15 @@ const tableColumns = computed<TableColumn[]>(() => [
         label: '确认状态',
         minWidth: '100px',
         formatter: (_r, _c, v) => getOptionLabel(PAY_CONFIRM_STATUS_OPTIONS, v)
+    },
+    {
+        field: 'confirmResult',
+        label: '确认结果',
+        minWidth: '180px',
+        showOverflowTooltip: true,
+        slots: {
+            default: (data) => <span>{data.row.confirmResult || '-'}</span>
+        }
     },
     {
         field: 'payAmount',
@@ -250,13 +283,21 @@ const tableColumns = computed<TableColumn[]>(() => [
     {
         field: 'action',
         label: '操作',
-        width: '160px',
+        width: '300px',
         fixed: 'right',
         slots: {
             default: (data) => {
                 const row = data.row as OrderApi.OrderPayRecordRespVO
                 return row.confirmStatus === 10 ? (
                     <>
+                        <BaseButton link type="primary" onClick={() => openPayRecordDetail(row)}>
+                            详情
+                        </BaseButton>
+                        {canShowContractInfo(row) ? (
+                            <BaseButton link type="primary" onClick={() => openContractInfo(row)}>
+                                合同信息
+                            </BaseButton>
+                        ) : null}
                         <BaseButton link type="primary" onClick={() => audit(row, 20)}>
                             通过
                         </BaseButton>
@@ -265,7 +306,16 @@ const tableColumns = computed<TableColumn[]>(() => [
                         </BaseButton>
                     </>
                 ) : (
-                    <span>-</span>
+                    <>
+                        <BaseButton link type="primary" onClick={() => openPayRecordDetail(row)}>
+                            详情
+                        </BaseButton>
+                        {canShowContractInfo(row) ? (
+                            <BaseButton link type="primary" onClick={() => openContractInfo(row)}>
+                                合同信息
+                            </BaseButton>
+                        ) : null}
+                    </>
                 )
             }
         }

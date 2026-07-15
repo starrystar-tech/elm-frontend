@@ -532,6 +532,7 @@ const handleContractSign = (row: OrderApi.OrderPageRespVO) => {
 const isPendingPayOrder = (row: OrderApi.OrderPageRespVO) => [0, 10].includes(row.orderStatus)
 const isClosedOrder = (row: OrderApi.OrderPageRespVO) => row.orderStatus === 30
 const isRefundedOrder = (row: OrderApi.OrderPageRespVO) => row.orderStatus === 40
+const canVoidOrderAction = (row: OrderApi.OrderPageRespVO) => row.orderStatus === 0
 const canSignContract = (row: OrderApi.OrderPageRespVO) => canSignOrderContract(row)
 const canPayOrder = (row: OrderApi.OrderPageRespVO) =>
     !isClosedOrder(row) &&
@@ -564,7 +565,7 @@ const getMoreActions = (row: OrderApi.OrderPageRespVO) =>
         {
             command: 'void',
             label: '作废',
-            show: canVoidOrder && row.orderStatus !== 30,
+            show: canVoidOrder && canVoidOrderAction(row),
             type: 'danger' as const
         }
     ].filter((item) => item.show)
