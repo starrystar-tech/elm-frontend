@@ -148,6 +148,12 @@ const searchSchema = reactive<FormSchema[]>([
     componentProps: { placeholder: '请输入坐席分机/备注', clearable: true, style: { width: '240px' } }
   },
   {
+    field: 'callerDisplayNumber',
+    label: '外显号码',
+    component: 'Input',
+    componentProps: { placeholder: '请输入外显号码', clearable: true, style: { width: '220px' } }
+  },
+  {
     field: 'status',
     label: '状态',
     component: 'Select',
@@ -171,6 +177,7 @@ const { tableObject, tableMethods, register: tableRegister } = useTable<CallSeat
 const setSearchParams = (params: Recordable = {}) => {
   tableMethods.setSearchParams({
     keyword: params.keyword,
+    callerDisplayNumber: params.callerDisplayNumber,
     status: params.status
   })
 }

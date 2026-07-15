@@ -17,6 +17,7 @@ export interface CallSeatVO {
 
 export interface CallSeatPageReqVO extends PageParam {
   keyword?: string
+  callerDisplayNumber?: string
   status?: number
 }
 
