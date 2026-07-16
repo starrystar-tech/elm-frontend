@@ -223,6 +223,7 @@ const tableColumns = reactive<TableColumn[]>([
     { field: 'createTime', label: '发起时间', formatter: dateFormatter, width: '180px' },
     { field: 'answerTime', label: '接通时间', formatter: dateFormatter, width: '180px' },
     { field: 'endTime', label: '结束时间', formatter: dateFormatter, width: '180px' },
+    { field: 'durationSeconds', label: '通话时长(秒)', width: '120px' },
     { field: 'ringDurationSeconds', label: '振铃时长(秒)', width: '120px' },
     { field: 'statusDesc', label: '状态', width: '110px' },
     {
@@ -249,8 +250,7 @@ const tableColumns = reactive<TableColumn[]>([
             }
         }
     },
-    { field: 'outboundRouteName', label: '线路名称', width: '110px' },
-    { field: 'durationSeconds', label: '通话时长(秒)', width: '120px' }
+    { field: 'outboundRouteName', label: '线路名称', width: '110px' }
 ])
 
 onMounted(async () => {
