@@ -81,7 +81,10 @@ const areaCascaderProps = {
     emitPath: false
 }
 
-const formRules = {}
+const formRules = {
+    sourceCode: [{ required: true, message: '请选择来源', trigger: 'change' }],
+    projectCode: [{ required: true, message: '请选择项目', trigger: 'change' }]
+}
 
 const resetFormData = () => {
     const rawRegionIds = Array.isArray(props.value?.regionIds)
@@ -100,10 +103,6 @@ const resetFormData = () => {
 const handleSubmit = async () => {
     const valid = await formRef.value?.validate()
     if (!valid) return
-    if (!formData.sourceCode && !formData.projectCode && !(formData.regionIds || []).length) {
-        dialogVisible.value = false
-        return
-    }
     const regionIds = normalizeAreaIdsToProvinceCity(
         (formData.regionIds || []) as number[],
         props.areaTree || []
