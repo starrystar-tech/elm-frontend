@@ -71,7 +71,7 @@
                     <el-descriptions-item label="报考省份">{{ applyProvinceText }}</el-descriptions-item>
                     <el-descriptions-item label="服务状态">{{ serviceStatusText }}</el-descriptions-item>
                     <el-descriptions-item label="开课状态">{{ courseStatusText }}</el-descriptions-item>
-                    <el-descriptions-item label="组别(归属人)">{{ ownerDeptText }}</el-descriptions-item>
+                    <el-descriptions-item label="归属人（组别）">{{ ownerDeptText }}</el-descriptions-item>
                 </el-descriptions>
             </el-collapse-item>
             <el-collapse-item name="systemInfo" class="p-10px">

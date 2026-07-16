@@ -36,9 +36,9 @@
 
             <div class="payment-record-detail__section">
                 <div class="payment-record-detail__section-title">支付记录</div>
-                <div v-if="detail.payRecords?.length" class="payment-record-detail__list">
+                <div v-if="sortedPayRecords.length" class="payment-record-detail__list">
                     <div
-                        v-for="(record, index) in detail.payRecords"
+                        v-for="(record, index) in sortedPayRecords"
                         :key="record.id || index"
                         class="payment-record-detail__card"
                     >
@@ -118,6 +118,17 @@ const detail = ref<OrderApi.OrderDetailRespVO>({ items: [], payRecords: [], refu
 
 const installmentStatusText = computed(() =>
     getOptionLabel(INSTALLMENT_STATUS_OPTIONS, detail.value.installmentStatus)
+)
+
+const sortedPayRecords = computed(() =>
+    [...(detail.value.payRecords || [])].sort((left, right) => {
+        const leftTime = new Date(left.payTime || left.createTime || 0).getTime()
+        const rightTime = new Date(right.payTime || right.createTime || 0).getTime()
+        if (leftTime !== rightTime) {
+            return leftTime - rightTime
+        }
+        return Number(left.id || 0) - Number(right.id || 0)
+    })
 )
 
 const formatDisplayAmount = (value?: number | null) => {

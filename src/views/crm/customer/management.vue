@@ -364,7 +364,7 @@ const tableColumns = computed<TableColumn[]>(() => [
     },
     {
         field: 'ownerDeptName',
-        label: '组别(归属人)',
+        label: '归属人（组别）',
         minWidth: '190px',
         showOverflowTooltip: true,
         slots: {
