@@ -37,15 +37,13 @@
 
             <el-divider content-position="left">地区权限</el-divider>
             <el-form-item label="管辖地区">
-                <el-tree-select
+                <AreaSelect
                     v-model="formData.areaIds"
                     :data="areaTreeList"
-                    :props="defaultProps"
                     multiple
-                    show-checkbox
-                    check-strictly
-                    node-key="id"
-                    value-key="id"
+                    :include-all-node="true"
+                    :check-strictly="true"
+                    placeholder="请选择管辖地区"
                 />
             </el-form-item>
             <el-form-item label="同步下级机构">
@@ -97,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { defaultProps } from '@/utils/tree'
+import AreaSelect from '@/components/AreaSelect.vue'
 import * as CampusApi from '@/api/system/campus'
 import * as AreaApi from '@/api/system/area'
 import * as ProductCategoryApi from '@/api/crm/product/category'
