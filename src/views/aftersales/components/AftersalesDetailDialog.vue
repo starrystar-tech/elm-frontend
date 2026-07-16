@@ -191,13 +191,21 @@
                             v-if="shouldShowLogRefundAmount(log.aftersalesResult)"
                             class="aftersales-log-card__row"
                         >
-                            退款金额：￥{{ formatAftersalesCentAmount(log.refundAmount) }}
+                            退款金额：￥{{
+                                formatAftersalesCentAmount(
+                                    normalizeLogCentAmount(log.refundAmount, detail?.refundAmount)
+                                )
+                            }}
                         </div>
                         <div
                             v-if="shouldShowLogRetainAmount(log.aftersalesResult)"
                             class="aftersales-log-card__row"
                         >
-                            挽回金额：￥{{ formatAftersalesCentAmount(log.retainAmount) }}
+                            挽回金额：￥{{
+                                formatAftersalesCentAmount(
+                                    normalizeLogCentAmount(log.retainAmount, detail?.retainAmount)
+                                )
+                            }}
                         </div>
                         <div v-if="log.remark" class="aftersales-log-card__row">
                             备注：{{ log.remark }}
@@ -245,6 +253,25 @@ const installmentStatusLabel = computed(() =>
 const attachmentName = computed(() =>
     detail.value?.attachmentUrl ? getFileNameFromUrl(detail.value.attachmentUrl) : '--'
 )
+
+const normalizeLogCentAmount = (
+    logAmount?: number | string | null,
+    detailAmount?: number | string | null
+) => {
+    if (logAmount === undefined || logAmount === null || logAmount === '') {
+        return logAmount
+    }
+    const numericLogAmount = Number(logAmount)
+    const numericDetailAmount = Number(detailAmount)
+    if (
+        Number.isFinite(numericLogAmount) &&
+        Number.isFinite(numericDetailAmount) &&
+        numericLogAmount / 100 === numericDetailAmount
+    ) {
+        return numericDetailAmount
+    }
+    return logAmount
+}
 
 const getContractStatusLabel = (value?: number) => {
     const statusMap: Record<number, string> = {
