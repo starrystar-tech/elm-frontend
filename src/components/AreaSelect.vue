@@ -71,6 +71,17 @@ const pruneAreaTree = (nodes: any[] = [], level = 1): any[] =>
         }
     })
 
+const resolveRootNodes = (nodes: any[] = []) => {
+    const list = Array.isArray(nodes) ? nodes : []
+    const rootNode = list.find((item) =>
+        ['中国', '全国', '全球'].includes(String(item?.name || '').trim())
+    )
+    if (Array.isArray(rootNode?.children) && rootNode.children.length) {
+        return rootNode.children
+    }
+    return list
+}
+
 const buildRetainedIdMap = (nodes: any[] = []) => {
     const map = new Map<number, number>()
     const walk = (list: any[], level = 1, retainedAncestorId?: number) => {
@@ -123,7 +134,7 @@ const hasOnlyAllNode = (list: any[] = []) =>
     Array.isArray(list) && list.length === 1 && Number(list[0]?.id) === -1
 
 const mergeAreaData = (data: any[] = []) => {
-    const list = Array.isArray(data) ? data : []
+    const list = resolveRootNodes(data)
     const prunedList = pruneAreaTree(list)
     if (!includeAllNode.value) return prunedList
     if (prunedList.some((item) => Number(item?.id) === -1)) return prunedList

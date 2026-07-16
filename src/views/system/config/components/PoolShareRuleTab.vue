@@ -65,7 +65,7 @@
                     <ProductTypeSelect v-model="form.consultProjectIds" multiple />
                 </el-form-item>
                 <el-form-item label="地域" prop="areaIds">
-                    <AreaSelect v-model="form.areaIds" multiple />
+                    <AreaSelect v-model="form.areaIds" multiple :include-all-node="true" />
                 </el-form-item>
                 <el-form-item label="状态">
                     <el-radio-group v-model="form.status">
