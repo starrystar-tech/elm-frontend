@@ -50,6 +50,7 @@
 <script setup lang="ts">
 import { BaseButton } from '@/components/Button'
 import * as AftersalesApi from '@/api/crm/aftersales'
+import { fenToYuan } from '@/utils'
 import { AFTERSALES_RESULT_OPTIONS } from '../config'
 
 defineOptions({ name: 'AftersalesProcessDialog' })
@@ -103,13 +104,20 @@ const formRules = reactive({
 
 const emit = defineEmits(['success'])
 
+const toYuanNumber = (value?: number) => {
+    if (value === undefined || value === null) {
+        return undefined
+    }
+    return Number(fenToYuan(value))
+}
+
 const open = (row: AftersalesApi.AftersalesRespVO) => {
     formData.value = {
         id: row.id,
         aftersalesResult: row.aftersalesResult && row.aftersalesResult > 0 ? row.aftersalesResult : undefined,
         processResult: row.processResult || '',
-        refundAmount: row.refundAmount,
-        retainAmount: row.retainAmount
+        refundAmount: toYuanNumber(row.refundAmount),
+        retainAmount: toYuanNumber(row.retainAmount)
     }
     dialogVisible.value = true
     nextTick(() => formRef.value?.clearValidate?.())
