@@ -146,6 +146,7 @@ onBeforeUnmount(() => {
             v-model:visible="popoverVisible"
             :width="420"
             placement="bottom"
+            popper-class="message-panel-popper"
             trigger="click"
             @show="handleShow"
         >
@@ -396,8 +397,14 @@ onBeforeUnmount(() => {
 }
 
 .message-item__category {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
     font-size: 12px;
+    font-weight: 500;
     color: #b45309;
+    background: #fdf6ec;
 }
 
 .message-item__date {
@@ -425,6 +432,10 @@ onBeforeUnmount(() => {
 .message-panel__footer {
     display: flex;
     justify-content: flex-end;
+}
+
+:global(.message-panel-popper) {
+    z-index: 10020 !important;
 }
 
 .message-preview {
