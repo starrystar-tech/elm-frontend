@@ -205,7 +205,13 @@ const {
     tableMethods,
     register: tableRegister
 } = useTable<UserApi.UserVO>({
-    getListApi: UserApi.getUserPage
+    getListApi: async (params) => {
+        const nextParams = buildPageParams({
+            ...searchParams,
+            ...params
+        })
+        return UserApi.getUserPage(nextParams)
+    }
 })
 
 const stats = reactive({
@@ -243,7 +249,10 @@ const setSearchParams = (params: SeatSearchParams) => {
     searchParams.deptId = params.deptId
     searchParams.bindStatus = params.bindStatus
     searchParams.outboundRouteId = params.outboundRouteId
-    tableMethods.setSearchParams(buildPageParams(params))
+    tableMethods.setSearchParams(buildPageParams({
+        ...searchParams,
+        ...params
+    }))
 }
 
 const resetSearchParams = () => {
@@ -251,7 +260,7 @@ const resetSearchParams = () => {
     searchParams.deptId = undefined
     searchParams.bindStatus = undefined
     searchParams.outboundRouteId = undefined
-    tableMethods.setSearchParams(buildPageParams({}))
+    tableMethods.setSearchParams(buildPageParams(searchParams))
 }
 
 const textCell = (value?: string | number) => {

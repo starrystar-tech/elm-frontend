@@ -102,6 +102,7 @@ import {
     canSignOrderContract,
     CONTRACT_STATUS_OPTIONS,
     INSTALLMENT_STATUS_OPTIONS,
+    PAY_CONFIRM_STATUS_OPTIONS,
     ORDER_STATUS_OPTIONS,
     formatAmount,
     getOptionLabel,
@@ -639,6 +640,12 @@ const tableColumns = computed<TableColumn[]>(() => [
         label: '售后结果',
         minWidth: '120px',
         formatter: (_r, _c, v) => getAftersalesResultLabel(v)
+    },
+    {
+        field: 'confirmStatus',
+        label: '财务确认状态',
+        minWidth: '120px',
+        formatter: (_r, _c, v) => getOptionLabel(PAY_CONFIRM_STATUS_OPTIONS, v)
     },
     {
         field: 'courseStatus',

@@ -45,6 +45,8 @@ export interface OrderPageRespVO {
   aftersalesStatus?: number
   aftersalesResult?: number
   courseStatus?: number
+  confirmStatus?: number
+  confirmResult?: string
   remark: string
   creator: string
   creatorName?: string
