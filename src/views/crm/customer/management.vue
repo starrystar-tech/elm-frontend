@@ -485,6 +485,15 @@ const tableColumns = computed<TableColumn[]>(() => [
         }
     },
     {
+        field: 'confirmResult',
+        label: '财务确认结果',
+        minWidth: '140px',
+        showOverflowTooltip: true,
+        slots: {
+            default: (data) => <span>{data.row.confirmResult || '--'}</span>
+        }
+    },
+    {
         field: 'ownerDeptName',
         label: '归属人（组别）',
         minWidth: '190px',

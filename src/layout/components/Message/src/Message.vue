@@ -236,7 +236,9 @@ onBeforeUnmount(() => {
                             <el-tag type="danger" effect="light" round>
                                 未处理 {{ previewCount > 99 ? '99+' : previewCount }}
                             </el-tag>
-                            <el-button link type="primary" @click="goMyList">查看全部</el-button>
+                            <el-button link type="primary" class="message-preview__link" @click="goMyList">
+                                查看全部
+                            </el-button>
                             <button
                                 class="message-preview__close"
                                 type="button"
@@ -299,8 +301,13 @@ onBeforeUnmount(() => {
 }
 
 .message-panel__count {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
     font-size: 12px;
     color: var(--el-color-danger);
+    background: var(--el-color-danger-light-9);
 }
 
 .message-panel__categories {
@@ -341,26 +348,29 @@ onBeforeUnmount(() => {
 
 .message-list {
     height: 360px;
+    padding: 8px;
 }
 
 .message-item {
     display: flex;
     gap: 10px;
-    padding: 12px 8px;
-    border-radius: 10px;
-    border-bottom: 1px solid var(--el-border-color-lighter);
+    padding: 12px 8px 10px;
+    border: 1px solid #e9edf3;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
     cursor: pointer;
     transition:
         background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
         transform 0.2s ease;
 }
 
 .message-item:hover {
-    background: var(--el-fill-color-light);
-}
-
-.message-item:last-child {
-    border-bottom: none;
+    background: #fcfdff;
+    border-color: #dbe7ff;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
 }
 
 .message-item__dot {
@@ -387,7 +397,7 @@ onBeforeUnmount(() => {
 
 .message-item__category {
     font-size: 12px;
-    color: var(--el-color-primary);
+    color: #b45309;
 }
 
 .message-item__date {
@@ -424,12 +434,12 @@ onBeforeUnmount(() => {
     z-index: 10000;
     width: 360px;
     padding: 14px 14px 12px;
-    border: 1px solid var(--el-border-color-light);
+    border: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.98);
+    background: rgba(255, 255, 255, 0.99);
     box-shadow:
-        0 14px 36px rgba(15, 23, 42, 0.14),
-        0 2px 8px rgba(15, 23, 42, 0.06);
+        0 18px 40px rgba(15, 23, 42, 0.14),
+        0 4px 10px rgba(15, 23, 42, 0.06);
     backdrop-filter: blur(10px);
 }
 
@@ -448,6 +458,14 @@ onBeforeUnmount(() => {
     font-size: 14px;
     font-weight: 600;
     color: var(--el-text-color-primary);
+}
+
+.message-preview__link {
+    color: var(--el-color-primary);
+}
+
+.message-preview__link:hover {
+    color: var(--el-color-primary-dark-2);
 }
 
 .message-preview__actions {
@@ -487,20 +505,28 @@ onBeforeUnmount(() => {
     gap: 8px;
     max-height: none;
     overflow: hidden;
+    padding: 8px;
 }
 
 .message-preview__item {
     display: flex;
     gap: 10px;
-    padding: 10px 8px;
-    border-radius: 10px;
+    padding: 12px 8px 10px;
+    border-radius: 14px;
+    border: 1px solid #e9edf3;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
     transition:
         background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
         transform 0.2s ease;
 }
 
 .message-preview__item:hover {
-    background: var(--el-fill-color-light);
+    background: #fcfdff;
+    border-color: #dbe7ff;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
 }
 
 .message-preview__dot {
@@ -526,8 +552,14 @@ onBeforeUnmount(() => {
 }
 
 .message-preview__category {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
     font-size: 12px;
-    color: var(--el-color-primary);
+    font-weight: 500;
+    color: #b45309;
+    background: #fdf6ec;
 }
 
 .message-preview__date {
@@ -539,7 +571,7 @@ onBeforeUnmount(() => {
 .message-preview__text {
     font-size: 13px;
     line-height: 1.6;
-    color: var(--el-text-color-primary);
+    color: #334155;
     word-break: break-all;
 }
 
