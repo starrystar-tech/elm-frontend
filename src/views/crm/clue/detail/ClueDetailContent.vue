@@ -361,16 +361,6 @@
                                     </template>
                                 </el-table-column>
                                 <el-table-column
-                                    prop="finalPaymentChannel"
-                                    label="尾款渠道"
-                                    min-width="140"
-                                    show-overflow-tooltip
-                                >
-                                    <template #default="{ row }">
-                                        {{ row.finalPaymentChannel || '--' }}
-                                    </template>
-                                </el-table-column>
-                                <el-table-column
                                     prop="payableAmount"
                                     label="应付金额"
                                     min-width="100"

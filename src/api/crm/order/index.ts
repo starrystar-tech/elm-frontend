@@ -257,6 +257,11 @@ export interface OrderPayRecordPageReqVO extends PageParam {
   maxPayAmount?: number
 }
 
+export interface OrderPayConfirmExportReqVO extends OrderPayRecordPageReqVO {
+  authCode?: string
+  exportPlainMobile?: boolean
+}
+
 export interface OrderRefundPageReqVO extends PageParam {
   customer?: string
   mobile?: string
@@ -335,6 +340,10 @@ export const getPayRecordPage = async (params: OrderPayRecordPageReqVO) => {
 
 export const getPayConfirmPage = async (params: OrderPayRecordPageReqVO) => {
   return await request.get({ url: '/crm/order/pay-record/confirm-page', params })
+}
+
+export const createPayConfirmExportTask = async (data: OrderPayConfirmExportReqVO) => {
+  return await request.post<number>({ url: '/crm/order/pay-record/confirm-export-task', data })
 }
 
 export const confirmPayRecord = async (data: OrderPayConfirmReqVO) => {

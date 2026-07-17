@@ -356,13 +356,6 @@ const tableColumns = computed<TableColumn[]>(() => [
         }
     },
     {
-        field: 'finalPaymentChannel',
-        label: '尾款渠道',
-        minWidth: '140px',
-        showOverflowTooltip: true,
-        slots: { default: (data) => <span>{data.row.finalPaymentChannel || '--'}</span> }
-    },
-    {
         field: 'ownerDeptName',
         label: '归属人（组别）',
         minWidth: '190px',

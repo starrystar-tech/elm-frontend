@@ -187,13 +187,6 @@
                                 </el-radio>
                             </el-radio-group>
                         </el-form-item>
-                        <el-form-item label="尾款渠道" prop="finalPaymentChannel">
-                            <el-input
-                                v-model="formData.finalPaymentChannel"
-                                placeholder="请输入尾款渠道"
-                                clearable
-                            />
-                        </el-form-item>
                     </div>
 
                     <el-form-item label="备注" prop="enrollRemark" class="enroll-payment__remark">
@@ -329,7 +322,6 @@ type EnrollFormData = {
     campusName: string
     payableAmount?: number
     installmentStatus: number
-    finalPaymentChannel: string
     enrollRemark: string
     payStatus: 'unpaid' | 'paid'
 }
@@ -420,7 +412,6 @@ const createDefaultFormData = (): EnrollFormData => ({
     campusName: '',
     payableAmount: undefined,
     installmentStatus: 2,
-    finalPaymentChannel: '',
     enrollRemark: '',
     payStatus: 'unpaid'
 })
@@ -695,7 +686,6 @@ const submitForm = async () => {
             campusName: formData.value.campusName,
             projectName: selectedProducts.value[0]?.projectName || '',
             installmentStatus: formData.value.installmentStatus,
-            finalPaymentChannel: formData.value.finalPaymentChannel?.trim() || undefined,
             mainProductCategoryPath: selectedProducts.value[0]?.categoryPath || '',
             mainProductName: selectedProducts.value[0]?.productName || '',
             mainProductCode: selectedProducts.value[0]?.productCode || '',

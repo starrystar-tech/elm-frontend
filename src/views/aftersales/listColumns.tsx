@@ -6,6 +6,8 @@ import type * as AftersalesApi from '@/api/crm/aftersales'
 import { hasPermission } from '@/directives/permission/hasPermi'
 import { renderCopyMobileCell } from '@/views/crm/clue/mobileCopy'
 import {
+    getAftersalesConfirmStatusLabel,
+    getAftersalesCourseStatusLabel,
     formatAftersalesCentAmount,
     formatComplaintTags,
     getAftersalesInstallmentStatusLabel,
@@ -125,15 +127,28 @@ export const buildAftersalesColumns = (options: BuildAftersalesColumnsOptions): 
                 )
             }
         },
+        { field: 'headteacherUserName', label: '班主任', minWidth: '100px' },
         { field: 'campusName', label: '报名分校', minWidth: '130px', showOverflowTooltip: true },
         { field: 'enrollTime', label: '报名时间', minWidth: '170px', formatter: dateFormatter },
+        {
+            field: 'courseStatus',
+            label: '开课状态',
+            minWidth: '100px',
+            formatter: (_r, _c, v) => getAftersalesCourseStatusLabel(v)
+        },
         {
             field: 'installmentStatus',
             label: '分期状态',
             minWidth: '100px',
             formatter: (_r, _c, v) => getAftersalesInstallmentStatusLabel(v)
         },
-        { field: 'finalPaymentChannel', label: '尾款渠道', minWidth: '130px', showOverflowTooltip: true },
+        {
+            field: 'confirmStatus',
+            label: '财务确认状态',
+            minWidth: '120px',
+            formatter: (_r, _c, v) => getAftersalesConfirmStatusLabel(v)
+        },
+        { field: 'confirmResult', label: '财务确认结果', minWidth: '160px', showOverflowTooltip: true },
         {
             field: 'complaintTags',
             label: '投诉标签',

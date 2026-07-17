@@ -642,13 +642,6 @@ const tableColumns = computed<TableColumn[]>(() => [
         formatter: (_r, _c, v) => installmentStatusLabel(v)
     },
     {
-        field: 'finalPaymentChannel',
-        label: '尾款渠道',
-        minWidth: '140px',
-        showOverflowTooltip: true,
-        formatter: (_row, _column, value) => value || '-'
-    },
-    {
         field: 'mainProductCode',
         label: '商品编号',
         minWidth: '140px',

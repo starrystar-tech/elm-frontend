@@ -17,7 +17,7 @@ export interface AftersalesPageReqVO extends PageParam {
   beginEnrollTime?: string
   endEnrollTime?: string
   installmentStatus?: number
-  finalPaymentChannel?: string
+  confirmStatus?: number
   aftersalesResult?: number
   handlerUserId?: number
   deptId?: number
@@ -81,8 +81,12 @@ export interface AftersalesRespVO {
   campusId?: number
   campusName?: string
   enrollTime?: string
+  headteacherUserName?: string
+  courseStatus?: number
   installmentStatus?: number
   finalPaymentChannel?: string
+  confirmStatus?: number
+  confirmResult?: string
   handlerUserId?: number
   handlerUserName?: string
   receiveTime?: string

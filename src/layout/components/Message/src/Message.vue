@@ -18,12 +18,64 @@ const loading = ref(false)
 const unreadCount = ref(0)
 const list = ref<NotifyMessageApi.NotifyMessageVO[]>([])
 const categories = ref<NotifyMessageApi.ReminderCategorySummaryVO[]>([])
+const previewVisible = ref(false)
+const previewList = ref<NotifyMessageApi.NotifyMessageVO[]>([])
+const previewCount = ref(0)
 let unreadTimer: ReturnType<typeof setInterval> | undefined
+let previewTimer: ReturnType<typeof setTimeout> | undefined
+let lastPreviewSignature = ''
 
-const loadPanelSummary = async () => {
+const clearPreviewTimer = () => {
+    if (previewTimer) {
+        clearTimeout(previewTimer)
+        previewTimer = undefined
+    }
+}
+
+const startPreviewTimer = () => {
+    clearPreviewTimer()
+    previewTimer = window.setTimeout(() => {
+        previewVisible.value = false
+    }, 6000)
+}
+
+const buildPreviewSignature = (messages: NotifyMessageApi.NotifyMessageVO[]) =>
+    messages
+        .slice(0, 5)
+        .map((item) => `${item.id}:${item.readStatus}:${item.triggerTime || item.createTime}`)
+        .join('|')
+
+const showPreviewPanel = (messages: NotifyMessageApi.NotifyMessageVO[], count: number) => {
+    if (!count || !messages.length) {
+        return
+    }
+    const signature = buildPreviewSignature(messages)
+    if (signature === lastPreviewSignature) {
+        return
+    }
+    lastPreviewSignature = signature
+    previewCount.value = count
+    previewList.value = messages.slice(0, 3)
+    previewVisible.value = true
+    startPreviewTimer()
+}
+
+const loadPanelSummary = async (showNewPreview = false) => {
     const data = await NotifyMessageApi.getReminderMessagePanelSummary()
     unreadCount.value = Number(data?.totalUnreadCount || 0)
     categories.value = data?.categories || []
+    if (!userStore.getIsSetUser) {
+        return
+    }
+    if (unreadCount.value <= 0) {
+        previewVisible.value = false
+        lastPreviewSignature = ''
+        return
+    }
+    const messages = await NotifyMessageApi.getUnreadNotifyMessageList(undefined, 10)
+    if (showNewPreview || unreadCount.value > 0) {
+        showPreviewPanel(messages, unreadCount.value)
+    }
 }
 
 const loadList = async () => {
@@ -54,20 +106,27 @@ const handleRead = async (item: NotifyMessageApi.NotifyMessageVO) => {
 
 const goMyList = () => {
     popoverVisible.value = false
+    previewVisible.value = false
     push({
         name: 'MyNotifyMessage'
     })
 }
 
+const closePreview = () => {
+    clearPreviewTimer()
+    previewVisible.value = false
+}
+
 onMounted(() => {
-    loadPanelSummary()
+    loadPanelSummary(true)
     unreadTimer = setInterval(
         () => {
             if (userStore.getIsSetUser) {
-                loadPanelSummary()
+                loadPanelSummary(true)
                 return
             }
             unreadCount.value = 0
+            previewVisible.value = false
         },
         1000 * 60 * 2
     )
@@ -77,6 +136,7 @@ onBeforeUnmount(() => {
     if (unreadTimer) {
         clearInterval(unreadTimer)
     }
+    clearPreviewTimer()
 })
 </script>
 
@@ -158,6 +218,51 @@ onBeforeUnmount(() => {
                 </div>
             </div>
         </ElPopover>
+
+        <transition name="message-preview-slide">
+            <div
+                v-show="previewVisible"
+                class="message-preview"
+                @mouseenter="clearPreviewTimer"
+                @mouseleave="startPreviewTimer"
+            >
+                <div class="message-preview__header">
+                    <div class="message-preview__title">
+                        <Icon icon="ep:bell-filled" :size="16" />
+                        <span>消息提醒</span>
+                    </div>
+                    <div class="message-preview__actions">
+                        <el-tag type="danger" effect="light" round>
+                            未处理 {{ previewCount > 99 ? '99+' : previewCount }}
+                        </el-tag>
+                        <el-button link type="primary" @click="goMyList">查看全部</el-button>
+                        <el-button link type="info" @click="closePreview">关闭</el-button>
+                    </div>
+                </div>
+                <div class="message-preview__body">
+                    <div
+                        v-for="item in previewList"
+                        :key="item.id"
+                        class="message-preview__item"
+                    >
+                        <div class="message-preview__dot"></div>
+                        <div class="message-preview__content">
+                            <div class="message-preview__meta">
+                                <span class="message-preview__category">
+                                    {{ item.categoryName || '提醒' }}
+                                </span>
+                                <span class="message-preview__date">
+                                    {{ formatDate(item.triggerTime || item.createTime) }}
+                                </span>
+                            </div>
+                            <div class="message-preview__text">
+                                {{ item.displayContent }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
     </div>
 </template>
 
@@ -293,5 +398,118 @@ onBeforeUnmount(() => {
 .message-panel__footer {
     display: flex;
     justify-content: flex-end;
+}
+
+.message-preview {
+    position: fixed;
+    top: calc(var(--top-tool-height, 56px) + 12px);
+    right: 16px;
+    z-index: 3000;
+    width: 360px;
+    padding: 14px 16px;
+    border: 1px solid var(--el-color-primary-light-7);
+    border-radius: 12px;
+    background: var(--el-bg-color);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.message-preview__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.message-preview__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+}
+
+.message-preview__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.message-preview__body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 240px;
+    overflow: auto;
+}
+
+.message-preview__item {
+    display: flex;
+    gap: 10px;
+}
+
+.message-preview__dot {
+    width: 8px;
+    height: 8px;
+    margin-top: 7px;
+    border-radius: 50%;
+    background: var(--el-color-danger);
+    flex-shrink: 0;
+}
+
+.message-preview__content {
+    min-width: 0;
+    flex: 1;
+}
+
+.message-preview__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.message-preview__category {
+    font-size: 12px;
+    color: var(--el-color-primary);
+}
+
+.message-preview__date {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    white-space: nowrap;
+}
+
+.message-preview__text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--el-text-color-primary);
+    word-break: break-all;
+}
+
+.message-preview-slide-enter-active,
+.message-preview-slide-leave-active {
+    transition:
+        transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.24s ease,
+        filter 0.24s ease;
+    will-change: transform, opacity;
+}
+
+.message-preview-slide-enter-from,
+.message-preview-slide-leave-to {
+    opacity: 0;
+    filter: blur(2px);
+}
+
+.message-preview-slide-enter-from {
+    transform: translateX(48px) scale(0.98);
+}
+
+.message-preview-slide-leave-to {
+    transform: translateX(56px) scale(0.98);
 }
 </style>

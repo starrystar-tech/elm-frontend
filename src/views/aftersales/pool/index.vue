@@ -42,7 +42,7 @@ const hiddenPoolSearchFields = [
     'handlerUserId',
     'enrollTimeRange',
     'installmentStatus',
-    'finalPaymentChannel',
+    'confirmStatus',
     'aftersalesResult',
     'receiveTimeRange',
     'processTimeRange'

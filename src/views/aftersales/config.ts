@@ -1,5 +1,7 @@
 import type { FormSchema } from '@/types/form'
 import { DICT_TYPE, getDictLabel, getIntDictOptions } from '@/utils/dict'
+import { getStudentCourseStatusLabel } from '@/api/crm/studentCenter'
+import { PAY_CONFIRM_STATUS_OPTIONS } from '@/views/order/utils'
 
 export const AFTERSALES_SOURCE = {
     MANUAL: 1,
@@ -67,6 +69,12 @@ export const getAftersalesResultLabel = (value?: number) =>
 
 export const getAftersalesInstallmentStatusLabel = (value?: number) =>
     value === undefined ? '--' : getOptionLabel(AFTERSALES_INSTALLMENT_STATUS_OPTIONS, Number(value))
+
+export const getAftersalesCourseStatusLabel = (value?: number | null) =>
+    value == null ? '--' : getStudentCourseStatusLabel(Number(value))
+
+export const getAftersalesConfirmStatusLabel = (value?: number | null) =>
+    value == null ? '--' : getOptionLabel(PAY_CONFIRM_STATUS_OPTIONS, Number(value))
 
 export const formatAftersalesAmount = (value?: number | string | null) => {
     if (value === undefined || value === null || value === '') return '--'
@@ -207,10 +215,14 @@ export const buildBaseSearchSchema = (
         }
     },
     {
-        field: 'finalPaymentChannel',
-        label: '尾款渠道',
-        component: 'Input',
-        componentProps: { clearable: true, style: { width: '220px' } }
+        field: 'confirmStatus',
+        label: '财务确认状态',
+        component: 'Select',
+        componentProps: {
+            options: PAY_CONFIRM_STATUS_OPTIONS.filter((item) => item.value !== 0),
+            clearable: true,
+            style: { width: '220px' }
+        }
     },
     {
         field: 'aftersalesResult',

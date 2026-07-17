@@ -26,9 +26,6 @@
                 <el-descriptions-item label="分期状态">
                     {{ installmentStatusText }}
                 </el-descriptions-item>
-                <el-descriptions-item label="尾款渠道">
-                    {{ detail.finalPaymentChannel || '-' }}
-                </el-descriptions-item>
                 <el-descriptions-item label="订单备注" :span="2">
                     {{ detail.remark || '-' }}
                 </el-descriptions-item>

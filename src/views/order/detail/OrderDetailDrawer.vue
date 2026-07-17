@@ -58,9 +58,6 @@
                                     <el-descriptions-item label="分期状态">{{
                                         installmentStatusText
                                     }}</el-descriptions-item>
-                                    <el-descriptions-item label="尾款渠道">{{
-                                        detail.finalPaymentChannel || '-'
-                                    }}</el-descriptions-item>
                                     <el-descriptions-item label="应付金额">{{
                                         `￥${formatAmount(detail.payableAmount)}`
                                     }}</el-descriptions-item>

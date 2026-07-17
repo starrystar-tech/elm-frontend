@@ -1,6 +1,15 @@
 <template>
     <ContentWrap>
         <Search :schema="searchSchema" @search="setSearchParams" @reset="setSearchParams" />
+        <div class="action-btn-wrap flex items-center gap-2">
+            <BaseButton
+                v-hasPermi="['crm:order:payment-confirm-export']"
+                plain
+                @click="openExportDialog"
+            >
+                导出
+            </BaseButton>
+        </div>
         <Table
             v-model:currentPage="tableObject.currentPage"
             v-model:pageSize="tableObject.pageSize"
@@ -13,6 +22,7 @@
     </ContentWrap>
     <PaymentRecordDetailDialog ref="detailDialogRef" />
     <PaymentContractInfoDialog ref="contractDialogRef" />
+    <ExportTaskDialog ref="exportDialogRef" @success="handleExportSuccess" />
 </template>
 
 <script setup lang="tsx">
@@ -41,6 +51,7 @@ import {
     getAftersalesStatusLabel
 } from '@/views/aftersales/config'
 import * as StudentCenterApi from '@/api/crm/studentCenter'
+import ExportTaskDialog from '@/views/crm/clue/components/ExportTaskDialog.vue'
 import PaymentRecordDetailDialog from './PaymentRecordDetailDialog.vue'
 import PaymentContractInfoDialog from './PaymentContractInfoDialog.vue'
 
@@ -49,6 +60,8 @@ defineOptions({ name: 'OrderPaymentConfirm' })
 const message = useMessage()
 const detailDialogRef = ref<InstanceType<typeof PaymentRecordDetailDialog>>()
 const contractDialogRef = ref<InstanceType<typeof PaymentContractInfoDialog>>()
+const exportDialogRef = ref<InstanceType<typeof ExportTaskDialog>>()
+const currentSearchParams = ref<Recordable>({})
 const payConfirmSearchOptions = PAY_CONFIRM_STATUS_OPTIONS.filter((item) => item.value !== 0)
 const ownerDeptLabel = (row: OrderApi.OrderPayRecordRespVO) =>
     buildDeptOwnerDisplayName(row.ownerDeptName, row.ownerUserName)
@@ -143,7 +156,40 @@ const {
 })
 
 const setSearchParams = (params: Recordable) => {
+    currentSearchParams.value = params || {}
     tableMethods.setSearchParams(params)
+}
+
+const buildExportParams = (params: Recordable = {}) => {
+    const { payTimeRange = [], payAmountRange = [], confirmStatus, ...rest } = params
+    return {
+        ...rest,
+        confirmStatus:
+            confirmStatus === '' || confirmStatus === null || confirmStatus === undefined
+                ? undefined
+                : Number(confirmStatus),
+        beginPayTime: payTimeRange[0],
+        endPayTime: payTimeRange[1],
+        minPayAmount: payAmountRange[0] ? Math.round(Number(payAmountRange[0]) * 100) : undefined,
+        maxPayAmount: payAmountRange[1] ? Math.round(Number(payAmountRange[1]) * 100) : undefined
+    }
+}
+
+const openExportDialog = () => {
+    exportDialogRef.value?.open({
+        title: '导出支付确认',
+        bizType: 'crm_order_payment_confirm_export',
+        submit: async (payload) => {
+            await OrderApi.createPayConfirmExportTask({
+                ...buildExportParams(currentSearchParams.value),
+                ...payload
+            })
+        }
+    })
+}
+
+const handleExportSuccess = async () => {
+    message.success('导出任务已创建，请到下载中心查看')
 }
 
 const getOrderClueDetail = async (id: number) => {

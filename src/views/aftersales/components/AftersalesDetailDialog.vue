@@ -39,9 +39,6 @@
                     <el-descriptions-item label="分期状态">{{
                         installmentStatusLabel
                     }}</el-descriptions-item>
-                    <el-descriptions-item label="尾款渠道" :span="2">{{
-                        detail?.finalPaymentChannel || '--'
-                    }}</el-descriptions-item>
                     <el-descriptions-item label="工单来源">{{ sourceLabel }}</el-descriptions-item>
                     <el-descriptions-item label="优先级">{{ priorityLabel }}</el-descriptions-item>
                     <el-descriptions-item label="状态">{{ statusLabel }}</el-descriptions-item>

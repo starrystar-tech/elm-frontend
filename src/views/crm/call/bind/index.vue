@@ -187,7 +187,8 @@ const formRules = reactive<FormRules>({})
 const buildPageParams = (params: SeatSearchParams = {}) => {
     const nextParams: Record<string, any> = {
         deptId: params.deptId,
-        userId: params.userId
+        userId: params.userId,
+        status: 0
     }
     if (params.bindStatus === 'bound') {
         nextParams.hasCallExt = true

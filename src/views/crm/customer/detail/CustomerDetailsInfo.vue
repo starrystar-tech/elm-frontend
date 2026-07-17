@@ -62,7 +62,6 @@
                     <el-descriptions-item label="报考专业">{{ applyMajorText }}</el-descriptions-item>
                     <el-descriptions-item label="报考项目">{{ applyProjectText }}</el-descriptions-item>
                     <el-descriptions-item label="分期状态">{{ installmentStatusText }}</el-descriptions-item>
-                    <el-descriptions-item label="尾款渠道">{{ finalPaymentChannelText }}</el-descriptions-item>
                     <el-descriptions-item label="报名分校">{{ campusNameText }}</el-descriptions-item>
                     <el-descriptions-item label="售后状态">{{ aftersalesStatusText }}</el-descriptions-item>
                     <el-descriptions-item label="售后结果">{{ aftersalesResultText }}</el-descriptions-item>
@@ -230,13 +229,6 @@ const installmentStatusText = computed(() =>
         props.clue.installmentStatus ??
             props.studentInfo?.installmentStatus ??
             firstOrderRecord.value?.installmentStatus
-    )
-)
-const finalPaymentChannelText = computed(() =>
-    getDisplayText(
-        props.clue.finalPaymentChannel,
-        props.studentInfo?.finalPaymentChannel,
-        firstOrderRecord.value?.finalPaymentChannel
     )
 )
 const ownerDeptText = computed(() =>
