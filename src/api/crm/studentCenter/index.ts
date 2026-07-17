@@ -14,6 +14,7 @@ export interface StudentCenterPageReqVO extends PageParam {
     installmentStatus?: number
     finalPaymentChannel?: string
     ownerDeptId?: number
+    ownerUserId?: number
     campusId?: number
     aftersalesStatus?: number
     aftersalesResult?: number
@@ -21,6 +22,7 @@ export interface StudentCenterPageReqVO extends PageParam {
     applyProvince?: string
     serviceStatus?: number
     courseStatus?: number
+    confirmStatus?: number
     studentRemark?: string
 }
 
@@ -65,6 +67,8 @@ export interface StudentCenterPageRespVO {
     applyProvince?: string
     serviceStatus?: number
     courseStatus?: number
+    confirmStatus?: number
+    confirmResult?: string
     studentRemark?: string
     projectName?: string
     mainProductCategoryPath?: string

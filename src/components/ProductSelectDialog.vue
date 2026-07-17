@@ -39,10 +39,30 @@
                 max-height="320"
                 border
                 row-key="id"
+                highlight-current-row
                 v-loading="loading"
                 @selection-change="handleSelectionChange"
+                @current-change="handleCurrentChange"
+                @row-click="handleRowClick"
             >
-                <el-table-column type="selection" width="54" reserve-selection />
+                <el-table-column
+                    v-if="multiple"
+                    type="selection"
+                    width="54"
+                    reserve-selection
+                />
+                <el-table-column v-else label="" width="54" align="center">
+                    <template #default="{ row }">
+                        <el-radio
+                            :value="row.id"
+                            v-model="selectedProductId"
+                            @change="handleSingleSelection(row)"
+                            @click.stop
+                        >
+                            &nbsp;
+                        </el-radio>
+                    </template>
+                </el-table-column>
                 <el-table-column prop="name" label="商品" min-width="160" />
                 <el-table-column label="商品分类" min-width="150">
                     <template #default="{ row }">
@@ -98,6 +118,7 @@ defineOptions({ name: 'ProductSelectDialog' })
 const props = defineProps<{
     modelValue: boolean
     consultProjectId?: number
+    multiple?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -126,11 +147,13 @@ const total = ref(0)
 const pageNo = ref(1)
 const pageSize = ref(20)
 const selectedProductMap = ref<Record<number, ProductVO>>({})
+const selectedProductId = ref<number>()
 const filterForm = ref<FilterForm>({
     consultProjectId: props.consultProjectId,
     productCategoryId: undefined,
     keyword: ''
 })
+const multiple = computed(() => props.multiple ?? true)
 
 watch(
     () => props.consultProjectId,
@@ -149,6 +172,7 @@ watch(dialogVisible, (visible) => {
     filterForm.value.keyword = ''
     pageNo.value = 1
     selectedProductMap.value = {}
+    selectedProductId.value = undefined
 })
 
 const loadCategoryOptions = async () => {
@@ -226,12 +250,17 @@ const selectedProducts = computed(() => Object.values(selectedProductMap.value))
 const syncTableSelection = () => {
     const table = tableRef.value
     if (!table) return
-    table.clearSelection()
-    pickerDisplayProducts.value.forEach((item) => {
-        if (selectedProductMap.value[item.id]) {
-            table.toggleRowSelection(item, true)
-        }
-    })
+    if (multiple.value) {
+        table.clearSelection()
+        pickerDisplayProducts.value.forEach((item) => {
+            if (selectedProductMap.value[item.id]) {
+                table.toggleRowSelection(item, true)
+            }
+        })
+        return
+    }
+    const current = pickerDisplayProducts.value.find((item) => item.id === selectedProductId.value)
+    table.setCurrentRow(current || null)
 }
 
 const handleProjectChange = (value?: number) => {
@@ -265,6 +294,9 @@ const handleKeywordChange = () => {
 }
 
 const handleSelectionChange = (rows: ProductVO[]) => {
+    if (!multiple.value) {
+        return
+    }
     const currentIds = new Set(pickerDisplayProducts.value.map((item) => item.id))
     currentIds.forEach((id) => {
         delete selectedProductMap.value[id]
@@ -272,6 +304,25 @@ const handleSelectionChange = (rows: ProductVO[]) => {
     rows.forEach((item) => {
         selectedProductMap.value[item.id] = item
     })
+}
+
+const handleSingleSelection = (row?: ProductVO) => {
+    if (!row?.id) return
+    selectedProductId.value = Number(row.id)
+    selectedProductMap.value = {
+        [row.id]: row
+    }
+    tableRef.value?.setCurrentRow(row)
+}
+
+const handleCurrentChange = (row?: ProductVO) => {
+    if (multiple.value || !row) return
+    handleSingleSelection(row)
+}
+
+const handleRowClick = (row: ProductVO) => {
+    if (multiple.value) return
+    handleSingleSelection(row)
 }
 
 const handleConfirm = () => {

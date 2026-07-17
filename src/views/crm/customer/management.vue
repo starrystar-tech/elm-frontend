@@ -14,6 +14,20 @@
                     style="width: 220px"
                 />
             </template>
+            <template #householdProvince>
+                <ProvinceSelect
+                    v-model="searchForm.householdProvince"
+                    placeholder="请选择户籍省份"
+                    style="width: 220px"
+                />
+            </template>
+            <template #applyProvince>
+                <ProvinceSelect
+                    v-model="searchForm.applyProvince"
+                    placeholder="请选择报考省份"
+                    style="width: 220px"
+                />
+            </template>
         </Search>
         <div class="mb-12px flex items-center justify-between action-btn-wrap">
             <BaseButton
@@ -46,12 +60,16 @@
 </template>
 
 <script lang="tsx" setup>
-import { computed, nextTick, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { ElLink } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import * as StudentCenterApi from '@/api/crm/studentCenter'
 import * as HeadteacherApi from '@/api/crm/allocation/headteacher'
+import * as UserApi from '@/api/system/user'
+import * as DeptApi from '@/api/system/dept'
+import * as CampusApi from '@/api/system/campus'
 import AreaSelect from '@/components/AreaSelect.vue'
+import ProvinceSelect from '@/components/ProvinceSelect.vue'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
@@ -67,18 +85,27 @@ import { buildAreaLabel, buildDeptOwnerDisplayName } from '@/views/crm/clue/list
 import AftersalesForm from '@/views/aftersales/components/AftersalesForm.vue'
 import {
     AFTERSALES_SOURCE,
+    AFTERSALES_RESULT_OPTIONS,
     getAftersalesResultLabel,
     getAftersalesStatusLabel
 } from '@/views/aftersales/config'
 import StudentEditForm from './StudentEditForm.vue'
+import { PAY_CONFIRM_STATUS_OPTIONS } from '@/views/order/utils'
 
 interface StudentSearchParams {
     mobile?: string
     customer?: string
     areaId?: number
     headteacherUserId?: number
+    ownerUserId?: number
+    ownerDeptId?: number
+    campusId?: number
+    aftersalesResult?: number
+    householdProvince?: string
+    applyProvince?: string
     serviceStatus?: number
     courseStatus?: number
+    confirmStatus?: number
     studentRemark?: string
 }
 
@@ -92,6 +119,9 @@ const searchForm = reactive<StudentSearchParams>({})
 const message = useMessage()
 const selectionList = ref<StudentCenterApi.StudentCenterPageRespVO[]>([])
 const headteacherOptions = ref<{ label: string; value: number }[]>([])
+const ownerUserOptions = ref<{ label: string; value: number }[]>([])
+const ownerDeptOptions = ref<{ label: string; value: number }[]>([])
+const campusOptions = ref<{ label: string; value: number }[]>([])
 const canCreateAftersales = hasPermission(['crm:aftersales:create'])
 const canEditManagedStudent = hasPermission(['crm:student:management:update'])
 const canRepurchaseManagedStudent = hasPermission(['crm:order:repurchase'])
@@ -137,6 +167,73 @@ const searchSchema = reactive<FormSchema[]>([
         }
     },
     {
+        field: 'ownerUserId',
+        label: '订单归属人',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择订单归属人',
+            clearable: true,
+            filterable: true,
+            style: { width: '220px' },
+            options: ownerUserOptions.value
+        }
+    },
+    {
+        field: 'ownerDeptId',
+        label: '归属人组别',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择归属人组别',
+            clearable: true,
+            filterable: true,
+            style: { width: '220px' },
+            options: ownerDeptOptions.value
+        }
+    },
+    {
+        field: 'campusId',
+        label: '报名分校',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择报名分校',
+            clearable: true,
+            filterable: true,
+            style: { width: '220px' },
+            options: campusOptions.value
+        }
+    },
+    {
+        field: 'aftersalesResult',
+        label: '售后结果',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择售后结果',
+            clearable: true,
+            style: { width: '220px' },
+            options: AFTERSALES_RESULT_OPTIONS
+        }
+    },
+    {
+        field: 'householdProvince',
+        label: '户籍省份',
+        component: 'Input',
+        componentProps: {
+            placeholder: '请选择户籍省份',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'applyProvince',
+        label: '报考省份',
+        component: 'Input',
+        componentProps: {
+            placeholder: '请选择报考省份',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
         field: 'serviceStatus',
         label: '服务状态',
         component: 'Select',
@@ -156,6 +253,17 @@ const searchSchema = reactive<FormSchema[]>([
             clearable: true,
             style: { width: '220px' },
             options: StudentCenterApi.STUDENT_COURSE_STATUS_OPTIONS
+        }
+    },
+    {
+        field: 'confirmStatus',
+        label: '财务确认状态',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择财务确认状态',
+            clearable: true,
+            style: { width: '220px' },
+            options: PAY_CONFIRM_STATUS_OPTIONS.filter((item) => item.value !== 0)
         }
     },
     {
@@ -184,8 +292,15 @@ const buildListParams = (params: StudentSearchParams = {}) => ({
     customer: params.customer,
     areaId: params.areaId,
     headteacherUserId: params.headteacherUserId,
+    ownerUserId: params.ownerUserId,
+    ownerDeptId: params.ownerDeptId,
+    campusId: params.campusId,
+    aftersalesResult: params.aftersalesResult,
+    householdProvince: params.householdProvince,
+    applyProvince: params.applyProvince,
     serviceStatus: params.serviceStatus,
     courseStatus: params.courseStatus,
+    confirmStatus: params.confirmStatus,
     studentRemark: params.studentRemark
 })
 
@@ -356,6 +471,20 @@ const tableColumns = computed<TableColumn[]>(() => [
         }
     },
     {
+        field: 'confirmStatus',
+        label: '财务确认状态',
+        width: '120px',
+        slots: {
+            default: (data) => (
+                <span>
+                    {PAY_CONFIRM_STATUS_OPTIONS.find(
+                        (item) => item.value === Number(data.row.confirmStatus)
+                    )?.label || '--'}
+                </span>
+            )
+        }
+    },
+    {
         field: 'ownerDeptName',
         label: '归属人（组别）',
         minWidth: '190px',
@@ -473,14 +602,45 @@ const tableColumns = computed<TableColumn[]>(() => [
 ])
 
 const loadFilterOptions = async () => {
-    const [headteachers] = await Promise.all([HeadteacherApi.getHeadteacherSimpleList()])
+    const [headteachers, users, depts, campuses] = await Promise.all([
+        HeadteacherApi.getHeadteacherSimpleList(),
+        UserApi.getSimpleUserList(),
+        DeptApi.getSimpleDeptList(),
+        CampusApi.getSimpleCampusList()
+    ])
     headteacherOptions.value = [{ label: '无', value: 0 }].concat((headteachers || []).map((item) => ({
         label: item.nickname || item.username,
         value: item.id
     })))
+    ownerUserOptions.value = (users || []).map((item) => ({
+        label: item.nickname || item.username,
+        value: item.id
+    }))
+    ownerDeptOptions.value = (depts || [])
+        .filter((item) => item.status === 0 || item.status === undefined)
+        .map((item) => ({
+            label: item.name,
+            value: item.id
+        }))
+    campusOptions.value = (campuses || []).map((item) => ({
+        label: item.name,
+        value: Number(item.id)
+    }))
     const headteacherField = searchSchema.find((item) => item.field === 'headteacherUserId')
     if (headteacherField?.componentProps) {
         headteacherField.componentProps.options = headteacherOptions.value
+    }
+    const ownerUserField = searchSchema.find((item) => item.field === 'ownerUserId')
+    if (ownerUserField?.componentProps) {
+        ownerUserField.componentProps.options = ownerUserOptions.value
+    }
+    const ownerDeptField = searchSchema.find((item) => item.field === 'ownerDeptId')
+    if (ownerDeptField?.componentProps) {
+        ownerDeptField.componentProps.options = ownerDeptOptions.value
+    }
+    const campusField = searchSchema.find((item) => item.field === 'campusId')
+    if (campusField?.componentProps) {
+        campusField.componentProps.options = campusOptions.value
     }
 }
 

@@ -219,50 +219,59 @@ onBeforeUnmount(() => {
             </div>
         </ElPopover>
 
-        <transition name="message-preview-slide">
-            <div
-                v-show="previewVisible"
-                class="message-preview"
-                @mouseenter="clearPreviewTimer"
-                @mouseleave="startPreviewTimer"
-            >
-                <div class="message-preview__header">
-                    <div class="message-preview__title">
-                        <Icon icon="ep:bell-filled" :size="16" />
-                        <span>消息提醒</span>
+        <Teleport to="body">
+            <transition name="message-preview-slide">
+                <div
+                    v-show="previewVisible"
+                    class="message-preview"
+                    @mouseenter="clearPreviewTimer"
+                    @mouseleave="startPreviewTimer"
+                >
+                    <div class="message-preview__header">
+                        <div class="message-preview__title">
+                            <Icon icon="ep:bell-filled" :size="16" />
+                            <span>消息提醒</span>
+                        </div>
+                        <div class="message-preview__actions">
+                            <el-tag type="danger" effect="light" round>
+                                未处理 {{ previewCount > 99 ? '99+' : previewCount }}
+                            </el-tag>
+                            <el-button link type="primary" @click="goMyList">查看全部</el-button>
+                            <button
+                                class="message-preview__close"
+                                type="button"
+                                aria-label="关闭消息提醒"
+                                @click="closePreview"
+                            >
+                                <Icon icon="ep:close" :size="14" />
+                            </button>
+                        </div>
                     </div>
-                    <div class="message-preview__actions">
-                        <el-tag type="danger" effect="light" round>
-                            未处理 {{ previewCount > 99 ? '99+' : previewCount }}
-                        </el-tag>
-                        <el-button link type="primary" @click="goMyList">查看全部</el-button>
-                        <el-button link type="info" @click="closePreview">关闭</el-button>
-                    </div>
-                </div>
-                <div class="message-preview__body">
-                    <div
-                        v-for="item in previewList"
-                        :key="item.id"
-                        class="message-preview__item"
-                    >
-                        <div class="message-preview__dot"></div>
-                        <div class="message-preview__content">
-                            <div class="message-preview__meta">
-                                <span class="message-preview__category">
-                                    {{ item.categoryName || '提醒' }}
-                                </span>
-                                <span class="message-preview__date">
-                                    {{ formatDate(item.triggerTime || item.createTime) }}
-                                </span>
-                            </div>
-                            <div class="message-preview__text">
-                                {{ item.displayContent }}
+                    <div class="message-preview__body">
+                        <div
+                            v-for="item in previewList"
+                            :key="item.id"
+                            class="message-preview__item"
+                        >
+                            <div class="message-preview__dot"></div>
+                            <div class="message-preview__content">
+                                <div class="message-preview__meta">
+                                    <span class="message-preview__category">
+                                        {{ item.categoryName || '提醒' }}
+                                    </span>
+                                    <span class="message-preview__date">
+                                        {{ formatDate(item.triggerTime || item.createTime) }}
+                                    </span>
+                                </div>
+                                <div class="message-preview__text">
+                                    {{ item.displayContent }}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </transition>
+            </transition>
+        </Teleport>
     </div>
 </template>
 
@@ -337,9 +346,17 @@ onBeforeUnmount(() => {
 .message-item {
     display: flex;
     gap: 10px;
-    padding: 12px 4px;
+    padding: 12px 8px;
+    border-radius: 10px;
     border-bottom: 1px solid var(--el-border-color-lighter);
     cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.message-item:hover {
+    background: var(--el-fill-color-light);
 }
 
 .message-item:last-child {
@@ -404,13 +421,16 @@ onBeforeUnmount(() => {
     position: fixed;
     top: calc(var(--top-tool-height, 56px) + 12px);
     right: 16px;
-    z-index: 3000;
+    z-index: 10000;
     width: 360px;
-    padding: 14px 16px;
-    border: 1px solid var(--el-color-primary-light-7);
-    border-radius: 12px;
-    background: var(--el-bg-color);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    padding: 14px 14px 12px;
+    border: 1px solid var(--el-border-color-light);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow:
+        0 14px 36px rgba(15, 23, 42, 0.14),
+        0 2px 8px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(10px);
 }
 
 .message-preview__header {
@@ -433,22 +453,54 @@ onBeforeUnmount(() => {
 .message-preview__actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     flex-wrap: wrap;
     justify-content: flex-end;
+}
+
+.message-preview__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--el-text-color-secondary);
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.message-preview__close:hover {
+    background: var(--el-fill-color-light);
+    color: var(--el-text-color-primary);
 }
 
 .message-preview__body {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    max-height: 240px;
-    overflow: auto;
+    gap: 8px;
+    max-height: none;
+    overflow: hidden;
 }
 
 .message-preview__item {
     display: flex;
     gap: 10px;
+    padding: 10px 8px;
+    border-radius: 10px;
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.message-preview__item:hover {
+    background: var(--el-fill-color-light);
 }
 
 .message-preview__dot {
@@ -467,6 +519,7 @@ onBeforeUnmount(() => {
 
 .message-preview__meta {
     display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
     margin-bottom: 6px;

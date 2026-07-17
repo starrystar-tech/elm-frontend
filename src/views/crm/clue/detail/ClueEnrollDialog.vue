@@ -269,6 +269,7 @@
         <ProductSelectDialog
             v-model="productPickerVisible"
             :consult-project-id="validConsultProjectId"
+            :multiple="false"
             @select="appendProducts"
         />
     </Dialog>
@@ -479,16 +480,11 @@ const openProductPicker = () => {
 }
 
 const appendProducts = (products: ProductVO[]) => {
-    if (!products?.length) return
-    let duplicateCount = 0
-    products.forEach((product) => {
-        if (!product?.id) return
-        if (selectedProducts.value.some((item) => item.id === product.id)) {
-            duplicateCount += 1
-            return
-        }
-        const category = categoryOptions.value.find((item) => item.id === product.categoryId)
-        selectedProducts.value.push({
+    const product = products?.[0]
+    if (!product?.id) return
+    const category = categoryOptions.value.find((item) => item.id === product.categoryId)
+    selectedProducts.value = [
+        {
             id: product.id,
             categoryId: product.categoryId,
             categoryName: product.categoryName || category?.name || '--',
@@ -499,11 +495,8 @@ const appendProducts = (products: ProductVO[]) => {
             productCode: product.productNo,
             categoryPath: product.categoryPath,
             projectName: product.categoryName || category?.name || ''
-        })
-    })
-    if (duplicateCount > 0) {
-        message.warning(`已跳过 ${duplicateCount} 个重复商品`)
-    }
+        }
+    ]
     formData.value.payableAmount = totalPayableAmount.value
     productPickerVisible.value = false
 }

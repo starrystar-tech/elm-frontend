@@ -14,6 +14,20 @@
                     style="width: 220px"
                 />
             </template>
+            <template #householdProvince>
+                <ProvinceSelect
+                    v-model="searchForm.householdProvince"
+                    placeholder="请选择户籍省份"
+                    style="width: 220px"
+                />
+            </template>
+            <template #applyProvince>
+                <ProvinceSelect
+                    v-model="searchForm.applyProvince"
+                    placeholder="请选择报考省份"
+                    style="width: 220px"
+                />
+            </template>
         </Search>
         <Table
             v-model:currentPage="tableObject.currentPage"
@@ -33,15 +47,20 @@
 </template>
 
 <script lang="tsx" setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElLink } from 'element-plus'
 import { dateFormatter } from '@/utils/formatTime'
 import * as StudentCenterApi from '@/api/crm/studentCenter'
+import * as UserApi from '@/api/system/user'
+import * as DeptApi from '@/api/system/dept'
+import * as CampusApi from '@/api/system/campus'
 import AreaSelect from '@/components/AreaSelect.vue'
+import ProvinceSelect from '@/components/ProvinceSelect.vue'
 import { Search } from '@/components/Search'
 import { Table, type TableColumn } from '@/components/Table'
 import { ContentWrap } from '@/components/ContentWrap'
 import { BaseButton } from '@/components/Button'
+import { useMessage } from '@/hooks/web/useMessage'
 import { useTable } from '@/hooks/web/useTable'
 import type { FormSchema } from '@/types/form'
 import { hasPermission } from '@/directives/permission/hasPermi'
@@ -51,17 +70,26 @@ import { buildAreaLabel, buildDeptOwnerDisplayName } from '@/views/crm/clue/list
 import AftersalesForm from '@/views/aftersales/components/AftersalesForm.vue'
 import {
     AFTERSALES_SOURCE,
+    AFTERSALES_RESULT_OPTIONS,
     getAftersalesResultLabel,
     getAftersalesStatusLabel
 } from '@/views/aftersales/config'
 import StudentEditForm from './StudentEditForm.vue'
+import { PAY_CONFIRM_STATUS_OPTIONS } from '@/views/order/utils'
 
 interface StudentSearchParams {
     mobile?: string
     customer?: string
     areaId?: number
+    ownerUserId?: number
+    ownerDeptId?: number
+    campusId?: number
+    aftersalesResult?: number
+    householdProvince?: string
+    applyProvince?: string
     serviceStatus?: number
     courseStatus?: number
+    confirmStatus?: number
     studentRemark?: string
 }
 
@@ -72,6 +100,9 @@ const aftersalesFormRef = ref<InstanceType<typeof AftersalesForm>>()
 const studentEditFormRef = ref<InstanceType<typeof StudentEditForm>>()
 const searchForm = reactive<StudentSearchParams>({})
 const message = useMessage()
+const ownerUserOptions = ref<{ label: string; value: number }[]>([])
+const ownerDeptOptions = ref<{ label: string; value: number }[]>([])
+const campusOptions = ref<{ label: string; value: number }[]>([])
 const canCreateAftersales = hasPermission(['crm:aftersales:create'])
 const canEditMyStudent = hasPermission(['crm:student:my:update'])
 const canRepurchaseMyStudent = hasPermission(['crm:student:my:repurchase'])
@@ -106,6 +137,73 @@ const searchSchema = reactive<FormSchema[]>([
         }
     },
     {
+        field: 'ownerUserId',
+        label: '订单归属人',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择订单归属人',
+            clearable: true,
+            filterable: true,
+            style: { width: '220px' },
+            options: ownerUserOptions.value
+        }
+    },
+    {
+        field: 'ownerDeptId',
+        label: '归属人组别',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择归属人组别',
+            clearable: true,
+            filterable: true,
+            style: { width: '220px' },
+            options: ownerDeptOptions.value
+        }
+    },
+    {
+        field: 'campusId',
+        label: '报名分校',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择报名分校',
+            clearable: true,
+            filterable: true,
+            style: { width: '220px' },
+            options: campusOptions.value
+        }
+    },
+    {
+        field: 'aftersalesResult',
+        label: '售后结果',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择售后结果',
+            clearable: true,
+            style: { width: '220px' },
+            options: AFTERSALES_RESULT_OPTIONS
+        }
+    },
+    {
+        field: 'householdProvince',
+        label: '户籍省份',
+        component: 'Input',
+        componentProps: {
+            placeholder: '请选择户籍省份',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
+        field: 'applyProvince',
+        label: '报考省份',
+        component: 'Input',
+        componentProps: {
+            placeholder: '请选择报考省份',
+            clearable: true,
+            style: { width: '220px' }
+        }
+    },
+    {
         field: 'serviceStatus',
         label: '服务状态',
         component: 'Select',
@@ -125,6 +223,17 @@ const searchSchema = reactive<FormSchema[]>([
             clearable: true,
             style: { width: '220px' },
             options: StudentCenterApi.STUDENT_COURSE_STATUS_OPTIONS
+        }
+    },
+    {
+        field: 'confirmStatus',
+        label: '财务确认状态',
+        component: 'Select',
+        componentProps: {
+            placeholder: '请选择财务确认状态',
+            clearable: true,
+            style: { width: '220px' },
+            options: PAY_CONFIRM_STATUS_OPTIONS.filter((item) => item.value !== 0)
         }
     },
     {
@@ -151,8 +260,15 @@ const buildListParams = (params: StudentSearchParams = {}) => ({
     mobile: params.mobile,
     customer: params.customer,
     areaId: params.areaId,
+    ownerUserId: params.ownerUserId,
+    ownerDeptId: params.ownerDeptId,
+    campusId: params.campusId,
+    aftersalesResult: params.aftersalesResult,
+    householdProvince: params.householdProvince,
+    applyProvince: params.applyProvince,
     serviceStatus: params.serviceStatus,
     courseStatus: params.courseStatus,
+    confirmStatus: params.confirmStatus,
     studentRemark: params.studentRemark
 })
 
@@ -197,6 +313,40 @@ const handleRepurchase = async (row: StudentCenterApi.StudentCenterPageRespVO) =
     await StudentCenterApi.myRepurchase(Number(row.orderId))
     message.success('激活成功')
     await tableMethods.getList()
+}
+
+const loadFilterOptions = async () => {
+    const [users, depts, campuses] = await Promise.all([
+        UserApi.getSimpleUserList(),
+        DeptApi.getSimpleDeptList(),
+        CampusApi.getSimpleCampusList()
+    ])
+    ownerUserOptions.value = (users || []).map((item) => ({
+        label: item.nickname || item.username,
+        value: item.id
+    }))
+    ownerDeptOptions.value = (depts || [])
+        .filter((item) => item.status === 0 || item.status === undefined)
+        .map((item) => ({
+            label: item.name,
+            value: item.id
+        }))
+    campusOptions.value = (campuses || []).map((item) => ({
+        label: item.name,
+        value: Number(item.id)
+    }))
+    const ownerUserField = searchSchema.find((item) => item.field === 'ownerUserId')
+    if (ownerUserField?.componentProps) {
+        ownerUserField.componentProps.options = ownerUserOptions.value
+    }
+    const ownerDeptField = searchSchema.find((item) => item.field === 'ownerDeptId')
+    if (ownerDeptField?.componentProps) {
+        ownerDeptField.componentProps.options = ownerDeptOptions.value
+    }
+    const campusField = searchSchema.find((item) => item.field === 'campusId')
+    if (campusField?.componentProps) {
+        campusField.componentProps.options = campusOptions.value
+    }
 }
 
 const getGenderLabel = (value?: number) => {
@@ -298,6 +448,20 @@ const tableColumns = computed<TableColumn[]>(() => [
         slots: {
             default: (data) => (
                 <span>{StudentCenterApi.getStudentInstallmentStatusLabel(data.row.installmentStatus)}</span>
+            )
+        }
+    },
+    {
+        field: 'confirmStatus',
+        label: '财务确认状态',
+        width: '120px',
+        slots: {
+            default: (data) => (
+                <span>
+                    {PAY_CONFIRM_STATUS_OPTIONS.find(
+                        (item) => item.value === Number(data.row.confirmStatus)
+                    )?.label || '--'}
+                </span>
             )
         }
     },
@@ -432,7 +596,8 @@ const resetSearchParams = () => {
     tableMethods.setSearchParams(buildListParams({}))
 }
 
-onMounted(() => {
+onMounted(async () => {
+    await loadFilterOptions()
     tableMethods.setSearchParams(buildListParams())
 })
 </script>
