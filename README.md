@@ -9,7 +9,7 @@
 
 ## 启动 
 
-* [前端说明](https://docs.softfoucs.cn/frontend.html)
+* [前端说明](https://docs.bgwa.cn/frontend.html)
 * 克隆 https://github.com/starrystar-tech/elm-frontend.git 项目，并 Star 关注下该项目。
 
 * 在目录下执行如下命令，进行启动：
