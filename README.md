@@ -4,12 +4,12 @@
 * nodejs > 16.18.0 && pnpm > 8.6.0 (强制使用pnpm)
 
 ## 在线体验
-* 体验地址: https://elm.softfoucs.cn (账号密码已默认)
-* 文档地址: https://docs.softfoucs.cn
+* 体验地址: https://elm.bgwa.cn/ (账号密码已默认)
+* 文档地址: https://docs.bgwa.cn//
 
 ## 启动 
 
-* [前端说明](https://docs.softfoucs.cn/frontend.html)
+* [前端说明](https://docs.bgwa.cn/frontend.html)
 * 克隆 https://github.com/starrystar-tech/elm-frontend.git 项目，并 Star 关注下该项目。
 
 * 在目录下执行如下命令，进行启动：
